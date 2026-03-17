@@ -14,7 +14,113 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      reports: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          period_end: string
+          period_start: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          period_end: string
+          period_start: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          period_end?: string
+          period_start?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      subtasks: {
+        Row: {
+          completed: boolean
+          completed_at: string | null
+          created_at: string
+          id: string
+          sort_order: number
+          title: string
+          topic_id: string
+        }
+        Insert: {
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          sort_order?: number
+          title: string
+          topic_id: string
+        }
+        Update: {
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          sort_order?: number
+          title?: string
+          topic_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subtasks_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      topics: {
+        Row: {
+          created_at: string
+          due_date: string | null
+          id: string
+          priority: Database["public"]["Enums"]["topic_priority"]
+          progress_notes: string | null
+          sort_order: number
+          status: Database["public"]["Enums"]["topic_status"]
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          priority?: Database["public"]["Enums"]["topic_priority"]
+          progress_notes?: string | null
+          sort_order?: number
+          status?: Database["public"]["Enums"]["topic_status"]
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          priority?: Database["public"]["Enums"]["topic_priority"]
+          progress_notes?: string | null
+          sort_order?: number
+          status?: Database["public"]["Enums"]["topic_status"]
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +129,8 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      topic_priority: "alta" | "media" | "baja"
+      topic_status: "activo" | "completado" | "pausado"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +257,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      topic_priority: ["alta", "media", "baja"],
+      topic_status: ["activo", "completado", "pausado"],
+    },
   },
 } as const
