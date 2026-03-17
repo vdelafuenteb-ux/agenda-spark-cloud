@@ -1,16 +1,16 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, Plus, Trash2, CalendarIcon } from 'lucide-react';
+import { ChevronRight, Plus, Trash2, CalendarIcon, CheckCircle2, RotateCcw } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ProgressLog } from '@/components/ProgressLog';
 import { cn } from '@/lib/utils';
 import type { TopicWithSubtasks } from '@/hooks/useTopics';
 import type { Database } from '@/integrations/supabase/types';
@@ -25,6 +25,7 @@ interface TopicCardProps {
   onAddSubtask: (topicId: string, title: string) => void;
   onToggleSubtask: (id: string, completed: boolean) => void;
   onDeleteSubtask: (id: string) => void;
+  onAddProgressEntry: (topicId: string, content: string) => void;
 }
 
 const priorityConfig: Record<Priority, { label: string; className: string }> = {
@@ -39,27 +40,13 @@ const statusLabels: Record<Status, string> = {
   pausado: 'Pausado',
 };
 
-export function TopicCard({ topic, onUpdate, onDelete, onAddSubtask, onToggleSubtask, onDeleteSubtask }: TopicCardProps) {
+export function TopicCard({ topic, onUpdate, onDelete, onAddSubtask, onToggleSubtask, onDeleteSubtask, onAddProgressEntry }: TopicCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [newSubtask, setNewSubtask] = useState('');
-  const [notes, setNotes] = useState(topic.progress_notes || '');
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
   const completedCount = topic.subtasks.filter(s => s.completed).length;
   const totalCount = topic.subtasks.length;
   const progress = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
-
-  useEffect(() => {
-    setNotes(topic.progress_notes || '');
-  }, [topic.progress_notes]);
-
-  const handleNotesChange = useCallback((value: string) => {
-    setNotes(value);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      onUpdate(topic.id, { progress_notes: value });
-    }, 800);
-  }, [topic.id, onUpdate]);
 
   const handleAddSubtask = () => {
     if (!newSubtask.trim()) return;
@@ -67,8 +54,10 @@ export function TopicCard({ topic, onUpdate, onDelete, onAddSubtask, onToggleSub
     setNewSubtask('');
   };
 
+  const isCompleted = topic.status === 'completado';
+
   return (
-    <div className="bg-card rounded-lg shadow-sm hover:shadow-md transition-shadow">
+    <div className={cn("bg-card rounded-lg shadow-sm hover:shadow-md transition-shadow", isCompleted && "opacity-75")}>
       {/* Compact row */}
       <button
         onClick={() => setExpanded(!expanded)}
@@ -83,7 +72,7 @@ export function TopicCard({ topic, onUpdate, onDelete, onAddSubtask, onToggleSub
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="font-medium text-sm text-card-foreground truncate">{topic.title}</span>
+            <span className={cn("font-medium text-sm text-card-foreground truncate", isCompleted && "line-through")}>{topic.title}</span>
             <Badge className={cn('text-[10px] px-1.5 py-0', priorityConfig[topic.priority].className)}>
               {priorityConfig[topic.priority].label}
             </Badge>
@@ -93,7 +82,6 @@ export function TopicCard({ topic, onUpdate, onDelete, onAddSubtask, onToggleSub
               </Badge>
             )}
           </div>
-          {/* Progress bar */}
           {totalCount > 0 && (
             <div className="mt-1.5 h-[2px] w-full bg-muted rounded-full overflow-hidden">
               <div
@@ -188,6 +176,20 @@ export function TopicCard({ topic, onUpdate, onDelete, onAddSubtask, onToggleSub
                 </Button>
               </div>
 
+              {/* Complete / Reopen button */}
+              <Button
+                size="sm"
+                variant={isCompleted ? 'outline' : 'default'}
+                className="w-full h-9 text-xs gap-2"
+                onClick={() => onUpdate(topic.id, { status: isCompleted ? 'activo' : 'completado' })}
+              >
+                {isCompleted ? (
+                  <><RotateCcw className="h-3.5 w-3.5" /> Reabrir Tema</>
+                ) : (
+                  <><CheckCircle2 className="h-3.5 w-3.5" /> Marcar como Completado</>
+                )}
+              </Button>
+
               {/* Subtasks checklist */}
               <div className="space-y-1.5">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Subtareas</p>
@@ -225,16 +227,11 @@ export function TopicCard({ topic, onUpdate, onDelete, onAddSubtask, onToggleSub
                 </div>
               </div>
 
-              {/* Progress notes */}
-              <div className="space-y-1.5">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Notas de avance</p>
-                <Textarea
-                  value={notes}
-                  onChange={e => handleNotesChange(e.target.value)}
-                  placeholder="Registra avances, decisiones, observaciones..."
-                  className="text-sm min-h-[80px] resize-none"
-                />
-              </div>
+              {/* Progress log (bitácora) */}
+              <ProgressLog
+                entries={topic.progress_entries}
+                onAdd={(content) => onAddProgressEntry(topic.id, content)}
+              />
             </div>
           </motion.div>
         )}

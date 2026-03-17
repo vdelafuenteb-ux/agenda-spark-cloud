@@ -7,7 +7,14 @@ type TopicInsert = Database['public']['Tables']['topics']['Insert'];
 type TopicUpdate = Database['public']['Tables']['topics']['Update'];
 type Subtask = Database['public']['Tables']['subtasks']['Row'];
 
-export type TopicWithSubtasks = Topic & { subtasks: Subtask[] };
+export interface ProgressEntry {
+  id: string;
+  topic_id: string;
+  content: string;
+  created_at: string;
+}
+
+export type TopicWithSubtasks = Topic & { subtasks: Subtask[]; progress_entries: ProgressEntry[] };
 
 export function useTopics() {
   const queryClient = useQueryClient();
@@ -30,9 +37,17 @@ export function useTopics() {
 
       if (subError) throw subError;
 
+      const { data: entries, error: entError } = await supabase
+        .from('progress_entries')
+        .select('*')
+        .order('created_at', { ascending: true });
+
+      if (entError) throw entError;
+
       return (topics || []).map(t => ({
         ...t,
         subtasks: (subtasks || []).filter(s => s.topic_id === t.id),
+        progress_entries: (entries || []).filter(e => e.topic_id === t.id),
       }));
     },
   });
@@ -90,6 +105,14 @@ export function useTopics() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['topics'] }),
   });
 
+  const addProgressEntry = useMutation({
+    mutationFn: async ({ topic_id, content }: { topic_id: string; content: string }) => {
+      const { error } = await supabase.from('progress_entries').insert({ topic_id, content });
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['topics'] }),
+  });
+
   return {
     topics: topicsQuery.data || [],
     isLoading: topicsQuery.isLoading,
@@ -100,5 +123,6 @@ export function useTopics() {
     addSubtask,
     toggleSubtask,
     deleteSubtask,
+    addProgressEntry,
   };
 }
