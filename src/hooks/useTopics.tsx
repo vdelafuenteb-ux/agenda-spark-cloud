@@ -113,6 +113,14 @@ export function useTopics() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['topics'] }),
   });
 
+  const updateSubtask = useMutation({
+    mutationFn: async ({ id, ...data }: { id: string; [key: string]: any }) => {
+      const { error } = await supabase.from('subtasks').update(data).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['topics'] }),
+  });
+
   return {
     topics: topicsQuery.data || [],
     isLoading: topicsQuery.isLoading,
