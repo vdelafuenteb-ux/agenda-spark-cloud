@@ -114,6 +114,63 @@ export type Database = {
           },
         ]
       }
+      tags: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      topic_tags: {
+        Row: {
+          id: string
+          tag_id: string
+          topic_id: string
+        }
+        Insert: {
+          id?: string
+          tag_id: string
+          topic_id: string
+        }
+        Update: {
+          id?: string
+          tag_id?: string
+          topic_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "topic_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "tags"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "topic_tags_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       topics: {
         Row: {
           created_at: string
