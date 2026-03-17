@@ -19,7 +19,7 @@ type StatusTab = 'activo' | 'pausado' | 'completado';
 
 const Index = () => {
   const { user, loading: authLoading } = useAuth();
-  const { topics, isLoading, createTopic, updateTopic, deleteTopic, addSubtask, toggleSubtask, deleteSubtask, addProgressEntry } = useTopics();
+  const { topics, isLoading, createTopic, updateTopic, deleteTopic, addSubtask, toggleSubtask, deleteSubtask, addProgressEntry, updateSubtask } = useTopics();
   const [filter, setFilter] = useState<Filter>('todos');
   const [statusTab, setStatusTab] = useState<StatusTab>('activo');
   const [reportOpen, setReportOpen] = useState(false);
@@ -39,7 +39,11 @@ const Index = () => {
     // First filter by status tab
     if (t.status !== statusTab) return false;
     // Then apply sidebar filters
-    if (filter === 'hoy') return t.due_date && isToday(new Date(t.due_date));
+    if (filter === 'hoy') {
+      const topicDueToday = t.due_date && isToday(new Date(t.due_date));
+      const hasSubtaskDueToday = t.subtasks.some(s => s.due_date && isToday(new Date(s.due_date)));
+      return topicDueToday || hasSubtaskDueToday;
+    }
     if (filter === 'alta') return t.priority === 'alta';
     return true;
   });
@@ -69,7 +73,7 @@ const Index = () => {
             <div className="flex items-center gap-2">
               <SidebarTrigger />
               <h1 className="text-sm font-semibold text-foreground">
-                {filter === 'informes' ? 'Informes' : filter === 'alta' ? 'Prioridad Alta' : filter === 'hoy' ? 'Vence Hoy' : 'Temas'}
+                {filter === 'informes' ? 'Informes' : filter === 'alta' ? 'Prioridad Alta' : filter === 'hoy' ? 'Mi Día' : 'Temas'}
               </h1>
             </div>
             <Button size="sm" className="h-8 text-xs gap-1" onClick={() => setReportOpen(true)}>
@@ -132,6 +136,7 @@ const Index = () => {
                         onAddSubtask={(topicId, title) => addSubtask.mutate({ topic_id: topicId, title })}
                         onToggleSubtask={(id, completed) => toggleSubtask.mutate({ id, completed })}
                         onDeleteSubtask={(id) => deleteSubtask.mutate(id)}
+                        onUpdateSubtask={(id, data) => updateSubtask.mutate({ id, ...data })}
                         onAddProgressEntry={(topicId, content) => addProgressEntry.mutate({ topic_id: topicId, content })}
                       />
                     ))
