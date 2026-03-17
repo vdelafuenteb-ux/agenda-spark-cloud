@@ -89,6 +89,22 @@ export function TopicCard({ topic, allTags, topicTags, onUpdate, onDelete, onAdd
                 {statusLabels[topic.status]}
               </Badge>
             )}
+            {topicTags.length > 0 && (
+              <div className="flex items-center gap-1 ml-1">
+                {topicTags.slice(0, 3).map(tag => (
+                  <span
+                    key={tag.id}
+                    className="inline-block rounded-full px-1.5 py-0 text-[9px] text-white font-medium"
+                    style={{ backgroundColor: tag.color }}
+                  >
+                    {tag.name}
+                  </span>
+                ))}
+                {topicTags.length > 3 && (
+                  <span className="text-[9px] text-muted-foreground">+{topicTags.length - 3}</span>
+                )}
+              </div>
+            )}
           </div>
           {totalCount > 0 && (
             <div className="mt-1.5 h-[2px] w-full bg-muted rounded-full overflow-hidden">
