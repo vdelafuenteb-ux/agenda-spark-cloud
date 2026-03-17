@@ -22,6 +22,8 @@ type Status = Database['public']['Enums']['topic_status'];
 
 interface TopicCardProps {
   topic: TopicWithSubtasks;
+  allTags: Tag[];
+  topicTags: Tag[];
   onUpdate: (id: string, data: any) => void;
   onDelete: (id: string) => void;
   onAddSubtask: (topicId: string, title: string) => void;
@@ -29,6 +31,9 @@ interface TopicCardProps {
   onUpdateSubtask: (id: string, data: any) => void;
   onDeleteSubtask: (id: string) => void;
   onAddProgressEntry: (topicId: string, content: string) => void;
+  onAddTag: (topicId: string, tagId: string) => void;
+  onRemoveTag: (topicId: string, tagId: string) => void;
+  onCreateTag: (name: string, color: string) => Promise<any>;
 }
 
 const priorityConfig: Record<Priority, { label: string; className: string }> = {
