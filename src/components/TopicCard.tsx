@@ -41,7 +41,7 @@ const statusLabels: Record<Status, string> = {
   pausado: 'Pausado',
 };
 
-export function TopicCard({ topic, onUpdate, onDelete, onAddSubtask, onToggleSubtask, onDeleteSubtask, onAddProgressEntry }: TopicCardProps) {
+export function TopicCard({ topic, onUpdate, onDelete, onAddSubtask, onToggleSubtask, onUpdateSubtask, onDeleteSubtask, onAddProgressEntry }: TopicCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [newSubtask, setNewSubtask] = useState('');
 
