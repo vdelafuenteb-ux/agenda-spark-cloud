@@ -14,6 +14,35 @@ export type Database = {
   }
   public: {
     Tables: {
+      progress_entries: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          topic_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          topic_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          topic_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "progress_entries_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reports: {
         Row: {
           content: string
