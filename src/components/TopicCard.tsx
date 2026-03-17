@@ -24,6 +24,7 @@ interface TopicCardProps {
   onDelete: (id: string) => void;
   onAddSubtask: (topicId: string, title: string) => void;
   onToggleSubtask: (id: string, completed: boolean) => void;
+  onUpdateSubtask: (id: string, data: any) => void;
   onDeleteSubtask: (id: string) => void;
   onAddProgressEntry: (topicId: string, content: string) => void;
 }
