@@ -1,4 +1,4 @@
-import { LayoutList, AlertTriangle, CalendarClock, FileText, LogOut } from 'lucide-react';
+import { AlertTriangle, CalendarClock, FileText, LogOut, LayoutList } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
