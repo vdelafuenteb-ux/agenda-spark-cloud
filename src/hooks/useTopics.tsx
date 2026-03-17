@@ -56,8 +56,9 @@ export function useTopics() {
     mutationFn: async (data: Omit<TopicInsert, 'user_id'>) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
-      const { error } = await supabase.from('topics').insert({ ...data, user_id: user.id });
+      const { data: created, error } = await supabase.from('topics').insert({ ...data, user_id: user.id }).select().single();
       if (error) throw error;
+      return created;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['topics'] }),
   });
