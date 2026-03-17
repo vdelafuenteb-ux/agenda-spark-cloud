@@ -268,6 +268,18 @@ export function TopicCard({ topic, allTags, topicTags, onUpdate, onDelete, onAdd
                 </div>
               </div>
 
+              {/* Tags */}
+              <TagSelector
+                allTags={allTags}
+                topicTags={topicTags}
+                onAddTag={(tagId) => onAddTag(topic.id, tagId)}
+                onRemoveTag={(tagId) => onRemoveTag(topic.id, tagId)}
+                onCreateTag={async (name, color) => {
+                  const newTag = await onCreateTag(name, color);
+                  if (newTag) onAddTag(topic.id, newTag.id);
+                }}
+              />
+
               {/* Progress log (bitácora) */}
               <ProgressLog
                 entries={topic.progress_entries}
