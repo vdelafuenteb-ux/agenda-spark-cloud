@@ -69,7 +69,7 @@ const Index = () => {
             <div className="flex items-center gap-2">
               <SidebarTrigger />
               <h1 className="text-sm font-semibold text-foreground">
-                {filter === 'informes' ? 'Informes' : filter === 'alta' ? 'Prioridad Alta' : filter === 'hoy' ? 'Vence Hoy' : 'Temas'}
+                {filter === 'informes' ? 'Informes' : filter === 'alta' ? 'Prioridad Alta' : filter === 'hoy' ? 'Mi Día' : 'Temas'}
               </h1>
             </div>
             <Button size="sm" className="h-8 text-xs gap-1" onClick={() => setReportOpen(true)}>
