@@ -39,7 +39,11 @@ const Index = () => {
     // First filter by status tab
     if (t.status !== statusTab) return false;
     // Then apply sidebar filters
-    if (filter === 'hoy') return t.due_date && isToday(new Date(t.due_date));
+    if (filter === 'hoy') {
+      const topicDueToday = t.due_date && isToday(new Date(t.due_date));
+      const hasSubtaskDueToday = t.subtasks.some(s => s.due_date && isToday(new Date(s.due_date)));
+      return topicDueToday || hasSubtaskDueToday;
+    }
     if (filter === 'alta') return t.priority === 'alta';
     return true;
   });

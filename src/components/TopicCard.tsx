@@ -205,6 +205,23 @@ export function TopicCard({ topic, onUpdate, onDelete, onAddSubtask, onToggleSub
                     )}>
                       {sub.title}
                     </span>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button className="text-[10px] text-muted-foreground hover:text-foreground transition-colors shrink-0">
+                          {sub.due_date
+                            ? format(new Date(sub.due_date), 'dd MMM', { locale: es })
+                            : <CalendarIcon className="h-3 w-3" />}
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="end">
+                        <Calendar
+                          mode="single"
+                          selected={sub.due_date ? new Date(sub.due_date) : undefined}
+                          onSelect={(d) => onUpdateSubtask(sub.id, { due_date: d ? format(d, 'yyyy-MM-dd') : null })}
+                          className="p-3 pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
                     <button
                       onClick={() => onDeleteSubtask(sub.id)}
                       className="opacity-0 group-hover:opacity-100 transition-opacity"
