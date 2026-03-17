@@ -11,8 +11,10 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ProgressLog } from '@/components/ProgressLog';
+import { TagSelector } from '@/components/TagSelector';
 import { cn } from '@/lib/utils';
 import type { TopicWithSubtasks } from '@/hooks/useTopics';
+import type { Tag } from '@/hooks/useTags';
 import type { Database } from '@/integrations/supabase/types';
 
 type Priority = Database['public']['Enums']['topic_priority'];
@@ -20,6 +22,8 @@ type Status = Database['public']['Enums']['topic_status'];
 
 interface TopicCardProps {
   topic: TopicWithSubtasks;
+  allTags: Tag[];
+  topicTags: Tag[];
   onUpdate: (id: string, data: any) => void;
   onDelete: (id: string) => void;
   onAddSubtask: (topicId: string, title: string) => void;
@@ -27,6 +31,9 @@ interface TopicCardProps {
   onUpdateSubtask: (id: string, data: any) => void;
   onDeleteSubtask: (id: string) => void;
   onAddProgressEntry: (topicId: string, content: string) => void;
+  onAddTag: (topicId: string, tagId: string) => void;
+  onRemoveTag: (topicId: string, tagId: string) => void;
+  onCreateTag: (name: string, color: string) => Promise<any>;
 }
 
 const priorityConfig: Record<Priority, { label: string; className: string }> = {
@@ -41,7 +48,7 @@ const statusLabels: Record<Status, string> = {
   pausado: 'Pausado',
 };
 
-export function TopicCard({ topic, onUpdate, onDelete, onAddSubtask, onToggleSubtask, onUpdateSubtask, onDeleteSubtask, onAddProgressEntry }: TopicCardProps) {
+export function TopicCard({ topic, allTags, topicTags, onUpdate, onDelete, onAddSubtask, onToggleSubtask, onUpdateSubtask, onDeleteSubtask, onAddProgressEntry, onAddTag, onRemoveTag, onCreateTag }: TopicCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [newSubtask, setNewSubtask] = useState('');
 
@@ -81,6 +88,22 @@ export function TopicCard({ topic, onUpdate, onDelete, onAddSubtask, onToggleSub
               <Badge variant="outline" className="text-[10px] px-1.5 py-0">
                 {statusLabels[topic.status]}
               </Badge>
+            )}
+            {topicTags.length > 0 && (
+              <div className="flex items-center gap-1 ml-1">
+                {topicTags.slice(0, 3).map(tag => (
+                  <span
+                    key={tag.id}
+                    className="inline-block rounded-full px-1.5 py-0 text-[9px] text-white font-medium"
+                    style={{ backgroundColor: tag.color }}
+                  >
+                    {tag.name}
+                  </span>
+                ))}
+                {topicTags.length > 3 && (
+                  <span className="text-[9px] text-muted-foreground">+{topicTags.length - 3}</span>
+                )}
+              </div>
             )}
           </div>
           {totalCount > 0 && (
@@ -244,6 +267,18 @@ export function TopicCard({ topic, onUpdate, onDelete, onAddSubtask, onToggleSub
                   </Button>
                 </div>
               </div>
+
+              {/* Tags */}
+              <TagSelector
+                allTags={allTags}
+                topicTags={topicTags}
+                onAddTag={(tagId) => onAddTag(topic.id, tagId)}
+                onRemoveTag={(tagId) => onRemoveTag(topic.id, tagId)}
+                onCreateTag={async (name, color) => {
+                  const newTag = await onCreateTag(name, color);
+                  if (newTag) onAddTag(topic.id, newTag.id);
+                }}
+              />
 
               {/* Progress log (bitácora) */}
               <ProgressLog

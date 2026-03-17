@@ -4,9 +4,11 @@ import { AppSidebar } from '@/components/AppSidebar';
 import { TopicCard } from '@/components/TopicCard';
 import { ReportModal } from '@/components/ReportModal';
 import { ReportsList } from '@/components/ReportsList';
+import { FilterBar } from '@/components/FilterBar';
 import { AuthPage } from '@/components/AuthPage';
 import { useAuth } from '@/hooks/useAuth';
 import { useTopics } from '@/hooks/useTopics';
+import { useTags } from '@/hooks/useTags';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,10 +22,13 @@ type StatusTab = 'activo' | 'pausado' | 'completado';
 const Index = () => {
   const { user, loading: authLoading } = useAuth();
   const { topics, isLoading, createTopic, updateTopic, deleteTopic, addSubtask, toggleSubtask, deleteSubtask, addProgressEntry, updateSubtask } = useTopics();
+  const { tags, getTagsForTopic, createTag, addTopicTag, removeTopicTag } = useTags();
   const [filter, setFilter] = useState<Filter>('todos');
   const [statusTab, setStatusTab] = useState<StatusTab>('activo');
   const [reportOpen, setReportOpen] = useState(false);
   const [newTitle, setNewTitle] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
 
   if (authLoading) {
     return (
@@ -35,16 +40,32 @@ const Index = () => {
 
   if (!user) return <AuthPage />;
 
+  const toggleTagFilter = (tagId: string) => {
+    setSelectedTagIds(prev =>
+      prev.includes(tagId) ? prev.filter(id => id !== tagId) : [...prev, tagId]
+    );
+  };
+
   const filteredTopics = topics.filter(t => {
-    // First filter by status tab
     if (t.status !== statusTab) return false;
-    // Then apply sidebar filters
     if (filter === 'hoy') {
       const topicDueToday = t.due_date && isToday(new Date(t.due_date));
       const hasSubtaskDueToday = t.subtasks.some(s => s.due_date && isToday(new Date(s.due_date)));
-      return topicDueToday || hasSubtaskDueToday;
+      if (!topicDueToday && !hasSubtaskDueToday) return false;
     }
-    if (filter === 'alta') return t.priority === 'alta';
+    if (filter === 'alta' && t.priority !== 'alta') return false;
+    // Search filter
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      const matchesTitle = t.title.toLowerCase().includes(q);
+      const matchesSubtask = t.subtasks.some(s => s.title.toLowerCase().includes(q));
+      if (!matchesTitle && !matchesSubtask) return false;
+    }
+    // Tag filter
+    if (selectedTagIds.length > 0) {
+      const topicTagIds = getTagsForTopic(t.id).map(tag => tag.id);
+      if (!selectedTagIds.some(id => topicTagIds.includes(id))) return false;
+    }
     return true;
   });
 
@@ -68,7 +89,6 @@ const Index = () => {
         <AppSidebar activeFilter={filter} onFilterChange={setFilter} topics={topics} />
 
         <div className="flex-1 flex flex-col min-w-0">
-          {/* Header */}
           <header className="h-12 flex items-center justify-between border-b border-border px-4 shrink-0">
             <div className="flex items-center gap-2">
               <SidebarTrigger />
@@ -82,14 +102,12 @@ const Index = () => {
             </Button>
           </header>
 
-          {/* Content */}
           <main className="flex-1 overflow-auto p-4 md:p-6">
             <div className="max-w-3xl mx-auto space-y-3">
               {filter === 'informes' ? (
                 <ReportsList />
               ) : (
                 <>
-                  {/* Status tabs */}
                   <Tabs value={statusTab} onValueChange={(v) => setStatusTab(v as StatusTab)}>
                     <TabsList className="w-full">
                       <TabsTrigger value="activo" className="flex-1 text-xs">
@@ -104,7 +122,15 @@ const Index = () => {
                     </TabsList>
                   </Tabs>
 
-                  {/* New topic input */}
+                  {/* Search & tag filter */}
+                  <FilterBar
+                    searchQuery={searchQuery}
+                    onSearchChange={setSearchQuery}
+                    allTags={tags}
+                    selectedTagIds={selectedTagIds}
+                    onToggleTag={toggleTagFilter}
+                  />
+
                   {statusTab === 'activo' && (
                     <div className="flex items-center gap-2">
                       <Input
@@ -124,13 +150,17 @@ const Index = () => {
                     <p className="text-sm text-muted-foreground text-center py-8">Cargando temas...</p>
                   ) : filteredTopics.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-8">
-                      {statusTab === 'activo' ? 'No hay temas activos.' : statusTab === 'pausado' ? 'No hay temas pausados.' : 'No hay temas cerrados.'}
+                      {searchQuery || selectedTagIds.length > 0
+                        ? 'No hay temas que coincidan con tu búsqueda.'
+                        : statusTab === 'activo' ? 'No hay temas activos.' : statusTab === 'pausado' ? 'No hay temas pausados.' : 'No hay temas cerrados.'}
                     </p>
                   ) : (
                     filteredTopics.map(topic => (
                       <TopicCard
                         key={topic.id}
                         topic={topic}
+                        allTags={tags}
+                        topicTags={getTagsForTopic(topic.id)}
                         onUpdate={(id, data) => updateTopic.mutate({ id, ...data })}
                         onDelete={(id) => deleteTopic.mutate(id, { onSuccess: () => toast.success('Tema eliminado') })}
                         onAddSubtask={(topicId, title) => addSubtask.mutate({ topic_id: topicId, title })}
@@ -138,6 +168,12 @@ const Index = () => {
                         onDeleteSubtask={(id) => deleteSubtask.mutate(id)}
                         onUpdateSubtask={(id, data) => updateSubtask.mutate({ id, ...data })}
                         onAddProgressEntry={(topicId, content) => addProgressEntry.mutate({ topic_id: topicId, content })}
+                        onAddTag={(topicId, tagId) => addTopicTag.mutate({ topic_id: topicId, tag_id: tagId })}
+                        onRemoveTag={(topicId, tagId) => removeTopicTag.mutate({ topic_id: topicId, tag_id: tagId })}
+                        onCreateTag={async (name, color) => {
+                          const result = await createTag.mutateAsync({ name, color });
+                          return result;
+                        }}
                       />
                     ))
                   )}
