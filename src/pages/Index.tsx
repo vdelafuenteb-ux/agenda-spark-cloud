@@ -110,29 +110,31 @@ const Index = () => {
       });
 
       // Batch all parallel inserts
-      const promises: Promise<any>[] = [];
+      const promises: (() => Promise<void>)[] = [];
 
       if (data.subtasks.length > 0) {
-        promises.push(
-          supabase.from('subtasks').insert(
+        promises.push(async () => {
+          const { error } = await supabase.from('subtasks').insert(
             data.subtasks.map((title, i) => ({ topic_id: created.id, title, sort_order: i }))
-          ).then(({ error }) => { if (error) console.error('Subtask insert error:', error); })
-        );
+          );
+          if (error) console.error('Subtask insert error:', error);
+        });
       }
 
       if (data.tagIds.length > 0) {
-        promises.push(
-          supabase.from('topic_tags').insert(
+        promises.push(async () => {
+          const { error } = await supabase.from('topic_tags').insert(
             data.tagIds.map((tag_id) => ({ topic_id: created.id, tag_id }))
-          ).then(({ error }) => { if (error) console.error('Tag link error:', error); })
-        );
+          );
+          if (error) console.error('Tag link error:', error);
+        });
       }
 
       if (data.notes.trim()) {
-        promises.push(
-          supabase.from('progress_entries').insert({ topic_id: created.id, content: data.notes.trim() })
-            .then(({ error }) => { if (error) console.error('Notes insert error:', error); })
-        );
+        promises.push(async () => {
+          const { error } = await supabase.from('progress_entries').insert({ topic_id: created.id, content: data.notes.trim() });
+          if (error) console.error('Notes insert error:', error);
+        });
       }
 
       // Create new tags sequentially then link
@@ -144,16 +146,16 @@ const Index = () => {
             .select()
             .single();
           if (tagErr) { console.error('Tag create error:', tagErr); continue; }
-          promises.push(
-            supabase.from('topic_tags').insert({ topic_id: created.id, tag_id: createdTag.id })
-              .then(({ error }) => { if (error) console.error('Tag link error:', error); })
-          );
+          promises.push(async () => {
+            const { error } = await supabase.from('topic_tags').insert({ topic_id: created.id, tag_id: createdTag.id });
+            if (error) console.error('Tag link error:', error);
+          });
         } catch (e) {
           console.error('New tag error:', e);
         }
       }
 
-      await Promise.all(promises);
+      await Promise.all(promises.map(fn => fn()));
 
       setCreateOpen(false);
       toast.success('Tema creado');
