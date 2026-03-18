@@ -148,10 +148,11 @@ const Index = () => {
             )}
           </header>
 
+          {filter === 'notas' ? (
+            <NotesView />
+          ) : (
           <main className="flex-1 overflow-auto p-4 md:p-6">
             <div className="max-w-3xl mx-auto space-y-3">
-              {filter === 'notas' ? (
-                <NotesView />
               ) : filter === 'informes' ? (
                 <ReportsList />
               ) : (
