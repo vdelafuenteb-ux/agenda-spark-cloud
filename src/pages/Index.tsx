@@ -105,25 +105,47 @@ const Index = () => {
         assignee: data.assignee || null,
       });
 
-      // Run subtasks and existing tags in parallel
-      const subtaskPromises = data.subtasks.map((title) =>
-        addSubtask.mutateAsync({ topic_id: created.id, title })
-      );
-      const tagPromises = data.tagIds.map((tagId) =>
-        addTopicTag.mutateAsync({ topic_id: created.id, tag_id: tagId })
-      );
+      // Use raw supabase calls to avoid triggering refetch per item
+      // Batch insert subtasks
+      if (data.subtasks.length > 0) {
+        const { error } = await supabase.from('subtasks').insert(
+          data.subtasks.map((title, i) => ({ topic_id: created.id, title, sort_order: i }))
+        );
+        if (error) throw error;
+      }
 
-      await Promise.all([...subtaskPromises, ...tagPromises]);
+      // Batch insert existing tag associations
+      if (data.tagIds.length > 0) {
+        const { error } = await supabase.from('topic_tags').insert(
+          data.tagIds.map((tag_id) => ({ topic_id: created.id, tag_id }))
+        );
+        if (error) throw error;
+      }
 
       // New tags must be sequential (create then assign)
       for (const newTag of data.newTags) {
-        const createdTag = await createTag.mutateAsync({ name: newTag.name, color: newTag.color });
-        await addTopicTag.mutateAsync({ topic_id: created.id, tag_id: createdTag.id });
+        const { data: createdTag, error: tagErr } = await supabase
+          .from('tags')
+          .insert({ name: newTag.name, color: newTag.color, user_id: user!.id })
+          .select()
+          .single();
+        if (tagErr) throw tagErr;
+        const { error: linkErr } = await supabase
+          .from('topic_tags')
+          .insert({ topic_id: created.id, tag_id: createdTag.id });
+        if (linkErr) throw linkErr;
       }
 
       if (data.notes.trim()) {
-        await addProgressEntry.mutateAsync({ topic_id: created.id, content: data.notes.trim() });
+        const { error } = await supabase
+          .from('progress_entries')
+          .insert({ topic_id: created.id, content: data.notes.trim() });
+        if (error) throw error;
       }
+
+      // Single invalidation at the end
+      queryClient.invalidateQueries({ queryKey: ['topics'] });
+      queryClient.invalidateQueries({ queryKey: ['tags'] });
 
       setCreateOpen(false);
       toast.success('Tema creado');
