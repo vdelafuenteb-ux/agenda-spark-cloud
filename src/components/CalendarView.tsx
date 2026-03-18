@@ -129,7 +129,16 @@ export function CalendarView({ topics }: CalendarViewProps) {
           </Button>
         </div>
 
-        {/* Grid */}
+        <div className="flex items-center gap-2 justify-end">
+          <Label htmlFor="show-periodic" className="text-xs text-muted-foreground cursor-pointer">
+            Mostrar recordatorios
+          </Label>
+          <Switch
+            id="show-periodic"
+            checked={showPeriodicEvents}
+            onCheckedChange={setShowPeriodicEvents}
+          />
+        </div>
         <div className="grid grid-cols-7 gap-px bg-border rounded-lg overflow-hidden">
           {weekDays.map((d) => (
             <div key={d} className="bg-muted px-1 py-1.5 text-center text-[10px] font-medium text-muted-foreground">
