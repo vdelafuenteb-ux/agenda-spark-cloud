@@ -69,7 +69,7 @@ Deno.serve(async (req) => {
     const pendingSubtasks = (subtasks || []).filter((s: any) => !s.completed);
     const entries = (progress_entries || []).slice(0, 5);
     const lastEntry = entries.length > 0 ? entries[0]?.content || "" : "";
-    const truncated = lastEntry.length > 80 ? lastEntry.substring(0, 80) + "…" : lastEntry;
+    const truncated = lastEntry;
     const pendingCount = pendingSubtasks.length;
     const pendingText = pendingCount > 0
       ? `${pendingCount} subtarea${pendingCount > 1 ? "s" : ""}`
