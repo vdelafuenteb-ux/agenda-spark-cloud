@@ -10,8 +10,9 @@ import type { Tag } from '@/hooks/useTags';
 import type { Assignee } from '@/hooks/useAssignees';
 import { useReminders } from '@/hooks/useReminders';
 import { useReminderCompletions } from '@/hooks/useReminderCompletions';
+import { useChecklist } from '@/hooks/useChecklist';
 import { getRemindersForDate, getUpcomingReminders } from '@/lib/reminderMatch';
-import { isStoredDateToday, isStoredDateOverdue, isStoredDateUpcoming } from '@/lib/date';
+import { isStoredDateToday, isStoredDateOverdue, isStoredDateUpcoming, formatStoredDate } from '@/lib/date';
 
 type ReviewTab = 'hoy' | 'atrasados' | 'proximos';
 
@@ -38,8 +39,13 @@ export function ReviewView(props: ReviewViewProps) {
   const [tab, setTab] = useState<ReviewTab>('hoy');
   const { reminders } = useReminders();
   const { isCompleted, toggleCompletion } = useReminderCompletions();
+  const { items: checklistItems, toggleItem } = useChecklist();
 
   const activeTopics = topics.filter(t => t.status === 'activo' || t.status === 'seguimiento');
+
+  const todayChecklist = checklistItems.filter(i => !i.completed && isStoredDateToday(i.due_date));
+  const upcomingChecklist = checklistItems.filter(i => !i.completed && isStoredDateUpcoming(i.due_date, 3));
+  const overdueChecklist = checklistItems.filter(i => !i.completed && isStoredDateOverdue(i.due_date));
 
   const getTodayMatchCount = (topic: TopicWithSubtasks) => {
     const subtaskCount = topic.subtasks.filter(s => isStoredDateToday(s.due_date)).length;
@@ -68,9 +74,9 @@ export function ReviewView(props: ReviewViewProps) {
   const upcomingReminders = useMemo(() => getUpcomingReminders(reminders, 3), [reminders]);
 
   const currentTopics = tab === 'hoy' ? todayTopics : tab === 'atrasados' ? overdueTopics : upcomingTopics;
-  const todayTotalCount = todayTopics.reduce((sum, topic) => sum + getTodayMatchCount(topic), 0) + todayReminders.length;
-  const overdueTotalCount = overdueTopics.reduce((sum, topic) => sum + getOverdueMatchCount(topic), 0);
-  const upcomingTotalCount = upcomingTopics.reduce((sum, topic) => sum + getUpcomingMatchCount(topic), 0) + upcomingReminders.length;
+  const todayTotalCount = todayTopics.reduce((sum, topic) => sum + getTodayMatchCount(topic), 0) + todayReminders.length + todayChecklist.length;
+  const overdueTotalCount = overdueTopics.reduce((sum, topic) => sum + getOverdueMatchCount(topic), 0) + overdueChecklist.length;
+  const upcomingTotalCount = upcomingTopics.reduce((sum, topic) => sum + getUpcomingMatchCount(topic), 0) + upcomingReminders.length + upcomingChecklist.length;
 
   const emptyMessages: Record<ReviewTab, string> = {
     hoy: 'No hay temas programados para hoy.',
@@ -139,6 +145,16 @@ export function ReviewView(props: ReviewViewProps) {
         </div>
       )}
 
+      {/* Today's checklist items */}
+      {tab === 'hoy' && todayChecklist.length > 0 && (
+        <ChecklistSection
+          label="Checklist de hoy"
+          items={todayChecklist}
+          onToggle={(id) => toggleItem.mutate({ id, completed: true })}
+        />
+      )}
+
+
       {/* Upcoming reminders */}
       {tab === 'proximos' && upcomingReminders.length > 0 && (
         <div className="space-y-1.5">
@@ -175,7 +191,27 @@ export function ReviewView(props: ReviewViewProps) {
         </div>
       )}
 
-      {currentTopics.length === 0 && (tab === 'hoy' ? todayReminders.length === 0 : tab === 'proximos' ? upcomingReminders.length === 0 : true) ? (
+      {/* Upcoming checklist items */}
+      {tab === 'proximos' && upcomingChecklist.length > 0 && (
+        <ChecklistSection
+          label="Checklist próximos"
+          items={upcomingChecklist}
+          onToggle={(id) => toggleItem.mutate({ id, completed: true })}
+          variant="upcoming"
+        />
+      )}
+
+      {/* Overdue checklist items */}
+      {tab === 'atrasados' && overdueChecklist.length > 0 && (
+        <ChecklistSection
+          label="Checklist atrasados"
+          items={overdueChecklist}
+          onToggle={(id) => toggleItem.mutate({ id, completed: true })}
+          variant="overdue"
+        />
+      )}
+
+      {currentTopics.length === 0 && (tab === 'hoy' ? (todayReminders.length === 0 && todayChecklist.length === 0) : tab === 'proximos' ? (upcomingReminders.length === 0 && upcomingChecklist.length === 0) : overdueChecklist.length === 0) ? (
         <p className="text-sm text-muted-foreground text-center py-8">{emptyMessages[tab]}</p>
       ) : (
         currentTopics.map((topic) => (
@@ -202,6 +238,41 @@ export function ReviewView(props: ReviewViewProps) {
           />
         ))
       )}
+    </div>
+  );
+}
+
+function ChecklistSection({ label, items, onToggle, variant }: {
+  label: string;
+  items: { id: string; title: string; due_date: string | null }[];
+  onToggle: (id: string) => void;
+  variant?: 'upcoming' | 'overdue';
+}) {
+  return (
+    <div className="space-y-1.5">
+      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{label}</p>
+      {items.map((item) => (
+        <div
+          key={item.id}
+          className={`flex items-center gap-3 rounded-lg border border-border px-4 py-2.5 ${
+            variant === 'overdue' ? 'bg-destructive/5' : variant === 'upcoming' ? 'bg-yellow-500/5' : 'bg-background'
+          }`}
+        >
+          <button
+            onClick={() => onToggle(item.id)}
+            className="shrink-0 hover:scale-110 transition-transform"
+          >
+            <Circle className="h-4 w-4 text-muted-foreground" />
+          </button>
+          <span className="text-sm font-medium flex-1 text-foreground">{item.title}</span>
+          {item.due_date && (
+            <span className="text-[10px] text-muted-foreground shrink-0">
+              {formatStoredDate(item.due_date, "d MMM")}
+            </span>
+          )}
+          <Badge variant="outline" className="text-[9px] h-4 shrink-0">Checklist</Badge>
+        </div>
+      ))}
     </div>
   );
 }

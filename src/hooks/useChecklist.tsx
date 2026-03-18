@@ -6,6 +6,7 @@ export interface ChecklistItem {
   user_id: string;
   title: string;
   completed: boolean;
+  due_date: string | null;
   created_at: string;
 }
 
@@ -28,19 +29,18 @@ export function useChecklist() {
   const invalidate = () => qc.invalidateQueries({ queryKey: key });
 
   const addItem = useMutation({
-    mutationFn: async (title: string) => {
+    mutationFn: async ({ title, due_date }: { title: string; due_date?: string | null }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
       const { data, error } = await supabase
         .from('checklist_items')
-        .insert({ user_id: user.id, title: title.trim() })
+        .insert({ user_id: user.id, title: title.trim(), due_date: due_date ?? null })
         .select()
         .single();
       if (error) throw error;
       return data as ChecklistItem;
     },
-    // Optimistic: add item instantly
-    onMutate: async (title) => {
+    onMutate: async ({ title, due_date }) => {
       await qc.cancelQueries({ queryKey: key });
       const previous = qc.getQueryData<ChecklistItem[]>(key);
       const optimistic: ChecklistItem = {
@@ -48,9 +48,32 @@ export function useChecklist() {
         user_id: '',
         title: title.trim(),
         completed: false,
+        due_date: due_date ?? null,
         created_at: new Date().toISOString(),
       };
       qc.setQueryData<ChecklistItem[]>(key, (old = []) => [...old, optimistic]);
+      return { previous };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous) qc.setQueryData(key, ctx.previous);
+    },
+    onSettled: invalidate,
+  });
+
+  const updateItem = useMutation({
+    mutationFn: async ({ id, ...data }: { id: string; completed?: boolean; due_date?: string | null }) => {
+      const { error } = await supabase
+        .from('checklist_items')
+        .update(data)
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onMutate: async ({ id, ...data }) => {
+      await qc.cancelQueries({ queryKey: key });
+      const previous = qc.getQueryData<ChecklistItem[]>(key);
+      qc.setQueryData<ChecklistItem[]>(key, (old = []) =>
+        old.map((i) => (i.id === id ? { ...i, ...data } : i)),
+      );
       return { previous };
     },
     onError: (_err, _vars, ctx) => {
@@ -125,6 +148,7 @@ export function useChecklist() {
     items: query.data || [],
     isLoading: query.isLoading,
     addItem,
+    updateItem,
     toggleItem,
     deleteItem,
     clearCompleted,
