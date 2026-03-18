@@ -145,6 +145,16 @@ export function ReviewView(props: ReviewViewProps) {
         </div>
       )}
 
+      {/* Today's checklist items */}
+      {tab === 'hoy' && todayChecklist.length > 0 && (
+        <ChecklistSection
+          label="Checklist de hoy"
+          items={todayChecklist}
+          onToggle={(id) => toggleItem.mutate({ id, completed: true })}
+        />
+      )}
+
+
       {/* Upcoming reminders */}
       {tab === 'proximos' && upcomingReminders.length > 0 && (
         <div className="space-y-1.5">
