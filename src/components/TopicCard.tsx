@@ -103,6 +103,11 @@ export function TopicCard({
             <Badge className={cn('text-[10px] px-1.5 py-0', priorityConfig[topic.priority].className)}>
               {priorityConfig[topic.priority].label}
             </Badge>
+            {showSubtaskTodayBadge && (
+              <Badge className="text-[10px] px-1.5 py-0 bg-accent text-accent-foreground border-transparent">
+                📌 Subtarea hoy
+              </Badge>
+            )}
             {topic.status !== 'activo' && (
               <Badge variant="outline" className="text-[10px] px-1.5 py-0">
                 {statusLabels[topic.status]}
