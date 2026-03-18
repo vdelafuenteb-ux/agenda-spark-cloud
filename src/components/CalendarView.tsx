@@ -44,11 +44,17 @@ function getEventsForDay(
   const todayStart = startOfDay(new Date());
   const isPast = isBefore(date, todayStart) && !isToday(date);
 
-  for (const r of reminders) {
-    if (reminderMatchesDate(r, date)) {
-      const done = isReminderCompleted(r.id, dateStr);
-      const color = done ? COLOR_COMPLETED : isPast ? COLOR_OVERDUE : COLOR_PENDING;
-      events.push({ label: r.title, color, type: done ? 'completed' : 'reminder', reminderId: r.id });
+  // Only show reminders from the week of March 16 onwards
+  const reminderCutoff = new Date(2026, 2, 16); // March 16, 2026
+  const showRemindersForDate = !isBefore(date, reminderCutoff);
+
+  if (showRemindersForDate) {
+    for (const r of reminders) {
+      if (reminderMatchesDate(r, date)) {
+        const done = isReminderCompleted(r.id, dateStr);
+        const color = done ? COLOR_COMPLETED : isPast ? COLOR_OVERDUE : COLOR_PENDING;
+        events.push({ label: r.title, color, type: done ? 'completed' : 'reminder', reminderId: r.id });
+      }
     }
   }
 
