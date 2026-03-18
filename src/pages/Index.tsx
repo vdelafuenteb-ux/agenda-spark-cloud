@@ -18,7 +18,7 @@ import { NotesView } from '@/components/NotesView';
 import { toast } from 'sonner';
 
 type Filter = 'todos' | 'revision' | 'informes' | 'notas';
-type StatusTab = 'activo' | 'pausado' | 'completado';
+type StatusTab = 'activo' | 'seguimiento' | 'pausado' | 'completado';
 
 const Index = () => {
   const { user, loading: authLoading } = useAuth();
