@@ -235,6 +235,8 @@ const Index = () => {
             />
           ) : filter === 'dashboard' ? (
             <DashboardView topics={topics} />
+          ) : filter === 'historial_correos' ? (
+            <EmailHistoryView />
           ) : filter === 'checklist' ? (
             <ChecklistView />
           ) : filter === 'calendario' ? (
