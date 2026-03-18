@@ -93,6 +93,10 @@ export function TopicCard({
   const topicUpcoming = isStoredDateUpcoming(topic.due_date, 3);
   const showSubtaskUpcomingBadge = highlightUpcoming && !topicUpcoming && hasSubtaskUpcoming;
 
+  const hasSubtaskOverdue = topic.subtasks.some(s => !s.completed && isStoredDateOverdue(s.due_date));
+  const topicOverdue = isStoredDateOverdue(topic.due_date);
+  const showSubtaskOverdueBadge = highlightOverdue && !topicOverdue && hasSubtaskOverdue;
+
   const completedCount = topic.subtasks.filter((s) => s.completed).length;
   const totalCount = topic.subtasks.length;
   const progress = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
