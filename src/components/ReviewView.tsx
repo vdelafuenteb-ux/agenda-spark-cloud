@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { TopicCard } from '@/components/TopicCard';
 import type { TopicWithSubtasks } from '@/hooks/useTopics';
 import type { Tag } from '@/hooks/useTags';
+import type { Assignee } from '@/hooks/useAssignees';
 import { isStoredDateToday, isStoredDateOverdue, isStoredDateUpcoming } from '@/lib/date';
 
 type ReviewTab = 'hoy' | 'atrasados' | 'proximos';
@@ -11,6 +12,8 @@ type ReviewTab = 'hoy' | 'atrasados' | 'proximos';
 interface ReviewViewProps {
   topics: TopicWithSubtasks[];
   allTags: Tag[];
+  assignees: Assignee[];
+  onCreateAssignee: (name: string) => Promise<Assignee>;
   getTagsForTopic: (id: string) => Tag[];
   onUpdate: (id: string, data: any) => void;
   onDelete: (id: string) => void;
@@ -25,7 +28,7 @@ interface ReviewViewProps {
 }
 
 export function ReviewView(props: ReviewViewProps) {
-  const { topics, allTags, getTagsForTopic, ...handlers } = props;
+  const { topics, allTags, assignees, onCreateAssignee, getTagsForTopic, ...handlers } = props;
   const [tab, setTab] = useState<ReviewTab>('hoy');
 
   const activeTopics = topics.filter(t => t.status === 'activo' || t.status === 'seguimiento');
@@ -90,6 +93,8 @@ export function ReviewView(props: ReviewViewProps) {
             topic={topic}
             allTags={allTags}
             topicTags={getTagsForTopic(topic.id)}
+            assignees={assignees}
+            onCreateAssignee={onCreateAssignee}
             highlightToday={tab === 'hoy'}
             onUpdate={handlers.onUpdate}
             onDelete={handlers.onDelete}

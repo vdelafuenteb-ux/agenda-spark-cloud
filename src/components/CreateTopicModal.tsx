@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { CalendarIcon, Plus, X } from 'lucide-react';
+import { CalendarIcon, Plus, X, User } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,7 +11,9 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
 import { toStoredDate } from '@/lib/date';
+import { cn } from '@/lib/utils';
 import type { Tag as TagType } from '@/hooks/useTags';
+import type { Assignee } from '@/hooks/useAssignees';
 import type { Database } from '@/integrations/supabase/types';
 
 type Priority = Database['public']['Enums']['topic_priority'];
@@ -23,6 +25,8 @@ interface CreateTopicModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   allTags: TagType[];
+  assignees: Assignee[];
+  onCreateAssignee: (name: string) => Promise<Assignee>;
   onSubmit: (data: {
     title: string;
     priority: Priority;
@@ -38,11 +42,12 @@ interface CreateTopicModalProps {
   isPending: boolean;
 }
 
-export function CreateTopicModal({ open, onOpenChange, allTags, onSubmit, isPending }: CreateTopicModalProps) {
+export function CreateTopicModal({ open, onOpenChange, allTags, assignees, onCreateAssignee, onSubmit, isPending }: CreateTopicModalProps) {
   const [title, setTitle] = useState('');
   const [priority, setPriority] = useState<Priority>('media');
   const [status, setStatus] = useState<Status>('activo');
   const [assignee, setAssignee] = useState('');
+  const [newAssigneeName, setNewAssigneeName] = useState('');
   const [dueDate, setDueDate] = useState<Date>();
   const [startDate, setStartDate] = useState<Date>(new Date());
   const [subtasks, setSubtasks] = useState<string[]>([]);
@@ -58,6 +63,7 @@ export function CreateTopicModal({ open, onOpenChange, allTags, onSubmit, isPend
     setPriority('media');
     setStatus('activo');
     setAssignee('');
+    setNewAssigneeName('');
     setDueDate(undefined);
     setStartDate(new Date());
     setSubtasks([]);
@@ -146,12 +152,61 @@ export function CreateTopicModal({ open, onOpenChange, allTags, onSubmit, isPend
             {status === 'seguimiento' && (
               <div className="space-y-1.5 w-full">
                 <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Responsable *</label>
-                <Input
-                  placeholder="Nombre del responsable..."
-                  value={assignee}
-                  onChange={(e) => setAssignee(e.target.value)}
-                  className="h-8 text-sm"
-                />
+                {assignees.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mb-1.5">
+                    {assignees.map((a) => (
+                      <button
+                        key={a.id}
+                        type="button"
+                        onClick={() => setAssignee(a.name)}
+                        className={cn(
+                          'inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium border transition-all',
+                          assignee === a.name
+                            ? 'bg-primary text-primary-foreground border-primary'
+                            : 'bg-transparent text-foreground border-border hover:border-primary/50'
+                        )}
+                      >
+                        <User className="h-2.5 w-2.5 mr-1" />
+                        {a.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <Input
+                    placeholder="Nuevo responsable..."
+                    value={newAssigneeName}
+                    onChange={(e) => setNewAssigneeName(e.target.value)}
+                    onKeyDown={async (e) => {
+                      if (e.key === 'Enter' && newAssigneeName.trim()) {
+                        e.preventDefault();
+                        const created = await onCreateAssignee(newAssigneeName.trim());
+                        setAssignee(created.name);
+                        setNewAssigneeName('');
+                      }
+                    }}
+                    className="h-8 text-sm"
+                  />
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 shrink-0"
+                    disabled={!newAssigneeName.trim()}
+                    onClick={async () => {
+                      if (!newAssigneeName.trim()) return;
+                      const created = await onCreateAssignee(newAssigneeName.trim());
+                      setAssignee(created.name);
+                      setNewAssigneeName('');
+                    }}
+                  >
+                    <Plus className="h-3 w-3" />
+                  </Button>
+                </div>
+                {assignee && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Seleccionado: <span className="font-medium text-foreground">{assignee}</span>
+                  </p>
+                )}
               </div>
             )}
 

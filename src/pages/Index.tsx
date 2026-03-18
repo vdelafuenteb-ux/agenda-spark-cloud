@@ -11,6 +11,7 @@ import { ReviewView } from '@/components/ReviewView';
 import { useAuth } from '@/hooks/useAuth';
 import { useTopics } from '@/hooks/useTopics';
 import { useTags } from '@/hooks/useTags';
+import { useAssignees } from '@/hooks/useAssignees';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Plus, FileText } from 'lucide-react';
@@ -25,6 +26,7 @@ const Index = () => {
   const { user, loading: authLoading } = useAuth();
   const { topics, isLoading, createTopic, updateTopic, deleteTopic, addSubtask, toggleSubtask, deleteSubtask, addProgressEntry, updateSubtask } = useTopics();
   const { tags, getTagsForTopic, createTag, addTopicTag, removeTopicTag } = useTags();
+  const { assignees, createAssignee } = useAssignees();
   const [filter, setFilter] = useState<Filter>('todos');
   const [statusTab, setStatusTab] = useState<StatusTab>('activo');
   const [reportOpen, setReportOpen] = useState(false);
@@ -163,6 +165,8 @@ const Index = () => {
               <ReviewView
                 topics={topics}
                 allTags={tags}
+                assignees={assignees}
+                onCreateAssignee={(name) => createAssignee.mutateAsync(name)}
                 getTagsForTopic={getTagsForTopic}
                 onUpdate={(id, data) => updateTopic.mutate({ id, ...data })}
                 onDelete={(id) => deleteTopic.mutate(id, { onSuccess: () => toast.success('Tema eliminado') })}
@@ -222,6 +226,8 @@ const Index = () => {
                           topic={topic}
                           allTags={tags}
                           topicTags={getTagsForTopic(topic.id)}
+                          assignees={assignees}
+                          onCreateAssignee={(name) => createAssignee.mutateAsync(name)}
                           onUpdate={(id, data) => updateTopic.mutate({ id, ...data })}
                           onDelete={(id) => deleteTopic.mutate(id, { onSuccess: () => toast.success('Tema eliminado') })}
                           onAddSubtask={(topicId, title) => addSubtask.mutate({ topic_id: topicId, title })}
@@ -247,6 +253,8 @@ const Index = () => {
           open={createOpen}
           onOpenChange={setCreateOpen}
           allTags={tags}
+          assignees={assignees}
+          onCreateAssignee={(name) => createAssignee.mutateAsync(name)}
           onSubmit={handleCreateTopic}
           isPending={createTopic.isPending}
         />
