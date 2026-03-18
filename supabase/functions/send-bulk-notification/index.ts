@@ -83,11 +83,17 @@ Deno.serve(async (req) => {
     mensaje += `<th style="padding:8px;border:1px solid #ddd;width:110px;">Pendientes</th>`;
     mensaje += `</tr></thead><tbody>`;
 
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
     topicsWithPending.forEach((t: any) => {
       const pendingText = t.pendingSubtasks.length > 0
         ? `${t.pendingSubtasks.length} subtarea${t.pendingSubtasks.length > 1 ? "s" : ""}`
         : "Sin pendientes";
       const pendingColor = t.pendingSubtasks.length > 0 ? "#c0392b" : "#888";
+      const isOverdue = t.due_date && new Date(t.due_date) < now;
+      const rowBg = isOverdue ? "background-color:#fff5f5;" : "";
+      const rowColor = isOverdue ? "color:#c0392b;" : "";
       const lastEntry = (t.progress_entries || []).length > 0 ? (t.progress_entries || [])[0]?.content || "" : "";
       const truncated = lastEntry.length > 80 ? lastEntry.substring(0, 80) + "…" : lastEntry;
       mensaje += `<tr>`;
