@@ -94,8 +94,8 @@ export function ReviewView(props: ReviewViewProps) {
           </TabsTrigger>
           <TabsTrigger value="atrasados" className="flex-1 text-xs gap-1.5">
             Atrasados
-            {overdueTopics.length > 0 && (
-              <Badge variant="destructive" className="h-5 min-w-5 px-1.5 text-[10px]">{overdueTopics.length}</Badge>
+            {overdueTotalCount > 0 && (
+              <Badge variant="destructive" className="h-5 min-w-5 px-1.5 text-[10px]">{overdueTotalCount}</Badge>
             )}
           </TabsTrigger>
           <TabsTrigger value="proximos" className="flex-1 text-xs gap-1.5">

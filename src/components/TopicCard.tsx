@@ -141,17 +141,17 @@ export function TopicCard({
             </Badge>
             {showSubtaskTodayBadge && (
               <Badge className="text-[10px] px-1.5 py-0 bg-accent text-accent-foreground border-transparent">
-                📌 Subtarea hoy
+                📌 {subtaskTodayCount} subtarea{subtaskTodayCount === 1 ? '' : 's'} hoy
               </Badge>
             )}
             {showSubtaskOverdueBadge && (
               <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
-                🔴 Subtarea atrasada
+                🔴 {subtaskOverdueCount} subtarea{subtaskOverdueCount === 1 ? '' : 's'} atrasada{subtaskOverdueCount === 1 ? '' : 's'}
               </Badge>
             )}
             {showSubtaskUpcomingBadge && (
               <Badge className="text-[10px] px-1.5 py-0 bg-yellow-500/20 text-yellow-700 border-transparent">
-                📅 Subtarea próxima
+                📅 {subtaskUpcomingCount} subtarea{subtaskUpcomingCount === 1 ? '' : 's'} próxima{subtaskUpcomingCount === 1 ? '' : 's'}
               </Badge>
             )}
             {topic.status !== 'activo' && (
