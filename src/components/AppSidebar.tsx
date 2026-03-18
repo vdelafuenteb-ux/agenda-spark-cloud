@@ -26,6 +26,7 @@ const filters: { key: Filter; label: string; icon: typeof LayoutList }[] = [
   { key: 'hoy', label: 'Mi día', icon: CalendarClock },
   { key: 'alta', label: 'Prioridad Alta', icon: AlertTriangle },
   { key: 'informes', label: 'Informes', icon: FileText },
+  { key: 'notas', label: 'Notas', icon: StickyNote },
 ];
 
 export function AppSidebar({ activeFilter, onFilterChange, topics }: AppSidebarProps) {
