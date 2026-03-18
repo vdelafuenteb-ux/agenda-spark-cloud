@@ -113,7 +113,7 @@ Deno.serve(async (req) => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         para: to_email,
-        asunto: `Recordatorio: ${topic_title}`,
+        asunto: `⚠️ URGENTE: "${topic_title}" — Actualizar a la brevedad | 48 hrs para responder`,
         mensaje: mensaje,
       }),
     });
