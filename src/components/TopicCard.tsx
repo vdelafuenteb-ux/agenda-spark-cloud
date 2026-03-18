@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { isStoredDateToday } from '@/lib/date';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, Plus, Trash2, CalendarIcon, CheckCircle2, RotateCcw } from 'lucide-react';
 import { es } from 'date-fns/locale';
@@ -24,6 +25,7 @@ interface TopicCardProps {
   topic: TopicWithSubtasks;
   allTags: Tag[];
   topicTags: Tag[];
+  highlightToday?: boolean;
   onUpdate: (id: string, data: any) => void;
   onDelete: (id: string) => void;
   onAddSubtask: (topicId: string, title: string) => void;
@@ -52,6 +54,7 @@ export function TopicCard({
   topic,
   allTags,
   topicTags,
+  highlightToday = false,
   onUpdate,
   onDelete,
   onAddSubtask,
@@ -63,8 +66,16 @@ export function TopicCard({
   onRemoveTag,
   onCreateTag,
 }: TopicCardProps) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(highlightToday);
   const [newSubtask, setNewSubtask] = useState('');
+
+  useEffect(() => {
+    if (highlightToday) setExpanded(true);
+  }, [highlightToday]);
+
+  const topicDueToday = isStoredDateToday(topic.due_date);
+  const hasSubtaskDueToday = topic.subtasks.some(s => isStoredDateToday(s.due_date));
+  const showSubtaskTodayBadge = highlightToday && !topicDueToday && hasSubtaskDueToday;
 
   const completedCount = topic.subtasks.filter((s) => s.completed).length;
   const totalCount = topic.subtasks.length;
@@ -92,6 +103,11 @@ export function TopicCard({
             <Badge className={cn('text-[10px] px-1.5 py-0', priorityConfig[topic.priority].className)}>
               {priorityConfig[topic.priority].label}
             </Badge>
+            {showSubtaskTodayBadge && (
+              <Badge className="text-[10px] px-1.5 py-0 bg-accent text-accent-foreground border-transparent">
+                📌 Subtarea hoy
+              </Badge>
+            )}
             {topic.status !== 'activo' && (
               <Badge variant="outline" className="text-[10px] px-1.5 py-0">
                 {statusLabels[topic.status]}
@@ -242,14 +258,19 @@ export function TopicCard({
 
               <div className="space-y-1.5">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Subtareas</p>
-                {topic.subtasks.map((subtask) => (
-                  <div key={subtask.id} className="flex items-center gap-2 group">
+                {topic.subtasks.map((subtask) => {
+                  const subtaskIsToday = highlightToday && isStoredDateToday(subtask.due_date);
+                  return (
+                  <div key={subtask.id} className={cn('flex items-center gap-2 group rounded-md px-1.5 py-1 -mx-1.5 transition-colors', subtaskIsToday && 'bg-accent/50 ring-1 ring-accent')}>
                     <Checkbox
                       checked={subtask.completed}
                       onCheckedChange={(checked) => onToggleSubtask(subtask.id, !!checked)}
                     />
                     <div className={cn('flex-1 min-w-0', subtask.completed && 'line-through text-muted-foreground')}>
                       <span className="text-sm">{subtask.title}</span>
+                      {subtaskIsToday && (
+                        <Badge className="ml-2 text-[9px] px-1 py-0 bg-primary text-primary-foreground border-transparent">Hoy</Badge>
+                      )}
                       <span className="ml-2 text-[10px] text-muted-foreground">
                         {formatStoredDate(subtask.created_at?.slice(0, 10), 'dd MMM', { locale: es })}
                       </span>
@@ -284,7 +305,8 @@ export function TopicCard({
                       <Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" />
                     </button>
                   </div>
-                ))}
+                  );
+                })}
                 <div className="flex items-center gap-2 mt-2">
                   <Input
                     placeholder="Nueva subtarea..."
