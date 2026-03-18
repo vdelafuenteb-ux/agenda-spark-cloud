@@ -18,6 +18,7 @@ import { Plus, FileText } from 'lucide-react';
 import { NotesView } from '@/components/NotesView';
 import { DashboardView } from '@/components/DashboardView';
 import { ChecklistView } from '@/components/ChecklistView';
+import { CalendarView } from '@/components/CalendarView';
 import { SettingsView } from '@/components/SettingsView';
 import { toast } from 'sonner';
 
