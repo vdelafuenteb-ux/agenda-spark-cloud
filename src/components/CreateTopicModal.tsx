@@ -135,6 +135,7 @@ export function CreateTopicModal({ open, onOpenChange, allTags, onSubmit, isPend
                 <SelectTrigger className="w-32 h-8 text-xs"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="activo">Activo</SelectItem>
+                  <SelectItem value="seguimiento">Seguimiento</SelectItem>
                   <SelectItem value="completado">Completado</SelectItem>
                   <SelectItem value="pausado">Pausado</SelectItem>
                 </SelectContent>
