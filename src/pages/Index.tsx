@@ -80,6 +80,16 @@ const Index = () => {
     return [...new Set(names)].sort();
   }, [topics]);
 
+  const bulkEmailAssignee = useMemo(() => {
+    if (statusTab !== 'seguimiento' || !selectedAssignee) return null;
+    return assignees.find(a => a.name === selectedAssignee) || null;
+  }, [statusTab, selectedAssignee, assignees]);
+
+  const bulkEmailTopics = useMemo(() => {
+    if (!bulkEmailAssignee) return [];
+    return topics.filter(t => t.status === 'seguimiento' && t.assignee === bulkEmailAssignee.name);
+  }, [topics, bulkEmailAssignee]);
+
   if (authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
