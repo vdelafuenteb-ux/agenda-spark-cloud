@@ -65,11 +65,13 @@ export function CalendarView({ topics }: CalendarViewProps) {
     return eachDayOfInterval({ start, end });
   }, [currentMonth]);
 
+  const activeTopics = useMemo(() => topics.filter(t => t.status === 'activo' || t.status === 'seguimiento'), [topics]);
+
   const eventsByDay = useMemo(() => {
     const map = new Map<string, DayEvent[]>();
     for (const day of calendarDays) {
       const key = format(day, 'yyyy-MM-dd');
-      const events = getEventsForDay(day, reminders, topics);
+      const events = getEventsForDay(day, reminders, activeTopics);
       if (events.length > 0) map.set(key, events);
     }
     return map;
