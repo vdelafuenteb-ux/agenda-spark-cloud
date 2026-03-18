@@ -1,8 +1,7 @@
 import { useState, useMemo } from 'react';
 import {
   addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek,
-  eachDayOfInterval, format, isSameMonth, isToday, isSameDay, getDay, getDate, getYear,
-  lastDayOfMonth,
+  eachDayOfInterval, format, isSameMonth, isToday, isSameDay, getYear,
 } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, CheckCircle2, Circle } from 'lucide-react';
@@ -12,9 +11,10 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { ReminderManager } from '@/components/ReminderManager';
-import { useReminders, type Reminder } from '@/hooks/useReminders';
+import { useReminders } from '@/hooks/useReminders';
 import { useReminderCompletions } from '@/hooks/useReminderCompletions';
 import { useHolidays } from '@/hooks/useHolidays';
+import { reminderMatchesDate } from '@/lib/reminderMatch';
 import type { TopicWithSubtasks } from '@/hooks/useTopics';
 import { parseStoredDate } from '@/lib/date';
 
@@ -31,29 +31,13 @@ interface DayEvent {
 
 function getEventsForDay(
   date: Date,
-  reminders: Reminder[],
+  reminders: import('@/hooks/useReminders').Reminder[],
   topics: TopicWithSubtasks[],
 ): DayEvent[] {
   const events: DayEvent[] = [];
-  const dayOfMonth = getDate(date);
-  const dayOfWeek = getDay(date);
 
   for (const r of reminders) {
-    let matches = false;
-    if (r.recurrence_type === 'monthly' && r.recurrence_day === dayOfMonth) {
-      matches = true;
-    } else if (r.recurrence_type === 'weekly' && r.recurrence_day === dayOfWeek) {
-      matches = true;
-    } else if (r.recurrence_type === 'monthly_weekday' && r.recurrence_day === dayOfWeek && r.recurrence_week != null) {
-      if (r.recurrence_week === -1) {
-        const lastDay = getDate(lastDayOfMonth(date));
-        matches = dayOfMonth + 7 > lastDay;
-      } else {
-        const nth = r.recurrence_week;
-        matches = dayOfMonth > (nth - 1) * 7 && dayOfMonth <= nth * 7;
-      }
-    }
-    if (matches) {
+    if (reminderMatchesDate(r, date)) {
       events.push({ label: r.title, color: r.color, type: 'reminder', reminderId: r.id });
     }
   }
