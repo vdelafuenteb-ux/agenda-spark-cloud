@@ -49,9 +49,10 @@ const Index = () => {
         const topicTagIds = getTagsForTopic(topic.id).map((t) => t.id);
         if (!selectedTagIds.some((id) => topicTagIds.includes(id))) return false;
       }
+      if (selectedAssignee && topic.assignee !== selectedAssignee) return false;
       return true;
     });
-  }, [topics, statusTab, searchQuery, selectedTagIds, getTagsForTopic]);
+  }, [topics, statusTab, searchQuery, selectedTagIds, selectedAssignee, getTagsForTopic]);
 
   const statusCounts = useMemo(() => ({
     activo: topics.filter((t) => t.status === 'activo').length,
