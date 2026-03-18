@@ -266,25 +266,23 @@ export function TopicCard({
                       checked={subtask.completed}
                       onCheckedChange={(checked) => onToggleSubtask(subtask.id, !!checked)}
                     />
-                    <div className={cn('flex-1 min-w-0', subtask.completed && 'line-through text-muted-foreground')}>
-                      <span className="text-sm">{subtask.title}</span>
+                    <div className={cn('flex-1 min-w-0 flex items-center gap-1.5', subtask.completed && 'line-through text-muted-foreground')}>
+                      <span className="text-sm truncate">{subtask.title}</span>
                       {subtaskIsToday && (
-                        <Badge className="ml-2 text-[9px] px-1 py-0 bg-primary text-primary-foreground border-transparent">Hoy</Badge>
+                        <Badge className="text-[9px] px-1 py-0 bg-primary text-primary-foreground border-transparent shrink-0">Hoy</Badge>
                       )}
-                      <span className="ml-2 text-[10px] text-muted-foreground">
-                        {formatStoredDate(subtask.created_at?.slice(0, 10), 'dd MMM', { locale: es })}
-                      </span>
                     </div>
                     <Popover>
                       <PopoverTrigger asChild>
                         <button
                           type="button"
-                          className="text-[10px] text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                          className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors shrink-0"
                         >
+                          <CalendarIcon className="h-3 w-3" />
                           {subtask.due_date ? (
                             formatStoredDate(subtask.due_date, 'dd MMM', { locale: es })
                           ) : (
-                            <CalendarIcon className="h-3 w-3" />
+                            <span>Sin fecha</span>
                           )}
                         </button>
                       </PopoverTrigger>
