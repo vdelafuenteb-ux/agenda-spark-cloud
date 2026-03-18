@@ -13,7 +13,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import type { TopicWithSubtasks } from '@/hooks/useTopics';
 
-type Filter = 'todos' | 'hoy' | 'alta' | 'informes';
+type Filter = 'todos' | 'hoy' | 'alta' | 'informes' | 'notas';
 
 interface AppSidebarProps {
   activeFilter: Filter;
