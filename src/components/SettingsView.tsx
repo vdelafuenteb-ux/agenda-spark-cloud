@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-
-import { Trash2, Plus } from 'lucide-react';
+import { Trash2, Plus, Pencil, Check, X } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,14 +25,20 @@ interface SettingsViewProps {
   assignees: Assignee[];
   onDeleteTag: (id: string) => void;
   onCreateTag: (data: { name: string; color: string }) => Promise<any>;
+  onUpdateTag: (id: string, name: string) => void;
   onDeleteAssignee: (id: string) => void;
   onCreateAssignee: (name: string) => Promise<any>;
+  onUpdateAssignee: (id: string, name: string) => void;
 }
 
-export function SettingsView({ tags, assignees, onDeleteTag, onCreateTag, onDeleteAssignee, onCreateAssignee }: SettingsViewProps) {
+export function SettingsView({ tags, assignees, onDeleteTag, onCreateTag, onUpdateTag, onDeleteAssignee, onCreateAssignee, onUpdateAssignee }: SettingsViewProps) {
   const [newTagName, setNewTagName] = useState('');
   const [newTagColor, setNewTagColor] = useState(TAG_COLORS[0]);
   const [newAssigneeName, setNewAssigneeName] = useState('');
+  const [editingTagId, setEditingTagId] = useState<string | null>(null);
+  const [editingTagName, setEditingTagName] = useState('');
+  const [editingAssigneeId, setEditingAssigneeId] = useState<string | null>(null);
+  const [editingAssigneeName, setEditingAssigneeName] = useState('');
 
   const handleCreateTag = async () => {
     if (!newTagName.trim()) return;
@@ -55,6 +60,20 @@ export function SettingsView({ tags, assignees, onDeleteTag, onCreateTag, onDele
     } catch (e: any) {
       toast.error(e.message);
     }
+  };
+
+  const handleSaveTag = (id: string) => {
+    if (!editingTagName.trim()) return;
+    onUpdateTag(id, editingTagName.trim());
+    setEditingTagId(null);
+    toast.success('Etiqueta actualizada');
+  };
+
+  const handleSaveAssignee = (id: string) => {
+    if (!editingAssigneeName.trim()) return;
+    onUpdateAssignee(id, editingAssigneeName.trim());
+    setEditingAssigneeId(null);
+    toast.success('Responsable actualizado');
   };
 
   return (
@@ -95,31 +114,65 @@ export function SettingsView({ tags, assignees, onDeleteTag, onCreateTag, onDele
               <div className="space-y-1">
                 {tags.map((tag) => (
                   <div key={tag.id} className="flex items-center justify-between py-1.5 px-2 rounded hover:bg-muted/50">
-                    <div className="flex items-center gap-2">
-                      <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: tag.color }} />
-                      <span className="text-sm">{tag.name}</span>
-                    </div>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive">
-                          <Trash2 className="h-3.5 w-3.5" />
+                    {editingTagId === tag.id ? (
+                      <div className="flex items-center gap-2 flex-1 mr-2">
+                        <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: tag.color }} />
+                        <Input
+                          value={editingTagName}
+                          onChange={(e) => setEditingTagName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleSaveTag(tag.id);
+                            if (e.key === 'Escape') setEditingTagId(null);
+                          }}
+                          className="h-7 text-sm flex-1"
+                          autoFocus
+                        />
+                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-emerald-500" onClick={() => handleSaveTag(tag.id)}>
+                          <Check className="h-3.5 w-3.5" />
                         </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>¿Eliminar etiqueta?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Se eliminará la etiqueta "{tag.name}" y se quitará de todos los temas asociados.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => { onDeleteTag(tag.id); toast.success('Etiqueta eliminada'); }}>
-                            Eliminar
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground" onClick={() => setEditingTagId(null)}>
+                          <X className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: tag.color }} />
+                          <span className="text-sm">{tag.name}</span>
+                        </div>
+                        <div className="flex items-center gap-0.5">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                            onClick={() => { setEditingTagId(tag.id); setEditingTagName(tag.name); }}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive">
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>¿Eliminar etiqueta?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Se eliminará la etiqueta "{tag.name}" y se quitará de todos los temas asociados.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => { onDeleteTag(tag.id); toast.success('Etiqueta eliminada'); }}>
+                                  Eliminar
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </>
+                    )}
                   </div>
                 ))}
               </div>
@@ -152,28 +205,61 @@ export function SettingsView({ tags, assignees, onDeleteTag, onCreateTag, onDele
               <div className="space-y-1">
                 {assignees.map((a) => (
                   <div key={a.id} className="flex items-center justify-between py-1.5 px-2 rounded hover:bg-muted/50">
-                    <span className="text-sm">{a.name}</span>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive">
-                          <Trash2 className="h-3.5 w-3.5" />
+                    {editingAssigneeId === a.id ? (
+                      <div className="flex items-center gap-2 flex-1 mr-2">
+                        <Input
+                          value={editingAssigneeName}
+                          onChange={(e) => setEditingAssigneeName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleSaveAssignee(a.id);
+                            if (e.key === 'Escape') setEditingAssigneeId(null);
+                          }}
+                          className="h-7 text-sm flex-1"
+                          autoFocus
+                        />
+                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-emerald-500" onClick={() => handleSaveAssignee(a.id)}>
+                          <Check className="h-3.5 w-3.5" />
                         </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>¿Eliminar responsable?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Se eliminará "{a.name}" de la lista. Los temas que ya tengan este responsable asignado no se modificarán.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => { onDeleteAssignee(a.id); toast.success('Responsable eliminado'); }}>
-                            Eliminar
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground" onClick={() => setEditingAssigneeId(null)}>
+                          <X className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <>
+                        <span className="text-sm">{a.name}</span>
+                        <div className="flex items-center gap-0.5">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                            onClick={() => { setEditingAssigneeId(a.id); setEditingAssigneeName(a.name); }}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive">
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>¿Eliminar responsable?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Se eliminará "{a.name}" de la lista. Los temas que ya tengan este responsable asignado no se modificarán.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => { onDeleteAssignee(a.id); toast.success('Responsable eliminado'); }}>
+                                  Eliminar
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </>
+                    )}
                   </div>
                 ))}
               </div>

@@ -31,8 +31,8 @@ const Index = () => {
   const queryClient = useQueryClient();
   const { user, loading: authLoading } = useAuth();
   const { topics, isLoading, createTopic, updateTopic, deleteTopic, addSubtask, toggleSubtask, deleteSubtask, addProgressEntry, updateSubtask } = useTopics();
-  const { tags, getTagsForTopic, createTag, deleteTag, addTopicTag, removeTopicTag } = useTags();
-  const { assignees, createAssignee, deleteAssignee } = useAssignees();
+  const { tags, getTagsForTopic, createTag, updateTag, deleteTag, addTopicTag, removeTopicTag } = useTags();
+  const { assignees, createAssignee, updateAssignee, deleteAssignee } = useAssignees();
   const [filter, setFilter] = useState<Filter>('todos');
   const [statusTab, setStatusTab] = useState<StatusTab>('activo');
   const [reportOpen, setReportOpen] = useState(false);
@@ -201,8 +201,10 @@ const Index = () => {
               assignees={assignees}
               onDeleteTag={(id) => deleteTag.mutate(id)}
               onCreateTag={(data) => createTag.mutateAsync(data)}
+              onUpdateTag={(id, name) => updateTag.mutate({ id, name })}
               onDeleteAssignee={(id) => deleteAssignee.mutate(id)}
               onCreateAssignee={(name) => createAssignee.mutateAsync(name)}
+              onUpdateAssignee={(id, name) => updateAssignee.mutate({ id, name })}
             />
           ) : filter === 'dashboard' ? (
             <DashboardView topics={topics} />

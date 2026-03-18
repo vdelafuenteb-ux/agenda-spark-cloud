@@ -40,6 +40,14 @@ export function useAssignees() {
     onSuccess: invalidate,
   });
 
+  const updateAssignee = useMutation({
+    mutationFn: async ({ id, name }: { id: string; name: string }) => {
+      const { error } = await supabase.from('assignees').update({ name: name.trim() }).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: invalidate,
+  });
+
   const deleteAssignee = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from('assignees').delete().eq('id', id);
@@ -52,6 +60,7 @@ export function useAssignees() {
     assignees: assigneesQuery.data || [],
     isLoading: assigneesQuery.isLoading,
     createAssignee,
+    updateAssignee,
     deleteAssignee,
   };
 }
