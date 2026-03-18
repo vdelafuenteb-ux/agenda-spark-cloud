@@ -5,10 +5,12 @@ import {
   lastDayOfMonth,
 } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, CheckCircle2, Circle, Eye, EyeOff } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, CheckCircle2, Circle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { ReminderManager } from '@/components/ReminderManager';
 import { useReminders, type Reminder } from '@/hooks/useReminders';
 import { useReminderCompletions } from '@/hooks/useReminderCompletions';
