@@ -158,7 +158,16 @@ const Index = () => {
             )}
           </header>
 
-          {filter === 'dashboard' ? (
+          {filter === 'configuracion' ? (
+            <SettingsView
+              tags={tags}
+              assignees={assignees}
+              onDeleteTag={(id) => deleteTag.mutate(id)}
+              onCreateTag={(data) => createTag.mutateAsync(data)}
+              onDeleteAssignee={(id) => deleteAssignee.mutate(id)}
+              onCreateAssignee={(name) => createAssignee.mutateAsync(name)}
+            />
+          ) : filter === 'dashboard' ? (
             <DashboardView topics={topics} />
           ) : filter === 'checklist' ? (
             <ChecklistView />

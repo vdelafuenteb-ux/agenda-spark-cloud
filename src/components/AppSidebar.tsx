@@ -30,6 +30,7 @@ const filters: { key: Filter; label: string; icon: typeof LayoutList }[] = [
   { key: 'informes', label: 'Informes', icon: FileText },
   { key: 'dashboard', label: 'Dashboard', icon: BarChart3 },
   { key: 'checklist', label: 'Checklist', icon: CheckSquare },
+  { key: 'configuracion', label: 'Configuración', icon: Settings },
 ];
 
 export function AppSidebar({ activeFilter, onFilterChange, topics }: AppSidebarProps) {
