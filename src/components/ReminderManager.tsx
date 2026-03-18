@@ -135,16 +135,6 @@ export function ReminderManager({ reminders, onCreate, onDelete }: ReminderManag
             </>
           )}
 
-          <div className="flex gap-1">
-            {COLORS.map((c) => (
-              <button
-                key={c}
-                className={`h-5 w-5 rounded-full border-2 transition-transform ${color === c ? 'border-foreground scale-110' : 'border-transparent'}`}
-                style={{ backgroundColor: c }}
-                onClick={() => setColor(c)}
-              />
-            ))}
-          </div>
 
           <Button size="sm" className="h-8 text-xs gap-1" onClick={handleCreate}>
             <Plus className="h-3 w-3" /> Agregar
