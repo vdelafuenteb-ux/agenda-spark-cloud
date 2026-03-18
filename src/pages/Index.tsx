@@ -159,6 +159,8 @@ const Index = () => {
 
           {filter === 'dashboard' ? (
             <DashboardView topics={topics} />
+          ) : filter === 'checklist' ? (
+            <ChecklistView />
           ) : filter === 'notas' ? (
             <NotesView />
           ) : filter === 'revision' ? (

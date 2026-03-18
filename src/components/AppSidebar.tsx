@@ -29,6 +29,7 @@ const filters: { key: Filter; label: string; icon: typeof LayoutList }[] = [
   { key: 'notas', label: 'Notas', icon: StickyNote },
   { key: 'informes', label: 'Informes', icon: FileText },
   { key: 'dashboard', label: 'Dashboard', icon: BarChart3 },
+  { key: 'checklist', label: 'Checklist', icon: CheckSquare },
 ];
 
 export function AppSidebar({ activeFilter, onFilterChange, topics }: AppSidebarProps) {
