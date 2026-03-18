@@ -86,16 +86,14 @@ export function TopicCard({
   }, [highlightToday, highlightUpcoming]);
 
   const topicDueToday = isStoredDateToday(topic.due_date);
-  const hasSubtaskDueToday = topic.subtasks.some(s => isStoredDateToday(s.due_date));
-  const showSubtaskTodayBadge = highlightToday && !topicDueToday && hasSubtaskDueToday;
+  const subtaskTodayCount = topic.subtasks.filter(s => isStoredDateToday(s.due_date)).length;
+  const showSubtaskTodayBadge = highlightToday && subtaskTodayCount > 0;
 
-  const hasSubtaskUpcoming = topic.subtasks.some(s => !s.completed && isStoredDateUpcoming(s.due_date, 3));
-  const topicUpcoming = isStoredDateUpcoming(topic.due_date, 3);
-  const showSubtaskUpcomingBadge = highlightUpcoming && !topicUpcoming && hasSubtaskUpcoming;
+  const subtaskUpcomingCount = topic.subtasks.filter(s => !s.completed && isStoredDateUpcoming(s.due_date, 3)).length;
+  const showSubtaskUpcomingBadge = highlightUpcoming && subtaskUpcomingCount > 0;
 
-  const hasSubtaskOverdue = topic.subtasks.some(s => !s.completed && isStoredDateOverdue(s.due_date));
-  const topicOverdue = isStoredDateOverdue(topic.due_date);
-  const showSubtaskOverdueBadge = highlightOverdue && !topicOverdue && hasSubtaskOverdue;
+  const subtaskOverdueCount = topic.subtasks.filter(s => !s.completed && isStoredDateOverdue(s.due_date)).length;
+  const showSubtaskOverdueBadge = highlightOverdue && subtaskOverdueCount > 0;
 
   const completedCount = topic.subtasks.filter((s) => s.completed).length;
   const totalCount = topic.subtasks.length;
