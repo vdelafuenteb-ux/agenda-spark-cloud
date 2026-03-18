@@ -99,7 +99,7 @@ Deno.serve(async (req) => {
       mensaje += `<tr style="${rowBg}${rowColor}">`;
       mensaje += `<td style="padding:6px 8px;border:1px solid #ddd;text-align:center;">${t.num}</td>`;
       mensaje += `<td style="padding:6px 8px;border:1px solid #ddd;font-weight:600;">${t.title}</td>`;
-      mensaje += `<td style="padding:6px 8px;border:1px solid #ddd;${isOverdue ? '' : 'color:#555;'}font-size:13px;">${truncated || "<em style='color:#aaa;'>—</em>"}</td>`;
+      mensaje += `<td style="padding:6px 8px;border:1px solid #ddd;${isOverdue ? '' : 'color:#555;'}font-size:13px;word-wrap:break-word;">${truncated || "<em style='color:#aaa;'>—</em>"}</td>`;
       mensaje += `<td style="padding:6px 8px;border:1px solid #ddd;">${formatDate(t.start_date) || "—"}</td>`;
       mensaje += `<td style="padding:6px 8px;border:1px solid #ddd;">${formatDate(t.due_date) || "—"}</td>`;
       mensaje += `<td style="padding:6px 8px;border:1px solid #ddd;color:${pendingColor};">${pendingText}</td>`;
