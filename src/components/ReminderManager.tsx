@@ -6,7 +6,7 @@ import { Trash2, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Reminder } from '@/hooks/useReminders';
 
-const COLORS = ['#3b82f6', '#ef4444', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899', '#6b7280'];
+const DEFAULT_COLOR = '#9ca3af'; // gray - managed automatically
 const DAYS_OF_WEEK = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 const ORDINALS = [
   { value: '1', label: 'Primer' },
