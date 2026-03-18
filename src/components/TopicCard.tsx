@@ -90,6 +90,10 @@ export function TopicCard({
     if (highlightToday || highlightUpcoming) setExpanded(true);
   }, [highlightToday, highlightUpcoming]);
 
+  useEffect(() => {
+    if (forceExpand !== null) setExpanded(forceExpand);
+  }, [forceExpand]);
+
   const subtaskTodayCount = topic.subtasks.filter(s => isStoredDateToday(s.due_date)).length;
   const showSubtaskTodayBadge = highlightToday && subtaskTodayCount > 0;
 
