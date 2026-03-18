@@ -27,6 +27,7 @@ interface CreateTopicModalProps {
     title: string;
     priority: Priority;
     status: Status;
+    start_date: string | null;
     due_date: string | null;
     subtasks: string[];
     tagIds: string[];
