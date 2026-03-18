@@ -30,6 +30,7 @@ interface TopicCardProps {
   onCreateAssignee: (name: string) => Promise<Assignee>;
   highlightToday?: boolean;
   highlightUpcoming?: boolean;
+  highlightOverdue?: boolean;
   onUpdate: (id: string, data: any) => void;
   onDelete: (id: string) => void;
   onAddSubtask: (topicId: string, title: string) => void;
