@@ -191,6 +191,26 @@ export function ReviewView(props: ReviewViewProps) {
         </div>
       )}
 
+      {/* Upcoming checklist items */}
+      {tab === 'proximos' && upcomingChecklist.length > 0 && (
+        <ChecklistSection
+          label="Checklist próximos"
+          items={upcomingChecklist}
+          onToggle={(id) => toggleItem.mutate({ id, completed: true })}
+          variant="upcoming"
+        />
+      )}
+
+      {/* Overdue checklist items */}
+      {tab === 'atrasados' && overdueChecklist.length > 0 && (
+        <ChecklistSection
+          label="Checklist atrasados"
+          items={overdueChecklist}
+          onToggle={(id) => toggleItem.mutate({ id, completed: true })}
+          variant="overdue"
+        />
+      )}
+
       {currentTopics.length === 0 && (tab === 'hoy' ? todayReminders.length === 0 : tab === 'proximos' ? upcomingReminders.length === 0 : true) ? (
         <p className="text-sm text-muted-foreground text-center py-8">{emptyMessages[tab]}</p>
       ) : (
