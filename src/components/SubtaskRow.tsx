@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { formatStoredDate, parseStoredDate, toStoredDate } from '@/lib/date';
+import { formatStoredDate, parseStoredDate, toStoredDate, isStoredDateOverdue } from '@/lib/date';
 import { CalendarIcon, Trash2, MessageSquare } from 'lucide-react';
 import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
