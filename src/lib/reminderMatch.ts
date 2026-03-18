@@ -34,3 +34,21 @@ export function reminderMatchesDate(r: Reminder, date: Date): boolean {
 export function getRemindersForDate(reminders: Reminder[], date: Date): Reminder[] {
   return reminders.filter((r) => reminderMatchesDate(r, date));
 }
+
+/**
+ * Get reminders that match any date within the next N days (excluding today).
+ */
+export function getUpcomingReminders(reminders: Reminder[], days: number): { reminder: Reminder; date: Date }[] {
+  const results: { reminder: Reminder; date: Date }[] = [];
+  const today = new Date();
+  for (let i = 1; i <= days; i++) {
+    const d = new Date(today);
+    d.setDate(d.getDate() + i);
+    for (const r of reminders) {
+      if (reminderMatchesDate(r, d)) {
+        results.push({ reminder: r, date: d });
+      }
+    }
+  }
+  return results;
+}

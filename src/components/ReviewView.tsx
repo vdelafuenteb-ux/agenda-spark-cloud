@@ -9,7 +9,7 @@ import type { Tag } from '@/hooks/useTags';
 import type { Assignee } from '@/hooks/useAssignees';
 import { useReminders } from '@/hooks/useReminders';
 import { useReminderCompletions } from '@/hooks/useReminderCompletions';
-import { getRemindersForDate } from '@/lib/reminderMatch';
+import { getRemindersForDate, getUpcomingReminders } from '@/lib/reminderMatch';
 import { isStoredDateToday, isStoredDateOverdue, isStoredDateUpcoming } from '@/lib/date';
 
 type ReviewTab = 'hoy' | 'atrasados' | 'proximos';
