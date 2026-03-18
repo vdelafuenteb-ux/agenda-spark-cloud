@@ -7,17 +7,17 @@ import { ReportsList } from '@/components/ReportsList';
 import { FilterBar } from '@/components/FilterBar';
 import { CreateTopicModal } from '@/components/CreateTopicModal';
 import { AuthPage } from '@/components/AuthPage';
+import { ReviewView } from '@/components/ReviewView';
 import { useAuth } from '@/hooks/useAuth';
 import { useTopics } from '@/hooks/useTopics';
 import { useTags } from '@/hooks/useTags';
-import { isStoredDateToday } from '@/lib/date';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Plus, FileText } from 'lucide-react';
 import { NotesView } from '@/components/NotesView';
 import { toast } from 'sonner';
 
-type Filter = 'todos' | 'hoy' | 'alta' | 'informes' | 'notas';
+type Filter = 'todos' | 'revision' | 'informes' | 'notas';
 type StatusTab = 'activo' | 'pausado' | 'completado';
 
 const Index = () => {
@@ -47,14 +47,6 @@ const Index = () => {
 
   const filteredTopics = topics.filter((topic) => {
     if (topic.status !== statusTab) return false;
-
-    if (filter === 'hoy') {
-      const topicDueToday = isStoredDateToday(topic.due_date);
-      const hasSubtaskDueToday = topic.subtasks.some((subtask) => isStoredDateToday(subtask.due_date));
-      if (!topicDueToday && !hasSubtaskDueToday) return false;
-    }
-
-    if (filter === 'alta' && topic.priority !== 'alta') return false;
 
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -131,10 +123,10 @@ const Index = () => {
             <div className="flex items-center gap-2">
               <SidebarTrigger />
               <h1 className="text-sm font-semibold text-foreground">
-                {filter === 'notas' ? 'Notas' : filter === 'informes' ? 'Informes' : filter === 'alta' ? 'Prioridad Alta' : filter === 'hoy' ? 'Mi Día' : 'Temas'}
+                {filter === 'notas' ? 'Notas' : filter === 'informes' ? 'Informes' : filter === 'revision' ? 'Revisión' : 'Temas'}
               </h1>
             </div>
-            {filter !== 'notas' && (
+            {filter !== 'notas' && filter !== 'informes' && filter !== 'revision' && (
               <div className="flex items-center gap-2">
                 <Button size="sm" variant="outline" className="h-8 text-xs gap-1" onClick={() => setReportOpen(true)}>
                   <FileText className="h-3 w-3" />
@@ -150,6 +142,24 @@ const Index = () => {
 
           {filter === 'notas' ? (
             <NotesView />
+          ) : filter === 'revision' ? (
+            <main className="flex-1 overflow-auto p-4 md:p-6">
+              <ReviewView
+                topics={topics}
+                allTags={tags}
+                getTagsForTopic={getTagsForTopic}
+                onUpdate={(id, data) => updateTopic.mutate({ id, ...data })}
+                onDelete={(id) => deleteTopic.mutate(id, { onSuccess: () => toast.success('Tema eliminado') })}
+                onAddSubtask={(topicId, title) => addSubtask.mutate({ topic_id: topicId, title })}
+                onToggleSubtask={(id, completed) => toggleSubtask.mutate({ id, completed })}
+                onDeleteSubtask={(id) => deleteSubtask.mutate(id)}
+                onUpdateSubtask={(id, data) => updateSubtask.mutate({ id, ...data })}
+                onAddProgressEntry={(topicId, content) => addProgressEntry.mutate({ topic_id: topicId, content })}
+                onAddTag={(topicId, tagId) => addTopicTag.mutate({ topic_id: topicId, tag_id: tagId })}
+                onRemoveTag={(topicId, tagId) => removeTopicTag.mutate({ topic_id: topicId, tag_id: tagId })}
+                onCreateTag={(name, color) => createTag.mutateAsync({ name, color })}
+              />
+            </main>
           ) : (
             <main className="flex-1 overflow-auto p-4 md:p-6">
               <div className="max-w-3xl mx-auto space-y-3">

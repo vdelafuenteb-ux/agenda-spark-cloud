@@ -1,4 +1,4 @@
-import { AlertTriangle, CalendarClock, FileText, LogOut, LayoutList, StickyNote } from 'lucide-react';
+import { Eye, LayoutList, FileText, LogOut, StickyNote } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -11,9 +11,11 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import { useAuth } from '@/hooks/useAuth';
+import { Badge } from '@/components/ui/badge';
 import type { TopicWithSubtasks } from '@/hooks/useTopics';
+import { isStoredDateOverdue } from '@/lib/date';
 
-type Filter = 'todos' | 'hoy' | 'alta' | 'informes' | 'notas';
+type Filter = 'todos' | 'revision' | 'informes' | 'notas';
 
 interface AppSidebarProps {
   activeFilter: Filter;
@@ -23,8 +25,7 @@ interface AppSidebarProps {
 
 const filters: { key: Filter; label: string; icon: typeof LayoutList }[] = [
   { key: 'todos', label: 'Todos', icon: LayoutList },
-  { key: 'hoy', label: 'Mi día', icon: CalendarClock },
-  { key: 'alta', label: 'Prioridad Alta', icon: AlertTriangle },
+  { key: 'revision', label: 'Revisión', icon: Eye },
   { key: 'informes', label: 'Informes', icon: FileText },
   { key: 'notas', label: 'Notas', icon: StickyNote },
 ];
@@ -35,6 +36,7 @@ export function AppSidebar({ activeFilter, onFilterChange, topics }: AppSidebarP
   const { signOut } = useAuth();
 
   const activeTopics = topics.filter(t => t.status === 'activo');
+  const overdueCount = activeTopics.filter(t => isStoredDateOverdue(t.due_date)).length;
   const totalSubtasks = activeTopics.reduce((acc, t) => acc + t.subtasks.length, 0);
   const completedSubtasks = activeTopics.reduce((acc, t) => acc + t.subtasks.filter(s => s.completed).length, 0);
   const progress = totalSubtasks > 0 ? Math.round((completedSubtasks / totalSubtasks) * 100) : 0;
@@ -63,7 +65,16 @@ export function AppSidebar({ activeFilter, onFilterChange, topics }: AppSidebarP
                     className={activeFilter === f.key ? 'bg-accent text-accent-foreground font-medium' : ''}
                   >
                     <f.icon className="h-4 w-4" />
-                    {!collapsed && <span>{f.label}</span>}
+                    {!collapsed && (
+                      <span className="flex items-center gap-2">
+                        {f.label}
+                        {f.key === 'revision' && overdueCount > 0 && (
+                          <Badge variant="destructive" className="h-5 min-w-5 px-1.5 text-[10px]">
+                            {overdueCount}
+                          </Badge>
+                        )}
+                      </span>
+                    )}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
