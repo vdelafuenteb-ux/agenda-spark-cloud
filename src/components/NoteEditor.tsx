@@ -317,6 +317,8 @@ export function NoteEditor({
 
   const handleContentInput = () => {
     clearTimeout(saveTimeout.current);
+    // Push to undo history
+    pushHistory();
     saveTimeout.current = setTimeout(saveContent, 800);
   };
 
@@ -327,6 +329,17 @@ export function NoteEditor({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Intercept Ctrl+Z / Ctrl+Y for manual undo/redo
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+      e.preventDefault();
+      handleUndo();
+      return;
+    }
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+      e.preventDefault();
+      handleRedo();
+      return;
+    }
     if (e.key === 'Enter' && !e.shiftKey) {
       setTimeout(handleContentInput, 50);
     }
