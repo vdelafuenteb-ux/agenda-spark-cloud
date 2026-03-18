@@ -64,6 +64,7 @@ export function TopicCard({
   onCreateAssignee,
   highlightToday = false,
   highlightUpcoming = false,
+  highlightOverdue = false,
   onUpdate,
   onDelete,
   onAddSubtask,
