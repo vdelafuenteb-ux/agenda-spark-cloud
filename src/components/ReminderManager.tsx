@@ -80,6 +80,7 @@ export function ReminderManager({ reminders, onCreate, onDelete }: ReminderManag
               <SelectItem value="monthly">Día del mes</SelectItem>
               <SelectItem value="weekly">Cada semana</SelectItem>
               <SelectItem value="monthly_weekday">Día específico del mes</SelectItem>
+              <SelectItem value="last_business_day">Último día hábil del mes</SelectItem>
             </SelectContent>
           </Select>
 
