@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
 import { TopicCard } from '@/components/TopicCard';
@@ -31,6 +31,33 @@ const Index = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
 
+  const toggleTagFilter = useCallback((tagId: string) => {
+    setSelectedTagIds((prev) => (prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]));
+  }, []);
+
+  const filteredTopics = useMemo(() => {
+    return topics.filter((topic) => {
+      if (topic.status !== statusTab) return false;
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const matchesTitle = topic.title.toLowerCase().includes(query);
+        const matchesSubtask = topic.subtasks.some((s) => s.title.toLowerCase().includes(query));
+        if (!matchesTitle && !matchesSubtask) return false;
+      }
+      if (selectedTagIds.length > 0) {
+        const topicTagIds = getTagsForTopic(topic.id).map((t) => t.id);
+        if (!selectedTagIds.some((id) => topicTagIds.includes(id))) return false;
+      }
+      return true;
+    });
+  }, [topics, statusTab, searchQuery, selectedTagIds, getTagsForTopic]);
+
+  const statusCounts = useMemo(() => ({
+    activo: topics.filter((t) => t.status === 'activo').length,
+    pausado: topics.filter((t) => t.status === 'pausado').length,
+    completado: topics.filter((t) => t.status === 'completado').length,
+  }), [topics]);
+
   if (authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -40,28 +67,6 @@ const Index = () => {
   }
 
   if (!user) return <AuthPage />;
-
-  const toggleTagFilter = (tagId: string) => {
-    setSelectedTagIds((prev) => (prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]));
-  };
-
-  const filteredTopics = topics.filter((topic) => {
-    if (topic.status !== statusTab) return false;
-
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      const matchesTitle = topic.title.toLowerCase().includes(query);
-      const matchesSubtask = topic.subtasks.some((subtask) => subtask.title.toLowerCase().includes(query));
-      if (!matchesTitle && !matchesSubtask) return false;
-    }
-
-    if (selectedTagIds.length > 0) {
-      const topicTagIds = getTagsForTopic(topic.id).map((tag) => tag.id);
-      if (!selectedTagIds.some((id) => topicTagIds.includes(id))) return false;
-    }
-
-    return true;
-  });
 
   const handleCreateTopic = async (data: {
     title: string;
@@ -83,14 +88,17 @@ const Index = () => {
         due_date: data.due_date,
       });
 
-      for (const subtaskTitle of data.subtasks) {
-        await addSubtask.mutateAsync({ topic_id: created.id, title: subtaskTitle });
-      }
+      // Run subtasks and existing tags in parallel
+      const subtaskPromises = data.subtasks.map((title) =>
+        addSubtask.mutateAsync({ topic_id: created.id, title })
+      );
+      const tagPromises = data.tagIds.map((tagId) =>
+        addTopicTag.mutateAsync({ topic_id: created.id, tag_id: tagId })
+      );
 
-      for (const tagId of data.tagIds) {
-        await addTopicTag.mutateAsync({ topic_id: created.id, tag_id: tagId });
-      }
+      await Promise.all([...subtaskPromises, ...tagPromises]);
 
+      // New tags must be sequential (create then assign)
       for (const newTag of data.newTags) {
         const createdTag = await createTag.mutateAsync({ name: newTag.name, color: newTag.color });
         await addTopicTag.mutateAsync({ topic_id: created.id, tag_id: createdTag.id });
@@ -105,12 +113,6 @@ const Index = () => {
     } catch (error: any) {
       toast.error(error.message);
     }
-  };
-
-  const statusCounts = {
-    activo: topics.filter((topic) => topic.status === 'activo').length,
-    pausado: topics.filter((topic) => topic.status === 'pausado').length,
-    completado: topics.filter((topic) => topic.status === 'completado').length,
   };
 
   return (

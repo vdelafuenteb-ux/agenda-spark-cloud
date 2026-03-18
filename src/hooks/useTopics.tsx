@@ -22,35 +22,44 @@ export function useTopics() {
   const topicsQuery = useQuery({
     queryKey: ['topics'],
     queryFn: async (): Promise<TopicWithSubtasks[]> => {
-      const { data: topics, error } = await supabase
-        .from('topics')
-        .select('*')
-        .order('sort_order', { ascending: true })
-        .order('created_at', { ascending: false });
+      // Run all 3 queries in parallel instead of sequentially
+      const [topicsRes, subtasksRes, entriesRes] = await Promise.all([
+        supabase.from('topics').select('*').order('sort_order', { ascending: true }).order('created_at', { ascending: false }),
+        supabase.from('subtasks').select('*').order('sort_order', { ascending: true }),
+        supabase.from('progress_entries').select('*').order('created_at', { ascending: true }),
+      ]);
 
-      if (error) throw error;
+      if (topicsRes.error) throw topicsRes.error;
+      if (subtasksRes.error) throw subtasksRes.error;
+      if (entriesRes.error) throw entriesRes.error;
 
-      const { data: subtasks, error: subError } = await supabase
-        .from('subtasks')
-        .select('*')
-        .order('sort_order', { ascending: true });
+      const subtasks = subtasksRes.data || [];
+      const entries = entriesRes.data || [];
 
-      if (subError) throw subError;
+      // Build lookup maps for O(n) instead of O(n*m)
+      const subtasksByTopic = new Map<string, Subtask[]>();
+      for (const s of subtasks) {
+        const arr = subtasksByTopic.get(s.topic_id);
+        if (arr) arr.push(s);
+        else subtasksByTopic.set(s.topic_id, [s]);
+      }
 
-      const { data: entries, error: entError } = await supabase
-        .from('progress_entries')
-        .select('*')
-        .order('created_at', { ascending: true });
+      const entriesByTopic = new Map<string, ProgressEntry[]>();
+      for (const e of entries) {
+        const arr = entriesByTopic.get(e.topic_id);
+        if (arr) arr.push(e);
+        else entriesByTopic.set(e.topic_id, [e]);
+      }
 
-      if (entError) throw entError;
-
-      return (topics || []).map((topic) => ({
+      return (topicsRes.data || []).map((topic) => ({
         ...topic,
-        subtasks: (subtasks || []).filter((subtask) => subtask.topic_id === topic.id),
-        progress_entries: (entries || []).filter((entry) => entry.topic_id === topic.id),
+        subtasks: subtasksByTopic.get(topic.id) || [],
+        progress_entries: entriesByTopic.get(topic.id) || [],
       }));
     },
   });
+
+  const invalidateTopics = () => queryClient.invalidateQueries({ queryKey: ['topics'] });
 
   const createTopic = useMutation({
     mutationFn: async (data: Omit<TopicInsert, 'user_id'>) => {
@@ -64,7 +73,7 @@ export function useTopics() {
       if (error) throw error;
       return created;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['topics'] }),
+    onSuccess: invalidateTopics,
   });
 
   const updateTopic = useMutation({
@@ -74,18 +83,16 @@ export function useTopics() {
     },
     onMutate: async ({ id, ...data }) => {
       await queryClient.cancelQueries({ queryKey: ['topics'] });
-      const previousTopics = queryClient.getQueryData<TopicWithSubtasks[]>(['topics']);
+      const previous = queryClient.getQueryData<TopicWithSubtasks[]>(['topics']);
       queryClient.setQueryData<TopicWithSubtasks[]>(['topics'], (old = []) =>
-        old.map((topic) => (topic.id === id ? { ...topic, ...data } : topic)),
+        old.map((t) => (t.id === id ? { ...t, ...data } : t)),
       );
-      return { previousTopics };
+      return { previous };
     },
-    onError: (_error, _variables, context) => {
-      if (context?.previousTopics) {
-        queryClient.setQueryData(['topics'], context.previousTopics);
-      }
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous) queryClient.setQueryData(['topics'], ctx.previous);
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ['topics'] }),
+    onSettled: invalidateTopics,
   });
 
   const deleteTopic = useMutation({
@@ -93,15 +100,27 @@ export function useTopics() {
       const { error } = await supabase.from('topics').delete().eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['topics'] }),
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ['topics'] });
+      const previous = queryClient.getQueryData<TopicWithSubtasks[]>(['topics']);
+      queryClient.setQueryData<TopicWithSubtasks[]>(['topics'], (old = []) =>
+        old.filter((t) => t.id !== id),
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous) queryClient.setQueryData(['topics'], ctx.previous);
+    },
+    onSettled: invalidateTopics,
   });
 
   const addSubtask = useMutation({
     mutationFn: async ({ topic_id, title }: { topic_id: string; title: string }) => {
-      const { error } = await supabase.from('subtasks').insert({ topic_id, title });
+      const { data, error } = await supabase.from('subtasks').insert({ topic_id, title }).select().single();
       if (error) throw error;
+      return data;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['topics'] }),
+    onSuccess: invalidateTopics,
   });
 
   const toggleSubtask = useMutation({
@@ -112,7 +131,23 @@ export function useTopics() {
       }).eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['topics'] }),
+    onMutate: async ({ id, completed }) => {
+      await queryClient.cancelQueries({ queryKey: ['topics'] });
+      const previous = queryClient.getQueryData<TopicWithSubtasks[]>(['topics']);
+      queryClient.setQueryData<TopicWithSubtasks[]>(['topics'], (old = []) =>
+        old.map((t) => ({
+          ...t,
+          subtasks: t.subtasks.map((s) =>
+            s.id === id ? { ...s, completed, completed_at: completed ? new Date().toISOString() : null } : s,
+          ),
+        })),
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous) queryClient.setQueryData(['topics'], ctx.previous);
+    },
+    onSettled: invalidateTopics,
   });
 
   const deleteSubtask = useMutation({
@@ -120,7 +155,21 @@ export function useTopics() {
       const { error } = await supabase.from('subtasks').delete().eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['topics'] }),
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ['topics'] });
+      const previous = queryClient.getQueryData<TopicWithSubtasks[]>(['topics']);
+      queryClient.setQueryData<TopicWithSubtasks[]>(['topics'], (old = []) =>
+        old.map((t) => ({
+          ...t,
+          subtasks: t.subtasks.filter((s) => s.id !== id),
+        })),
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous) queryClient.setQueryData(['topics'], ctx.previous);
+    },
+    onSettled: invalidateTopics,
   });
 
   const addProgressEntry = useMutation({
@@ -128,7 +177,7 @@ export function useTopics() {
       const { error } = await supabase.from('progress_entries').insert({ topic_id, content });
       if (error) throw error;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['topics'] }),
+    onSuccess: invalidateTopics,
   });
 
   const updateSubtask = useMutation({
@@ -138,23 +187,19 @@ export function useTopics() {
     },
     onMutate: async ({ id, ...data }) => {
       await queryClient.cancelQueries({ queryKey: ['topics'] });
-      const previousTopics = queryClient.getQueryData<TopicWithSubtasks[]>(['topics']);
+      const previous = queryClient.getQueryData<TopicWithSubtasks[]>(['topics']);
       queryClient.setQueryData<TopicWithSubtasks[]>(['topics'], (old = []) =>
-        old.map((topic) => ({
-          ...topic,
-          subtasks: topic.subtasks.map((subtask) =>
-            subtask.id === id ? { ...subtask, ...data } : subtask,
-          ),
+        old.map((t) => ({
+          ...t,
+          subtasks: t.subtasks.map((s) => (s.id === id ? { ...s, ...data } : s)),
         })),
       );
-      return { previousTopics };
+      return { previous };
     },
-    onError: (_error, _variables, context) => {
-      if (context?.previousTopics) {
-        queryClient.setQueryData(['topics'], context.previousTopics);
-      }
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous) queryClient.setQueryData(['topics'], ctx.previous);
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ['topics'] }),
+    onSettled: invalidateTopics,
   });
 
   return {
