@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { format } from 'date-fns';
+import { format, addDays } from 'date-fns';
+import { es } from 'date-fns/locale';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, Circle } from 'lucide-react';
