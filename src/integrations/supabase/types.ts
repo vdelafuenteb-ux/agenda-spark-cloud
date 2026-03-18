@@ -65,6 +65,51 @@ export type Database = {
         }
         Relationships: []
       }
+      email_schedules: {
+        Row: {
+          created_at: string
+          day_of_week: number
+          enabled: boolean
+          id: string
+          selected_assignee_ids: Json
+          selected_topic_ids: Json
+          send_all_topics: boolean
+          send_hour: number
+          send_minute: number
+          send_to_all_assignees: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week?: number
+          enabled?: boolean
+          id?: string
+          selected_assignee_ids?: Json
+          selected_topic_ids?: Json
+          send_all_topics?: boolean
+          send_hour?: number
+          send_minute?: number
+          send_to_all_assignees?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: number
+          enabled?: boolean
+          id?: string
+          selected_assignee_ids?: Json
+          selected_topic_ids?: Json
+          send_all_topics?: boolean
+          send_hour?: number
+          send_minute?: number
+          send_to_all_assignees?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       note_tags: {
         Row: {
           id: string
