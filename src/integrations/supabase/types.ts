@@ -162,6 +162,8 @@ export type Database = {
           assignee_email: string
           assignee_name: string
           id: string
+          responded: boolean
+          responded_at: string | null
           sent_at: string
           topic_id: string
           user_id: string
@@ -170,6 +172,8 @@ export type Database = {
           assignee_email: string
           assignee_name: string
           id?: string
+          responded?: boolean
+          responded_at?: string | null
           sent_at?: string
           topic_id: string
           user_id: string
@@ -178,6 +182,8 @@ export type Database = {
           assignee_email?: string
           assignee_name?: string
           id?: string
+          responded?: boolean
+          responded_at?: string | null
           sent_at?: string
           topic_id?: string
           user_id?: string
