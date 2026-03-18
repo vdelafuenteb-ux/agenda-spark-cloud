@@ -67,6 +67,51 @@ export function NoteEditor({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedImage, setSelectedImage] = useState<HTMLImageElement | null>(null);
   const [overlayStyle, setOverlayStyle] = useState<React.CSSProperties>({});
+
+  // Manual undo/redo history
+  const historyRef = useRef<string[]>([]);
+  const historyIndexRef = useRef(-1);
+  const isUndoRedoRef = useRef(false);
+
+  const pushHistory = useCallback(() => {
+    if (!editorRef.current || isUndoRedoRef.current) return;
+    const html = editorRef.current.innerHTML;
+    const history = historyRef.current;
+    const idx = historyIndexRef.current;
+    // Don't push if same as current
+    if (idx >= 0 && history[idx] === html) return;
+    // Truncate any future states
+    historyRef.current = history.slice(0, idx + 1);
+    historyRef.current.push(html);
+    // Limit history size
+    if (historyRef.current.length > 100) {
+      historyRef.current = historyRef.current.slice(-100);
+    }
+    historyIndexRef.current = historyRef.current.length - 1;
+  }, []);
+
+  const handleUndo = useCallback(() => {
+    if (!editorRef.current) return;
+    const idx = historyIndexRef.current;
+    if (idx <= 0) return;
+    isUndoRedoRef.current = true;
+    historyIndexRef.current = idx - 1;
+    editorRef.current.innerHTML = historyRef.current[idx - 1];
+    isUndoRedoRef.current = false;
+    handleContentInput();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleRedo = useCallback(() => {
+    if (!editorRef.current) return;
+    const idx = historyIndexRef.current;
+    if (idx >= historyRef.current.length - 1) return;
+    isUndoRedoRef.current = true;
+    historyIndexRef.current = idx + 1;
+    editorRef.current.innerHTML = historyRef.current[idx + 1];
+    isUndoRedoRef.current = false;
+    handleContentInput();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const dragState = useRef<{
     type: 'resize' | 'move';
     startX: number;
@@ -83,6 +128,9 @@ export function NoteEditor({
     if (editorRef.current && editorRef.current.innerHTML !== note.content) {
       editorRef.current.innerHTML = note.content;
     }
+    // Initialize history with current content
+    historyRef.current = [note.content];
+    historyIndexRef.current = 0;
   }, [note.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Position overlay on selected image
