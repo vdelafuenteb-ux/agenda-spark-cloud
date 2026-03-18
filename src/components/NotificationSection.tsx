@@ -31,33 +31,27 @@ export function NotificationSection({ topic, assignees }: NotificationSectionPro
 
     setSending(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('No autenticado');
+      const { data, error } = await supabase.functions.invoke('send-notification-email', {
+        body: {
+          to_email: assignee.email,
+          to_name: assignee.name,
+          topic_title: topic.title,
+          subtasks: topic.subtasks.map((s) => ({
+            title: s.title,
+            completed: s.completed,
+            due_date: s.due_date,
+          })),
+        },
+      });
 
-      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-      const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/send-notification-email`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
-            to_email: assignee.email,
-            to_name: assignee.name,
-            topic_title: topic.title,
-            subtasks: topic.subtasks.map(s => ({
-              title: s.title,
-              completed: s.completed,
-              due_date: s.due_date,
-            })),
-          }),
-        }
-      );
+      if (error) {
+        const message = typeof error.message === 'string' ? error.message : 'Error al enviar';
+        throw new Error(message);
+      }
 
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'Error al enviar');
+      if (!data?.success) {
+        throw new Error('No se pudo enviar el correo');
+      }
 
       await logEmail.mutateAsync({
         topic_id: topic.id,
