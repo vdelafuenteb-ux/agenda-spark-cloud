@@ -48,14 +48,6 @@ const Index = () => {
   const filteredTopics = topics.filter((topic) => {
     if (topic.status !== statusTab) return false;
 
-    if (filter === 'hoy') {
-      const topicDueToday = isStoredDateToday(topic.due_date);
-      const hasSubtaskDueToday = topic.subtasks.some((subtask) => isStoredDateToday(subtask.due_date));
-      if (!topicDueToday && !hasSubtaskDueToday) return false;
-    }
-
-    if (filter === 'alta' && topic.priority !== 'alta') return false;
-
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       const matchesTitle = topic.title.toLowerCase().includes(query);
