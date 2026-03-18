@@ -96,8 +96,8 @@ export function ReviewView(props: ReviewViewProps) {
           </TabsTrigger>
           <TabsTrigger value="proximos" className="flex-1 text-xs gap-1.5">
             Próximos
-            {upcomingTopics.length > 0 && (
-              <Badge className="h-5 min-w-5 px-1.5 text-[10px] bg-yellow-500 text-white border-0 hover:bg-yellow-500/80">{upcomingTopics.length}</Badge>
+            {upcomingTotalCount > 0 && (
+              <Badge className="h-5 min-w-5 px-1.5 text-[10px] bg-yellow-500 text-white border-0 hover:bg-yellow-500/80">{upcomingTotalCount}</Badge>
             )}
           </TabsTrigger>
         </TabsList>
