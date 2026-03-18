@@ -202,8 +202,10 @@ const Index = () => {
               assignees={assignees}
               onDeleteTag={(id) => deleteTag.mutate(id)}
               onCreateTag={(data) => createTag.mutateAsync(data)}
+              onUpdateTag={(id, name) => updateTag.mutate({ id, name })}
               onDeleteAssignee={(id) => deleteAssignee.mutate(id)}
               onCreateAssignee={(name) => createAssignee.mutateAsync(name)}
+              onUpdateAssignee={(id, name) => updateAssignee.mutate({ id, name })}
             />
           ) : filter === 'dashboard' ? (
             <DashboardView topics={topics} />
