@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Mail, Send, Loader2, CheckCircle2, X } from 'lucide-react';
+import { Mail, Send, Loader2, CheckCircle2, X, AlertCircle, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 
@@ -17,9 +17,15 @@ interface NotificationSectionProps {
   assignees: Assignee[];
 }
 
+function getEmailStatus(email: { responded: boolean; confirmed: boolean }) {
+  if (email.confirmed) return { label: 'Confirmado', color: 'text-green-600 dark:text-green-400', bg: 'bg-green-50 dark:bg-green-950/30' };
+  if (email.responded) return { label: 'Por confirmar', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-950/30' };
+  return { label: 'Pendiente', color: 'text-muted-foreground', bg: 'bg-muted/30' };
+}
+
 export function NotificationSection({ topic, assignees }: NotificationSectionProps) {
   const [sending, setSending] = useState(false);
-  const { emails, logEmail, toggleResponded, deleteEmail } = useNotificationEmails(topic.id);
+  const { emails, logEmail, toggleConfirmed, deleteEmail } = useNotificationEmails(topic.id);
 
   const assignee = assignees.find(a => a.name === topic.assignee);
   const hasEmail = assignee?.email;
@@ -32,14 +38,12 @@ export function NotificationSection({ topic, assignees }: NotificationSectionPro
 
     setSending(true);
     try {
-      // 1. Create notification record FIRST to get the ID
       const record = await logEmail.mutateAsync({
         topic_id: topic.id,
         assignee_name: assignee.name,
         assignee_email: assignee.email,
       });
 
-      // 2. Send email with the notification ID for the confirm button
       const { data, error } = await supabase.functions.invoke('send-notification-email', {
         body: {
           to_email: assignee.email,
@@ -115,40 +119,56 @@ export function NotificationSection({ topic, assignees }: NotificationSectionPro
       {emails.length > 0 && (
         <div className="space-y-1 max-h-32 overflow-y-auto">
           <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Correos enviados</p>
-          {emails.map((email) => (
-            <div
-              key={email.id}
-              className={cn(
-                "flex items-center gap-2 text-[11px] py-1 px-1.5 rounded transition-colors",
-                email.responded ? "bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400" : "bg-muted/30 text-muted-foreground"
-              )}
-            >
-              <Checkbox
-                checked={email.responded}
-                onCheckedChange={(checked) => toggleResponded.mutate({ id: email.id, responded: !!checked })}
-                className="h-3.5 w-3.5 shrink-0"
-              />
-              <span className={cn("truncate", email.responded && "line-through opacity-70")}>
-                {email.assignee_name} ({email.assignee_email})
-              </span>
-              {email.responded && email.responded_at && (
-                <span className="text-[9px] shrink-0 flex items-center gap-0.5">
-                  <CheckCircle2 className="h-2.5 w-2.5" />
-                  {format(new Date(email.responded_at), "dd MMM", { locale: es })}
-                </span>
-              )}
-              <span className="text-[10px] ml-auto shrink-0 font-mono">
-                {format(new Date(email.sent_at), "dd MMM yy HH:mm", { locale: es })}
-              </span>
-              <button
-                onClick={() => deleteEmail.mutate(email.id)}
-                className="shrink-0 text-muted-foreground hover:text-destructive transition-colors"
-                title="Eliminar registro"
+          {emails.map((email) => {
+            const status = getEmailStatus(email);
+            return (
+              <div
+                key={email.id}
+                className={cn(
+                  "flex items-center gap-2 text-[11px] py-1 px-1.5 rounded transition-colors",
+                  status.bg
+                )}
               >
-                <X className="h-3 w-3" />
-              </button>
-            </div>
-          ))}
+                <Checkbox
+                  checked={email.confirmed}
+                  onCheckedChange={(checked) => toggleConfirmed.mutate({ id: email.id, confirmed: !!checked })}
+                  className="h-3.5 w-3.5 shrink-0"
+                  title={email.confirmed ? 'Desmarcar confirmación' : 'Confirmar respuesta'}
+                />
+                <span className={cn("truncate", email.confirmed && "line-through opacity-70")}>
+                  {email.assignee_name}
+                </span>
+                {email.responded && !email.confirmed && (
+                  <span className="text-[9px] shrink-0 flex items-center gap-0.5 text-amber-600 dark:text-amber-400 font-medium">
+                    <AlertCircle className="h-2.5 w-2.5" />
+                    Dice que respondió
+                  </span>
+                )}
+                {email.confirmed && (
+                  <span className="text-[9px] shrink-0 flex items-center gap-0.5 text-green-600 dark:text-green-400">
+                    <CheckCircle2 className="h-2.5 w-2.5" />
+                    {email.confirmed_at && format(new Date(email.confirmed_at), "dd MMM", { locale: es })}
+                  </span>
+                )}
+                {!email.responded && !email.confirmed && (
+                  <span className="text-[9px] shrink-0 flex items-center gap-0.5 text-muted-foreground">
+                    <Clock className="h-2.5 w-2.5" />
+                    Pendiente
+                  </span>
+                )}
+                <span className="text-[10px] ml-auto shrink-0 font-mono">
+                  {format(new Date(email.sent_at), "dd MMM yy HH:mm", { locale: es })}
+                </span>
+                <button
+                  onClick={() => deleteEmail.mutate(email.id)}
+                  className="shrink-0 text-muted-foreground hover:text-destructive transition-colors"
+                  title="Eliminar registro"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

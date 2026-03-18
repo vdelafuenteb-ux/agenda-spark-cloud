@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Mail, CheckCircle2, Search, X, CalendarIcon, Trash2 } from 'lucide-react';
+import { Mail, CheckCircle2, Search, X, CalendarIcon, Trash2, AlertCircle, Clock } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,8 @@ interface EmailRecord {
   sent_at: string;
   responded: boolean;
   responded_at: string | null;
+  confirmed: boolean;
+  confirmed_at: string | null;
 }
 
 export function EmailHistoryView() {
@@ -31,7 +33,7 @@ export function EmailHistoryView() {
   const [selectedAssignee, setSelectedAssignee] = useState<string>('all');
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
   const [dateTo, setDateTo] = useState<Date | undefined>();
-  const [respondedFilter, setRespondedFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
 
   const { data: emails = [], isLoading } = useQuery({
     queryKey: ['notification_emails_all'],
@@ -45,21 +47,23 @@ export function EmailHistoryView() {
     },
   });
 
-  const toggleResponded = useMutation({
-    mutationFn: async ({ id, responded }: { id: string; responded: boolean }) => {
+  const invalidateAll = () => {
+    queryClient.invalidateQueries({ queryKey: ['notification_emails_all'] });
+    queryClient.invalidateQueries({ queryKey: ['notification_emails'] });
+  };
+
+  const toggleConfirmed = useMutation({
+    mutationFn: async ({ id, confirmed }: { id: string; confirmed: boolean }) => {
       const { error } = await supabase
         .from('notification_emails')
         .update({
-          responded,
-          responded_at: responded ? new Date().toISOString() : null,
+          confirmed,
+          confirmed_at: confirmed ? new Date().toISOString() : null,
         } as any)
         .eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notification_emails_all'] });
-      queryClient.invalidateQueries({ queryKey: ['notification_emails'] });
-    },
+    onSuccess: invalidateAll,
   });
 
   const deleteEmail = useMutation({
@@ -68,15 +72,13 @@ export function EmailHistoryView() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notification_emails_all'] });
-      queryClient.invalidateQueries({ queryKey: ['notification_emails'] });
+      invalidateAll();
       toast.success('Registro eliminado');
     },
   });
 
   const uniqueAssignees = useMemo(() => {
-    const names = [...new Set(emails.map(e => e.assignee_name))].sort();
-    return names;
+    return [...new Set(emails.map(e => e.assignee_name))].sort();
   }, [emails]);
 
   const filtered = useMemo(() => {
@@ -86,27 +88,27 @@ export function EmailHistoryView() {
         if (!e.assignee_name.toLowerCase().includes(q) && !e.assignee_email.toLowerCase().includes(q)) return false;
       }
       if (selectedAssignee !== 'all' && e.assignee_name !== selectedAssignee) return false;
-      if (respondedFilter === 'yes' && !e.responded) return false;
-      if (respondedFilter === 'no' && e.responded) return false;
+      if (statusFilter === 'pending' && (e.responded || e.confirmed)) return false;
+      if (statusFilter === 'self-reported' && (!e.responded || e.confirmed)) return false;
+      if (statusFilter === 'confirmed' && !e.confirmed) return false;
       if (dateFrom) {
-        const sentDate = new Date(e.sent_at);
-        if (sentDate < dateFrom) return false;
+        if (new Date(e.sent_at) < dateFrom) return false;
       }
       if (dateTo) {
-        const sentDate = new Date(e.sent_at);
         const endOfDay = new Date(dateTo);
         endOfDay.setHours(23, 59, 59, 999);
-        if (sentDate > endOfDay) return false;
+        if (new Date(e.sent_at) > endOfDay) return false;
       }
       return true;
     });
-  }, [emails, searchQuery, selectedAssignee, respondedFilter, dateFrom, dateTo]);
+  }, [emails, searchQuery, selectedAssignee, statusFilter, dateFrom, dateTo]);
 
   const stats = useMemo(() => {
     const total = filtered.length;
-    const responded = filtered.filter(e => e.responded).length;
-    const pending = total - responded;
-    return { total, responded, pending };
+    const confirmed = filtered.filter(e => e.confirmed).length;
+    const selfReported = filtered.filter(e => e.responded && !e.confirmed).length;
+    const pending = total - confirmed - selfReported;
+    return { total, confirmed, selfReported, pending };
   }, [filtered]);
 
   const clearFilters = () => {
@@ -114,23 +116,27 @@ export function EmailHistoryView() {
     setSelectedAssignee('all');
     setDateFrom(undefined);
     setDateTo(undefined);
-    setRespondedFilter('all');
+    setStatusFilter('all');
   };
 
-  const hasFilters = searchQuery || selectedAssignee !== 'all' || dateFrom || dateTo || respondedFilter !== 'all';
+  const hasFilters = searchQuery || selectedAssignee !== 'all' || dateFrom || dateTo || statusFilter !== 'all';
 
   return (
     <div className="flex-1 overflow-auto p-3 md:p-4">
       <div className="max-w-5xl mx-auto space-y-4">
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-4 gap-3">
           <div className="rounded-lg border border-border bg-card p-3 text-center">
             <p className="text-2xl font-bold text-foreground">{stats.total}</p>
             <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Total enviados</p>
           </div>
           <div className="rounded-lg border border-border bg-card p-3 text-center">
-            <p className="text-2xl font-bold text-green-600">{stats.responded}</p>
-            <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Respondidos</p>
+            <p className="text-2xl font-bold text-green-600">{stats.confirmed}</p>
+            <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Confirmados</p>
+          </div>
+          <div className="rounded-lg border border-border bg-card p-3 text-center">
+            <p className="text-2xl font-bold text-amber-600">{stats.selfReported}</p>
+            <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Por confirmar</p>
           </div>
           <div className="rounded-lg border border-border bg-card p-3 text-center">
             <p className="text-2xl font-bold text-destructive">{stats.pending}</p>
@@ -162,14 +168,15 @@ export function EmailHistoryView() {
             </SelectContent>
           </Select>
 
-          <Select value={respondedFilter} onValueChange={setRespondedFilter}>
-            <SelectTrigger className="w-[140px] h-8 text-xs">
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[160px] h-8 text-xs">
               <SelectValue placeholder="Estado" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos</SelectItem>
-              <SelectItem value="yes">Respondidos</SelectItem>
-              <SelectItem value="no">Sin respuesta</SelectItem>
+              <SelectItem value="pending">Sin respuesta</SelectItem>
+              <SelectItem value="self-reported">Por confirmar</SelectItem>
+              <SelectItem value="confirmed">Confirmados</SelectItem>
             </SelectContent>
           </Select>
 
@@ -221,11 +228,11 @@ export function EmailHistoryView() {
               <table className="w-full text-xs">
                 <thead>
                   <tr className="bg-muted/50 border-b border-border">
+                    <th className="text-left px-3 py-2 font-medium text-muted-foreground">Confirmado</th>
                     <th className="text-left px-3 py-2 font-medium text-muted-foreground">Estado</th>
                     <th className="text-left px-3 py-2 font-medium text-muted-foreground">Persona</th>
                     <th className="text-left px-3 py-2 font-medium text-muted-foreground">Email</th>
                     <th className="text-left px-3 py-2 font-medium text-muted-foreground">Enviado</th>
-                    <th className="text-left px-3 py-2 font-medium text-muted-foreground">Respondido</th>
                     <th className="text-right px-3 py-2 font-medium text-muted-foreground"></th>
                   </tr>
                 </thead>
@@ -235,30 +242,46 @@ export function EmailHistoryView() {
                       key={email.id}
                       className={cn(
                         "border-b border-border last:border-0 transition-colors hover:bg-muted/30",
-                        email.responded && "bg-green-50/50 dark:bg-green-950/10"
+                        email.confirmed && "bg-green-50/50 dark:bg-green-950/10",
+                        email.responded && !email.confirmed && "bg-amber-50/50 dark:bg-amber-950/10"
                       )}
                     >
                       <td className="px-3 py-2.5">
                         <Checkbox
-                          checked={email.responded}
-                          onCheckedChange={(checked) => toggleResponded.mutate({ id: email.id, responded: !!checked })}
+                          checked={email.confirmed}
+                          onCheckedChange={(checked) => toggleConfirmed.mutate({ id: email.id, confirmed: !!checked })}
                           className="h-4 w-4"
+                          title={email.confirmed ? 'Desmarcar confirmación' : 'Confirmar que realmente respondió'}
                         />
+                      </td>
+                      <td className="px-3 py-2.5">
+                        {email.confirmed ? (
+                          <span className="inline-flex items-center gap-1 text-green-600">
+                            <CheckCircle2 className="h-3 w-3" />
+                            <span className="text-[10px] font-medium">Confirmado</span>
+                            {email.confirmed_at && (
+                              <span className="text-[9px] opacity-70">{format(new Date(email.confirmed_at), "dd MMM", { locale: es })}</span>
+                            )}
+                          </span>
+                        ) : email.responded ? (
+                          <span className="inline-flex items-center gap-1 text-amber-600">
+                            <AlertCircle className="h-3 w-3" />
+                            <span className="text-[10px] font-medium">Dice que respondió</span>
+                            {email.responded_at && (
+                              <span className="text-[9px] opacity-70">{format(new Date(email.responded_at), "dd MMM", { locale: es })}</span>
+                            )}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-muted-foreground">
+                            <Clock className="h-3 w-3" />
+                            <Badge variant="outline" className="text-[10px]">Pendiente</Badge>
+                          </span>
+                        )}
                       </td>
                       <td className="px-3 py-2.5 font-medium text-foreground">{email.assignee_name}</td>
                       <td className="px-3 py-2.5 text-muted-foreground">{email.assignee_email}</td>
                       <td className="px-3 py-2.5 text-muted-foreground font-mono">
                         {format(new Date(email.sent_at), "dd MMM yyyy HH:mm", { locale: es })}
-                      </td>
-                      <td className="px-3 py-2.5">
-                        {email.responded ? (
-                          <span className="inline-flex items-center gap-1 text-green-600">
-                            <CheckCircle2 className="h-3 w-3" />
-                            {email.responded_at && format(new Date(email.responded_at), "dd MMM yy", { locale: es })}
-                          </span>
-                        ) : (
-                          <Badge variant="outline" className="text-[10px] text-muted-foreground">Pendiente</Badge>
-                        )}
                       </td>
                       <td className="px-3 py-2.5 text-right">
                         <button
