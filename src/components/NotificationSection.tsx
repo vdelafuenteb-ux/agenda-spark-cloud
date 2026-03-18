@@ -32,6 +32,14 @@ export function NotificationSection({ topic, assignees }: NotificationSectionPro
 
     setSending(true);
     try {
+      // 1. Create notification record FIRST to get the ID
+      const record = await logEmail.mutateAsync({
+        topic_id: topic.id,
+        assignee_name: assignee.name,
+        assignee_email: assignee.email,
+      });
+
+      // 2. Send email with the notification ID for the confirm button
       const { data, error } = await supabase.functions.invoke('send-notification-email', {
         body: {
           to_email: assignee.email,
@@ -39,6 +47,7 @@ export function NotificationSection({ topic, assignees }: NotificationSectionPro
           topic_title: topic.title,
           start_date: topic.start_date,
           due_date: topic.due_date,
+          notification_ids: [record.id],
           subtasks: topic.subtasks.map((s) => ({
             title: s.title,
             completed: s.completed,
@@ -60,12 +69,6 @@ export function NotificationSection({ topic, assignees }: NotificationSectionPro
       if (!data?.success) {
         throw new Error('No se pudo enviar el correo');
       }
-
-      await logEmail.mutateAsync({
-        topic_id: topic.id,
-        assignee_name: assignee.name,
-        assignee_email: assignee.email,
-      });
 
       toast.success(`Correo enviado a ${assignee.name}`);
     } catch (error: any) {
