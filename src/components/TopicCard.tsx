@@ -86,7 +86,6 @@ export function TopicCard({
   }, [highlightToday, highlightUpcoming]);
 
   const subtaskTodayCount = topic.subtasks.filter(s => isStoredDateToday(s.due_date)).length;
-  const subtaskTodayCount = topic.subtasks.filter(s => isStoredDateToday(s.due_date)).length;
   const showSubtaskTodayBadge = highlightToday && subtaskTodayCount > 0;
 
   const subtaskUpcomingCount = topic.subtasks.filter(s => !s.completed && isStoredDateUpcoming(s.due_date, 3)).length;
