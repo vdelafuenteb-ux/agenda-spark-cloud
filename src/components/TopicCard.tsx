@@ -83,7 +83,10 @@ export function TopicCard({
   onRemoveTag,
   onCreateTag,
 }: TopicCardProps) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(() => {
+    if (forceExpand !== null) return forceExpand;
+    return false;
+  });
   const [subtasksExpanded, setSubtasksExpanded] = useState(false);
   const [newSubtask, setNewSubtask] = useState('');
   const [newAssigneeName, setNewAssigneeName] = useState('');
@@ -91,12 +94,12 @@ export function TopicCard({
   const [titleDraft, setTitleDraft] = useState(topic.title);
 
   useEffect(() => {
-    if (highlightToday || highlightUpcoming) setExpanded(true);
-  }, [highlightToday, highlightUpcoming]);
-
-  useEffect(() => {
-    if (forceExpand !== null) setExpanded(forceExpand);
-  }, [forceExpand]);
+    if (forceExpand !== null) {
+      setExpanded(forceExpand);
+    } else if (highlightToday || highlightUpcoming) {
+      setExpanded(true);
+    }
+  }, [forceExpand, highlightToday, highlightUpcoming]);
 
   const subtaskTodayCount = topic.subtasks.filter(s => isStoredDateToday(s.due_date)).length;
   const showSubtaskTodayBadge = highlightToday && subtaskTodayCount > 0;
