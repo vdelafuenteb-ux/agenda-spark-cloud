@@ -6,7 +6,7 @@ import { Trash2, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Reminder } from '@/hooks/useReminders';
 
-const COLORS = ['#3b82f6', '#ef4444', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899', '#6b7280'];
+const DEFAULT_COLOR = '#9ca3af'; // gray - managed automatically
 const DAYS_OF_WEEK = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 const ORDINALS = [
   { value: '1', label: 'Primer' },
@@ -40,7 +40,7 @@ export function ReminderManager({ reminders, onCreate, onDelete }: ReminderManag
   const [type, setType] = useState<RecurrenceType>('monthly');
   const [day, setDay] = useState(1);
   const [week, setWeek] = useState(1);
-  const [color, setColor] = useState(COLORS[0]);
+  
 
   const handleCreate = async () => {
     if (!title.trim()) return;
@@ -50,7 +50,7 @@ export function ReminderManager({ reminders, onCreate, onDelete }: ReminderManag
         recurrence_type: type,
         recurrence_day: type === 'monthly' ? day : type === 'weekly' ? day : day,
         recurrence_week: type === 'monthly_weekday' ? week : null,
-        color,
+        color: DEFAULT_COLOR,
       });
       setTitle('');
       toast.success('Recordatorio creado');
@@ -135,16 +135,6 @@ export function ReminderManager({ reminders, onCreate, onDelete }: ReminderManag
             </>
           )}
 
-          <div className="flex gap-1">
-            {COLORS.map((c) => (
-              <button
-                key={c}
-                className={`h-5 w-5 rounded-full border-2 transition-transform ${color === c ? 'border-foreground scale-110' : 'border-transparent'}`}
-                style={{ backgroundColor: c }}
-                onClick={() => setColor(c)}
-              />
-            ))}
-          </div>
 
           <Button size="sm" className="h-8 text-xs gap-1" onClick={handleCreate}>
             <Plus className="h-3 w-3" /> Agregar
