@@ -1,4 +1,4 @@
-import { format, isToday } from 'date-fns';
+import { format, isToday, isBefore, isAfter, startOfDay, addDays } from 'date-fns';
 
 export function parseStoredDate(value?: string | null) {
   if (!value) return undefined;
@@ -26,4 +26,18 @@ export function formatStoredDate(
 export function isStoredDateToday(value?: string | null) {
   const date = parseStoredDate(value);
   return date ? isToday(date) : false;
+}
+
+export function isStoredDateOverdue(value?: string | null) {
+  const date = parseStoredDate(value);
+  if (!date) return false;
+  return isBefore(date, startOfDay(new Date()));
+}
+
+export function isStoredDateUpcoming(value?: string | null, days = 3) {
+  const date = parseStoredDate(value);
+  if (!date) return false;
+  const today = startOfDay(new Date());
+  const limit = addDays(today, days);
+  return !isBefore(date, today) && !isAfter(date, limit);
 }
