@@ -11,6 +11,7 @@ import { ReviewView } from '@/components/ReviewView';
 import { useAuth } from '@/hooks/useAuth';
 import { useTopics } from '@/hooks/useTopics';
 import { useTags } from '@/hooks/useTags';
+import { useAssignees } from '@/hooks/useAssignees';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Plus, FileText } from 'lucide-react';
