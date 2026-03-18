@@ -16,7 +16,7 @@ import { useTags } from '@/hooks/useTags';
 import { useAssignees } from '@/hooks/useAssignees';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Plus, FileText } from 'lucide-react';
+import { Plus, FileText, ChevronsDownUp, ChevronsUpDown } from 'lucide-react';
 import { NotesView } from '@/components/NotesView';
 import { DashboardView } from '@/components/DashboardView';
 import { ChecklistView } from '@/components/ChecklistView';
@@ -40,6 +40,7 @@ const Index = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [selectedAssignee, setSelectedAssignee] = useState<string>('');
+  const [forceExpand, setForceExpand] = useState<boolean | null>(null);
 
   const toggleTagFilter = useCallback((tagId: string) => {
     setSelectedTagIds((prev) => (prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]));
@@ -253,7 +254,7 @@ const Index = () => {
                   <ReportsList onNewReport={() => setReportOpen(true)} />
                 ) : (
                   <>
-                    <Tabs value={statusTab} onValueChange={(value) => setStatusTab(value as StatusTab)}>
+                    <Tabs value={statusTab} onValueChange={(value) => { setStatusTab(value as StatusTab); setForceExpand(null); }}>
                       <TabsList className="w-full">
                         <TabsTrigger value="activo" className="flex-1 text-xs">Activos ({statusCounts.activo})</TabsTrigger>
                         <TabsTrigger value="seguimiento" className="flex-1 text-xs">Seguimiento ({statusCounts.seguimiento})</TabsTrigger>
@@ -294,6 +295,7 @@ const Index = () => {
                           topicTags={getTagsForTopic(topic.id)}
                           assignees={assignees}
                           onCreateAssignee={(name) => createAssignee.mutateAsync(name)}
+                          forceExpand={forceExpand}
                           onUpdate={(id, data) => updateTopic.mutate({ id, ...data })}
                           onDelete={(id) => deleteTopic.mutate(id, { onSuccess: () => toast.success('Tema eliminado') })}
                           onAddSubtask={(topicId, title) => addSubtask.mutate({ topic_id: topicId, title })}

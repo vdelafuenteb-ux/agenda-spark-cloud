@@ -32,6 +32,7 @@ interface TopicCardProps {
   highlightToday?: boolean;
   highlightUpcoming?: boolean;
   highlightOverdue?: boolean;
+  forceExpand?: boolean | null;
   onUpdate: (id: string, data: any) => void;
   onDelete: (id: string) => void;
   onAddSubtask: (topicId: string, title: string) => void;
@@ -66,6 +67,7 @@ export function TopicCard({
   highlightToday = false,
   highlightUpcoming = false,
   highlightOverdue = false,
+  forceExpand = null,
   onUpdate,
   onDelete,
   onAddSubtask,
@@ -87,6 +89,10 @@ export function TopicCard({
   useEffect(() => {
     if (highlightToday || highlightUpcoming) setExpanded(true);
   }, [highlightToday, highlightUpcoming]);
+
+  useEffect(() => {
+    if (forceExpand !== null) setExpanded(forceExpand);
+  }, [forceExpand]);
 
   const subtaskTodayCount = topic.subtasks.filter(s => isStoredDateToday(s.due_date)).length;
   const showSubtaskTodayBadge = highlightToday && subtaskTodayCount > 0;
