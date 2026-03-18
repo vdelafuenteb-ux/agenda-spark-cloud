@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Mail, Send, Clock, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+
 import { supabase } from '@/integrations/supabase/client';
 import { useNotificationEmails } from '@/hooks/useNotificationEmails';
 import { toast } from 'sonner';
