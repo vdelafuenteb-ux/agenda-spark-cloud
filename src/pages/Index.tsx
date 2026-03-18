@@ -287,6 +287,7 @@ const Index = () => {
                       onAssigneeChange={setSelectedAssignee}
                       forceExpand={forceExpand}
                       onToggleExpand={() => setForceExpand(prev => !prev)}
+                      onBulkEmail={bulkEmailAssignee ? () => setBulkEmailOpen(true) : undefined}
                     />
 
                     {isLoading ? (
