@@ -67,6 +67,7 @@ export function TopicCard({
   highlightToday = false,
   highlightUpcoming = false,
   highlightOverdue = false,
+  forceExpand = null,
   onUpdate,
   onDelete,
   onAddSubtask,
