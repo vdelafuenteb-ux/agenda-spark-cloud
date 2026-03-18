@@ -377,7 +377,23 @@ export function TopicCard({
               </div>
 
               <div className="space-y-1.5">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Subtareas</p>
+                <button
+                  type="button"
+                  onClick={() => setSubtasksExpanded(!subtasksExpanded)}
+                  className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors"
+                >
+                  {subtasksExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                  Subtareas ({completedCount}/{totalCount})
+                </button>
+                <AnimatePresence>
+                  {subtasksExpanded && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.15 }}
+                      className="overflow-hidden space-y-1.5"
+                    >
                 {topic.subtasks.map((subtask) => {
                   const subtaskIsToday = highlightToday && isStoredDateToday(subtask.due_date);
                   return (
@@ -403,6 +419,9 @@ export function TopicCard({
                     <Plus className="h-3 w-3" />
                   </Button>
                 </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
 
 
