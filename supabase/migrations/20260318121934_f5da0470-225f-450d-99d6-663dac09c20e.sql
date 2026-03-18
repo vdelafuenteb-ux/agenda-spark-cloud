@@ -1,0 +1,1 @@
+ALTER TABLE public.reminders ADD COLUMN recurrence_week integer;

@@ -190,6 +190,7 @@ export type Database = {
           id: string
           recurrence_day: number
           recurrence_type: string
+          recurrence_week: number | null
           title: string
           user_id: string
         }
@@ -199,6 +200,7 @@ export type Database = {
           id?: string
           recurrence_day: number
           recurrence_type: string
+          recurrence_week?: number | null
           title: string
           user_id: string
         }
@@ -208,6 +210,7 @@ export type Database = {
           id?: string
           recurrence_day?: number
           recurrence_type?: string
+          recurrence_week?: number | null
           title?: string
           user_id?: string
         }
