@@ -65,7 +65,18 @@ export function NoteEditor({
   const saveTimeout = useRef<ReturnType<typeof setTimeout>>();
   const imageInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [resizingImage, setResizingImage] = useState<HTMLImageElement | null>(null);
+  const [selectedImage, setSelectedImage] = useState<HTMLImageElement | null>(null);
+  const [overlayStyle, setOverlayStyle] = useState<React.CSSProperties>({});
+  const dragState = useRef<{
+    type: 'resize' | 'move';
+    startX: number;
+    startY: number;
+    startWidth: number;
+    startHeight: number;
+    aspectRatio: number;
+    corner?: string;
+    image: HTMLImageElement;
+  } | null>(null);
 
   useEffect(() => {
     setTitle(note.title);
@@ -74,28 +85,182 @@ export function NoteEditor({
     }
   }, [note.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Make images interactive (resize handles + drag)
+  // Position overlay on selected image
+  const updateOverlay = useCallback((img: HTMLImageElement) => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    const editorRect = editor.getBoundingClientRect();
+    const imgRect = img.getBoundingClientRect();
+    setOverlayStyle({
+      position: 'absolute',
+      left: imgRect.left - editorRect.left + editor.scrollLeft,
+      top: imgRect.top - editorRect.top + editor.scrollTop,
+      width: imgRect.width,
+      height: imgRect.height,
+      pointerEvents: 'auto',
+    });
+  }, []);
+
+  // Update overlay position on scroll/resize
+  useEffect(() => {
+    if (!selectedImage) return;
+    const update = () => updateOverlay(selectedImage);
+    const editor = editorRef.current;
+    editor?.addEventListener('scroll', update);
+    window.addEventListener('resize', update);
+    // Use RAF loop for smooth tracking
+    let raf: number;
+    const loop = () => { update(); raf = requestAnimationFrame(loop); };
+    raf = requestAnimationFrame(loop);
+    return () => {
+      editor?.removeEventListener('scroll', update);
+      window.removeEventListener('resize', update);
+      cancelAnimationFrame(raf);
+    };
+  }, [selectedImage, updateOverlay]);
+
+  // Handle click on editor to select/deselect images
   useEffect(() => {
     const editor = editorRef.current;
     if (!editor) return;
 
-    const handleImageClick = (e: MouseEvent) => {
+    const handleClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       if (target.tagName === 'IMG') {
         e.preventDefault();
-        // Remove previous selection highlights
-        editor.querySelectorAll('img.note-img-selected').forEach(img => img.classList.remove('note-img-selected'));
-        target.classList.add('note-img-selected');
-        setResizingImage(target as HTMLImageElement);
+        const img = target as HTMLImageElement;
+        setSelectedImage(img);
+        updateOverlay(img);
       } else {
-        editor.querySelectorAll('img.note-img-selected').forEach(img => img.classList.remove('note-img-selected'));
-        setResizingImage(null);
+        setSelectedImage(null);
       }
     };
 
-    editor.addEventListener('click', handleImageClick);
-    return () => editor.removeEventListener('click', handleImageClick);
-  }, []);
+    editor.addEventListener('click', handleClick);
+    return () => editor.removeEventListener('click', handleClick);
+  }, [updateOverlay]);
+
+  // Global mouse handlers for drag resize/move
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      const state = dragState.current;
+      if (!state) return;
+      e.preventDefault();
+
+      if (state.type === 'resize') {
+        const dx = e.clientX - state.startX;
+        const dy = e.clientY - state.startY;
+        let newWidth = state.startWidth;
+
+        // Calculate new width based on which corner is dragged
+        if (state.corner === 'se') {
+          newWidth = Math.max(50, state.startWidth + dx);
+        } else if (state.corner === 'sw') {
+          newWidth = Math.max(50, state.startWidth - dx);
+        } else if (state.corner === 'ne') {
+          newWidth = Math.max(50, state.startWidth + dx);
+        } else if (state.corner === 'nw') {
+          newWidth = Math.max(50, state.startWidth - dx);
+        }
+
+        const newHeight = newWidth / state.aspectRatio;
+        state.image.style.width = `${newWidth}px`;
+        state.image.style.height = `${newHeight}px`;
+        state.image.style.maxWidth = 'none';
+        updateOverlay(state.image);
+      } else if (state.type === 'move') {
+        // Visual feedback: add opacity while dragging
+        state.image.style.opacity = '0.5';
+      }
+    };
+
+    const handleMouseUp = (e: MouseEvent) => {
+      const state = dragState.current;
+      if (!state) return;
+
+      if (state.type === 'move') {
+        state.image.style.opacity = '1';
+        // Find the drop position using caretRangeFromPoint
+        const editor = editorRef.current;
+        if (editor) {
+          let range: Range | null = null;
+          if (document.caretRangeFromPoint) {
+            range = document.caretRangeFromPoint(e.clientX, e.clientY);
+          } else if ((document as any).caretPositionFromPoint) {
+            const pos = (document as any).caretPositionFromPoint(e.clientX, e.clientY);
+            if (pos) {
+              range = document.createRange();
+              range.setStart(pos.offsetNode, pos.offset);
+              range.collapse(true);
+            }
+          }
+
+          if (range && editor.contains(range.startContainer)) {
+            // Remove image from current position
+            state.image.parentNode?.removeChild(state.image);
+            // Insert at new position
+            range.insertNode(state.image);
+            // Add a br after if needed
+            if (!state.image.nextSibling || (state.image.nextSibling as HTMLElement).tagName !== 'BR') {
+              const br = document.createElement('br');
+              state.image.parentNode?.insertBefore(br, state.image.nextSibling);
+            }
+          }
+        }
+      }
+
+      dragState.current = null;
+      handleContentInput();
+      if (selectedImage) updateOverlay(selectedImage);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [selectedImage, updateOverlay]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const startResize = (corner: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!selectedImage) return;
+    const rect = selectedImage.getBoundingClientRect();
+    dragState.current = {
+      type: 'resize',
+      startX: e.clientX,
+      startY: e.clientY,
+      startWidth: rect.width,
+      startHeight: rect.height,
+      aspectRatio: rect.width / rect.height,
+      corner,
+      image: selectedImage,
+    };
+  };
+
+  const startMove = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!selectedImage) return;
+    const rect = selectedImage.getBoundingClientRect();
+    dragState.current = {
+      type: 'move',
+      startX: e.clientX,
+      startY: e.clientY,
+      startWidth: rect.width,
+      startHeight: rect.height,
+      aspectRatio: rect.width / rect.height,
+      image: selectedImage,
+    };
+  };
+
+  const deleteSelectedImage = () => {
+    if (!selectedImage) return;
+    selectedImage.parentNode?.removeChild(selectedImage);
+    setSelectedImage(null);
+    handleContentInput();
+  };
 
   const saveContent = useCallback(() => {
     if (!editorRef.current) return;
@@ -113,12 +278,14 @@ export function NoteEditor({
     saveTimeout.current = setTimeout(() => onUpdate(note.id, { title: val }), 800);
   };
 
-  // Fix: handle Enter key to prevent cursor jumping
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
-      // Let the browser handle Enter naturally for contentEditable
-      // but ensure we save after
       setTimeout(handleContentInput, 50);
+    }
+    // Delete selected image with Delete/Backspace
+    if (selectedImage && (e.key === 'Delete' || e.key === 'Backspace')) {
+      e.preventDefault();
+      deleteSelectedImage();
     }
   };
 
@@ -132,7 +299,6 @@ export function NoteEditor({
     const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0) return;
     editorRef.current?.focus();
-    // Use fontSize command (1-7 scale)
     document.execCommand('fontSize', false, size);
     handleContentInput();
   };
@@ -153,9 +319,7 @@ export function NoteEditor({
           const url = await onUploadImage(file);
           insertImageAtCursor(url);
           handleContentInput();
-        } catch {
-          // silently fail
-        }
+        } catch { /* silently fail */ }
         return;
       }
     }
@@ -168,14 +332,13 @@ export function NoteEditor({
     img.style.borderRadius = '8px';
     img.style.margin = '8px 0';
     img.style.cursor = 'pointer';
-    img.draggable = true;
+    img.draggable = false; // We handle our own dragging
 
     const selection = window.getSelection();
     if (selection && selection.rangeCount > 0) {
       const range = selection.getRangeAt(0);
       range.deleteContents();
       range.insertNode(img);
-      // Add a paragraph after so cursor can go after the image
       const br = document.createElement('br');
       range.setStartAfter(img);
       range.insertNode(br);
@@ -214,20 +377,23 @@ export function NoteEditor({
     e.target.value = '';
   };
 
-  const resizeSelectedImage = (width: number) => {
-    if (!resizingImage) return;
-    resizingImage.style.width = `${width}%`;
-    resizingImage.style.maxWidth = `${width}%`;
-    resizingImage.style.height = 'auto';
-    handleContentInput();
-  };
-
   const noteTags = allTags.filter((t) => noteTagIds.includes(t.id));
   const availableTags = allTags.filter((t) => !noteTagIds.includes(t.id));
 
+  const handleCorners = ['nw', 'ne', 'sw', 'se'] as const;
+  const cornerCursors: Record<string, string> = {
+    nw: 'nwse-resize', ne: 'nesw-resize', sw: 'nesw-resize', se: 'nwse-resize',
+  };
+  const cornerPositions: Record<string, React.CSSProperties> = {
+    nw: { top: -5, left: -5 },
+    ne: { top: -5, right: -5 },
+    sw: { bottom: -5, left: -5 },
+    se: { bottom: -5, right: -5 },
+  };
+
   return (
     <div className="flex flex-col h-full w-full">
-      {/* Top bar - meta info */}
+      {/* Top bar */}
       <div className="flex items-center gap-2 px-3 py-1.5 border-b border-border shrink-0">
         <Button variant="ghost" size="icon" className="h-7 w-7 md:hidden" onClick={onBack}>
           <ArrowLeft className="h-4 w-4" />
@@ -300,8 +466,6 @@ export function NoteEditor({
         <ToolbarButton icon={Heading3} label="Título 3" onClick={() => execCommand('formatBlock', 'h3')} />
         <ToolbarButton icon={Type} label="Párrafo" onClick={() => execCommand('formatBlock', 'p')} />
         <Separator orientation="vertical" className="h-5 mx-1" />
-
-        {/* Font size */}
         <Select onValueChange={handleFontSize} defaultValue="3">
           <SelectTrigger className="h-7 w-20 text-[10px]">
             <SelectValue placeholder="Tamaño" />
@@ -316,7 +480,6 @@ export function NoteEditor({
             <SelectItem value="7" className="text-[10px]">Enorme</SelectItem>
           </SelectContent>
         </Select>
-
         <Separator orientation="vertical" className="h-5 mx-1" />
         <ToolbarButton icon={List} label="Viñetas" onClick={() => execCommand('insertUnorderedList')} />
         <ToolbarButton icon={ListOrdered} label="Lista numerada" onClick={() => execCommand('insertOrderedList')} />
@@ -328,24 +491,18 @@ export function NoteEditor({
         <ToolbarButton icon={Minus} label="Línea horizontal" onClick={insertHorizontalRule} />
         <ToolbarButton icon={ImagePlus} label="Insertar imagen" onClick={() => imageInputRef.current?.click()} />
         <ToolbarButton icon={FileUp} label="Insertar texto desde archivo" onClick={() => fileInputRef.current?.click()} />
-
         <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
         <input ref={fileInputRef} type="file" accept=".txt,.md,.csv,.json" className="hidden" onChange={handleFileInsert} />
       </div>
 
-      {/* Image resize controls */}
-      {resizingImage && (
+      {/* Selected image toolbar */}
+      {selectedImage && (
         <div className="flex items-center gap-2 px-3 py-1 border-b border-border bg-muted/30 shrink-0">
-          <span className="text-[10px] text-muted-foreground">Tamaño de imagen:</span>
-          {[25, 50, 75, 100].map(pct => (
-            <Button key={pct} variant="outline" size="sm" className="h-6 text-[10px] px-2"
-              onMouseDown={(e) => { e.preventDefault(); resizeSelectedImage(pct); }}>
-              {pct}%
-            </Button>
-          ))}
+          <span className="text-[10px] text-muted-foreground">Imagen seleccionada — arrastra las esquinas para redimensionar, o arrastra la imagen para moverla</span>
+          <div className="flex-1" />
           <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2 text-destructive"
-            onMouseDown={(e) => { e.preventDefault(); resizingImage.remove(); setResizingImage(null); handleContentInput(); }}>
-            Eliminar
+            onMouseDown={(e) => { e.preventDefault(); deleteSelectedImage(); }}>
+            Eliminar imagen
           </Button>
         </div>
       )}
@@ -372,26 +529,51 @@ export function NoteEditor({
         </div>
       )}
 
-      {/* Content editor */}
-      <div
-        ref={editorRef}
-        contentEditable
-        suppressContentEditableWarning
-        className="flex-1 overflow-auto px-4 py-3 text-sm text-foreground outline-none prose prose-sm max-w-none
-          [&_img]:rounded-lg [&_img]:max-w-full [&_img]:cursor-pointer
-          [&_img.note-img-selected]:ring-2 [&_img.note-img-selected]:ring-primary [&_img.note-img-selected]:ring-offset-2
-          [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:mb-2 [&_h1]:mt-4
-          [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:mb-2 [&_h2]:mt-3
-          [&_h3]:text-lg [&_h3]:font-medium [&_h3]:mb-1 [&_h3]:mt-2
-          [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5
-          [&_hr]:my-4 [&_hr]:border-border"
-        onInput={handleContentInput}
-        onPaste={handlePaste}
-        onKeyDown={handleKeyDown}
-        dangerouslySetInnerHTML={{ __html: note.content }}
-        data-placeholder="Empieza a escribir..."
-        style={{ minHeight: 200 }}
-      />
+      {/* Content editor - relative container for overlay */}
+      <div className="flex-1 overflow-auto relative" style={{ minHeight: 200 }}>
+        <div
+          ref={editorRef}
+          contentEditable
+          suppressContentEditableWarning
+          className="h-full px-4 py-3 text-sm text-foreground outline-none prose prose-sm max-w-none
+            [&_img]:rounded-lg [&_img]:max-w-full [&_img]:cursor-pointer
+            [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:mb-2 [&_h1]:mt-4
+            [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:mb-2 [&_h2]:mt-3
+            [&_h3]:text-lg [&_h3]:font-medium [&_h3]:mb-1 [&_h3]:mt-2
+            [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5
+            [&_hr]:my-4 [&_hr]:border-border"
+          onInput={handleContentInput}
+          onPaste={handlePaste}
+          onKeyDown={handleKeyDown}
+          dangerouslySetInnerHTML={{ __html: note.content }}
+          data-placeholder="Empieza a escribir..."
+        />
+
+        {/* Image overlay with resize handles */}
+        {selectedImage && (
+          <div
+            style={overlayStyle}
+            className="border-2 border-primary rounded-lg z-10"
+            onMouseDown={startMove}
+          >
+            {/* Move cursor area */}
+            <div className="absolute inset-3 cursor-move" />
+
+            {/* Corner handles */}
+            {handleCorners.map((corner) => (
+              <div
+                key={corner}
+                className="absolute w-3 h-3 bg-primary rounded-full border-2 border-background shadow-md z-20"
+                style={{
+                  ...cornerPositions[corner],
+                  cursor: cornerCursors[corner],
+                }}
+                onMouseDown={(e) => startResize(corner, e)}
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
