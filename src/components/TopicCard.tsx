@@ -407,11 +407,13 @@ export function TopicCard({
                     >
                 {topic.subtasks.map((subtask) => {
                   const subtaskIsToday = highlightToday && isStoredDateToday(subtask.due_date);
+                  const subtaskIsUpcoming = highlightUpcoming && !subtask.completed && isStoredDateUpcoming(subtask.due_date, 3);
                   return (
                   <SubtaskRow
                     key={subtask.id}
                     subtask={subtask}
                     subtaskIsToday={subtaskIsToday}
+                    subtaskIsUpcoming={subtaskIsUpcoming}
                     onToggleSubtask={onToggleSubtask}
                     onUpdateSubtask={onUpdateSubtask}
                     onDeleteSubtask={onDeleteSubtask}
