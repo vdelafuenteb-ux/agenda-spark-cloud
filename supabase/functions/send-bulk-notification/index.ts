@@ -114,8 +114,8 @@ Deno.serve(async (req) => {
     mensaje += `<p>Gracias.</p>`;
 
     const asunto = topics.length === 1
-      ? `Recordatorio: ${topics[0].title}`
-      : `Recordatorio: ${topics.length} temas pendientes`;
+      ? `⚠️ URGENTE: "${topics[0].title}" — Actualizar a la brevedad | 48 hrs para responder`
+      : `🚨 ${topics.length} TEMAS ACTIVOS — ¡Actualizar a la brevedad! | Máx. 48 hrs para responder`;
 
     const CC_EMAILS = ["matias@transitglobalgroup.com", "vicente@transitglobalgroup.com"];
 
