@@ -40,6 +40,14 @@ export function FilterBar({ searchQuery, onSearchChange, allTags, selectedTagIds
           )}
         </div>
 
+        {/* Expand/Collapse all */}
+        {onToggleExpand && (
+          <Button size="sm" variant="outline" className="h-9 text-xs gap-1 shrink-0" onClick={onToggleExpand}>
+            {forceExpand ? <ChevronsDownUp className="h-3.5 w-3.5" /> : <ChevronsUpDown className="h-3.5 w-3.5" />}
+            {forceExpand ? 'Contraer' : 'Expandir'}
+          </Button>
+        )}
+
         {/* Assignee filter */}
         {assignees && assignees.length > 0 && onAssigneeChange && (
           <Select value={selectedAssignee || '_all'} onValueChange={(v) => onAssigneeChange(v === '_all' ? '' : v)}>
