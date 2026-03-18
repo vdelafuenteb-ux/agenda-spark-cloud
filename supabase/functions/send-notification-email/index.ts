@@ -63,45 +63,67 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Build HTML email body
-    let mensaje = `<p>Hola ${to_name || ""},</p>`;
-    mensaje += `<p><strong>Te recordamos el siguiente tema</strong> para que por favor puedas <strong>responder sobre este correo y actualizar</strong> el estado:</p>`;
-    mensaje += `<h3>${topic_title}</h3>`;
-
-    if (start_date || due_date) {
-      mensaje += `<p style="color:#555;">`;
-      if (start_date) mensaje += `📅 Inicio: <strong>${formatDate(start_date)}</strong>`;
-      if (start_date && due_date) mensaje += ` &nbsp;|&nbsp; `;
-      if (due_date) mensaje += `⏰ Vencimiento: <strong>${formatDate(due_date)}</strong>`;
-      mensaje += `</p>`;
-    }
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
 
     const pendingSubtasks = (subtasks || []).filter((s: any) => !s.completed);
-    if (pendingSubtasks.length > 0) {
-      mensaje += `<p><strong>Subtareas pendientes:</strong></p><ul>`;
+    const entries = (progress_entries || []).slice(0, 5);
+    const lastEntry = entries.length > 0 ? entries[0]?.content || "" : "";
+    const truncated = lastEntry.length > 80 ? lastEntry.substring(0, 80) + "…" : lastEntry;
+    const pendingCount = pendingSubtasks.length;
+    const pendingText = pendingCount > 0
+      ? `${pendingCount} subtarea${pendingCount > 1 ? "s" : ""}`
+      : "Sin pendientes";
+    const pendingColor = pendingCount > 0 ? "#c0392b" : "#888";
+    const isOverdue = due_date && new Date(due_date) < now;
+    const rowBg = isOverdue ? "background-color:#fff5f5;" : "";
+    const rowColor = isOverdue ? "color:#c0392b;" : "";
+
+    // Build executive HTML email body with summary table (same format as bulk)
+    let mensaje = `<p>Hola ${to_name || ""},</p>`;
+    mensaje += `<p>Tienes <strong>1 tema</strong> pendiente de actualizar. <strong>Responde este correo</strong> con el estado.</p>`;
+
+    // Summary table
+    mensaje += `<table style="width:100%;border-collapse:collapse;margin:16px 0;font-size:14px;">`;
+    mensaje += `<thead><tr style="background-color:#f2f2f2;text-align:left;">`;
+    mensaje += `<th style="padding:8px;border:1px solid #ddd;width:30px;">#</th>`;
+    mensaje += `<th style="padding:8px;border:1px solid #ddd;">Tema</th>`;
+    mensaje += `<th style="padding:8px;border:1px solid #ddd;">Último comentario</th>`;
+    mensaje += `<th style="padding:8px;border:1px solid #ddd;width:90px;">Inicio</th>`;
+    mensaje += `<th style="padding:8px;border:1px solid #ddd;width:90px;">Vencimiento</th>`;
+    mensaje += `<th style="padding:8px;border:1px solid #ddd;width:110px;">Pendientes</th>`;
+    mensaje += `</tr></thead><tbody>`;
+
+    mensaje += `<tr style="${rowBg}${rowColor}">`;
+    mensaje += `<td style="padding:6px 8px;border:1px solid #ddd;text-align:center;">1</td>`;
+    mensaje += `<td style="padding:6px 8px;border:1px solid #ddd;font-weight:600;">${topic_title}</td>`;
+    mensaje += `<td style="padding:6px 8px;border:1px solid #ddd;${isOverdue ? '' : 'color:#555;'}font-size:13px;">${truncated || "<em style='color:#aaa;'>—</em>"}</td>`;
+    mensaje += `<td style="padding:6px 8px;border:1px solid #ddd;">${formatDate(start_date) || "—"}</td>`;
+    mensaje += `<td style="padding:6px 8px;border:1px solid #ddd;">${formatDate(due_date) || "—"}</td>`;
+    mensaje += `<td style="padding:6px 8px;border:1px solid #ddd;color:${pendingColor};">${pendingText}</td>`;
+    mensaje += `</tr>`;
+    mensaje += `</tbody></table>`;
+
+    if (isOverdue) {
+      mensaje += `<p style="font-size:12px;color:#999;margin:0 0 16px;">🔴 La fila en rojo indica que el tema tiene fecha de vencimiento ya pasada.</p>`;
+    }
+
+    // Detail section — pending subtasks
+    if (pendingCount > 0) {
+      mensaje += `<p style="margin-top:16px;"><strong>Detalle de subtareas pendientes:</strong></p>`;
+      mensaje += `<p style="margin:8px 0 2px;"><strong>1. ${topic_title}</strong></p><ul style="margin:0;">`;
       pendingSubtasks.forEach((s: any) => {
         mensaje += `<li>${s.title}`;
-        if (s.due_date) mensaje += ` <em>(vence: ${formatDate(s.due_date)})</em>`;
+        if (s.due_date) mensaje += ` <em style="color:#888;">(vence: ${formatDate(s.due_date)})</em>`;
         if (s.notes) mensaje += `<br/><span style="color:#666;font-size:0.9em;">📝 ${s.notes}</span>`;
         mensaje += `</li>`;
       });
       mensaje += `</ul>`;
     }
 
-    const entries = (progress_entries || []).slice(0, 5);
-    if (entries.length > 0) {
-      mensaje += `<p><strong>Últimas notas de bitácora:</strong></p><ul style="color:#555;">`;
-      entries.forEach((e: any) => {
-        const dateStr = e.created_at ? formatDate(e.created_at) : "";
-        mensaje += `<li>${e.content}${dateStr ? ` <em style="color:#999;">(${dateStr})</em>` : ""}</li>`;
-      });
-      mensaje += `</ul>`;
-    }
-
-    mensaje += `<p style="font-size:1.1em;"><strong>⚠️ IMPORTANTE: Por favor responde a este correo actualizando sobre este tema.</strong></p>`;
-    mensaje += `<p style="font-size:1.1em;"><strong>🕐 Plazo máximo de respuesta: 48 HORAS.</strong></p>`;
+    mensaje += `<hr style="border:none;border-top:1px solid #ddd;margin:20px 0 12px;"/>`;
+    mensaje += `<p><strong>⚠️ Responde actualizando CADA tema. Plazo máximo: 48 HORAS.</strong></p>`;
     mensaje += `<p><strong>No olvides responder a todos</strong> para que tu respuesta llegue a todo el equipo.</p>`;
-    mensaje += `<p>Gracias.</p>`;
 
     const CC_EMAILS = ["matias@transitglobalgroup.com", "vicente@transitglobalgroup.com"]
       .filter((cc) => cc.toLowerCase() !== to_email.toLowerCase());
