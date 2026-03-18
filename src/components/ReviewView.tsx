@@ -12,7 +12,7 @@ import { useReminders } from '@/hooks/useReminders';
 import { useReminderCompletions } from '@/hooks/useReminderCompletions';
 import { useChecklist } from '@/hooks/useChecklist';
 import { getRemindersForDate, getUpcomingReminders } from '@/lib/reminderMatch';
-import { isStoredDateToday, isStoredDateOverdue, isStoredDateUpcoming } from '@/lib/date';
+import { isStoredDateToday, isStoredDateOverdue, isStoredDateUpcoming, formatStoredDate } from '@/lib/date';
 
 type ReviewTab = 'hoy' | 'atrasados' | 'proximos';
 
