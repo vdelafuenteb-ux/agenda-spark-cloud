@@ -342,6 +342,14 @@ const Index = () => {
           onSubmit={handleCreateTopic}
           isPending={createTopic.isPending}
         />
+        {bulkEmailAssignee && (
+          <BulkEmailModal
+            open={bulkEmailOpen}
+            onOpenChange={setBulkEmailOpen}
+            topics={bulkEmailTopics}
+            assignee={bulkEmailAssignee}
+          />
+        )}
       </div>
     </SidebarProvider>
   );
