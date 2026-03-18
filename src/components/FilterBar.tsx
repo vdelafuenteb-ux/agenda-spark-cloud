@@ -67,6 +67,19 @@ export function FilterBar({ searchQuery, onSearchChange, allTags, selectedTagIds
           </Select>
         )}
 
+        {/* No due date filter */}
+        {onToggleNoDueDate && (
+          <Button
+            size="sm"
+            variant={filterNoDueDate ? "default" : "outline"}
+            className="h-9 text-xs gap-1 shrink-0"
+            onClick={onToggleNoDueDate}
+          >
+            <CalendarOff className="h-3.5 w-3.5" />
+            Sin fecha fin
+          </Button>
+        )}
+
         {/* Bulk email button */}
         {onBulkEmail && selectedAssignee && selectedAssignee !== '_all' && selectedAssignee !== '' && (
           <Button size="sm" variant="outline" className="h-9 text-xs gap-1 shrink-0" onClick={onBulkEmail}>
