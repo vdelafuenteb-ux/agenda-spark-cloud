@@ -84,6 +84,7 @@ export function CreateTopicModal({ open, onOpenChange, allTags, onSubmit, isPend
       title: title.trim(),
       priority,
       status,
+      start_date: toStoredDate(startDate),
       due_date: toStoredDate(dueDate),
       subtasks,
       tagIds: selectedTagIds,
