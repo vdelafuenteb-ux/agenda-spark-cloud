@@ -46,7 +46,7 @@ const priorityConfig: Record<Priority, { label: string; className: string }> = {
 
 const statusLabels: Record<Status, string> = {
   activo: 'Activo',
-  completado: 'Completado',
+  completado: 'Cerrado',
   pausado: 'Pausado',
 };
 
