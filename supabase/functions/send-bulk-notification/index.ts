@@ -96,10 +96,10 @@ Deno.serve(async (req) => {
       const rowColor = isOverdue ? "color:#c0392b;" : "";
       const lastEntry = (t.progress_entries || []).length > 0 ? (t.progress_entries || [])[0]?.content || "" : "";
       const truncated = lastEntry.length > 80 ? lastEntry.substring(0, 80) + "…" : lastEntry;
-      mensaje += `<tr>`;
+      mensaje += `<tr style="${rowBg}${rowColor}">`;
       mensaje += `<td style="padding:6px 8px;border:1px solid #ddd;text-align:center;">${t.num}</td>`;
       mensaje += `<td style="padding:6px 8px;border:1px solid #ddd;font-weight:600;">${t.title}</td>`;
-      mensaje += `<td style="padding:6px 8px;border:1px solid #ddd;color:#555;font-size:13px;">${truncated || "<em style='color:#aaa;'>—</em>"}</td>`;
+      mensaje += `<td style="padding:6px 8px;border:1px solid #ddd;${isOverdue ? '' : 'color:#555;'}font-size:13px;">${truncated || "<em style='color:#aaa;'>—</em>"}</td>`;
       mensaje += `<td style="padding:6px 8px;border:1px solid #ddd;">${formatDate(t.start_date) || "—"}</td>`;
       mensaje += `<td style="padding:6px 8px;border:1px solid #ddd;">${formatDate(t.due_date) || "—"}</td>`;
       mensaje += `<td style="padding:6px 8px;border:1px solid #ddd;color:${pendingColor};">${pendingText}</td>`;
