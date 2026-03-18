@@ -241,3 +241,38 @@ export function ReviewView(props: ReviewViewProps) {
     </div>
   );
 }
+
+function ChecklistSection({ label, items, onToggle, variant }: {
+  label: string;
+  items: { id: string; title: string; due_date: string | null }[];
+  onToggle: (id: string) => void;
+  variant?: 'upcoming' | 'overdue';
+}) {
+  return (
+    <div className="space-y-1.5">
+      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{label}</p>
+      {items.map((item) => (
+        <div
+          key={item.id}
+          className={`flex items-center gap-3 rounded-lg border border-border px-4 py-2.5 ${
+            variant === 'overdue' ? 'bg-destructive/5' : variant === 'upcoming' ? 'bg-yellow-500/5' : 'bg-background'
+          }`}
+        >
+          <button
+            onClick={() => onToggle(item.id)}
+            className="shrink-0 hover:scale-110 transition-transform"
+          >
+            <Circle className="h-4 w-4 text-muted-foreground" />
+          </button>
+          <span className="text-sm font-medium flex-1 text-foreground">{item.title}</span>
+          {item.due_date && (
+            <span className="text-[10px] text-muted-foreground shrink-0">
+              {formatStoredDate(item.due_date, "d MMM")}
+            </span>
+          )}
+          <Badge variant="outline" className="text-[9px] h-4 shrink-0">Checklist</Badge>
+        </div>
+      ))}
+    </div>
+  );
+}
