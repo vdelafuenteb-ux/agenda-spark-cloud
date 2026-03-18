@@ -446,6 +446,9 @@ export function TopicCard({
                 </AnimatePresence>
               </div>
 
+              {isSeguimiento && (
+                <NotificationSection topic={topic} assignees={assignees} />
+              )}
 
               <ProgressLog entries={topic.progress_entries} onAdd={(content) => onAddProgressEntry(topic.id, content)} />
             </div>
