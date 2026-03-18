@@ -272,6 +272,8 @@ const Index = () => {
                       assignees={statusTab === 'seguimiento' ? uniqueAssignees : undefined}
                       selectedAssignee={selectedAssignee}
                       onAssigneeChange={setSelectedAssignee}
+                      forceExpand={forceExpand}
+                      onToggleExpand={() => setForceExpand(prev => !prev)}
                     />
 
                     {isLoading ? (
