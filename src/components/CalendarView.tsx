@@ -99,7 +99,7 @@ export function CalendarView({ topics }: CalendarViewProps) {
         events.push({ label: holidayName, color: '#fca5a5', type: 'holiday' });
       }
 
-      events.push(...getEventsForDay(day, activeReminders, activeTopics));
+      events.push(...getEventsForDay(day, activeReminders, activeTopics, isCompleted));
       if (events.length > 0) map.set(key, events);
     }
     return map;
