@@ -56,6 +56,7 @@ export function CreateTopicModal({ open, onOpenChange, allTags, onSubmit, isPend
     setPriority('media');
     setStatus('activo');
     setDueDate(undefined);
+    setStartDate(new Date());
     setSubtasks([]);
     setNewSubtask('');
     setSelectedTagIds([]);
