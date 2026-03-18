@@ -25,6 +25,7 @@ interface TopicCardProps {
   topic: TopicWithSubtasks;
   allTags: Tag[];
   topicTags: Tag[];
+  highlightToday?: boolean;
   onUpdate: (id: string, data: any) => void;
   onDelete: (id: string) => void;
   onAddSubtask: (topicId: string, title: string) => void;
