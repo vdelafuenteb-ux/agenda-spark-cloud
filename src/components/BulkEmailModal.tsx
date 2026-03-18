@@ -21,7 +21,6 @@ export function BulkEmailModal({ open, onOpenChange, topics, assignee }: BulkEma
   const [sending, setSending] = useState(false);
   const { logEmail } = useNotificationEmails();
 
-  // Sync selections when modal opens or topics change
   useEffect(() => {
     if (open) {
       setSelectedIds(new Set(topics.map(t => t.id)));
@@ -59,10 +58,25 @@ export function BulkEmailModal({ open, onOpenChange, topics, assignee }: BulkEma
 
     setSending(true);
     try {
+      // 1. Create notification records FIRST to get IDs
+      const records = await Promise.all(
+        selected.map(t =>
+          logEmail.mutateAsync({
+            topic_id: t.id,
+            assignee_name: assignee.name,
+            assignee_email: assignee.email!,
+          })
+        )
+      );
+
+      const notificationIds = records.map(r => r.id);
+
+      // 2. Send email with notification IDs for the confirm button
       const { error } = await supabase.functions.invoke('send-bulk-notification', {
         body: {
           to_email: assignee.email,
           to_name: assignee.name,
+          notification_ids: notificationIds,
           topics: selected.map(t => ({
             title: t.title,
             start_date: t.start_date,
@@ -82,17 +96,6 @@ export function BulkEmailModal({ open, onOpenChange, topics, assignee }: BulkEma
       });
 
       if (error) throw error;
-
-      // Log one entry per topic
-      await Promise.all(
-        selected.map(t =>
-          logEmail.mutateAsync({
-            topic_id: t.id,
-            assignee_name: assignee.name,
-            assignee_email: assignee.email!,
-          })
-        )
-      );
 
       toast.success(`Correo enviado con ${selected.length} tema${selected.length > 1 ? 's' : ''}`);
       onOpenChange(false);

@@ -1,1 +1,4 @@
 project_id = "pxdigcofmljlgwohscmb"
+
+[functions.mark-email-responded]
+verify_jwt = false
