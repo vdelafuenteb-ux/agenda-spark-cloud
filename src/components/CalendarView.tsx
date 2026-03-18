@@ -123,8 +123,8 @@ export function CalendarView({ topics }: CalendarViewProps) {
               <Popover key={key}>
                 <PopoverTrigger asChild>
                   <button
-                    className={`min-h-[72px] md:min-h-[88px] p-1 text-left align-top transition-colors hover:bg-accent/50 focus:outline-none ${!inMonth ? 'opacity-40' : ''}`}
-                    style={{ backgroundColor: isHoliday && inMonth ? '#fef2f2' : undefined }}
+                    className={`min-h-[72px] md:min-h-[88px] p-1 text-left align-top transition-colors hover:bg-accent/30 focus:outline-none bg-background ${!inMonth ? 'opacity-40' : ''}`}
+                    style={isHoliday && inMonth ? { backgroundColor: '#fef2f2' } : undefined}
                   >
                     <span
                       className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-medium ${today ? 'bg-primary text-primary-foreground' : isHoliday ? 'text-red-500 font-bold' : 'text-foreground'}`}
