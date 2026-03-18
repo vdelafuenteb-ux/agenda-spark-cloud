@@ -1,4 +1,4 @@
-import { AlertTriangle, CalendarClock, FileText, LogOut, LayoutList } from 'lucide-react';
+import { AlertTriangle, CalendarClock, FileText, LogOut, LayoutList, StickyNote } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -13,7 +13,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import type { TopicWithSubtasks } from '@/hooks/useTopics';
 
-type Filter = 'todos' | 'hoy' | 'alta' | 'informes';
+type Filter = 'todos' | 'hoy' | 'alta' | 'informes' | 'notas';
 
 interface AppSidebarProps {
   activeFilter: Filter;
@@ -26,6 +26,7 @@ const filters: { key: Filter; label: string; icon: typeof LayoutList }[] = [
   { key: 'hoy', label: 'Mi día', icon: CalendarClock },
   { key: 'alta', label: 'Prioridad Alta', icon: AlertTriangle },
   { key: 'informes', label: 'Informes', icon: FileText },
+  { key: 'notas', label: 'Notas', icon: StickyNote },
 ];
 
 export function AppSidebar({ activeFilter, onFilterChange, topics }: AppSidebarProps) {
