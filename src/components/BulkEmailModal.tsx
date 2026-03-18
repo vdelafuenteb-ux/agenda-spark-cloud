@@ -28,22 +28,22 @@ export function BulkEmailModal({ open, onOpenChange, topics, assignee }: BulkEma
     }
   }, [open, topics]);
 
-  const toggleAll = () => {
-    if (allSelected) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(topics.map(t => t.id)));
-    }
-  };
+  const allSelected = selectedIds.size === topics.length && topics.length > 0;
 
-  const toggleTopic = (id: string) => {
+  const toggleAll = useCallback(() => {
+    setSelectedIds(prev =>
+      prev.size === topics.length ? new Set() : new Set(topics.map(t => t.id))
+    );
+  }, [topics]);
+
+  const toggleTopic = useCallback((id: string) => {
     setSelectedIds(prev => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
-  };
+  }, []);
 
   const handleSend = async () => {
     if (!assignee.email) {
