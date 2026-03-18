@@ -23,6 +23,8 @@ interface SubtaskRowProps {
 export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false, onToggleSubtask, onUpdateSubtask, onDeleteSubtask }: SubtaskRowProps) {
   const [showNotes, setShowNotes] = useState(false);
   const [notes, setNotes] = useState(subtask.notes || '');
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleDraft, setTitleDraft] = useState(subtask.title);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
   // Sync from prop
@@ -55,11 +57,43 @@ export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false,
           onCheckedChange={(checked) => onToggleSubtask(subtask.id, !!checked)}
         />
         <div className={cn('flex-1 min-w-0 flex items-center gap-1.5', subtask.completed && 'line-through text-muted-foreground')}>
-          <span className={cn(
-            'text-sm truncate',
-            isOverdue && 'text-destructive font-medium',
-            subtaskIsUpcoming && !isOverdue && 'text-yellow-700 font-medium'
-          )}>{subtask.title}</span>
+          {editingTitle ? (
+            <input
+              value={titleDraft}
+              onChange={(e) => setTitleDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  if (titleDraft.trim()) onUpdateSubtask(subtask.id, { title: titleDraft.trim() });
+                  setEditingTitle(false);
+                }
+                if (e.key === 'Escape') {
+                  setTitleDraft(subtask.title);
+                  setEditingTitle(false);
+                }
+              }}
+              onBlur={() => {
+                if (titleDraft.trim() && titleDraft.trim() !== subtask.title) {
+                  onUpdateSubtask(subtask.id, { title: titleDraft.trim() });
+                }
+                setEditingTitle(false);
+              }}
+              className="text-sm bg-transparent border-b border-primary outline-none flex-1 min-w-0"
+              autoFocus
+            />
+          ) : (
+            <span
+              className={cn(
+                'text-sm truncate cursor-pointer hover:underline',
+                isOverdue && 'text-destructive font-medium',
+                subtaskIsUpcoming && !isOverdue && 'text-yellow-700 font-medium'
+              )}
+              onDoubleClick={() => {
+                setTitleDraft(subtask.title);
+                setEditingTitle(true);
+              }}
+              title="Doble clic para editar"
+            >{subtask.title}</span>
+          )}
           {subtaskIsToday && (
             <Badge className="text-[9px] px-1 py-0 bg-primary text-primary-foreground border-transparent shrink-0">Hoy</Badge>
           )}
