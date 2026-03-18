@@ -164,6 +164,8 @@ export type Database = {
         Row: {
           assignee_email: string
           assignee_name: string
+          confirmed: boolean
+          confirmed_at: string | null
           id: string
           responded: boolean
           responded_at: string | null
@@ -174,6 +176,8 @@ export type Database = {
         Insert: {
           assignee_email: string
           assignee_name: string
+          confirmed?: boolean
+          confirmed_at?: string | null
           id?: string
           responded?: boolean
           responded_at?: string | null
@@ -184,6 +188,8 @@ export type Database = {
         Update: {
           assignee_email?: string
           assignee_name?: string
+          confirmed?: boolean
+          confirmed_at?: string | null
           id?: string
           responded?: boolean
           responded_at?: string | null
