@@ -17,7 +17,7 @@ import { useTags } from '@/hooks/useTags';
 import { useAssignees } from '@/hooks/useAssignees';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Plus, FileText, ChevronsDownUp, ChevronsUpDown } from 'lucide-react';
+import { Plus, FileText } from 'lucide-react';
 import { NotesView } from '@/components/NotesView';
 import { DashboardView } from '@/components/DashboardView';
 import { ChecklistView } from '@/components/ChecklistView';
