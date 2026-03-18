@@ -10,6 +10,8 @@ export interface NotificationEmail {
   sent_at: string;
   responded: boolean;
   responded_at: string | null;
+  confirmed: boolean;
+  confirmed_at: string | null;
 }
 
 export function useNotificationEmails(topicId?: string) {
@@ -32,6 +34,11 @@ export function useNotificationEmails(topicId?: string) {
     enabled: !!topicId,
   });
 
+  const invalidateAll = () => {
+    queryClient.invalidateQueries({ queryKey: ['notification_emails'] });
+    queryClient.invalidateQueries({ queryKey: ['notification_emails_all'] });
+  };
+
   const logEmail = useMutation({
     mutationFn: async (params: { topic_id: string; assignee_name: string; assignee_email: string }) => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -49,10 +56,7 @@ export function useNotificationEmails(topicId?: string) {
       if (error) throw error;
       return data as unknown as NotificationEmail;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notification_emails'] });
-      queryClient.invalidateQueries({ queryKey: ['notification_emails_all'] });
-    },
+    onSuccess: invalidateAll,
   });
 
   const deleteEmail = useMutation({
@@ -60,10 +64,7 @@ export function useNotificationEmails(topicId?: string) {
       const { error } = await supabase.from('notification_emails').delete().eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notification_emails'] });
-      queryClient.invalidateQueries({ queryKey: ['notification_emails_all'] });
-    },
+    onSuccess: invalidateAll,
   });
 
   const toggleResponded = useMutation({
@@ -77,10 +78,21 @@ export function useNotificationEmails(topicId?: string) {
         .eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notification_emails'] });
-      queryClient.invalidateQueries({ queryKey: ['notification_emails_all'] });
+    onSuccess: invalidateAll,
+  });
+
+  const toggleConfirmed = useMutation({
+    mutationFn: async ({ id, confirmed }: { id: string; confirmed: boolean }) => {
+      const { error } = await supabase
+        .from('notification_emails')
+        .update({
+          confirmed,
+          confirmed_at: confirmed ? new Date().toISOString() : null,
+        } as any)
+        .eq('id', id);
+      if (error) throw error;
     },
+    onSuccess: invalidateAll,
   });
 
   return {
@@ -88,6 +100,7 @@ export function useNotificationEmails(topicId?: string) {
     isLoading: emailsQuery.isLoading,
     logEmail,
     toggleResponded,
+    toggleConfirmed,
     deleteEmail,
   };
 }
