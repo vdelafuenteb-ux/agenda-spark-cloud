@@ -86,6 +86,7 @@ const Index = () => {
     tagIds: string[];
     newTags: { name: string; color: string }[];
     notes: string;
+    assignee?: string;
   }) => {
     try {
       const created = await createTopic.mutateAsync({
@@ -94,6 +95,7 @@ const Index = () => {
         status: data.status,
         start_date: data.start_date,
         due_date: data.due_date,
+        assignee: data.assignee || null,
       });
 
       // Run subtasks and existing tags in parallel
