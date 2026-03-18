@@ -70,7 +70,10 @@ Deno.serve(async (req) => {
     mensaje += `<p>Por favor actualiza sobre el estado de esta tarea.</p>`;
     mensaje += `<p>Gracias.</p>`;
 
-    // Call Firebase endpoint
+    // CC recipients
+    const CC_EMAILS = ["matias@transitglobalgroup.com", "vicente@transitglobalgroup.com"];
+
+    // Call Firebase endpoint for main recipient
     const response = await fetch(FIREBASE_EMAIL_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -80,6 +83,23 @@ Deno.serve(async (req) => {
         mensaje: mensaje,
       }),
     });
+
+    // Send CC copies in parallel
+    await Promise.allSettled(
+      CC_EMAILS
+        .filter((cc) => cc.toLowerCase() !== to_email.toLowerCase())
+        .map((cc) =>
+          fetch(FIREBASE_EMAIL_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              para: cc,
+              asunto: `[CC] Recordatorio: ${topic_title}`,
+              mensaje: mensaje,
+            }),
+          })
+        )
+    );
 
     const result = await response.json();
 
