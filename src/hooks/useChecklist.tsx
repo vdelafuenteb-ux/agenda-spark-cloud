@@ -148,6 +148,7 @@ export function useChecklist() {
     items: query.data || [],
     isLoading: query.isLoading,
     addItem,
+    updateItem,
     toggleItem,
     deleteItem,
     clearCompleted,
