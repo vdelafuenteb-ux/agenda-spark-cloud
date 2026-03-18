@@ -62,6 +62,7 @@ export function CreateTopicModal({ open, onOpenChange, allTags, assignees, onCre
     setPriority('media');
     setStatus('activo');
     setAssignee('');
+    setNewAssigneeName('');
     setDueDate(undefined);
     setStartDate(new Date());
     setSubtasks([]);
