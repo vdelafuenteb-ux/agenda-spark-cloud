@@ -85,5 +85,6 @@ export function useNotificationEmails(topicId?: string) {
     isLoading: emailsQuery.isLoading,
     logEmail,
     toggleResponded,
+    deleteEmail,
   };
 }
