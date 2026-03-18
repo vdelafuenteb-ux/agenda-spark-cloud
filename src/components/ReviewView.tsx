@@ -3,13 +3,14 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle2, Circle } from 'lucide-react';
+import { CheckCircle2, Circle, CheckSquare } from 'lucide-react';
 import { TopicCard } from '@/components/TopicCard';
 import type { TopicWithSubtasks } from '@/hooks/useTopics';
 import type { Tag } from '@/hooks/useTags';
 import type { Assignee } from '@/hooks/useAssignees';
 import { useReminders } from '@/hooks/useReminders';
 import { useReminderCompletions } from '@/hooks/useReminderCompletions';
+import { useChecklist } from '@/hooks/useChecklist';
 import { getRemindersForDate, getUpcomingReminders } from '@/lib/reminderMatch';
 import { isStoredDateToday, isStoredDateOverdue, isStoredDateUpcoming } from '@/lib/date';
 
