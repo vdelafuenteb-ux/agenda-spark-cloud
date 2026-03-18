@@ -106,6 +106,7 @@ Deno.serve(async (req) => {
       mensaje += `</tr>`;
     });
     mensaje += `</tbody></table>`;
+    mensaje += `<p style="font-size:12px;color:#999;margin:0 0 16px;">🔴 Las filas en rojo indican temas con fecha de vencimiento ya pasada.</p>`;
 
     // Detail section — only topics with pending subtasks
     const withPending = topicsWithPending.filter((t: any) => t.pendingSubtasks.length > 0);
