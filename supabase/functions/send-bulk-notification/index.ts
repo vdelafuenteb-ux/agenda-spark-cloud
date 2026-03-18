@@ -6,6 +6,16 @@ const corsHeaders = {
 
 const FIREBASE_EMAIL_URL = "https://us-central1-sistemattransit.cloudfunctions.net/correoAdministracion";
 
+function formatDate(dateStr?: string | null): string {
+  if (!dateStr) return "";
+  try {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString("es-CL", { day: "2-digit", month: "short", year: "numeric" });
+  } catch {
+    return dateStr;
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -59,16 +69,43 @@ Deno.serve(async (req) => {
 
     topics.forEach((topic: any, index: number) => {
       const pendingSubtasks = (topic.subtasks || []).filter((s: any) => !s.completed);
-      mensaje += `<p><strong>${index + 1}. ${topic.title}</strong></p>`;
+      mensaje += `<h3 style="margin-bottom:4px;">${index + 1}. ${topic.title}</h3>`;
+
+      // Dates
+      if (topic.start_date || topic.due_date) {
+        mensaje += `<p style="color:#555;margin:2px 0;">`;
+        if (topic.start_date) mensaje += `📅 Inicio: <strong>${formatDate(topic.start_date)}</strong>`;
+        if (topic.start_date && topic.due_date) mensaje += ` &nbsp;|&nbsp; `;
+        if (topic.due_date) mensaje += `⏰ Vencimiento: <strong>${formatDate(topic.due_date)}</strong>`;
+        mensaje += `</p>`;
+      }
+
+      // Subtasks
       if (pendingSubtasks.length > 0) {
-        mensaje += `<ul>`;
+        mensaje += `<ul style="margin-top:4px;">`;
         pendingSubtasks.forEach((s: any) => {
-          mensaje += `<li>${s.title}${s.due_date ? ` <em>(vence: ${s.due_date})</em>` : ""}</li>`;
+          mensaje += `<li>${s.title}`;
+          if (s.due_date) mensaje += ` <em>(vence: ${formatDate(s.due_date)})</em>`;
+          if (s.notes) mensaje += `<br/><span style="color:#666;font-size:0.9em;">📝 ${s.notes}</span>`;
+          mensaje += `</li>`;
         });
         mensaje += `</ul>`;
       } else {
         mensaje += `<p style="margin-left:20px;color:#888;"><em>Sin subtareas pendientes</em></p>`;
       }
+
+      // Progress entries (last 3 per topic in bulk)
+      const entries = (topic.progress_entries || []).slice(0, 3);
+      if (entries.length > 0) {
+        mensaje += `<p style="margin-bottom:2px;"><strong>Bitácora:</strong></p><ul style="color:#555;">`;
+        entries.forEach((e: any) => {
+          const dateStr = e.created_at ? formatDate(e.created_at) : "";
+          mensaje += `<li>${e.content}${dateStr ? ` <em style="color:#999;">(${dateStr})</em>` : ""}</li>`;
+        });
+        mensaje += `</ul>`;
+      }
+
+      mensaje += `<hr style="border:none;border-top:1px solid #eee;margin:12px 0;"/>`;
     });
 
     mensaje += `<p>Por favor actualiza sobre el estado de estas tareas.</p>`;
