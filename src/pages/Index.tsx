@@ -182,6 +182,7 @@ const Index = () => {
                     <Tabs value={statusTab} onValueChange={(value) => setStatusTab(value as StatusTab)}>
                       <TabsList className="w-full">
                         <TabsTrigger value="activo" className="flex-1 text-xs">Activos ({statusCounts.activo})</TabsTrigger>
+                        <TabsTrigger value="seguimiento" className="flex-1 text-xs">Seguimiento ({statusCounts.seguimiento})</TabsTrigger>
                         <TabsTrigger value="pausado" className="flex-1 text-xs">Pausados ({statusCounts.pausado})</TabsTrigger>
                         <TabsTrigger value="completado" className="flex-1 text-xs">Cerrados ({statusCounts.completado})</TabsTrigger>
                       </TabsList>
