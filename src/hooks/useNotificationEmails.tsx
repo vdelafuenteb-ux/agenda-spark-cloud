@@ -8,6 +8,8 @@ export interface NotificationEmail {
   assignee_name: string;
   assignee_email: string;
   sent_at: string;
+  responded: boolean;
+  responded_at: string | null;
 }
 
 export function useNotificationEmails(topicId?: string) {
@@ -52,9 +54,26 @@ export function useNotificationEmails(topicId?: string) {
     },
   });
 
+  const toggleResponded = useMutation({
+    mutationFn: async ({ id, responded }: { id: string; responded: boolean }) => {
+      const { error } = await supabase
+        .from('notification_emails')
+        .update({
+          responded,
+          responded_at: responded ? new Date().toISOString() : null,
+        } as any)
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notification_emails'] });
+    },
+  });
+
   return {
     emails: emailsQuery.data || [],
     isLoading: emailsQuery.isLoading,
     logEmail,
+    toggleResponded,
   };
 }
