@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { isStoredDateToday, isStoredDateUpcoming } from '@/lib/date';
+import { isStoredDateToday, isStoredDateUpcoming, isStoredDateOverdue } from '@/lib/date';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, ChevronDown, Plus, Trash2, CalendarIcon, CheckCircle2, RotateCcw, Pause, Play, User, Pin } from 'lucide-react';
 import { es } from 'date-fns/locale';
@@ -30,6 +30,7 @@ interface TopicCardProps {
   onCreateAssignee: (name: string) => Promise<Assignee>;
   highlightToday?: boolean;
   highlightUpcoming?: boolean;
+  highlightOverdue?: boolean;
   onUpdate: (id: string, data: any) => void;
   onDelete: (id: string) => void;
   onAddSubtask: (topicId: string, title: string) => void;
@@ -63,6 +64,7 @@ export function TopicCard({
   onCreateAssignee,
   highlightToday = false,
   highlightUpcoming = false,
+  highlightOverdue = false,
   onUpdate,
   onDelete,
   onAddSubtask,
@@ -90,6 +92,10 @@ export function TopicCard({
   const hasSubtaskUpcoming = topic.subtasks.some(s => !s.completed && isStoredDateUpcoming(s.due_date, 3));
   const topicUpcoming = isStoredDateUpcoming(topic.due_date, 3);
   const showSubtaskUpcomingBadge = highlightUpcoming && !topicUpcoming && hasSubtaskUpcoming;
+
+  const hasSubtaskOverdue = topic.subtasks.some(s => !s.completed && isStoredDateOverdue(s.due_date));
+  const topicOverdue = isStoredDateOverdue(topic.due_date);
+  const showSubtaskOverdueBadge = highlightOverdue && !topicOverdue && hasSubtaskOverdue;
 
   const completedCount = topic.subtasks.filter((s) => s.completed).length;
   const totalCount = topic.subtasks.length;
@@ -138,6 +144,11 @@ export function TopicCard({
             {showSubtaskTodayBadge && (
               <Badge className="text-[10px] px-1.5 py-0 bg-accent text-accent-foreground border-transparent">
                 📌 Subtarea hoy
+              </Badge>
+            )}
+            {showSubtaskOverdueBadge && (
+              <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
+                🔴 Subtarea atrasada
               </Badge>
             )}
             {showSubtaskUpcomingBadge && (
