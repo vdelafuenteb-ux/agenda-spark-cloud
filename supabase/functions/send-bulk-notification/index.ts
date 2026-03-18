@@ -117,25 +117,14 @@ Deno.serve(async (req) => {
       ? `⚠️ URGENTE: "${topics[0].title}" — Actualizar a la brevedad | 48 hrs para responder`
       : `🚨 ${topics.length} TEMAS ACTIVOS — ¡Actualizar a la brevedad! | Máx. 48 hrs para responder`;
 
-    const CC_EMAILS = ["matias@transitglobalgroup.com", "vicente@transitglobalgroup.com"];
+    const CC_EMAILS = ["matias@transitglobalgroup.com", "vicente@transitglobalgroup.com"]
+      .filter((cc) => cc.toLowerCase() !== to_email.toLowerCase());
 
     const response = await fetch(FIREBASE_EMAIL_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ para: to_email, asunto, mensaje }),
+      body: JSON.stringify({ para: to_email, asunto, mensaje, cc: CC_EMAILS }),
     });
-
-    await Promise.allSettled(
-      CC_EMAILS
-        .filter((cc) => cc.toLowerCase() !== to_email.toLowerCase())
-        .map((cc) =>
-          fetch(FIREBASE_EMAIL_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ para: cc, asunto: `[CC] ${asunto}`, mensaje }),
-          })
-        )
-    );
 
     const result = await response.json();
 

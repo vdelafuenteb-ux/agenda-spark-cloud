@@ -106,7 +106,8 @@ Deno.serve(async (req) => {
     mensaje += `<p><strong>No olvides responder a todos</strong> para que tu respuesta llegue a todo el equipo.</p>`;
     mensaje += `<p>Gracias.</p>`;
 
-    const CC_EMAILS = ["matias@transitglobalgroup.com", "vicente@transitglobalgroup.com"];
+    const CC_EMAILS = ["matias@transitglobalgroup.com", "vicente@transitglobalgroup.com"]
+      .filter((cc) => cc.toLowerCase() !== to_email.toLowerCase());
 
     const response = await fetch(FIREBASE_EMAIL_URL, {
       method: "POST",
@@ -115,24 +116,9 @@ Deno.serve(async (req) => {
         para: to_email,
         asunto: `⚠️ URGENTE: "${topic_title}" — Actualizar a la brevedad | 48 hrs para responder`,
         mensaje: mensaje,
+        cc: CC_EMAILS,
       }),
     });
-
-    await Promise.allSettled(
-      CC_EMAILS
-        .filter((cc) => cc.toLowerCase() !== to_email.toLowerCase())
-        .map((cc) =>
-          fetch(FIREBASE_EMAIL_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              para: cc,
-              asunto: `[CC] Recordatorio: ${topic_title}`,
-              mensaje: mensaje,
-            }),
-          })
-        )
-    );
 
     const result = await response.json();
 
