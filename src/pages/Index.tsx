@@ -272,7 +272,7 @@ const Index = () => {
                   <ReportsList onNewReport={() => setReportOpen(true)} />
                 ) : (
                   <>
-                    <Tabs value={statusTab} onValueChange={(value) => { setStatusTab(value as StatusTab); setForceExpand(null); }}>
+                    <Tabs value={statusTab} onValueChange={(value) => { setStatusTab(value as StatusTab); setForceExpand(null); setSearchQuery(''); setSelectedTagIds([]); setSelectedAssignee(''); setFilterNoDueDate(false); }}>
                       <TabsList className="w-full">
                         <TabsTrigger value="activo" className="flex-1 text-xs">Activos ({statusCounts.activo})</TabsTrigger>
                         <TabsTrigger value="seguimiento" className="flex-1 text-xs">Seguimiento ({statusCounts.seguimiento})</TabsTrigger>
