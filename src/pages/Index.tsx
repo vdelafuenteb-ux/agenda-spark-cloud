@@ -74,6 +74,7 @@ const Index = () => {
     title: string;
     priority: any;
     status: any;
+    start_date: string | null;
     due_date: string | null;
     subtasks: string[];
     tagIds: string[];
@@ -85,6 +86,7 @@ const Index = () => {
         title: data.title,
         priority: data.priority,
         status: data.status,
+        start_date: data.start_date,
         due_date: data.due_date,
       });
 
