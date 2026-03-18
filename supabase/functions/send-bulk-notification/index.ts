@@ -73,14 +73,14 @@ Deno.serve(async (req) => {
     mensaje += `<p>Tienes <strong>${topics.length} tema${topics.length > 1 ? "s" : ""}</strong> pendiente${topics.length > 1 ? "s" : ""} de actualizar. <strong>Responde este correo</strong> con el estado de cada uno.</p>`;
 
     // Summary table
-    mensaje += `<table style="width:100%;border-collapse:collapse;margin:16px 0;font-size:14px;">`;
+    mensaje += `<table style="width:100%;border-collapse:collapse;margin:16px 0;font-size:14px;table-layout:fixed;">`;
     mensaje += `<thead><tr style="background-color:#f2f2f2;text-align:left;">`;
-    mensaje += `<th style="padding:8px;border:1px solid #ddd;width:30px;">#</th>`;
-    mensaje += `<th style="padding:8px;border:1px solid #ddd;">Tema</th>`;
+    mensaje += `<th style="padding:8px;border:1px solid #ddd;width:28px;">#</th>`;
+    mensaje += `<th style="padding:8px;border:1px solid #ddd;width:20%;">Tema</th>`;
     mensaje += `<th style="padding:8px;border:1px solid #ddd;">Último comentario</th>`;
-    mensaje += `<th style="padding:8px;border:1px solid #ddd;width:90px;">Inicio</th>`;
-    mensaje += `<th style="padding:8px;border:1px solid #ddd;width:90px;">Vencimiento</th>`;
-    mensaje += `<th style="padding:8px;border:1px solid #ddd;width:110px;">Pendientes</th>`;
+    mensaje += `<th style="padding:8px;border:1px solid #ddd;width:80px;">Inicio</th>`;
+    mensaje += `<th style="padding:8px;border:1px solid #ddd;width:80px;">Vencimiento</th>`;
+    mensaje += `<th style="padding:8px;border:1px solid #ddd;width:90px;">Pendientes</th>`;
     mensaje += `</tr></thead><tbody>`;
 
     const now = new Date();
