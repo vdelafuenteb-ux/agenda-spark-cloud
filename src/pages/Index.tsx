@@ -154,7 +154,7 @@ const Index = () => {
             <main className="flex-1 overflow-auto p-4 md:p-6">
               <div className="max-w-3xl mx-auto space-y-3">
                 {filter === 'informes' ? (
-                  <ReportsList />
+                  <ReportsList onNewReport={() => setReportOpen(true)} />
                 ) : (
                   <>
                     <Tabs value={statusTab} onValueChange={(value) => setStatusTab(value as StatusTab)}>

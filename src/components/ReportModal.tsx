@@ -1,14 +1,16 @@
 import { useState, useMemo } from 'react';
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subDays } from 'date-fns';
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subDays, isAfter, isBefore, addDays, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Copy, Printer } from 'lucide-react';
+import { CalendarIcon, Copy, Printer, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { formatStoredDate } from '@/lib/date';
+import { formatStoredDate, parseStoredDate } from '@/lib/date';
+import { useQueryClient } from '@tanstack/react-query';
+import { cn } from '@/lib/utils';
 import type { TopicWithSubtasks } from '@/hooks/useTopics';
 
 interface ReportModalProps {
@@ -19,7 +21,27 @@ interface ReportModalProps {
 
 type Period = 'week' | 'month' | 'custom';
 
+function getTrafficLight(dueDateStr: string | null | undefined): { icon: string; label: string } {
+  if (!dueDateStr) return { icon: '🟢', label: 'Al día' };
+  const dueDate = parseStoredDate(dueDateStr);
+  if (!dueDate) return { icon: '🟢', label: 'Al día' };
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  dueDate.setHours(0, 0, 0, 0);
+  if (isBefore(dueDate, today)) return { icon: '🔴', label: 'Atrasado' };
+  if (isBefore(dueDate, addDays(today, 4))) return { icon: '🟡', label: 'Próximo a vencer' };
+  return { icon: '🟢', label: 'Al día' };
+}
+
+function isWithinPeriod(dateStr: string, start: Date, end: Date): boolean {
+  try {
+    const d = parseISO(dateStr);
+    return !isBefore(d, start) && !isAfter(d, end);
+  } catch { return false; }
+}
+
 export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
+  const queryClient = useQueryClient();
   const [period, setPeriod] = useState<Period>('week');
   const [customStart, setCustomStart] = useState<Date>(subDays(new Date(), 7));
   const [customEnd, setCustomEnd] = useState<Date>(new Date());
@@ -32,67 +54,90 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
     return { start: customStart, end: customEnd };
   }, [period, customStart, customEnd]);
 
+  const activeTopics = useMemo(() => topics.filter(t => t.status === 'activo'), [topics]);
+
   const report = useMemo(() => {
-    const active = topics.filter((topic) => topic.status === 'activo');
-    const completed = topics.filter((topic) => topic.status === 'completado');
-    const paused = topics.filter((topic) => topic.status === 'pausado');
-    const totalSubs = topics.reduce((acc, topic) => acc + topic.subtasks.length, 0);
-    const doneSubs = topics.reduce((acc, topic) => acc + topic.subtasks.filter((subtask) => subtask.completed).length, 0);
+    const totalSubs = activeTopics.reduce((a, t) => a + t.subtasks.length, 0);
+    const doneSubs = activeTopics.reduce((a, t) => a + t.subtasks.filter(s => s.completed).length, 0);
     const pct = totalSubs > 0 ? Math.round((doneSubs / totalSubs) * 100) : 0;
+
+    const delayed = activeTopics.filter(t => getTrafficLight(t.due_date).icon === '🔴').length;
+    const warning = activeTopics.filter(t => getTrafficLight(t.due_date).icon === '🟡').length;
+    const onTrack = activeTopics.length - delayed - warning;
 
     const periodStr = `${format(start, 'dd MMM yyyy', { locale: es })} — ${format(end, 'dd MMM yyyy', { locale: es })}`;
 
-    let md = `# Informe Ejecutivo\n\n`;
-    md += `**Período:** ${periodStr}\n\n`;
-    md += `## Resumen General\n\n`;
+    let md = `# 📊 Informe Ejecutivo\n\n`;
+    md += `**Período:** ${periodStr}\n`;
+    md += `**Emitido:** ${format(new Date(), "dd MMM yyyy 'a las' HH:mm", { locale: es })}\n\n`;
+    md += `---\n\n`;
+    md += `## Resumen de KPIs\n\n`;
     md += `| Indicador | Valor |\n|---|---|\n`;
-    md += `| Temas activos | ${active.length} |\n`;
-    md += `| Temas completados | ${completed.length} |\n`;
-    md += `| Temas pausados | ${paused.length} |\n`;
+    md += `| Temas activos | ${activeTopics.length} |\n`;
+    md += `| 🟢 Al día | ${onTrack} |\n`;
+    md += `| 🟡 Próximos a vencer | ${warning} |\n`;
+    md += `| 🔴 Atrasados | ${delayed} |\n`;
     md += `| Subtareas completadas | ${doneSubs}/${totalSubs} (${pct}%) |\n\n`;
+
+    md += `## Semáforo General\n\n`;
+    md += `| Tema | Prioridad | Semáforo | Fecha cierre | Progreso |\n`;
+    md += `|---|---|---|---|---|\n`;
+    activeTopics.forEach(t => {
+      const tl = getTrafficLight(t.due_date);
+      const done = t.subtasks.filter(s => s.completed).length;
+      const total = t.subtasks.length;
+      const dueStr = t.due_date ? formatStoredDate(t.due_date, 'dd MMM', { locale: es }) : '—';
+      md += `| ${t.title} | ${t.priority.charAt(0).toUpperCase() + t.priority.slice(1)} | ${tl.icon} ${tl.label} | ${dueStr} | ${total > 0 ? `${done}/${total}` : '—'} |\n`;
+    });
+    md += `\n`;
+
     md += `## Detalle por Tema\n\n`;
+    activeTopics.forEach(t => {
+      const tl = getTrafficLight(t.due_date);
+      const done = t.subtasks.filter(s => s.completed).length;
+      const total = t.subtasks.length;
 
-    const renderTopicSection = (list: TopicWithSubtasks[], sectionTitle: string) => {
-      if (list.length === 0) return '';
-      let section = `### ${sectionTitle}\n\n`;
+      md += `### ${tl.icon} ${t.title}\n\n`;
+      md += `- **Prioridad:** ${t.priority.charAt(0).toUpperCase() + t.priority.slice(1)}\n`;
+      md += `- **Estado:** ${tl.label}\n`;
+      if (t.due_date) md += `- **Fecha cierre:** ${formatStoredDate(t.due_date, 'dd MMM yyyy', { locale: es })}\n`;
+      if (total > 0) md += `- **Progreso:** ${done}/${total} subtareas completadas (${Math.round((done / total) * 100)}%)\n`;
+      md += `\n`;
 
-      list.forEach((topic) => {
-        const done = topic.subtasks.filter((subtask) => subtask.completed).length;
-        const total = topic.subtasks.length;
+      if (t.subtasks.length > 0) {
+        md += `**Subtareas:**\n`;
+        t.subtasks.forEach(s => {
+          const isNew = isWithinPeriod(s.created_at, start, end);
+          md += `- [${s.completed ? 'x' : ' '}] ${s.title}${isNew ? ' ⭐ NUEVO' : ''}\n`;
+        });
+        md += `\n`;
+      }
 
-        section += `#### ${topic.title}\n`;
-        section += `- **Prioridad:** ${topic.priority.charAt(0).toUpperCase() + topic.priority.slice(1)}\n`;
-        section += `- **Estado:** ${topic.status.charAt(0).toUpperCase() + topic.status.slice(1)}\n`;
-        if (topic.due_date) section += `- **Fecha cierre:** ${formatStoredDate(topic.due_date, 'dd MMM yyyy', { locale: es })}\n`;
-        if (total > 0) section += `- **Progreso:** ${done}/${total} subtareas completadas\n`;
+      const recentEntries = t.progress_entries.filter(e => isWithinPeriod(e.created_at, start, end));
+      const olderEntries = t.progress_entries.filter(e => !isWithinPeriod(e.created_at, start, end));
 
-        if (topic.subtasks.length > 0) {
-          section += `- **Subtareas:**\n`;
-          topic.subtasks.forEach((subtask) => {
-            section += `  - [${subtask.completed ? 'x' : ' '}] ${subtask.title}\n`;
-          });
-        }
+      if (recentEntries.length > 0) {
+        md += `**📌 Novedades (este período):**\n`;
+        recentEntries.forEach(e => {
+          md += `- ⭐ ${e.content}\n`;
+        });
+        md += `\n`;
+      }
 
-        if (topic.progress_entries.length > 0) {
-          section += `- **Avances:**\n`;
-          topic.progress_entries.forEach((entry) => {
-            section += `  - ${entry.content}\n`;
-          });
-        }
+      if (olderEntries.length > 0) {
+        md += `**Bitácora anterior:**\n`;
+        olderEntries.forEach(e => {
+          md += `- ${e.content}\n`;
+        });
+        md += `\n`;
+      }
 
-        section += '\n';
-      });
+      md += `---\n\n`;
+    });
 
-      return section;
-    };
-
-    md += renderTopicSection(active, 'Temas Activos');
-    md += renderTopicSection(completed, 'Temas Completados');
-    md += renderTopicSection(paused, 'Temas Pausados');
-    md += `---\n*Generado el ${format(new Date(), "dd MMM yyyy 'a las' HH:mm", { locale: es })}*\n`;
-
+    md += `*Generado automáticamente el ${format(new Date(), "dd MMM yyyy 'a las' HH:mm", { locale: es })}*\n`;
     return md;
-  }, [topics, start, end]);
+  }, [activeTopics, start, end]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(report);
@@ -102,15 +147,14 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
   const handlePrint = () => {
     const w = window.open('', '_blank');
     if (!w) return;
-    w.document.write(`<html><head><title>Informe</title><style>
+    w.document.write(`<html><head><title>Informe Ejecutivo</title><style>
       body { font-family: system-ui, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; color: #1a1a1a; line-height: 1.6; }
       h1 { font-size: 1.5rem; } h2 { font-size: 1.2rem; border-bottom: 1px solid #e5e5e5; padding-bottom: 4px; }
-      h3 { font-size: 1rem; } h4 { font-size: 0.9rem; margin-bottom: 4px; }
-      table { border-collapse: collapse; width: 100%; } th, td { border: 1px solid #e5e5e5; padding: 6px 12px; text-align: left; font-size: 0.85rem; }
-      li { font-size: 0.85rem; } hr { margin-top: 24px; border: none; border-top: 1px solid #e5e5e5; }
+      h3 { font-size: 1rem; } table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+      th, td { border: 1px solid #e5e5e5; padding: 6px 12px; text-align: left; font-size: 0.85rem; }
+      li { font-size: 0.85rem; } hr { margin: 16px 0; border: none; border-top: 1px solid #e5e5e5; }
     </style></head><body>`);
     const html = report
-      .replace(/^#### (.+)$/gm, '<h4>$1</h4>')
       .replace(/^### (.+)$/gm, '<h3>$1</h3>')
       .replace(/^## (.+)$/gm, '<h2>$1</h2>')
       .replace(/^# (.+)$/gm, '<h1>$1</h1>')
@@ -118,11 +162,10 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
       .replace(/\*(.+?)\*/g, '<em>$1</em>')
       .replace(/^---$/gm, '<hr>')
       .replace(/^\| (.+) \|$/gm, (match) => {
-        const cells = match.split('|').filter(Boolean).map((cell) => cell.trim());
-        return '<tr>' + cells.map((cell) => `<td>${cell}</td>`).join('') + '</tr>';
+        const cells = match.split('|').filter(Boolean).map(c => c.trim());
+        return '<tr>' + cells.map(c => `<td>${c}</td>`).join('') + '</tr>';
       })
       .replace(/^- (.+)$/gm, '<li>$1</li>')
-      .replace(/^  - (.+)$/gm, '<li style="margin-left:20px">$1</li>')
       .replace(/\n/g, '<br>');
     w.document.write(html);
     w.document.write('</body></html>');
@@ -130,20 +173,22 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
     w.print();
   };
 
-  const handleSave = async () => {
+  const handleEmit = async () => {
     setSaving(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      if (!user) throw new Error('No autenticado');
       const { error } = await supabase.from('reports').insert({
         user_id: user.id,
-        title: `Informe ${format(start, 'dd MMM', { locale: es })} - ${format(end, 'dd MMM yyyy', { locale: es })}`,
+        title: `Informe Ejecutivo ${format(start, 'dd MMM', { locale: es })} - ${format(end, 'dd MMM yyyy', { locale: es })}`,
         content: report,
         period_start: format(start, 'yyyy-MM-dd'),
         period_end: format(end, 'yyyy-MM-dd'),
       });
       if (error) throw error;
-      toast.success('Informe guardado');
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
+      toast.success('Informe emitido y guardado');
+      onOpenChange(false);
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -155,19 +200,13 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle>Emitir Informe</DialogTitle>
-          <DialogDescription>Genera un resumen ejecutivo de tus temas y avances.</DialogDescription>
+          <DialogTitle>Emitir Informe Ejecutivo</DialogTitle>
+          <DialogDescription>Informe de temas activos con semáforos de atraso y novedades.</DialogDescription>
         </DialogHeader>
 
         <div className="flex items-center gap-2 flex-wrap">
-          {(['week', 'month', 'custom'] as Period[]).map((value) => (
-            <Button
-              key={value}
-              size="sm"
-              variant={period === value ? 'default' : 'outline'}
-              className="h-7 text-xs"
-              onClick={() => setPeriod(value)}
-            >
+          {(['week', 'month', 'custom'] as Period[]).map(value => (
+            <Button key={value} size="sm" variant={period === value ? 'default' : 'outline'} className="h-7 text-xs" onClick={() => setPeriod(value)}>
               {value === 'week' ? 'Esta semana' : value === 'month' ? 'Este mes' : 'Personalizado'}
             </Button>
           ))}
@@ -176,24 +215,22 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" size="sm" className="h-7 text-xs">
-                    <CalendarIcon className="h-3 w-3 mr-1" />
-                    {format(customStart, 'dd/MM')}
+                    <CalendarIcon className="h-3 w-3 mr-1" />{format(customStart, 'dd/MM')}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar mode="single" selected={customStart} onSelect={(date) => date && setCustomStart(date)} initialFocus />
+                  <Calendar mode="single" selected={customStart} onSelect={d => d && setCustomStart(d)} initialFocus className={cn("p-3 pointer-events-auto")} />
                 </PopoverContent>
               </Popover>
               <span className="text-xs text-muted-foreground">a</span>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" size="sm" className="h-7 text-xs">
-                    <CalendarIcon className="h-3 w-3 mr-1" />
-                    {format(customEnd, 'dd/MM')}
+                    <CalendarIcon className="h-3 w-3 mr-1" />{format(customEnd, 'dd/MM')}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar mode="single" selected={customEnd} onSelect={(date) => date && setCustomEnd(date)} initialFocus />
+                  <Calendar mode="single" selected={customEnd} onSelect={d => d && setCustomEnd(d)} initialFocus className={cn("p-3 pointer-events-auto")} />
                 </PopoverContent>
               </Popover>
             </div>
@@ -207,7 +244,10 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
         <div className="flex items-center gap-2 justify-end">
           <Button variant="outline" size="sm" onClick={handleCopy}><Copy className="h-3 w-3 mr-1" /> Copiar</Button>
           <Button variant="outline" size="sm" onClick={handlePrint}><Printer className="h-3 w-3 mr-1" /> Imprimir</Button>
-          <Button size="sm" onClick={handleSave} disabled={saving}>{saving ? 'Guardando...' : 'Guardar informe'}</Button>
+          <Button size="sm" onClick={handleEmit} disabled={saving}>
+            <Save className="h-3 w-3 mr-1" />
+            {saving ? 'Emitiendo...' : 'Emitir Informe'}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
