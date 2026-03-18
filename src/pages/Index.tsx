@@ -165,6 +165,8 @@ const Index = () => {
               <ReviewView
                 topics={topics}
                 allTags={tags}
+                assignees={assignees}
+                onCreateAssignee={(name) => createAssignee.mutateAsync(name)}
                 getTagsForTopic={getTagsForTopic}
                 onUpdate={(id, data) => updateTopic.mutate({ id, ...data })}
                 onDelete={(id) => deleteTopic.mutate(id, { onSuccess: () => toast.success('Tema eliminado') })}
