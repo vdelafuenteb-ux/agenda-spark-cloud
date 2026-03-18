@@ -228,6 +228,7 @@ const Index = () => {
             <SettingsView
               tags={tags}
               assignees={assignees}
+              topics={topics}
               onDeleteTag={(id) => deleteTag.mutate(id)}
               onCreateTag={(data) => createTag.mutateAsync(data)}
               onUpdateTag={(id, name) => updateTag.mutate({ id, name })}
