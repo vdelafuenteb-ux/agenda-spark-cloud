@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Trash2, Plus, Pencil, Check, X } from 'lucide-react';
+import { Trash2, Plus, Pencil, Check, X, Mail } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,7 +28,7 @@ interface SettingsViewProps {
   onUpdateTag: (id: string, name: string) => void;
   onDeleteAssignee: (id: string) => void;
   onCreateAssignee: (name: string) => Promise<any>;
-  onUpdateAssignee: (id: string, name: string) => void;
+  onUpdateAssignee: (id: string, data: { name?: string; email?: string | null }) => void;
 }
 
 export function SettingsView({ tags, assignees, onDeleteTag, onCreateTag, onUpdateTag, onDeleteAssignee, onCreateAssignee, onUpdateAssignee }: SettingsViewProps) {
@@ -39,6 +39,7 @@ export function SettingsView({ tags, assignees, onDeleteTag, onCreateTag, onUpda
   const [editingTagName, setEditingTagName] = useState('');
   const [editingAssigneeId, setEditingAssigneeId] = useState<string | null>(null);
   const [editingAssigneeName, setEditingAssigneeName] = useState('');
+  const [editingAssigneeEmail, setEditingAssigneeEmail] = useState('');
 
   const handleCreateTag = async () => {
     if (!newTagName.trim()) return;
@@ -71,7 +72,7 @@ export function SettingsView({ tags, assignees, onDeleteTag, onCreateTag, onUpda
 
   const handleSaveAssignee = (id: string) => {
     if (!editingAssigneeName.trim()) return;
-    onUpdateAssignee(id, editingAssigneeName.trim());
+    onUpdateAssignee(id, { name: editingAssigneeName.trim(), email: editingAssigneeEmail.trim() || null });
     setEditingAssigneeId(null);
     toast.success('Responsable actualizado');
   };
@@ -206,7 +207,7 @@ export function SettingsView({ tags, assignees, onDeleteTag, onCreateTag, onUpda
                 {assignees.map((a) => (
                   <div key={a.id} className="flex items-center justify-between py-1.5 px-2 rounded hover:bg-muted/50">
                     {editingAssigneeId === a.id ? (
-                      <div className="flex items-center gap-2 flex-1 mr-2">
+                      <div className="flex items-center gap-2 flex-1 mr-2 flex-wrap">
                         <Input
                           value={editingAssigneeName}
                           onChange={(e) => setEditingAssigneeName(e.target.value)}
@@ -214,8 +215,20 @@ export function SettingsView({ tags, assignees, onDeleteTag, onCreateTag, onUpda
                             if (e.key === 'Enter') handleSaveAssignee(a.id);
                             if (e.key === 'Escape') setEditingAssigneeId(null);
                           }}
-                          className="h-7 text-sm flex-1"
+                          className="h-7 text-sm flex-1 min-w-[120px]"
+                          placeholder="Nombre"
                           autoFocus
+                        />
+                        <Input
+                          value={editingAssigneeEmail}
+                          onChange={(e) => setEditingAssigneeEmail(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleSaveAssignee(a.id);
+                            if (e.key === 'Escape') setEditingAssigneeId(null);
+                          }}
+                          className="h-7 text-sm flex-1 min-w-[160px]"
+                          placeholder="correo@ejemplo.com"
+                          type="email"
                         />
                         <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-emerald-500" onClick={() => handleSaveAssignee(a.id)}>
                           <Check className="h-3.5 w-3.5" />
@@ -226,13 +239,27 @@ export function SettingsView({ tags, assignees, onDeleteTag, onCreateTag, onUpda
                       </div>
                     ) : (
                       <>
-                        <span className="text-sm">{a.name}</span>
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-sm font-medium">{a.name}</span>
+                          {a.email ? (
+                            <span className="text-xs text-muted-foreground flex items-center gap-0.5 truncate">
+                              <Mail className="h-3 w-3 shrink-0" />
+                              {a.email}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground/50 italic">Sin correo</span>
+                          )}
+                        </div>
                         <div className="flex items-center gap-0.5">
                           <Button
                             variant="ghost"
                             size="sm"
                             className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
-                            onClick={() => { setEditingAssigneeId(a.id); setEditingAssigneeName(a.name); }}
+                            onClick={() => {
+                              setEditingAssigneeId(a.id);
+                              setEditingAssigneeName(a.name);
+                              setEditingAssigneeEmail(a.email || '');
+                            }}
                           >
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
