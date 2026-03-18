@@ -36,7 +36,7 @@ export function FilterBar({ searchQuery, onSearchChange, allTags, selectedTagIds
       {/* Tag chips */}
       {allTags.length > 0 && (
         <div className="flex items-center gap-1.5 flex-wrap">
-          {allTags.map(tag => {
+          <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mr-1">Filtrar por etiqueta:</span>
             const isSelected = selectedTagIds.includes(tag.id);
             return (
               <button
