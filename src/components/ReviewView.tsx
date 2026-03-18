@@ -29,6 +29,8 @@ interface ReviewViewProps {
   onDeleteSubtask: (id: string) => void;
   onUpdateSubtask: (id: string, data: any) => void;
   onAddProgressEntry: (topicId: string, content: string) => void;
+  onUpdateProgressEntry?: (id: string, content: string) => void;
+  onDeleteProgressEntry?: (id: string) => void;
   onAddTag: (topicId: string, tagId: string) => void;
   onRemoveTag: (topicId: string, tagId: string) => void;
   onCreateTag: (name: string, color: string) => Promise<any>;
@@ -232,6 +234,8 @@ export function ReviewView(props: ReviewViewProps) {
             onDeleteSubtask={handlers.onDeleteSubtask}
             onUpdateSubtask={handlers.onUpdateSubtask}
             onAddProgressEntry={handlers.onAddProgressEntry}
+            onUpdateProgressEntry={handlers.onUpdateProgressEntry}
+            onDeleteProgressEntry={handlers.onDeleteProgressEntry}
             onAddTag={handlers.onAddTag}
             onRemoveTag={handlers.onRemoveTag}
             onCreateTag={handlers.onCreateTag}

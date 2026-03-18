@@ -32,7 +32,7 @@ type StatusTab = 'activo' | 'seguimiento' | 'pausado' | 'completado';
 const Index = () => {
   const queryClient = useQueryClient();
   const { user, loading: authLoading } = useAuth();
-  const { topics, isLoading, createTopic, updateTopic, deleteTopic, addSubtask, toggleSubtask, deleteSubtask, addProgressEntry, updateSubtask } = useTopics();
+  const { topics, isLoading, createTopic, updateTopic, deleteTopic, addSubtask, toggleSubtask, deleteSubtask, addProgressEntry, updateProgressEntry, deleteProgressEntry, updateSubtask } = useTopics();
   const { tags, getTagsForTopic, createTag, updateTag, deleteTag, addTopicTag, removeTopicTag } = useTags();
   const { assignees, createAssignee, updateAssignee, deleteAssignee } = useAssignees();
   const [filter, setFilter] = useState<Filter>('todos');
@@ -261,6 +261,8 @@ const Index = () => {
                 onDeleteSubtask={(id) => deleteSubtask.mutate(id)}
                 onUpdateSubtask={(id, data) => updateSubtask.mutate({ id, ...data })}
                 onAddProgressEntry={(topicId, content) => addProgressEntry.mutate({ topic_id: topicId, content })}
+                onUpdateProgressEntry={(id, content) => updateProgressEntry.mutate({ id, content })}
+                onDeleteProgressEntry={(id) => deleteProgressEntry.mutate(id)}
                 onAddTag={(topicId, tagId) => addTopicTag.mutate({ topic_id: topicId, tag_id: tagId })}
                 onRemoveTag={(topicId, tagId) => removeTopicTag.mutate({ topic_id: topicId, tag_id: tagId })}
                 onCreateTag={(name, color) => createTag.mutateAsync({ name, color })}
@@ -327,6 +329,8 @@ const Index = () => {
                           onDeleteSubtask={(id) => deleteSubtask.mutate(id)}
                           onUpdateSubtask={(id, data) => updateSubtask.mutate({ id, ...data })}
                           onAddProgressEntry={(topicId, content) => addProgressEntry.mutate({ topic_id: topicId, content })}
+                          onUpdateProgressEntry={(id, content) => updateProgressEntry.mutate({ id, content })}
+                          onDeleteProgressEntry={(id) => deleteProgressEntry.mutate(id)}
                           onAddTag={(topicId, tagId) => addTopicTag.mutate({ topic_id: topicId, tag_id: tagId })}
                           onRemoveTag={(topicId, tagId) => removeTopicTag.mutate({ topic_id: topicId, tag_id: tagId })}
                           onCreateTag={(name, color) => createTag.mutateAsync({ name, color })}

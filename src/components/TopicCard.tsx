@@ -40,6 +40,8 @@ interface TopicCardProps {
   onUpdateSubtask: (id: string, data: any) => void;
   onDeleteSubtask: (id: string) => void;
   onAddProgressEntry: (topicId: string, content: string) => void;
+  onUpdateProgressEntry?: (id: string, content: string) => void;
+  onDeleteProgressEntry?: (id: string) => void;
   onAddTag: (topicId: string, tagId: string) => void;
   onRemoveTag: (topicId: string, tagId: string) => void;
   onCreateTag: (name: string, color: string) => Promise<any>;
@@ -75,6 +77,8 @@ export function TopicCard({
   onUpdateSubtask,
   onDeleteSubtask,
   onAddProgressEntry,
+  onUpdateProgressEntry,
+  onDeleteProgressEntry,
   onAddTag,
   onRemoveTag,
   onCreateTag,
@@ -513,7 +517,12 @@ export function TopicCard({
                 <NotificationSection topic={topic} assignees={assignees} />
               )}
 
-              <ProgressLog entries={topic.progress_entries} onAdd={(content) => onAddProgressEntry(topic.id, content)} />
+              <ProgressLog
+                entries={topic.progress_entries}
+                onAdd={(content) => onAddProgressEntry(topic.id, content)}
+                onUpdate={onUpdateProgressEntry ? (id, content) => onUpdateProgressEntry(id, content) : undefined}
+                onDelete={onDeleteProgressEntry}
+              />
             </div>
           </motion.div>
         )}
