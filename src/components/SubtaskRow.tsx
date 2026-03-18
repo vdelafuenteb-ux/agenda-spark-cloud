@@ -14,12 +14,13 @@ type Subtask = Database['public']['Tables']['subtasks']['Row'] & { notes?: strin
 interface SubtaskRowProps {
   subtask: Subtask;
   subtaskIsToday: boolean;
+  subtaskIsUpcoming?: boolean;
   onToggleSubtask: (id: string, completed: boolean) => void;
   onUpdateSubtask: (id: string, data: any) => void;
   onDeleteSubtask: (id: string) => void;
 }
 
-export function SubtaskRow({ subtask, subtaskIsToday, onToggleSubtask, onUpdateSubtask, onDeleteSubtask }: SubtaskRowProps) {
+export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false, onToggleSubtask, onUpdateSubtask, onDeleteSubtask }: SubtaskRowProps) {
   const [showNotes, setShowNotes] = useState(false);
   const [notes, setNotes] = useState(subtask.notes || '');
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
