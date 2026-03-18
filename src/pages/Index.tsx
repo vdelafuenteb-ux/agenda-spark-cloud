@@ -7,6 +7,8 @@ import { TopicCard } from '@/components/TopicCard';
 import { ReportModal } from '@/components/ReportModal';
 import { ReportsList } from '@/components/ReportsList';
 import { FilterBar } from '@/components/FilterBar';
+import { BulkEmailModal } from '@/components/BulkEmailModal';
+import { CreateTopicModal } from '@/components/CreateTopicModal';
 import { CreateTopicModal } from '@/components/CreateTopicModal';
 import { AuthPage } from '@/components/AuthPage';
 import { ReviewView } from '@/components/ReviewView';
