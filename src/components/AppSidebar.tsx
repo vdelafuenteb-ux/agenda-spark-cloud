@@ -24,10 +24,10 @@ interface AppSidebarProps {
 }
 
 const filters: { key: Filter; label: string; icon: typeof LayoutList }[] = [
-  { key: 'todos', label: 'Todos', icon: LayoutList },
+  { key: 'todos', label: 'Todos los temas', icon: LayoutList },
   { key: 'revision', label: 'Revisión', icon: Eye },
-  { key: 'informes', label: 'Informes', icon: FileText },
   { key: 'notas', label: 'Notas', icon: StickyNote },
+  { key: 'informes', label: 'Informes', icon: FileText },
 ];
 
 export function AppSidebar({ activeFilter, onFilterChange, topics }: AppSidebarProps) {
