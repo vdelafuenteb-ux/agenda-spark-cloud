@@ -146,6 +146,11 @@ export function TopicCard({
                 📌 Subtarea hoy
               </Badge>
             )}
+            {showSubtaskOverdueBadge && (
+              <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
+                🔴 Subtarea atrasada
+              </Badge>
+            )}
             {showSubtaskUpcomingBadge && (
               <Badge className="text-[10px] px-1.5 py-0 bg-yellow-500/20 text-yellow-700 border-transparent">
                 📅 Subtarea próxima
