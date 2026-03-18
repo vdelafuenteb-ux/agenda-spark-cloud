@@ -16,7 +16,7 @@ const ORDINALS = [
   { value: '-1', label: 'Último' },
 ];
 
-type RecurrenceType = 'weekly' | 'monthly' | 'monthly_weekday';
+type RecurrenceType = 'weekly' | 'monthly' | 'monthly_weekday' | 'last_business_day';
 
 function describeReminder(r: Reminder): string {
   if (r.recurrence_type === 'monthly') return `Día ${r.recurrence_day} de cada mes`;
