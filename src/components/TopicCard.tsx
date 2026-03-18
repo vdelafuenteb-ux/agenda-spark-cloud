@@ -91,7 +91,11 @@ export function TopicCard({
   };
 
   return (
-    <div className={cn('bg-card rounded-lg shadow-sm hover:shadow-md transition-shadow', isCompleted && 'opacity-75')}>
+    <div className={cn(
+      'bg-card rounded-lg shadow-sm hover:shadow-md transition-shadow',
+      isCompleted && 'opacity-75',
+      isSeguimiento && 'border-l-4 border-l-[hsl(var(--seguimiento))] bg-[hsl(var(--seguimiento-bg))]'
+    )}>
       <button onClick={() => setExpanded(!expanded)} className="w-full flex items-center gap-3 p-4 text-left">
         <motion.div animate={{ rotate: expanded ? 90 : 0 }} transition={{ duration: 0.15 }}>
           <ChevronRight className="h-4 w-4 text-muted-foreground" />
