@@ -177,7 +177,8 @@ export function TopicCard({
                   <PopoverTrigger asChild>
                     <Button variant="outline" size="sm" className="h-8 text-xs gap-1">
                       <CalendarIcon className="h-3 w-3" />
-                      {topic.start_date ? formatStoredDate(topic.start_date, 'dd MMM', { locale: es }) : 'Inicio'}
+                      <span className="text-muted-foreground">Inicio:</span>
+                      {topic.start_date ? formatStoredDate(topic.start_date, 'dd MMM', { locale: es }) : '—'}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
@@ -194,7 +195,8 @@ export function TopicCard({
                   <PopoverTrigger asChild>
                     <Button variant="outline" size="sm" className="h-8 text-xs gap-1">
                       <CalendarIcon className="h-3 w-3" />
-                      {topic.due_date ? formatStoredDate(topic.due_date, 'dd MMM', { locale: es }) : 'Cierre'}
+                      <span className="text-muted-foreground">Fin:</span>
+                      {topic.due_date ? formatStoredDate(topic.due_date, 'dd MMM', { locale: es }) : '—'}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
