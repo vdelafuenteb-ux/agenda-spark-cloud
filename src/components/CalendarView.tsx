@@ -91,6 +91,7 @@ export function CalendarView({ topics }: CalendarViewProps) {
 
   const eventsByDay = useMemo(() => {
     const map = new Map<string, DayEvent[]>();
+    const activeReminders = showPeriodicEvents ? reminders : [];
     for (const day of calendarDays) {
       const key = format(day, 'yyyy-MM-dd');
       const events: DayEvent[] = [];
@@ -100,11 +101,11 @@ export function CalendarView({ topics }: CalendarViewProps) {
         events.push({ label: holidayName, color: '#fca5a5', type: 'holiday' });
       }
 
-      events.push(...getEventsForDay(day, reminders, activeTopics));
+      events.push(...getEventsForDay(day, activeReminders, activeTopics));
       if (events.length > 0) map.set(key, events);
     }
     return map;
-  }, [calendarDays, reminders, activeTopics, holidayMap]);
+  }, [calendarDays, reminders, activeTopics, holidayMap, showPeriodicEvents]);
 
   const weekDays = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
