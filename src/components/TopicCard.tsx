@@ -202,6 +202,16 @@ export function TopicCard({
                   </PopoverContent>
                 </Popover>
 
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 text-xs text-destructive hover:text-destructive ml-auto"
+                  onClick={() => onDelete(topic.id)}
+                >
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </div>
+
               <TagSelector
                 allTags={allTags}
                 topicTags={topicTags}
@@ -212,15 +222,6 @@ export function TopicCard({
                   if (newTag) onAddTag(topic.id, newTag.id);
                 }}
               />
-
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 text-xs text-destructive hover:text-destructive ml-auto"
-                  onClick={() => onDelete(topic.id)}
-                >
-                  <Trash2 className="h-3 w-3" />
-                </Button>
-              </div>
 
               <Button
                 size="sm"
