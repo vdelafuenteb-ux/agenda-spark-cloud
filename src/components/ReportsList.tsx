@@ -161,8 +161,8 @@ export function ReportsList({ onNewReport }: ReportsListProps) {
                     <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => handleCopy(r.content)}>
                       <Copy className="h-3 w-3" />
                     </Button>
-                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => handlePrint(r.content, r.title)}>
-                      <Printer className="h-3 w-3" />
+                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => handleDownloadPdf(r.content, r.title, r.period_start, r.period_end)}>
+                      <FileDown className="h-3 w-3" />
                     </Button>
                     <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive hover:text-destructive" onClick={() => deleteReport.mutate(r.id)}>
                       <Trash2 className="h-3 w-3" />
