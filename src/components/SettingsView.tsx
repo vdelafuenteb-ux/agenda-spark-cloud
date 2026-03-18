@@ -17,12 +17,14 @@ import {
 import { toast } from 'sonner';
 import type { Tag } from '@/hooks/useTags';
 import type { Assignee } from '@/hooks/useAssignees';
+import { EmailScheduleSettings } from '@/components/EmailScheduleSettings';
 
 const TAG_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#8b5cf6', '#ec4899', '#6b7280'];
 
 interface SettingsViewProps {
   tags: Tag[];
   assignees: Assignee[];
+  topics: { id: string; title: string; assignee: string | null; status: string }[];
   onDeleteTag: (id: string) => void;
   onCreateTag: (data: { name: string; color: string }) => Promise<any>;
   onUpdateTag: (id: string, name: string) => void;
@@ -31,7 +33,7 @@ interface SettingsViewProps {
   onUpdateAssignee: (id: string, data: { name?: string; email?: string | null }) => void;
 }
 
-export function SettingsView({ tags, assignees, onDeleteTag, onCreateTag, onUpdateTag, onDeleteAssignee, onCreateAssignee, onUpdateAssignee }: SettingsViewProps) {
+export function SettingsView({ tags, assignees, topics, onDeleteTag, onCreateTag, onUpdateTag, onDeleteAssignee, onCreateAssignee, onUpdateAssignee }: SettingsViewProps) {
   const [newTagName, setNewTagName] = useState('');
   const [newTagColor, setNewTagColor] = useState(TAG_COLORS[0]);
   const [newAssigneeName, setNewAssigneeName] = useState('');
@@ -306,6 +308,9 @@ export function SettingsView({ tags, assignees, onDeleteTag, onCreateTag, onUpda
             )}
           </CardContent>
         </Card>
+
+        {/* Email Schedules */}
+        <EmailScheduleSettings assignees={assignees} topics={topics} />
       </div>
     </main>
   );
