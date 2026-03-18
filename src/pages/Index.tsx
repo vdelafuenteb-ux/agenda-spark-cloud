@@ -14,6 +14,7 @@ import { isStoredDateToday } from '@/lib/date';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Plus, FileText } from 'lucide-react';
+import { NotesView } from '@/components/NotesView';
 import { toast } from 'sonner';
 
 type Filter = 'todos' | 'hoy' | 'alta' | 'informes';
