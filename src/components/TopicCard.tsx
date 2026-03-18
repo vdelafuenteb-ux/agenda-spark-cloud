@@ -258,14 +258,19 @@ export function TopicCard({
 
               <div className="space-y-1.5">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Subtareas</p>
-                {topic.subtasks.map((subtask) => (
-                  <div key={subtask.id} className="flex items-center gap-2 group">
+                {topic.subtasks.map((subtask) => {
+                  const subtaskIsToday = highlightToday && isStoredDateToday(subtask.due_date);
+                  return (
+                  <div key={subtask.id} className={cn('flex items-center gap-2 group rounded-md px-1.5 py-1 -mx-1.5 transition-colors', subtaskIsToday && 'bg-accent/50 ring-1 ring-accent')}>
                     <Checkbox
                       checked={subtask.completed}
                       onCheckedChange={(checked) => onToggleSubtask(subtask.id, !!checked)}
                     />
                     <div className={cn('flex-1 min-w-0', subtask.completed && 'line-through text-muted-foreground')}>
                       <span className="text-sm">{subtask.title}</span>
+                      {subtaskIsToday && (
+                        <Badge className="ml-2 text-[9px] px-1 py-0 bg-primary text-primary-foreground border-transparent">Hoy</Badge>
+                      )}
                       <span className="ml-2 text-[10px] text-muted-foreground">
                         {formatStoredDate(subtask.created_at?.slice(0, 10), 'dd MMM', { locale: es })}
                       </span>
