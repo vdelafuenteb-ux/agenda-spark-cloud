@@ -82,6 +82,7 @@ export function TopicCard({
   const totalCount = topic.subtasks.length;
   const progress = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
   const isCompleted = topic.status === 'completado';
+  const isSeguimiento = topic.status === 'seguimiento';
 
   const handleAddSubtask = () => {
     if (!newSubtask.trim()) return;
