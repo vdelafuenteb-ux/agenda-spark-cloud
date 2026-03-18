@@ -22,7 +22,7 @@ import { CalendarView } from '@/components/CalendarView';
 import { SettingsView } from '@/components/SettingsView';
 import { toast } from 'sonner';
 
-type Filter = 'todos' | 'revision' | 'informes' | 'notas' | 'dashboard' | 'checklist' | 'configuracion';
+type Filter = 'todos' | 'revision' | 'informes' | 'notas' | 'dashboard' | 'checklist' | 'calendario' | 'configuracion';
 type StatusTab = 'activo' | 'seguimiento' | 'pausado' | 'completado';
 
 const Index = () => {
