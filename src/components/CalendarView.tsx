@@ -9,6 +9,8 @@ import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, CheckCircle2, Circle
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { ReminderManager } from '@/components/ReminderManager';
 import { useReminders, type Reminder } from '@/hooks/useReminders';
 import { useReminderCompletions } from '@/hooks/useReminderCompletions';
@@ -74,6 +76,7 @@ function getEventsForDay(
 export function CalendarView({ topics }: CalendarViewProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [showReminders, setShowReminders] = useState(false);
+  const [showPeriodicEvents, setShowPeriodicEvents] = useState(true);
   const { reminders, createReminder, deleteReminder } = useReminders();
   const { isCompleted, toggleCompletion } = useReminderCompletions();
   const { holidayMap } = useHolidays(getYear(currentMonth));
@@ -88,6 +91,7 @@ export function CalendarView({ topics }: CalendarViewProps) {
 
   const eventsByDay = useMemo(() => {
     const map = new Map<string, DayEvent[]>();
+    const activeReminders = showPeriodicEvents ? reminders : [];
     for (const day of calendarDays) {
       const key = format(day, 'yyyy-MM-dd');
       const events: DayEvent[] = [];
@@ -97,11 +101,11 @@ export function CalendarView({ topics }: CalendarViewProps) {
         events.push({ label: holidayName, color: '#fca5a5', type: 'holiday' });
       }
 
-      events.push(...getEventsForDay(day, reminders, activeTopics));
+      events.push(...getEventsForDay(day, activeReminders, activeTopics));
       if (events.length > 0) map.set(key, events);
     }
     return map;
-  }, [calendarDays, reminders, activeTopics, holidayMap]);
+  }, [calendarDays, reminders, activeTopics, holidayMap, showPeriodicEvents]);
 
   const weekDays = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
@@ -125,7 +129,16 @@ export function CalendarView({ topics }: CalendarViewProps) {
           </Button>
         </div>
 
-        {/* Grid */}
+        <div className="flex items-center gap-2 justify-end">
+          <Label htmlFor="show-periodic" className="text-xs text-muted-foreground cursor-pointer">
+            Mostrar recordatorios
+          </Label>
+          <Switch
+            id="show-periodic"
+            checked={showPeriodicEvents}
+            onCheckedChange={setShowPeriodicEvents}
+          />
+        </div>
         <div className="grid grid-cols-7 gap-px bg-border rounded-lg overflow-hidden">
           {weekDays.map((d) => (
             <div key={d} className="bg-muted px-1 py-1.5 text-center text-[10px] font-medium text-muted-foreground">
