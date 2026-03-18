@@ -46,6 +46,7 @@ export function CreateTopicModal({ open, onOpenChange, allTags, assignees, onCre
   const [priority, setPriority] = useState<Priority>('media');
   const [status, setStatus] = useState<Status>('activo');
   const [assignee, setAssignee] = useState('');
+  const [newAssigneeName, setNewAssigneeName] = useState('');
   const [dueDate, setDueDate] = useState<Date>();
   const [startDate, setStartDate] = useState<Date>(new Date());
   const [subtasks, setSubtasks] = useState<string[]>([]);
