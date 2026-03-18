@@ -37,11 +37,18 @@ export function NotificationSection({ topic, assignees }: NotificationSectionPro
           to_email: assignee.email,
           to_name: assignee.name,
           topic_title: topic.title,
+          start_date: topic.start_date,
+          due_date: topic.due_date,
           subtasks: topic.subtasks.map((s) => ({
             title: s.title,
             completed: s.completed,
             due_date: s.due_date,
+            notes: s.notes || null,
           })),
+          progress_entries: topic.progress_entries
+            .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+            .slice(0, 5)
+            .map((e) => ({ content: e.content, created_at: e.created_at })),
         },
       });
 
