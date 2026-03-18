@@ -1,4 +1,4 @@
-import { Search, X, User, ChevronsDownUp, ChevronsUpDown, Mail } from 'lucide-react';
+import { Search, X, User, ChevronsDownUp, ChevronsUpDown, Mail, CalendarOff } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -16,9 +16,11 @@ interface FilterBarProps {
   forceExpand?: boolean | null;
   onToggleExpand?: () => void;
   onBulkEmail?: () => void;
+  filterNoDueDate?: boolean;
+  onToggleNoDueDate?: () => void;
 }
 
-export function FilterBar({ searchQuery, onSearchChange, allTags, selectedTagIds, onToggleTag, assignees, selectedAssignee, onAssigneeChange, forceExpand, onToggleExpand, onBulkEmail }: FilterBarProps) {
+export function FilterBar({ searchQuery, onSearchChange, allTags, selectedTagIds, onToggleTag, assignees, selectedAssignee, onAssigneeChange, forceExpand, onToggleExpand, onBulkEmail, filterNoDueDate, onToggleNoDueDate }: FilterBarProps) {
   return (
     <div className="space-y-2">
       {/* Search input */}
@@ -63,6 +65,19 @@ export function FilterBar({ searchQuery, onSearchChange, allTags, selectedTagIds
               ))}
             </SelectContent>
           </Select>
+        )}
+
+        {/* No due date filter */}
+        {onToggleNoDueDate && (
+          <Button
+            size="sm"
+            variant={filterNoDueDate ? "default" : "outline"}
+            className="h-9 text-xs gap-1 shrink-0"
+            onClick={onToggleNoDueDate}
+          >
+            <CalendarOff className="h-3.5 w-3.5" />
+            Sin fecha fin
+          </Button>
         )}
 
         {/* Bulk email button */}

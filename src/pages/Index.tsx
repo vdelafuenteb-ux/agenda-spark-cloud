@@ -44,6 +44,7 @@ const Index = () => {
   const [selectedAssignee, setSelectedAssignee] = useState<string>('');
   const [forceExpand, setForceExpand] = useState<boolean | null>(null);
   const [bulkEmailOpen, setBulkEmailOpen] = useState(false);
+  const [filterNoDueDate, setFilterNoDueDate] = useState(false);
 
   const toggleTagFilter = useCallback((tagId: string) => {
     setSelectedTagIds((prev) => (prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]));
@@ -63,10 +64,11 @@ const Index = () => {
         if (!selectedTagIds.some((id) => topicTagIds.includes(id))) return false;
       }
       if (selectedAssignee && topic.assignee !== selectedAssignee) return false;
+      if (filterNoDueDate && topic.due_date) return false;
       return true;
     });
     return filtered.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
-  }, [topics, statusTab, searchQuery, selectedTagIds, selectedAssignee, getTagsForTopic]);
+  }, [topics, statusTab, searchQuery, selectedTagIds, selectedAssignee, filterNoDueDate, getTagsForTopic]);
 
   const statusCounts = useMemo(() => {
     const counts = { activo: 0, seguimiento: 0, pausado: 0, completado: 0 };
@@ -291,6 +293,8 @@ const Index = () => {
                       forceExpand={forceExpand}
                       onToggleExpand={() => setForceExpand(prev => !prev)}
                       onBulkEmail={bulkEmailAssignee ? () => setBulkEmailOpen(true) : undefined}
+                      filterNoDueDate={filterNoDueDate}
+                      onToggleNoDueDate={() => setFilterNoDueDate(prev => !prev)}
                     />
 
                     {isLoading ? (
