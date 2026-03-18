@@ -65,12 +65,6 @@ export function useNotes() {
   const notes = notesQuery.data ?? [];
   const noteTags = noteTagsQuery.data ?? [];
 
-  const invalidateAll = () => {
-    qc.invalidateQueries({ queryKey: ['notebooks'] });
-    qc.invalidateQueries({ queryKey: ['notes'] });
-    qc.invalidateQueries({ queryKey: ['note_tags'] });
-  };
-
   const createNotebook = useMutation({
     mutationFn: async (data: { name: string; color: string }) => {
       const { data: user } = await supabase.auth.getUser();
@@ -99,7 +93,11 @@ export function useNotes() {
       const { error } = await supabase.from('notebooks').delete().eq('id', id);
       if (error) throw error;
     },
-    onSuccess: invalidateAll,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['notebooks'] });
+      qc.invalidateQueries({ queryKey: ['notes'] });
+      qc.invalidateQueries({ queryKey: ['note_tags'] });
+    },
   });
 
   const createNote = useMutation({
@@ -127,7 +125,19 @@ export function useNotes() {
       const { error } = await supabase.from('notes').update(data).eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['notes'] }),
+    // Optimistic update for instant save feedback
+    onMutate: async ({ id, ...data }) => {
+      await qc.cancelQueries({ queryKey: ['notes'] });
+      const previous = qc.getQueryData<Note[]>(['notes']);
+      qc.setQueryData<Note[]>(['notes'], (old = []) =>
+        old.map((n) => (n.id === id ? { ...n, ...data, updated_at: new Date().toISOString() } : n)),
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous) qc.setQueryData(['notes'], ctx.previous);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ['notes'] }),
   });
 
   const deleteNote = useMutation({
@@ -135,7 +145,19 @@ export function useNotes() {
       const { error } = await supabase.from('notes').delete().eq('id', id);
       if (error) throw error;
     },
-    onSuccess: invalidateAll,
+    onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: ['notes'] });
+      const previous = qc.getQueryData<Note[]>(['notes']);
+      qc.setQueryData<Note[]>(['notes'], (old = []) => old.filter((n) => n.id !== id));
+      return { previous };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous) qc.setQueryData(['notes'], ctx.previous);
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ['notes'] });
+      qc.invalidateQueries({ queryKey: ['note_tags'] });
+    },
   });
 
   const addNoteTag = useMutation({
