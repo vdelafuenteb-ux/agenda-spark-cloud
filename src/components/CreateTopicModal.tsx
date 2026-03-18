@@ -27,6 +27,7 @@ interface CreateTopicModalProps {
     title: string;
     priority: Priority;
     status: Status;
+    start_date: string | null;
     due_date: string | null;
     subtasks: string[];
     tagIds: string[];
@@ -41,6 +42,7 @@ export function CreateTopicModal({ open, onOpenChange, allTags, onSubmit, isPend
   const [priority, setPriority] = useState<Priority>('media');
   const [status, setStatus] = useState<Status>('activo');
   const [dueDate, setDueDate] = useState<Date>();
+  const [startDate, setStartDate] = useState<Date>(new Date());
   const [subtasks, setSubtasks] = useState<string[]>([]);
   const [newSubtask, setNewSubtask] = useState('');
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
@@ -54,6 +56,7 @@ export function CreateTopicModal({ open, onOpenChange, allTags, onSubmit, isPend
     setPriority('media');
     setStatus('activo');
     setDueDate(undefined);
+    setStartDate(new Date());
     setSubtasks([]);
     setNewSubtask('');
     setSelectedTagIds([]);
@@ -81,6 +84,7 @@ export function CreateTopicModal({ open, onOpenChange, allTags, onSubmit, isPend
       title: title.trim(),
       priority,
       status,
+      start_date: toStoredDate(startDate),
       due_date: toStoredDate(dueDate),
       subtasks,
       tagIds: selectedTagIds,
@@ -131,6 +135,21 @@ export function CreateTopicModal({ open, onOpenChange, allTags, onSubmit, isPend
                   <SelectItem value="pausado">Pausado</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Fecha inicio</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-8 text-xs gap-1">
+                    <CalendarIcon className="h-3 w-3" />
+                    {startDate ? format(startDate, 'dd MMM yyyy', { locale: es }) : 'Hoy'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={startDate} onSelect={(d) => d && setStartDate(d)} initialFocus />
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div className="space-y-1.5">
