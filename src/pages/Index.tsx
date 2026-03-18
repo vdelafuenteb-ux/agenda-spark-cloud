@@ -154,7 +154,9 @@ const Index = () => {
             )}
           </header>
 
-          {filter === 'notas' ? (
+          {filter === 'dashboard' ? (
+            <DashboardView topics={topics} />
+          ) : filter === 'notas' ? (
             <NotesView />
           ) : filter === 'revision' ? (
             <main className="flex-1 overflow-auto p-3 md:p-4">
