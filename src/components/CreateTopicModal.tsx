@@ -82,6 +82,7 @@ export function CreateTopicModal({ open, onOpenChange, allTags, onSubmit, isPend
 
   const handleSubmit = async () => {
     if (!title.trim()) return;
+    if (status === 'seguimiento' && !assignee.trim()) return;
     await onSubmit({
       title: title.trim(),
       priority,
@@ -92,6 +93,7 @@ export function CreateTopicModal({ open, onOpenChange, allTags, onSubmit, isPend
       tagIds: selectedTagIds,
       newTags: pendingNewTags,
       notes,
+      assignee: status === 'seguimiento' ? assignee.trim() : undefined,
     });
     reset();
   };
