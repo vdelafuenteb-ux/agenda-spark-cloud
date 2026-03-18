@@ -1,6 +1,5 @@
 import { Search, X, User } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { Tag } from '@/hooks/useTags';
 
