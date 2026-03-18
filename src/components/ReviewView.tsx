@@ -12,6 +12,8 @@ type ReviewTab = 'hoy' | 'atrasados' | 'proximos';
 interface ReviewViewProps {
   topics: TopicWithSubtasks[];
   allTags: Tag[];
+  assignees: Assignee[];
+  onCreateAssignee: (name: string) => Promise<Assignee>;
   getTagsForTopic: (id: string) => Tag[];
   onUpdate: (id: string, data: any) => void;
   onDelete: (id: string) => void;
