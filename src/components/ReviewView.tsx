@@ -36,9 +36,17 @@ export function ReviewView(props: ReviewViewProps) {
     return topicDueToday || hasSubtaskDueToday;
   });
 
-  const overdueTopics = activeTopics.filter(t => isStoredDateOverdue(t.due_date));
+  const overdueTopics = activeTopics.filter(t => {
+    const topicOverdue = isStoredDateOverdue(t.due_date);
+    const hasSubtaskOverdue = t.subtasks.some(s => !s.completed && isStoredDateOverdue(s.due_date));
+    return topicOverdue || hasSubtaskOverdue;
+  });
 
-  const upcomingTopics = activeTopics.filter(t => isStoredDateUpcoming(t.due_date, 3));
+  const upcomingTopics = activeTopics.filter(t => {
+    const topicUpcoming = isStoredDateUpcoming(t.due_date, 3);
+    const hasSubtaskUpcoming = t.subtasks.some(s => !s.completed && isStoredDateUpcoming(s.due_date, 3));
+    return topicUpcoming || hasSubtaskUpcoming;
+  });
 
   const currentTopics = tab === 'hoy' ? todayTopics : tab === 'atrasados' ? overdueTopics : upcomingTopics;
 
