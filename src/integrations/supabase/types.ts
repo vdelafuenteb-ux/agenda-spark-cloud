@@ -265,6 +265,7 @@ export type Database = {
           created_at: string
           id: string
           recurrence_day: number
+          recurrence_months: number
           recurrence_type: string
           recurrence_week: number | null
           title: string
@@ -275,6 +276,7 @@ export type Database = {
           created_at?: string
           id?: string
           recurrence_day: number
+          recurrence_months?: number
           recurrence_type: string
           recurrence_week?: number | null
           title: string
@@ -285,6 +287,7 @@ export type Database = {
           created_at?: string
           id?: string
           recurrence_day?: number
+          recurrence_months?: number
           recurrence_type?: string
           recurrence_week?: number | null
           title?: string

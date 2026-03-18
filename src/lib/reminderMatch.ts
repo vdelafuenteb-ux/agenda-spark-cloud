@@ -1,4 +1,4 @@
-import { getDate, getDay, lastDayOfMonth, getMonth, getYear } from 'date-fns';
+import { getDate, getDay, lastDayOfMonth, getMonth, getYear, differenceInMonths, startOfMonth } from 'date-fns';
 import type { Reminder } from '@/hooks/useReminders';
 
 /**
@@ -15,17 +15,31 @@ function getLastBusinessDay(year: number, month: number): number {
 }
 
 /**
+ * Check if the month interval matches (every N months from creation).
+ */
+function monthIntervalMatches(r: Reminder, date: Date): boolean {
+  const months = r.recurrence_months ?? 1;
+  if (months <= 1) return true;
+  const createdDate = new Date(r.created_at);
+  const diff = differenceInMonths(startOfMonth(date), startOfMonth(createdDate));
+  return diff >= 0 && diff % months === 0;
+}
+
+/**
  * Check if a reminder matches a given date based on its recurrence pattern.
  */
 export function reminderMatchesDate(r: Reminder, date: Date): boolean {
   const dayOfMonth = getDate(date);
   const dayOfWeek = getDay(date);
 
-  if (r.recurrence_type === 'monthly' && r.recurrence_day === dayOfMonth) {
-    return true;
+  if (r.recurrence_type === 'weekly') {
+    return r.recurrence_day === dayOfWeek;
   }
 
-  if (r.recurrence_type === 'weekly' && r.recurrence_day === dayOfWeek) {
+  // For monthly types, check month interval
+  if (!monthIntervalMatches(r, date)) return false;
+
+  if (r.recurrence_type === 'monthly' && r.recurrence_day === dayOfMonth) {
     return true;
   }
 
