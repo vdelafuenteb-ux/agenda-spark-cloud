@@ -172,6 +172,8 @@ const Index = () => {
             <DashboardView topics={topics} />
           ) : filter === 'checklist' ? (
             <ChecklistView />
+          ) : filter === 'calendario' ? (
+            <CalendarView topics={topics} />
           ) : filter === 'notas' ? (
             <NotesView />
           ) : filter === 'revision' ? (

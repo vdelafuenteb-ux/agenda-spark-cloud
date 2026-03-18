@@ -28,6 +28,7 @@ const filters: { key: Filter; label: string; icon: typeof LayoutList }[] = [
   { key: 'todos', label: 'Todos los temas', icon: LayoutList },
   { key: 'revision', label: 'Revisión', icon: Eye },
   { key: 'checklist', label: 'Checklist', icon: CheckSquare },
+  { key: 'calendario', label: 'Calendario', icon: CalendarDays },
   { key: 'notas', label: 'Notas', icon: StickyNote },
   { key: 'informes', label: 'Informes', icon: FileText },
   { key: 'configuracion', label: 'Configuración', icon: Settings },
