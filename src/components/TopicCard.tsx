@@ -135,9 +135,64 @@ export function TopicCard({
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className={cn('font-medium text-sm text-card-foreground truncate', isCompleted && 'line-through')}>
-              {topic.title}
-            </span>
+            {editingTitle ? (
+              <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                <input
+                  value={titleDraft}
+                  onChange={(e) => setTitleDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      if (titleDraft.trim() && titleDraft.trim() !== topic.title) {
+                        onUpdate(topic.id, { title: titleDraft.trim() });
+                      }
+                      setEditingTitle(false);
+                    }
+                    if (e.key === 'Escape') {
+                      setTitleDraft(topic.title);
+                      setEditingTitle(false);
+                    }
+                  }}
+                  className="font-medium text-sm text-card-foreground bg-transparent border-b border-primary outline-none min-w-[120px]"
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (titleDraft.trim() && titleDraft.trim() !== topic.title) {
+                      onUpdate(topic.id, { title: titleDraft.trim() });
+                    }
+                    setEditingTitle(false);
+                  }}
+                  className="p-0.5 text-emerald-500 hover:text-emerald-600"
+                >
+                  <Check className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setTitleDraft(topic.title);
+                    setEditingTitle(false);
+                  }}
+                  className="p-0.5 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ) : (
+              <span
+                className={cn('font-medium text-sm text-card-foreground truncate cursor-pointer hover:underline', isCompleted && 'line-through')}
+                onDoubleClick={(e) => {
+                  e.stopPropagation();
+                  setTitleDraft(topic.title);
+                  setEditingTitle(true);
+                }}
+                title="Doble clic para editar"
+              >
+                {topic.title}
+              </span>
+            )}
             <Badge className={cn('text-[10px] px-1.5 py-0', priorityConfig[topic.priority].className)}>
               {priorityConfig[topic.priority].label}
             </Badge>
