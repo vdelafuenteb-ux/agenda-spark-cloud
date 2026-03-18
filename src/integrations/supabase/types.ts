@@ -183,6 +183,38 @@ export type Database = {
           },
         ]
       }
+      reminder_completions: {
+        Row: {
+          completed_date: string
+          created_at: string
+          id: string
+          reminder_id: string
+          user_id: string
+        }
+        Insert: {
+          completed_date: string
+          created_at?: string
+          id?: string
+          reminder_id: string
+          user_id: string
+        }
+        Update: {
+          completed_date?: string
+          created_at?: string
+          id?: string
+          reminder_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reminder_completions_reminder_id_fkey"
+            columns: ["reminder_id"]
+            isOneToOne: false
+            referencedRelation: "reminders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reminders: {
         Row: {
           color: string
