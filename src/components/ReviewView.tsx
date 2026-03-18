@@ -41,32 +41,36 @@ export function ReviewView(props: ReviewViewProps) {
 
   const activeTopics = topics.filter(t => t.status === 'activo' || t.status === 'seguimiento');
 
-  const todayTopics = activeTopics.filter(t => {
-    const topicDueToday = isStoredDateToday(t.due_date);
-    const hasSubtaskDueToday = t.subtasks.some(s => isStoredDateToday(s.due_date));
-    return topicDueToday || hasSubtaskDueToday;
-  });
+  const getTodayMatchCount = (topic: TopicWithSubtasks) => {
+    const subtaskCount = topic.subtasks.filter(s => isStoredDateToday(s.due_date)).length;
+    return subtaskCount > 0 ? subtaskCount : (isStoredDateToday(topic.due_date) ? 1 : 0);
+  };
+
+  const getOverdueMatchCount = (topic: TopicWithSubtasks) => {
+    const subtaskCount = topic.subtasks.filter(s => !s.completed && isStoredDateOverdue(s.due_date)).length;
+    return subtaskCount > 0 ? subtaskCount : (isStoredDateOverdue(topic.due_date) ? 1 : 0);
+  };
+
+  const getUpcomingMatchCount = (topic: TopicWithSubtasks) => {
+    const subtaskCount = topic.subtasks.filter(s => !s.completed && isStoredDateUpcoming(s.due_date, 3)).length;
+    return subtaskCount > 0 ? subtaskCount : (isStoredDateUpcoming(topic.due_date, 3) ? 1 : 0);
+  };
+
+  const todayTopics = activeTopics.filter(t => getTodayMatchCount(t) > 0);
 
   const todayReminders = useMemo(() => getRemindersForDate(reminders, new Date()), [reminders]);
   const todayDateStr = format(new Date(), 'yyyy-MM-dd');
 
-  const overdueTopics = activeTopics.filter(t => {
-    const topicOverdue = isStoredDateOverdue(t.due_date);
-    const hasSubtaskOverdue = t.subtasks.some(s => !s.completed && isStoredDateOverdue(s.due_date));
-    return topicOverdue || hasSubtaskOverdue;
-  });
+  const overdueTopics = activeTopics.filter(t => getOverdueMatchCount(t) > 0);
 
-  const upcomingTopics = activeTopics.filter(t => {
-    const topicUpcoming = isStoredDateUpcoming(t.due_date, 3);
-    const hasSubtaskUpcoming = t.subtasks.some(s => !s.completed && isStoredDateUpcoming(s.due_date, 3));
-    return topicUpcoming || hasSubtaskUpcoming;
-  });
+  const upcomingTopics = activeTopics.filter(t => getUpcomingMatchCount(t) > 0);
 
   const upcomingReminders = useMemo(() => getUpcomingReminders(reminders, 3), [reminders]);
 
   const currentTopics = tab === 'hoy' ? todayTopics : tab === 'atrasados' ? overdueTopics : upcomingTopics;
-  const todayTotalCount = todayTopics.length + todayReminders.length;
-  const upcomingTotalCount = upcomingTopics.length + upcomingReminders.length;
+  const todayTotalCount = todayTopics.reduce((sum, topic) => sum + getTodayMatchCount(topic), 0) + todayReminders.length;
+  const overdueTotalCount = overdueTopics.reduce((sum, topic) => sum + getOverdueMatchCount(topic), 0);
+  const upcomingTotalCount = upcomingTopics.reduce((sum, topic) => sum + getUpcomingMatchCount(topic), 0) + upcomingReminders.length;
 
   const emptyMessages: Record<ReviewTab, string> = {
     hoy: 'No hay temas programados para hoy.',
@@ -90,8 +94,8 @@ export function ReviewView(props: ReviewViewProps) {
           </TabsTrigger>
           <TabsTrigger value="atrasados" className="flex-1 text-xs gap-1.5">
             Atrasados
-            {overdueTopics.length > 0 && (
-              <Badge variant="destructive" className="h-5 min-w-5 px-1.5 text-[10px]">{overdueTopics.length}</Badge>
+            {overdueTotalCount > 0 && (
+              <Badge variant="destructive" className="h-5 min-w-5 px-1.5 text-[10px]">{overdueTotalCount}</Badge>
             )}
           </TabsTrigger>
           <TabsTrigger value="proximos" className="flex-1 text-xs gap-1.5">
