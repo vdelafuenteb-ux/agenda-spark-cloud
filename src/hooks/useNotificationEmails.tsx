@@ -62,6 +62,7 @@ export function useNotificationEmails(topicId?: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notification_emails'] });
+      queryClient.invalidateQueries({ queryKey: ['notification_emails_all'] });
     },
   });
 
