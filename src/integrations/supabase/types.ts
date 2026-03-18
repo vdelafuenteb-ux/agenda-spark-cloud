@@ -271,6 +271,7 @@ export type Database = {
       }
       topics: {
         Row: {
+          assignee: string | null
           created_at: string
           due_date: string | null
           id: string
@@ -284,6 +285,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          assignee?: string | null
           created_at?: string
           due_date?: string | null
           id?: string
@@ -297,6 +299,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          assignee?: string | null
           created_at?: string
           due_date?: string | null
           id?: string
@@ -320,7 +323,7 @@ export type Database = {
     }
     Enums: {
       topic_priority: "alta" | "media" | "baja"
-      topic_status: "activo" | "completado" | "pausado"
+      topic_status: "activo" | "completado" | "pausado" | "seguimiento"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -449,7 +452,7 @@ export const Constants = {
   public: {
     Enums: {
       topic_priority: ["alta", "media", "baja"],
-      topic_status: ["activo", "completado", "pausado"],
+      topic_status: ["activo", "completado", "pausado", "seguimiento"],
     },
   },
 } as const
