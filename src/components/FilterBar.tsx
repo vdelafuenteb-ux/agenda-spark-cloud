@@ -1,5 +1,6 @@
-import { Search, X, User } from 'lucide-react';
+import { Search, X, User, ChevronsDownUp, ChevronsUpDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { Tag } from '@/hooks/useTags';
 
@@ -12,9 +13,11 @@ interface FilterBarProps {
   assignees?: string[];
   selectedAssignee?: string;
   onAssigneeChange?: (assignee: string) => void;
+  forceExpand?: boolean | null;
+  onToggleExpand?: () => void;
 }
 
-export function FilterBar({ searchQuery, onSearchChange, allTags, selectedTagIds, onToggleTag, assignees, selectedAssignee, onAssigneeChange }: FilterBarProps) {
+export function FilterBar({ searchQuery, onSearchChange, allTags, selectedTagIds, onToggleTag, assignees, selectedAssignee, onAssigneeChange, forceExpand, onToggleExpand }: FilterBarProps) {
   return (
     <div className="space-y-2">
       {/* Search input */}
