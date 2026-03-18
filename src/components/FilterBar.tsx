@@ -1,5 +1,6 @@
-import { Search, X, User } from 'lucide-react';
+import { Search, X, User, ChevronsDownUp, ChevronsUpDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { Tag } from '@/hooks/useTags';
 
@@ -12,9 +13,11 @@ interface FilterBarProps {
   assignees?: string[];
   selectedAssignee?: string;
   onAssigneeChange?: (assignee: string) => void;
+  forceExpand?: boolean | null;
+  onToggleExpand?: () => void;
 }
 
-export function FilterBar({ searchQuery, onSearchChange, allTags, selectedTagIds, onToggleTag, assignees, selectedAssignee, onAssigneeChange }: FilterBarProps) {
+export function FilterBar({ searchQuery, onSearchChange, allTags, selectedTagIds, onToggleTag, assignees, selectedAssignee, onAssigneeChange, forceExpand, onToggleExpand }: FilterBarProps) {
   return (
     <div className="space-y-2">
       {/* Search input */}
@@ -36,6 +39,14 @@ export function FilterBar({ searchQuery, onSearchChange, allTags, selectedTagIds
             </button>
           )}
         </div>
+
+        {/* Expand/Collapse all */}
+        {onToggleExpand && (
+          <Button size="sm" variant="outline" className="h-9 text-xs gap-1 shrink-0" onClick={onToggleExpand}>
+            {forceExpand ? <ChevronsDownUp className="h-3.5 w-3.5" /> : <ChevronsUpDown className="h-3.5 w-3.5" />}
+            {forceExpand ? 'Contraer' : 'Expandir'}
+          </Button>
+        )}
 
         {/* Assignee filter */}
         {assignees && assignees.length > 0 && onAssigneeChange && (
