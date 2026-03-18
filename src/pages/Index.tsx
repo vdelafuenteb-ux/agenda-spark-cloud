@@ -109,62 +109,74 @@ const Index = () => {
         user_id: user!.id,
       });
 
-      // Batch all parallel inserts
-      const promises: (() => Promise<void>)[] = [];
+      const warnings: string[] = [];
+      const finalTagIds = [...data.tagIds];
+
+      for (const newTag of data.newTags) {
+        const { data: createdTag, error: tagErr } = await supabase
+          .from('tags')
+          .insert({ name: newTag.name, color: newTag.color, user_id: user!.id })
+          .select()
+          .single();
+
+        if (tagErr) {
+          throw new Error(`No se pudo crear la etiqueta "${newTag.name}"`);
+        }
+
+        finalTagIds.push(createdTag.id);
+      }
+
+      const operations: Promise<void>[] = [];
 
       if (data.subtasks.length > 0) {
-        promises.push(async () => {
+        operations.push((async () => {
           const { error } = await supabase.from('subtasks').insert(
             data.subtasks.map((title, i) => ({ topic_id: created.id, title, sort_order: i }))
           );
-          if (error) console.error('Subtask insert error:', error);
-        });
+          if (error) {
+            warnings.push('subtareas');
+            console.error('Subtask insert error:', error);
+          }
+        })());
       }
 
-      if (data.tagIds.length > 0) {
-        promises.push(async () => {
+      if (finalTagIds.length > 0) {
+        operations.push((async () => {
           const { error } = await supabase.from('topic_tags').insert(
-            data.tagIds.map((tag_id) => ({ topic_id: created.id, tag_id }))
+            finalTagIds.map((tag_id) => ({ topic_id: created.id, tag_id }))
           );
-          if (error) console.error('Tag link error:', error);
-        });
+          if (error) {
+            throw new Error('No se pudieron guardar las etiquetas del tema');
+          }
+        })());
       }
 
       if (data.notes.trim()) {
-        promises.push(async () => {
+        operations.push((async () => {
           const { error } = await supabase.from('progress_entries').insert({ topic_id: created.id, content: data.notes.trim() });
-          if (error) console.error('Notes insert error:', error);
-        });
+          if (error) {
+            warnings.push('nota inicial');
+            console.error('Notes insert error:', error);
+          }
+        })());
       }
 
-      // Create new tags sequentially then link
-      for (const newTag of data.newTags) {
-        try {
-          const { data: createdTag, error: tagErr } = await supabase
-            .from('tags')
-            .insert({ name: newTag.name, color: newTag.color, user_id: user!.id })
-            .select()
-            .single();
-          if (tagErr) { console.error('Tag create error:', tagErr); continue; }
-          promises.push(async () => {
-            const { error } = await supabase.from('topic_tags').insert({ topic_id: created.id, tag_id: createdTag.id });
-            if (error) console.error('Tag link error:', error);
-          });
-        } catch (e) {
-          console.error('New tag error:', e);
-        }
-      }
+      await Promise.all(operations);
 
-      await Promise.all(promises.map(fn => fn()));
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['topics'], refetchType: 'active' }),
+        queryClient.invalidateQueries({ queryKey: ['tags'], refetchType: 'active' }),
+        queryClient.invalidateQueries({ queryKey: ['topic_tags'], refetchType: 'active' }),
+      ]);
 
       setCreateOpen(false);
-      toast.success('Tema creado');
+      if (warnings.length > 0) {
+        toast.success(`Tema creado. Revisa: ${warnings.join(', ')}`);
+      } else {
+        toast.success('Tema creado');
+      }
     } catch (error: any) {
       toast.error(error.message || 'Error al crear tema');
-    } finally {
-      // Always invalidate to keep state in sync
-      queryClient.invalidateQueries({ queryKey: ['topics'] });
-      queryClient.invalidateQueries({ queryKey: ['tags'] });
     }
   };
 
