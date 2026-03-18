@@ -29,19 +29,18 @@ export function useChecklist() {
   const invalidate = () => qc.invalidateQueries({ queryKey: key });
 
   const addItem = useMutation({
-    mutationFn: async (title: string) => {
+    mutationFn: async ({ title, due_date }: { title: string; due_date?: string | null }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
       const { data, error } = await supabase
         .from('checklist_items')
-        .insert({ user_id: user.id, title: title.trim() })
+        .insert({ user_id: user.id, title: title.trim(), due_date: due_date ?? null })
         .select()
         .single();
       if (error) throw error;
       return data as ChecklistItem;
     },
-    // Optimistic: add item instantly
-    onMutate: async (title) => {
+    onMutate: async ({ title, due_date }) => {
       await qc.cancelQueries({ queryKey: key });
       const previous = qc.getQueryData<ChecklistItem[]>(key);
       const optimistic: ChecklistItem = {
@@ -49,6 +48,7 @@ export function useChecklist() {
         user_id: '',
         title: title.trim(),
         completed: false,
+        due_date: due_date ?? null,
         created_at: new Date().toISOString(),
       };
       qc.setQueryData<ChecklistItem[]>(key, (old = []) => [...old, optimistic]);
