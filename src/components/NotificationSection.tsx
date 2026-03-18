@@ -130,6 +130,13 @@ export function NotificationSection({ topic, assignees }: NotificationSectionPro
               <span className="text-[10px] ml-auto shrink-0 font-mono">
                 {format(new Date(email.sent_at), "dd MMM yy HH:mm", { locale: es })}
               </span>
+              <button
+                onClick={() => deleteEmail.mutate(email.id)}
+                className="shrink-0 text-muted-foreground hover:text-destructive transition-colors"
+                title="Eliminar registro"
+              >
+                <X className="h-3 w-3" />
+              </button>
             </div>
           ))}
         </div>
