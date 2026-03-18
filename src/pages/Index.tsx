@@ -98,7 +98,6 @@ const Index = () => {
     notes: string;
     assignee?: string;
   }) => {
-    let createdId: string | null = null;
     try {
       const created = await createTopic.mutateAsync({
         title: data.title,
@@ -109,7 +108,6 @@ const Index = () => {
         assignee: data.assignee || null,
         user_id: user!.id,
       });
-      createdId = created.id;
 
       // Batch all parallel inserts
       const promises: Promise<any>[] = [];
