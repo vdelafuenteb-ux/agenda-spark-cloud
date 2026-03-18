@@ -17,9 +17,10 @@ import { Button } from '@/components/ui/button';
 import { Plus, FileText } from 'lucide-react';
 import { NotesView } from '@/components/NotesView';
 import { DashboardView } from '@/components/DashboardView';
+import { ChecklistView } from '@/components/ChecklistView';
 import { toast } from 'sonner';
 
-type Filter = 'todos' | 'revision' | 'informes' | 'notas' | 'dashboard';
+type Filter = 'todos' | 'revision' | 'informes' | 'notas' | 'dashboard' | 'checklist';
 type StatusTab = 'activo' | 'seguimiento' | 'pausado' | 'completado';
 
 const Index = () => {
@@ -139,10 +140,10 @@ const Index = () => {
             <div className="flex items-center gap-2">
               <SidebarTrigger />
               <h1 className="text-sm font-semibold text-foreground">
-                {filter === 'notas' ? 'Notas' : filter === 'informes' ? 'Informes' : filter === 'revision' ? 'Revisión' : filter === 'dashboard' ? 'Dashboard' : 'Temas'}
+                {filter === 'notas' ? 'Notas' : filter === 'informes' ? 'Informes' : filter === 'revision' ? 'Revisión' : filter === 'dashboard' ? 'Dashboard' : filter === 'checklist' ? 'Checklist del Día' : 'Temas'}
               </h1>
             </div>
-            {filter !== 'notas' && filter !== 'informes' && filter !== 'revision' && filter !== 'dashboard' && (
+            {filter !== 'notas' && filter !== 'informes' && filter !== 'revision' && filter !== 'dashboard' && filter !== 'checklist' && (
               <div className="flex items-center gap-2">
                 <Button size="sm" variant="outline" className="h-8 text-xs gap-1" onClick={() => setReportOpen(true)}>
                   <FileText className="h-3 w-3" />
@@ -158,6 +159,8 @@ const Index = () => {
 
           {filter === 'dashboard' ? (
             <DashboardView topics={topics} />
+          ) : filter === 'checklist' ? (
+            <ChecklistView />
           ) : filter === 'notas' ? (
             <NotesView />
           ) : filter === 'revision' ? (
