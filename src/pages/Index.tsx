@@ -56,9 +56,15 @@ const Index = () => {
 
   const statusCounts = useMemo(() => ({
     activo: topics.filter((t) => t.status === 'activo').length,
+    seguimiento: topics.filter((t) => t.status === 'seguimiento').length,
     pausado: topics.filter((t) => t.status === 'pausado').length,
     completado: topics.filter((t) => t.status === 'completado').length,
   }), [topics]);
+
+  const uniqueAssignees = useMemo(() => {
+    const names = topics.filter(t => t.status === 'seguimiento' && t.assignee).map(t => t.assignee!);
+    return [...new Set(names)].sort();
+  }, [topics]);
 
   if (authLoading) {
     return (
