@@ -26,6 +26,8 @@ interface TopicCardProps {
   topic: TopicWithSubtasks;
   allTags: Tag[];
   topicTags: Tag[];
+  assignees: Assignee[];
+  onCreateAssignee: (name: string) => Promise<Assignee>;
   highlightToday?: boolean;
   onUpdate: (id: string, data: any) => void;
   onDelete: (id: string) => void;
