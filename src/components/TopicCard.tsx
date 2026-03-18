@@ -62,6 +62,7 @@ export function TopicCard({
   assignees,
   onCreateAssignee,
   highlightToday = false,
+  highlightUpcoming = false,
   onUpdate,
   onDelete,
   onAddSubtask,
@@ -73,7 +74,7 @@ export function TopicCard({
   onRemoveTag,
   onCreateTag,
 }: TopicCardProps) {
-  const [expanded, setExpanded] = useState(highlightToday);
+  const [expanded, setExpanded] = useState(highlightToday || highlightUpcoming);
   const [subtasksExpanded, setSubtasksExpanded] = useState(false);
   const [newSubtask, setNewSubtask] = useState('');
   const [newAssigneeName, setNewAssigneeName] = useState('');
