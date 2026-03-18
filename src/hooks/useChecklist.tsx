@@ -60,6 +60,28 @@ export function useChecklist() {
     onSettled: invalidate,
   });
 
+  const updateItem = useMutation({
+    mutationFn: async ({ id, ...data }: { id: string; completed?: boolean; due_date?: string | null }) => {
+      const { error } = await supabase
+        .from('checklist_items')
+        .update(data)
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onMutate: async ({ id, ...data }) => {
+      await qc.cancelQueries({ queryKey: key });
+      const previous = qc.getQueryData<ChecklistItem[]>(key);
+      qc.setQueryData<ChecklistItem[]>(key, (old = []) =>
+        old.map((i) => (i.id === id ? { ...i, ...data } : i)),
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous) qc.setQueryData(key, ctx.previous);
+    },
+    onSettled: invalidate,
+  });
+
   const toggleItem = useMutation({
     mutationFn: async ({ id, completed }: { id: string; completed: boolean }) => {
       const { error } = await supabase
