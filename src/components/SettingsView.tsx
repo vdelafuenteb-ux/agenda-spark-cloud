@@ -33,7 +33,7 @@ interface SettingsViewProps {
   onUpdateAssignee: (id: string, data: { name?: string; email?: string | null }) => void;
 }
 
-export function SettingsView({ tags, assignees, onDeleteTag, onCreateTag, onUpdateTag, onDeleteAssignee, onCreateAssignee, onUpdateAssignee }: SettingsViewProps) {
+export function SettingsView({ tags, assignees, topics, onDeleteTag, onCreateTag, onUpdateTag, onDeleteAssignee, onCreateAssignee, onUpdateAssignee }: SettingsViewProps) {
   const [newTagName, setNewTagName] = useState('');
   const [newTagColor, setNewTagColor] = useState(TAG_COLORS[0]);
   const [newAssigneeName, setNewAssigneeName] = useState('');
