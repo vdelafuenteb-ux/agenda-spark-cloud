@@ -7,6 +7,7 @@ import { TopicCard } from '@/components/TopicCard';
 import { ReportModal } from '@/components/ReportModal';
 import { ReportsList } from '@/components/ReportsList';
 import { FilterBar } from '@/components/FilterBar';
+import { BulkEmailModal } from '@/components/BulkEmailModal';
 import { CreateTopicModal } from '@/components/CreateTopicModal';
 import { AuthPage } from '@/components/AuthPage';
 import { ReviewView } from '@/components/ReviewView';
@@ -41,6 +42,7 @@ const Index = () => {
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [selectedAssignee, setSelectedAssignee] = useState<string>('');
   const [forceExpand, setForceExpand] = useState<boolean | null>(null);
+  const [bulkEmailOpen, setBulkEmailOpen] = useState(false);
 
   const toggleTagFilter = useCallback((tagId: string) => {
     setSelectedTagIds((prev) => (prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]));
@@ -76,6 +78,16 @@ const Index = () => {
     const names = topics.filter(t => t.status === 'seguimiento' && t.assignee).map(t => t.assignee!);
     return [...new Set(names)].sort();
   }, [topics]);
+
+  const bulkEmailAssignee = useMemo(() => {
+    if (statusTab !== 'seguimiento' || !selectedAssignee) return null;
+    return assignees.find(a => a.name === selectedAssignee) || null;
+  }, [statusTab, selectedAssignee, assignees]);
+
+  const bulkEmailTopics = useMemo(() => {
+    if (!bulkEmailAssignee) return [];
+    return topics.filter(t => t.status === 'seguimiento' && t.assignee === bulkEmailAssignee.name);
+  }, [topics, bulkEmailAssignee]);
 
   if (authLoading) {
     return (
@@ -274,6 +286,7 @@ const Index = () => {
                       onAssigneeChange={setSelectedAssignee}
                       forceExpand={forceExpand}
                       onToggleExpand={() => setForceExpand(prev => !prev)}
+                      onBulkEmail={bulkEmailAssignee ? () => setBulkEmailOpen(true) : undefined}
                     />
 
                     {isLoading ? (
@@ -328,6 +341,14 @@ const Index = () => {
           onSubmit={handleCreateTopic}
           isPending={createTopic.isPending}
         />
+        {bulkEmailAssignee && (
+          <BulkEmailModal
+            open={bulkEmailOpen}
+            onOpenChange={setBulkEmailOpen}
+            topics={bulkEmailTopics}
+            assignee={bulkEmailAssignee}
+          />
+        )}
       </div>
     </SidebarProvider>
   );
