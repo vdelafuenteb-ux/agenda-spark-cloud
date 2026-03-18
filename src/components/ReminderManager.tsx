@@ -21,6 +21,7 @@ type RecurrenceType = 'weekly' | 'monthly' | 'monthly_weekday' | 'last_business_
 function describeReminder(r: Reminder): string {
   if (r.recurrence_type === 'monthly') return `Día ${r.recurrence_day} de cada mes`;
   if (r.recurrence_type === 'weekly') return `Cada ${DAYS_OF_WEEK[r.recurrence_day]}`;
+  if (r.recurrence_type === 'last_business_day') return 'Último día hábil del mes';
   if (r.recurrence_type === 'monthly_weekday') {
     const ord = ORDINALS.find(o => o.value === String(r.recurrence_week));
     return `${ord?.label ?? ''} ${DAYS_OF_WEEK[r.recurrence_day]} de cada mes`;
