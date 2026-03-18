@@ -37,7 +37,7 @@ export function isStoredDateOverdue(value?: string | null) {
 export function isStoredDateUpcoming(value?: string | null, days = 3) {
   const date = parseStoredDate(value);
   if (!date) return false;
-  const today = startOfDay(new Date());
-  const limit = addDays(today, days);
-  return !isBefore(date, today) && !isAfter(date, limit);
+  const tomorrow = addDays(startOfDay(new Date()), 1);
+  const limit = addDays(startOfDay(new Date()), days);
+  return !isBefore(date, tomorrow) && !isAfter(date, limit);
 }
