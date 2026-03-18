@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils';
 import { formatStoredDate, parseStoredDate, toStoredDate } from '@/lib/date';
 import type { TopicWithSubtasks } from '@/hooks/useTopics';
 import type { Tag } from '@/hooks/useTags';
+import type { Assignee } from '@/hooks/useAssignees';
 import type { Database } from '@/integrations/supabase/types';
 
 type Priority = Database['public']['Enums']['topic_priority'];
