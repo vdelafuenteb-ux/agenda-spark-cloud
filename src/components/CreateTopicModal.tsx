@@ -24,6 +24,8 @@ interface CreateTopicModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   allTags: TagType[];
+  assignees: Assignee[];
+  onCreateAssignee: (name: string) => Promise<Assignee>;
   onSubmit: (data: {
     title: string;
     priority: Priority;
