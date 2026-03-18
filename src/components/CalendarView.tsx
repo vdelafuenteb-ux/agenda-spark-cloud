@@ -5,12 +5,13 @@ import {
   lastDayOfMonth,
 } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, CheckCircle2, Circle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
 import { ReminderManager } from '@/components/ReminderManager';
 import { useReminders, type Reminder } from '@/hooks/useReminders';
+import { useReminderCompletions } from '@/hooks/useReminderCompletions';
 import { useHolidays } from '@/hooks/useHolidays';
 import type { TopicWithSubtasks } from '@/hooks/useTopics';
 import { parseStoredDate } from '@/lib/date';
@@ -23,6 +24,7 @@ interface DayEvent {
   label: string;
   color: string;
   type: 'reminder' | 'due' | 'completed' | 'holiday';
+  reminderId?: string;
 }
 
 function getEventsForDay(
@@ -41,19 +43,16 @@ function getEventsForDay(
     } else if (r.recurrence_type === 'weekly' && r.recurrence_day === dayOfWeek) {
       matches = true;
     } else if (r.recurrence_type === 'monthly_weekday' && r.recurrence_day === dayOfWeek && r.recurrence_week != null) {
-      // Check nth weekday of month
       if (r.recurrence_week === -1) {
-        // Last occurrence: check if adding 7 days would exceed the month
         const lastDay = getDate(lastDayOfMonth(date));
         matches = dayOfMonth + 7 > lastDay;
       } else {
-        // Nth occurrence: day falls in the nth week range
         const nth = r.recurrence_week;
         matches = dayOfMonth > (nth - 1) * 7 && dayOfMonth <= nth * 7;
       }
     }
     if (matches) {
-      events.push({ label: r.title, color: r.color, type: 'reminder' });
+      events.push({ label: r.title, color: r.color, type: 'reminder', reminderId: r.id });
     }
   }
 
@@ -74,7 +73,9 @@ function getEventsForDay(
 
 export function CalendarView({ topics }: CalendarViewProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [showReminders, setShowReminders] = useState(false);
   const { reminders, createReminder, deleteReminder } = useReminders();
+  const { isCompleted, toggleCompletion } = useReminderCompletions();
   const { holidayMap } = useHolidays(getYear(currentMonth));
 
   const calendarDays = useMemo(() => {
@@ -91,7 +92,6 @@ export function CalendarView({ topics }: CalendarViewProps) {
       const key = format(day, 'yyyy-MM-dd');
       const events: DayEvent[] = [];
 
-      // Add holiday first
       const holidayName = holidayMap.get(key);
       if (holidayName) {
         events.push({ label: holidayName, color: '#fca5a5', type: 'holiday' });
@@ -104,6 +104,10 @@ export function CalendarView({ topics }: CalendarViewProps) {
   }, [calendarDays, reminders, activeTopics, holidayMap]);
 
   const weekDays = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+
+  const handleToggleCompletion = (reminderId: string, dateStr: string) => {
+    toggleCompletion.mutate({ reminder_id: reminderId, completed_date: dateStr });
+  };
 
   return (
     <div className="flex-1 overflow-auto p-3 md:p-4">
@@ -140,20 +144,25 @@ export function CalendarView({ topics }: CalendarViewProps) {
                 <PopoverTrigger asChild>
                   <button
                     className={`min-h-[72px] md:min-h-[88px] p-1 text-left align-top transition-colors hover:bg-accent/30 focus:outline-none bg-background ${!inMonth ? 'opacity-40' : ''}`}
-                    style={isHoliday && inMonth ? { backgroundColor: '#fef2f2' } : undefined}
+                    style={isHoliday && inMonth ? { backgroundColor: 'hsl(0 86% 97%)' } : undefined}
                   >
                     <span
-                      className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-medium ${today ? 'bg-primary text-primary-foreground' : isHoliday ? 'text-red-500 font-bold' : 'text-foreground'}`}
+                      className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-medium ${today ? 'bg-primary text-primary-foreground' : isHoliday ? 'text-destructive font-bold' : 'text-foreground'}`}
                     >
                       {format(day, 'd')}
                     </span>
                     <div className="mt-0.5 flex flex-col gap-0.5">
-                      {events.slice(0, 3).map((ev, i) => (
-                        <div key={i} className="flex items-center gap-1 truncate">
-                          <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ backgroundColor: ev.color }} />
-                          <span className={`text-[9px] md:text-[10px] truncate ${ev.type === 'holiday' ? 'text-red-400 font-medium' : 'text-muted-foreground'}`}>{ev.label}</span>
-                        </div>
-                      ))}
+                      {events.slice(0, 3).map((ev, i) => {
+                        const done = ev.reminderId ? isCompleted(ev.reminderId, key) : false;
+                        return (
+                          <div key={i} className="flex items-center gap-1 truncate">
+                            <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ backgroundColor: ev.color }} />
+                            <span className={`text-[9px] md:text-[10px] truncate ${ev.type === 'holiday' ? 'text-destructive/70 font-medium' : done ? 'text-muted-foreground line-through' : 'text-muted-foreground'}`}>
+                              {ev.label}
+                            </span>
+                          </div>
+                        );
+                      })}
                       {events.length > 3 && (
                         <span className="text-[9px] text-muted-foreground">+{events.length - 3} más</span>
                       )}
@@ -161,21 +170,47 @@ export function CalendarView({ topics }: CalendarViewProps) {
                   </button>
                 </PopoverTrigger>
                 {events.length > 0 && (
-                  <PopoverContent className="w-64 p-3 space-y-2" align="start">
+                  <PopoverContent className="w-72 p-3 space-y-2" align="start">
                     <p className="text-xs font-semibold text-foreground capitalize">
                       {format(day, "EEEE d 'de' MMMM", { locale: es })}
                     </p>
-                    {events.map((ev, i) => (
-                      <div key={i} className="flex items-start gap-2">
-                        <span className="h-2.5 w-2.5 rounded-full mt-0.5 shrink-0" style={{ backgroundColor: ev.color }} />
-                        <div className="min-w-0">
-                          <p className="text-xs font-medium truncate">{ev.label}</p>
-                          <Badge variant={ev.type === 'holiday' ? 'destructive' : 'outline'} className="text-[9px] h-4 mt-0.5">
-                            {ev.type === 'holiday' ? 'Feriado' : ev.type === 'reminder' ? 'Recordatorio' : ev.type === 'due' ? 'Vencimiento' : 'Completada'}
-                          </Badge>
+                    {events.map((ev, i) => {
+                      const done = ev.reminderId ? isCompleted(ev.reminderId, key) : false;
+                      return (
+                        <div key={i} className="flex items-start gap-2">
+                          {ev.reminderId ? (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleToggleCompletion(ev.reminderId!, key);
+                              }}
+                              className="mt-0.5 shrink-0 hover:scale-110 transition-transform"
+                            >
+                              {done ? (
+                                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                              ) : (
+                                <Circle className="h-4 w-4 text-muted-foreground" />
+                              )}
+                            </button>
+                          ) : (
+                            <span className="h-2.5 w-2.5 rounded-full mt-0.5 shrink-0" style={{ backgroundColor: ev.color }} />
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <p className={`text-xs font-medium truncate ${done ? 'line-through text-muted-foreground' : ''}`}>
+                              {ev.label}
+                            </p>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <Badge variant={ev.type === 'holiday' ? 'destructive' : 'outline'} className="text-[9px] h-4">
+                                {ev.type === 'holiday' ? 'Feriado' : ev.type === 'reminder' ? 'Recordatorio' : ev.type === 'due' ? 'Vencimiento' : 'Completada'}
+                              </Badge>
+                              {ev.reminderId && done && (
+                                <span className="text-[9px] text-emerald-500 font-medium">✓ Hecho</span>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </PopoverContent>
                 )}
               </Popover>
@@ -183,13 +218,24 @@ export function CalendarView({ topics }: CalendarViewProps) {
           })}
         </div>
 
-        {/* Reminder Manager */}
-        <div className="border border-border rounded-lg p-4">
-          <ReminderManager
-            reminders={reminders}
-            onCreate={(r) => createReminder.mutateAsync(r)}
-            onDelete={(id) => deleteReminder.mutate(id)}
-          />
+        {/* Reminders toggle */}
+        <div className="border border-border rounded-lg overflow-hidden">
+          <button
+            onClick={() => setShowReminders((v) => !v)}
+            className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-foreground hover:bg-accent/30 transition-colors"
+          >
+            <span>Recordatorios periódicos ({reminders.length})</span>
+            {showReminders ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+          </button>
+          {showReminders && (
+            <div className="px-4 pb-4">
+              <ReminderManager
+                reminders={reminders}
+                onCreate={(r) => createReminder.mutateAsync(r)}
+                onDelete={(id) => deleteReminder.mutate(id)}
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>
