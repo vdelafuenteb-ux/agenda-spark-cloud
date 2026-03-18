@@ -3,7 +3,9 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle2, Circle } from 'lucide-react';
+import { CheckCircle2, Circle, ChevronsDownUp, ChevronsUpDown, User } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TopicCard } from '@/components/TopicCard';
 import type { TopicWithSubtasks } from '@/hooks/useTopics';
 import type { Tag } from '@/hooks/useTags';
@@ -15,6 +17,7 @@ import { getRemindersForDate, getUpcomingReminders } from '@/lib/reminderMatch';
 import { isStoredDateToday, isStoredDateOverdue, isStoredDateUpcoming, formatStoredDate } from '@/lib/date';
 
 type ReviewTab = 'hoy' | 'atrasados' | 'proximos';
+type StatusFilter = 'todos' | 'activo' | 'seguimiento';
 
 interface ReviewViewProps {
   topics: TopicWithSubtasks[];
@@ -39,11 +42,42 @@ interface ReviewViewProps {
 export function ReviewView(props: ReviewViewProps) {
   const { topics, allTags, assignees, onCreateAssignee, getTagsForTopic, ...handlers } = props;
   const [tab, setTab] = useState<ReviewTab>('hoy');
+  const [forceExpand, setForceExpand] = useState<boolean | null>(false); // collapsed by default
+  const [selectedAssignee, setSelectedAssignee] = useState('');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('todos');
   const { reminders } = useReminders();
   const { isCompleted, toggleCompletion } = useReminderCompletions();
   const { items: checklistItems, toggleItem } = useChecklist();
 
-  const activeTopics = topics.filter(t => t.status === 'activo' || t.status === 'seguimiento');
+  const handleTabChange = (v: string) => {
+    setTab(v as ReviewTab);
+    setSelectedAssignee('');
+    setStatusFilter('todos');
+    setForceExpand(false);
+  };
+
+  const toggleExpand = () => {
+    setForceExpand(prev => prev === true ? false : true);
+  };
+
+  const activeTopics = useMemo(() => {
+    let filtered = topics.filter(t => t.status === 'activo' || t.status === 'seguimiento');
+    if (statusFilter !== 'todos') {
+      filtered = filtered.filter(t => t.status === statusFilter);
+    }
+    if (selectedAssignee) {
+      filtered = filtered.filter(t => t.assignee === selectedAssignee);
+    }
+    return filtered;
+  }, [topics, statusFilter, selectedAssignee]);
+
+  const assigneeNames = useMemo(() => {
+    const names = new Set<string>();
+    topics.filter(t => t.status === 'activo' || t.status === 'seguimiento').forEach(t => {
+      if (t.assignee) names.add(t.assignee);
+    });
+    return Array.from(names).sort();
+  }, [topics]);
 
   const todayChecklist = checklistItems.filter(i => !i.completed && isStoredDateToday(i.due_date));
   const upcomingChecklist = checklistItems.filter(i => !i.completed && isStoredDateUpcoming(i.due_date, 3));
@@ -92,7 +126,7 @@ export function ReviewView(props: ReviewViewProps) {
 
   return (
     <div className="max-w-5xl mx-auto space-y-3">
-      <Tabs value={tab} onValueChange={(v) => setTab(v as ReviewTab)}>
+      <Tabs value={tab} onValueChange={handleTabChange}>
         <TabsList className="w-full">
           <TabsTrigger value="hoy" className="flex-1 text-xs gap-1.5">
             Mi día
@@ -114,6 +148,40 @@ export function ReviewView(props: ReviewViewProps) {
           </TabsTrigger>
         </TabsList>
       </Tabs>
+
+      {/* Filters bar */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <Button size="sm" variant="outline" className="h-8 text-xs gap-1 shrink-0" onClick={toggleExpand}>
+          {forceExpand ? <ChevronsDownUp className="h-3.5 w-3.5" /> : <ChevronsUpDown className="h-3.5 w-3.5" />}
+          {forceExpand ? 'Contraer' : 'Expandir'}
+        </Button>
+
+        {assigneeNames.length > 0 && (
+          <Select value={selectedAssignee || '_all'} onValueChange={(v) => setSelectedAssignee(v === '_all' ? '' : v)}>
+            <SelectTrigger className="w-44 h-8 text-xs gap-1">
+              <User className="h-3 w-3 shrink-0" />
+              <SelectValue placeholder="Responsable" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="_all">Todos los responsables</SelectItem>
+              {assigneeNames.map((name) => (
+                <SelectItem key={name} value={name}>{name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
+        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
+          <SelectTrigger className="w-40 h-8 text-xs gap-1">
+            <SelectValue placeholder="Estado" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todos los estados</SelectItem>
+            <SelectItem value="activo">Solo Activos</SelectItem>
+            <SelectItem value="seguimiento">Solo Seguimiento</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
       {/* Today's reminders */}
       {tab === 'hoy' && todayReminders.length > 0 && (
@@ -155,7 +223,6 @@ export function ReviewView(props: ReviewViewProps) {
           onToggle={(id) => toggleItem.mutate({ id, completed: true })}
         />
       )}
-
 
       {/* Upcoming reminders */}
       {tab === 'proximos' && upcomingReminders.length > 0 && (
@@ -227,6 +294,7 @@ export function ReviewView(props: ReviewViewProps) {
             highlightToday={tab === 'hoy'}
             highlightUpcoming={tab === 'proximos'}
             highlightOverdue={tab === 'atrasados'}
+            forceExpand={forceExpand}
             onUpdate={handlers.onUpdate}
             onDelete={handlers.onDelete}
             onAddSubtask={handlers.onAddSubtask}
