@@ -211,7 +211,7 @@ export function ReviewView(props: ReviewViewProps) {
         />
       )}
 
-      {currentTopics.length === 0 && (tab === 'hoy' ? todayReminders.length === 0 : tab === 'proximos' ? upcomingReminders.length === 0 : true) ? (
+      {currentTopics.length === 0 && (tab === 'hoy' ? (todayReminders.length === 0 && todayChecklist.length === 0) : tab === 'proximos' ? (upcomingReminders.length === 0 && upcomingChecklist.length === 0) : overdueChecklist.length === 0) ? (
         <p className="text-sm text-muted-foreground text-center py-8">{emptyMessages[tab]}</p>
       ) : (
         currentTopics.map((topic) => (
