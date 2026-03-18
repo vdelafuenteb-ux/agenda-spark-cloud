@@ -80,12 +80,16 @@ export function TopicCard({
   const [newAssigneeName, setNewAssigneeName] = useState('');
 
   useEffect(() => {
-    if (highlightToday) setExpanded(true);
-  }, [highlightToday]);
+    if (highlightToday || highlightUpcoming) setExpanded(true);
+  }, [highlightToday, highlightUpcoming]);
 
   const topicDueToday = isStoredDateToday(topic.due_date);
   const hasSubtaskDueToday = topic.subtasks.some(s => isStoredDateToday(s.due_date));
   const showSubtaskTodayBadge = highlightToday && !topicDueToday && hasSubtaskDueToday;
+
+  const hasSubtaskUpcoming = topic.subtasks.some(s => !s.completed && isStoredDateUpcoming(s.due_date, 3));
+  const topicUpcoming = isStoredDateUpcoming(topic.due_date, 3);
+  const showSubtaskUpcomingBadge = highlightUpcoming && !topicUpcoming && hasSubtaskUpcoming;
 
   const completedCount = topic.subtasks.filter((s) => s.completed).length;
   const totalCount = topic.subtasks.length;
