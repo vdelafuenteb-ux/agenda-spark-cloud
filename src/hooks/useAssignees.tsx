@@ -60,6 +60,7 @@ export function useAssignees() {
     assignees: assigneesQuery.data || [],
     isLoading: assigneesQuery.isLoading,
     createAssignee,
+    updateAssignee,
     deleteAssignee,
   };
 }

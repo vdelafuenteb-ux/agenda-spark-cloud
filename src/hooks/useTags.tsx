@@ -126,6 +126,7 @@ export function useTags() {
     topicTags: topicTagsQuery.data || [],
     isLoading: tagsQuery.isLoading,
     createTag,
+    updateTag,
     deleteTag,
     addTopicTag,
     removeTopicTag,
