@@ -77,9 +77,10 @@ Deno.serve(async (req) => {
     mensaje += `<thead><tr style="background-color:#f2f2f2;text-align:left;">`;
     mensaje += `<th style="padding:8px;border:1px solid #ddd;width:30px;">#</th>`;
     mensaje += `<th style="padding:8px;border:1px solid #ddd;">Tema</th>`;
-    mensaje += `<th style="padding:8px;border:1px solid #ddd;width:100px;">Inicio</th>`;
-    mensaje += `<th style="padding:8px;border:1px solid #ddd;width:100px;">Vencimiento</th>`;
-    mensaje += `<th style="padding:8px;border:1px solid #ddd;width:120px;">Pendientes</th>`;
+    mensaje += `<th style="padding:8px;border:1px solid #ddd;">Último comentario</th>`;
+    mensaje += `<th style="padding:8px;border:1px solid #ddd;width:90px;">Inicio</th>`;
+    mensaje += `<th style="padding:8px;border:1px solid #ddd;width:90px;">Vencimiento</th>`;
+    mensaje += `<th style="padding:8px;border:1px solid #ddd;width:110px;">Pendientes</th>`;
     mensaje += `</tr></thead><tbody>`;
 
     topicsWithPending.forEach((t: any) => {
@@ -87,9 +88,12 @@ Deno.serve(async (req) => {
         ? `${t.pendingSubtasks.length} subtarea${t.pendingSubtasks.length > 1 ? "s" : ""}`
         : "Sin pendientes";
       const pendingColor = t.pendingSubtasks.length > 0 ? "#c0392b" : "#888";
+      const lastEntry = (t.progress_entries || []).length > 0 ? (t.progress_entries || [])[0]?.content || "" : "";
+      const truncated = lastEntry.length > 80 ? lastEntry.substring(0, 80) + "…" : lastEntry;
       mensaje += `<tr>`;
       mensaje += `<td style="padding:6px 8px;border:1px solid #ddd;text-align:center;">${t.num}</td>`;
       mensaje += `<td style="padding:6px 8px;border:1px solid #ddd;font-weight:600;">${t.title}</td>`;
+      mensaje += `<td style="padding:6px 8px;border:1px solid #ddd;color:#555;font-size:13px;">${truncated || "<em style='color:#aaa;'>—</em>"}</td>`;
       mensaje += `<td style="padding:6px 8px;border:1px solid #ddd;">${formatDate(t.start_date) || "—"}</td>`;
       mensaje += `<td style="padding:6px 8px;border:1px solid #ddd;">${formatDate(t.due_date) || "—"}</td>`;
       mensaje += `<td style="padding:6px 8px;border:1px solid #ddd;color:${pendingColor};">${pendingText}</td>`;
