@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Mail, CheckCircle2, Search, X, CalendarIcon, Trash2, AlertCircle, Clock } from 'lucide-react';
+import { Mail, CheckCircle2, Search, X, CalendarIcon, Trash2, Clock } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -21,8 +21,6 @@ interface EmailRecord {
   assignee_name: string;
   assignee_email: string;
   sent_at: string;
-  responded: boolean;
-  responded_at: string | null;
   confirmed: boolean;
   confirmed_at: string | null;
 }
@@ -88,8 +86,7 @@ export function EmailHistoryView() {
         if (!e.assignee_name.toLowerCase().includes(q) && !e.assignee_email.toLowerCase().includes(q)) return false;
       }
       if (selectedAssignee !== 'all' && e.assignee_name !== selectedAssignee) return false;
-      if (statusFilter === 'pending' && (e.responded || e.confirmed)) return false;
-      if (statusFilter === 'self-reported' && (!e.responded || e.confirmed)) return false;
+      if (statusFilter === 'pending' && e.confirmed) return false;
       if (statusFilter === 'confirmed' && !e.confirmed) return false;
       if (dateFrom) {
         if (new Date(e.sent_at) < dateFrom) return false;
@@ -106,9 +103,8 @@ export function EmailHistoryView() {
   const stats = useMemo(() => {
     const total = filtered.length;
     const confirmed = filtered.filter(e => e.confirmed).length;
-    const selfReported = filtered.filter(e => e.responded && !e.confirmed).length;
-    const pending = total - confirmed - selfReported;
-    return { total, confirmed, selfReported, pending };
+    const pending = total - confirmed;
+    return { total, confirmed, pending };
   }, [filtered]);
 
   const clearFilters = () => {
@@ -125,7 +121,7 @@ export function EmailHistoryView() {
     <div className="flex-1 overflow-auto p-3 md:p-4">
       <div className="max-w-5xl mx-auto space-y-4">
         {/* Stats */}
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           <div className="rounded-lg border border-border bg-card p-3 text-center">
             <p className="text-2xl font-bold text-foreground">{stats.total}</p>
             <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Total enviados</p>
@@ -135,12 +131,8 @@ export function EmailHistoryView() {
             <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Confirmados</p>
           </div>
           <div className="rounded-lg border border-border bg-card p-3 text-center">
-            <p className="text-2xl font-bold text-amber-600">{stats.selfReported}</p>
-            <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Por confirmar</p>
-          </div>
-          <div className="rounded-lg border border-border bg-card p-3 text-center">
             <p className="text-2xl font-bold text-destructive">{stats.pending}</p>
-            <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Sin respuesta</p>
+            <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Pendientes</p>
           </div>
         </div>
 
@@ -169,13 +161,12 @@ export function EmailHistoryView() {
           </Select>
 
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[160px] h-8 text-xs">
+            <SelectTrigger className="w-[140px] h-8 text-xs">
               <SelectValue placeholder="Estado" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos</SelectItem>
-              <SelectItem value="pending">Sin respuesta</SelectItem>
-              <SelectItem value="self-reported">Por confirmar</SelectItem>
+              <SelectItem value="pending">Pendientes</SelectItem>
               <SelectItem value="confirmed">Confirmados</SelectItem>
             </SelectContent>
           </Select>
@@ -242,8 +233,7 @@ export function EmailHistoryView() {
                       key={email.id}
                       className={cn(
                         "border-b border-border last:border-0 transition-colors hover:bg-muted/30",
-                        email.confirmed && "bg-green-50/50 dark:bg-green-950/10",
-                        email.responded && !email.confirmed && "bg-amber-50/50 dark:bg-amber-950/10"
+                        email.confirmed && "bg-green-50/50 dark:bg-green-950/10"
                       )}
                     >
                       <td className="px-3 py-2.5">
@@ -251,7 +241,7 @@ export function EmailHistoryView() {
                           checked={email.confirmed}
                           onCheckedChange={(checked) => toggleConfirmed.mutate({ id: email.id, confirmed: !!checked })}
                           className="h-4 w-4"
-                          title={email.confirmed ? 'Desmarcar confirmación' : 'Confirmar que realmente respondió'}
+                          title={email.confirmed ? 'Desmarcar confirmación' : 'Confirmar que respondió'}
                         />
                       </td>
                       <td className="px-3 py-2.5">
@@ -261,14 +251,6 @@ export function EmailHistoryView() {
                             <span className="text-[10px] font-medium">Confirmado</span>
                             {email.confirmed_at && (
                               <span className="text-[9px] opacity-70">{format(new Date(email.confirmed_at), "dd MMM", { locale: es })}</span>
-                            )}
-                          </span>
-                        ) : email.responded ? (
-                          <span className="inline-flex items-center gap-1 text-amber-600">
-                            <AlertCircle className="h-3 w-3" />
-                            <span className="text-[10px] font-medium">Dice que respondió</span>
-                            {email.responded_at && (
-                              <span className="text-[9px] opacity-70">{format(new Date(email.responded_at), "dd MMM", { locale: es })}</span>
                             )}
                           </span>
                         ) : (

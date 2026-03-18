@@ -16,18 +16,6 @@ function formatDate(dateStr?: string | null): string {
   }
 }
 
-function buildConfirmButton(supabaseUrl: string, notificationIds: string[]): string {
-  if (notificationIds.length === 0) return "";
-  const confirmUrl = `${supabaseUrl}/functions/v1/mark-email-responded?ids=${notificationIds.join(",")}`;
-  return `
-    <div style="text-align:center;margin:24px 0;">
-      <a href="${confirmUrl}" target="_blank" style="display:inline-block;background-color:#16a34a;color:white;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:16px;font-weight:bold;">
-        ✅ Ya actualicé — Confirmar
-      </a>
-      <p style="font-size:12px;color:#999;margin-top:8px;">Haz clic para confirmar que ya respondiste sobre este tema</p>
-    </div>`;
-}
-
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -66,7 +54,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { to_email, to_name, topic_title, subtasks, start_date, due_date, progress_entries, notification_ids } = await req.json();
+    const { to_email, to_name, topic_title, subtasks, start_date, due_date, progress_entries } = await req.json();
 
     if (!to_email || !topic_title) {
       return new Response(
@@ -109,10 +97,6 @@ Deno.serve(async (req) => {
       });
       mensaje += `</ul>`;
     }
-
-    // Confirmation button
-    const ids = notification_ids || [];
-    mensaje += buildConfirmButton(supabaseUrl, ids);
 
     mensaje += `<p style="font-size:1.1em;"><strong>⚠️ IMPORTANTE: Por favor responde a este correo actualizando sobre este tema.</strong></p>`;
     mensaje += `<p style="font-size:1.1em;"><strong>🕐 Plazo máximo de respuesta: 48 HORAS.</strong></p>`;
