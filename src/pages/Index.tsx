@@ -17,7 +17,7 @@ import { useTags } from '@/hooks/useTags';
 import { useAssignees } from '@/hooks/useAssignees';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Plus, FileText, ChevronsDownUp, ChevronsUpDown } from 'lucide-react';
+import { Plus, FileText } from 'lucide-react';
 import { NotesView } from '@/components/NotesView';
 import { DashboardView } from '@/components/DashboardView';
 import { ChecklistView } from '@/components/ChecklistView';
@@ -67,12 +67,13 @@ const Index = () => {
     return filtered.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
   }, [topics, statusTab, searchQuery, selectedTagIds, selectedAssignee, getTagsForTopic]);
 
-  const statusCounts = useMemo(() => ({
-    activo: topics.filter((t) => t.status === 'activo').length,
-    seguimiento: topics.filter((t) => t.status === 'seguimiento').length,
-    pausado: topics.filter((t) => t.status === 'pausado').length,
-    completado: topics.filter((t) => t.status === 'completado').length,
-  }), [topics]);
+  const statusCounts = useMemo(() => {
+    const counts = { activo: 0, seguimiento: 0, pausado: 0, completado: 0 };
+    for (const t of topics) {
+      if (t.status in counts) counts[t.status as keyof typeof counts]++;
+    }
+    return counts;
+  }, [topics]);
 
   const uniqueAssignees = useMemo(() => {
     const names = topics.filter(t => t.status === 'seguimiento' && t.assignee).map(t => t.assignee!);

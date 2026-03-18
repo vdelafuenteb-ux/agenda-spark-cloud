@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -17,29 +17,33 @@ interface BulkEmailModalProps {
 }
 
 export function BulkEmailModal({ open, onOpenChange, topics, assignee }: BulkEmailModalProps) {
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set(topics.map(t => t.id)));
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set(topics.map(t => t.id)));
   const [sending, setSending] = useState(false);
   const { logEmail } = useNotificationEmails();
 
-  // Sync selections when topics change
-  const allSelected = selectedIds.size === topics.length;
-
-  const toggleAll = () => {
-    if (allSelected) {
-      setSelectedIds(new Set());
-    } else {
+  // Sync selections when modal opens or topics change
+  useEffect(() => {
+    if (open) {
       setSelectedIds(new Set(topics.map(t => t.id)));
     }
-  };
+  }, [open, topics]);
 
-  const toggleTopic = (id: string) => {
+  const allSelected = selectedIds.size === topics.length && topics.length > 0;
+
+  const toggleAll = useCallback(() => {
+    setSelectedIds(prev =>
+      prev.size === topics.length ? new Set() : new Set(topics.map(t => t.id))
+    );
+  }, [topics]);
+
+  const toggleTopic = useCallback((id: string) => {
     setSelectedIds(prev => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
-  };
+  }, []);
 
   const handleSend = async () => {
     if (!assignee.email) {
