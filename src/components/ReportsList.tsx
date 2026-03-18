@@ -3,7 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format, parseISO, isAfter, isBefore, startOfDay, endOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Trash2, Copy, Printer, Plus, Search, CalendarIcon, ChevronDown, ChevronRight } from 'lucide-react';
+import { Trash2, Copy, FileDown, Plus, Search, CalendarIcon, ChevronDown, ChevronRight } from 'lucide-react';
+import { downloadPdfFromContent } from '@/lib/generateReportPdf';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Calendar } from '@/components/ui/calendar';
@@ -66,19 +67,9 @@ export function ReportsList({ onNewReport }: ReportsListProps) {
     toast.success('Copiado');
   };
 
-  const handlePrint = (content: string, title: string) => {
-    const w = window.open('', '_blank');
-    if (!w) return;
-    w.document.write(`<html><head><title>${title}</title><style>
-      body { font-family: system-ui, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; color: #1a1a1a; line-height: 1.6; }
-      h1 { font-size: 1.5rem; } h2 { font-size: 1.2rem; border-bottom: 1px solid #e5e5e5; padding-bottom: 4px; }
-      h3 { font-size: 1rem; } table { border-collapse: collapse; width: 100%; margin: 12px 0; }
-      th, td { border: 1px solid #e5e5e5; padding: 6px 12px; text-align: left; font-size: 0.85rem; }
-      li { font-size: 0.85rem; } hr { margin: 16px 0; border: none; border-top: 1px solid #e5e5e5; }
-      pre { white-space: pre-wrap; font-size: 0.85rem; }
-    </style></head><body><pre>${content}</pre></body></html>`);
-    w.document.close();
-    w.print();
+  const handleDownloadPdf = (content: string, title: string, periodStart: string, periodEnd: string) => {
+    downloadPdfFromContent(content, title, periodStart, periodEnd);
+    toast.success('PDF descargado');
   };
 
   const clearFilters = () => {
@@ -170,8 +161,8 @@ export function ReportsList({ onNewReport }: ReportsListProps) {
                     <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => handleCopy(r.content)}>
                       <Copy className="h-3 w-3" />
                     </Button>
-                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => handlePrint(r.content, r.title)}>
-                      <Printer className="h-3 w-3" />
+                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => handleDownloadPdf(r.content, r.title, r.period_start, r.period_end)}>
+                      <FileDown className="h-3 w-3" />
                     </Button>
                     <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive hover:text-destructive" onClick={() => deleteReport.mutate(r.id)}>
                       <Trash2 className="h-3 w-3" />
