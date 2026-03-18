@@ -42,6 +42,7 @@ export function CreateTopicModal({ open, onOpenChange, allTags, onSubmit, isPend
   const [priority, setPriority] = useState<Priority>('media');
   const [status, setStatus] = useState<Status>('activo');
   const [dueDate, setDueDate] = useState<Date>();
+  const [startDate, setStartDate] = useState<Date>(new Date());
   const [subtasks, setSubtasks] = useState<string[]>([]);
   const [newSubtask, setNewSubtask] = useState('');
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
