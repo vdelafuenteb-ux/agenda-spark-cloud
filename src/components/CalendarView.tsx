@@ -76,6 +76,7 @@ function getEventsForDay(
 export function CalendarView({ topics }: CalendarViewProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [showReminders, setShowReminders] = useState(false);
+  const [showPeriodicEvents, setShowPeriodicEvents] = useState(true);
   const { reminders, createReminder, deleteReminder } = useReminders();
   const { isCompleted, toggleCompletion } = useReminderCompletions();
   const { holidayMap } = useHolidays(getYear(currentMonth));
