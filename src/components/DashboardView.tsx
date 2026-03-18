@@ -199,7 +199,7 @@ export function DashboardView({ topics }: DashboardViewProps) {
               <CardTitle className="text-sm font-medium">Temas por Estado</CardTitle>
             </CardHeader>
             <CardContent className="p-4 pt-0">
-              <ChartContainer config={statusChartConfig} className="h-[200px] w-full">
+               <ChartContainer config={statusChartConfig} className="aspect-auto h-[200px] w-full">
                 <BarChart data={metrics.statusData} margin={{ top: 5, right: 5, bottom: 5, left: -20 }}>
                   <XAxis dataKey="name" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
                   <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} allowDecimals={false} />
