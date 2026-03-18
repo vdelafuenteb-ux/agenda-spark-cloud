@@ -46,7 +46,8 @@ export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false,
     <div className={cn(
       'rounded-md px-1.5 py-1 -mx-1.5 transition-colors',
       subtaskIsToday && 'bg-accent/50 ring-1 ring-accent',
-      isOverdue && 'bg-destructive/10 ring-1 ring-destructive/30'
+      isOverdue && 'bg-destructive/10 ring-1 ring-destructive/30',
+      subtaskIsUpcoming && !isOverdue && 'bg-yellow-500/10 ring-1 ring-yellow-500/30'
     )}>
       <div className="flex items-center gap-2 group">
         <Checkbox
@@ -54,12 +55,19 @@ export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false,
           onCheckedChange={(checked) => onToggleSubtask(subtask.id, !!checked)}
         />
         <div className={cn('flex-1 min-w-0 flex items-center gap-1.5', subtask.completed && 'line-through text-muted-foreground')}>
-          <span className={cn('text-sm truncate', isOverdue && 'text-destructive font-medium')}>{subtask.title}</span>
+          <span className={cn(
+            'text-sm truncate',
+            isOverdue && 'text-destructive font-medium',
+            subtaskIsUpcoming && !isOverdue && 'text-yellow-700 font-medium'
+          )}>{subtask.title}</span>
           {subtaskIsToday && (
             <Badge className="text-[9px] px-1 py-0 bg-primary text-primary-foreground border-transparent shrink-0">Hoy</Badge>
           )}
           {isOverdue && (
             <Badge variant="destructive" className="text-[9px] px-1 py-0 shrink-0">Atrasada</Badge>
+          )}
+          {subtaskIsUpcoming && !isOverdue && (
+            <Badge className="text-[9px] px-1 py-0 bg-yellow-500 text-white border-transparent shrink-0">Próxima</Badge>
           )}
         </div>
         <button
