@@ -133,15 +133,31 @@ export function CalendarView({ topics }: CalendarViewProps) {
           </Button>
         </div>
 
-        <div className="flex items-center gap-2 justify-end">
-          <Label htmlFor="show-periodic" className="text-xs text-muted-foreground cursor-pointer">
-            Mostrar recordatorios
-          </Label>
-          <Switch
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: COLOR_PENDING }} />
+              <span className="text-[10px] text-muted-foreground">Pendiente</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: COLOR_COMPLETED }} />
+              <span className="text-[10px] text-muted-foreground">Completado</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: COLOR_OVERDUE }} />
+              <span className="text-[10px] text-muted-foreground">Atrasado</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="show-periodic" className="text-xs text-muted-foreground cursor-pointer">
+              Mostrar recordatorios
+            </Label>
+            <Switch
             id="show-periodic"
             checked={showPeriodicEvents}
             onCheckedChange={setShowPeriodicEvents}
           />
+          </div>
         </div>
         <div className="grid grid-cols-7 gap-px bg-border rounded-lg overflow-hidden">
           {weekDays.map((d) => (
