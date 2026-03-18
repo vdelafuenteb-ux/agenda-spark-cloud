@@ -310,19 +310,29 @@ export function NoteEditor({
   const handlePaste = async (e: React.ClipboardEvent) => {
     const items = e.clipboardData?.items;
     if (!items) return;
-    for (const item of Array.from(items)) {
-      if (item.type.startsWith('image/')) {
-        e.preventDefault();
-        const file = item.getAsFile();
-        if (!file) continue;
-        try {
-          const url = await onUploadImage(file);
-          insertImageAtCursor(url);
-          handleContentInput();
-        } catch { /* silently fail */ }
-        return;
+
+    // Check if there's text/html or text/plain content (e.g. pasting from Word)
+    const hasText = Array.from(items).some(
+      (item) => item.type === 'text/html' || item.type === 'text/plain'
+    );
+
+    // Only handle as image if there's NO text content (pure image paste/screenshot)
+    if (!hasText) {
+      for (const item of Array.from(items)) {
+        if (item.type.startsWith('image/')) {
+          e.preventDefault();
+          const file = item.getAsFile();
+          if (!file) continue;
+          try {
+            const url = await onUploadImage(file);
+            insertImageAtCursor(url);
+            handleContentInput();
+          } catch { /* silently fail */ }
+          return;
+        }
       }
     }
+    // Otherwise let the browser handle the paste naturally (text/html from Word, etc.)
   };
 
   const insertImageAtCursor = (url: string) => {
