@@ -157,6 +157,7 @@ export function CalendarView({ topics }: CalendarViewProps) {
             checked={showPeriodicEvents}
             onCheckedChange={setShowPeriodicEvents}
           />
+          </div>
         </div>
         <div className="grid grid-cols-7 gap-px bg-border rounded-lg overflow-hidden">
           {weekDays.map((d) => (
