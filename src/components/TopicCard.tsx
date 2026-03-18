@@ -515,7 +515,12 @@ export function TopicCard({
                 <NotificationSection topic={topic} assignees={assignees} />
               )}
 
-              <ProgressLog entries={topic.progress_entries} onAdd={(content) => onAddProgressEntry(topic.id, content)} />
+              <ProgressLog
+                entries={topic.progress_entries}
+                onAdd={(content) => onAddProgressEntry(topic.id, content)}
+                onUpdate={onUpdateProgressEntry ? (id, content) => onUpdateProgressEntry(id, content) : undefined}
+                onDelete={onDeleteProgressEntry}
+              />
             </div>
           </motion.div>
         )}
