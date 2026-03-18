@@ -15,7 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import type { TopicWithSubtasks } from '@/hooks/useTopics';
 import { isStoredDateOverdue } from '@/lib/date';
 
-type Filter = 'todos' | 'revision' | 'informes' | 'notas' | 'dashboard';
+type Filter = 'todos' | 'revision' | 'informes' | 'notas' | 'dashboard' | 'checklist';
 
 interface AppSidebarProps {
   activeFilter: Filter;
