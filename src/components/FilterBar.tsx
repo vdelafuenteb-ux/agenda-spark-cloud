@@ -16,6 +16,8 @@ interface FilterBarProps {
   forceExpand?: boolean | null;
   onToggleExpand?: () => void;
   onBulkEmail?: () => void;
+  filterNoDueDate?: boolean;
+  onToggleNoDueDate?: () => void;
 }
 
 export function FilterBar({ searchQuery, onSearchChange, allTags, selectedTagIds, onToggleTag, assignees, selectedAssignee, onAssigneeChange, forceExpand, onToggleExpand, onBulkEmail }: FilterBarProps) {
