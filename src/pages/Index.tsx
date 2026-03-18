@@ -26,6 +26,7 @@ const Index = () => {
   const { user, loading: authLoading } = useAuth();
   const { topics, isLoading, createTopic, updateTopic, deleteTopic, addSubtask, toggleSubtask, deleteSubtask, addProgressEntry, updateSubtask } = useTopics();
   const { tags, getTagsForTopic, createTag, addTopicTag, removeTopicTag } = useTags();
+  const { assignees, createAssignee } = useAssignees();
   const [filter, setFilter] = useState<Filter>('todos');
   const [statusTab, setStatusTab] = useState<StatusTab>('activo');
   const [reportOpen, setReportOpen] = useState(false);

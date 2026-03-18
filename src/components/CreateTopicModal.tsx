@@ -11,6 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
 import { toStoredDate } from '@/lib/date';
+import { cn } from '@/lib/utils';
 import type { Tag as TagType } from '@/hooks/useTags';
 import type { Assignee } from '@/hooks/useAssignees';
 import type { Database } from '@/integrations/supabase/types';
