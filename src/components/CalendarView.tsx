@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import {
   addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek,
-  eachDayOfInterval, format, isSameMonth, isToday, isSameDay, getYear,
+  eachDayOfInterval, format, isSameMonth, isToday, isSameDay, getYear, isBefore, startOfDay,
 } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, CheckCircle2, Circle } from 'lucide-react';
@@ -29,31 +29,41 @@ interface DayEvent {
   reminderId?: string;
 }
 
+const COLOR_PENDING = '#9ca3af';   // gray
+const COLOR_COMPLETED = '#22c55e'; // green
+const COLOR_OVERDUE = '#ef4444';   // red
+
 function getEventsForDay(
   date: Date,
   reminders: import('@/hooks/useReminders').Reminder[],
   topics: TopicWithSubtasks[],
+  isReminderCompleted: (id: string, dateStr: string) => boolean,
 ): DayEvent[] {
   const events: DayEvent[] = [];
+  const dateStr = format(date, 'yyyy-MM-dd');
+  const todayStart = startOfDay(new Date());
+  const isPast = isBefore(date, todayStart) && !isToday(date);
 
   for (const r of reminders) {
     if (reminderMatchesDate(r, date)) {
-      events.push({ label: r.title, color: r.color, type: 'reminder', reminderId: r.id });
+      const done = isReminderCompleted(r.id, dateStr);
+      const color = done ? COLOR_COMPLETED : isPast ? COLOR_OVERDUE : COLOR_PENDING;
+      events.push({ label: r.title, color, type: done ? 'completed' : 'reminder', reminderId: r.id });
     }
   }
 
   for (const t of topics) {
     const due = parseStoredDate(t.due_date);
     if (due && isSameDay(due, date)) {
-      events.push({ label: t.title, color: '#f59e0b', type: 'due' });
+      const done = t.status === 'completado';
+      const color = done ? COLOR_COMPLETED : isPast ? COLOR_OVERDUE : COLOR_PENDING;
+      events.push({ label: t.title, color, type: done ? 'completed' : 'due' });
     }
     for (const s of t.subtasks) {
       const sDue = parseStoredDate(s.due_date);
-      if (sDue && isSameDay(sDue, date) && !s.completed) {
-        events.push({ label: s.title, color: '#f59e0b', type: 'due' });
-      }
-      if (s.completed_at && isSameDay(new Date(s.completed_at), date)) {
-        events.push({ label: `✓ ${s.title}`, color: '#10b981', type: 'completed' });
+      if (sDue && isSameDay(sDue, date)) {
+        const color = s.completed ? COLOR_COMPLETED : isPast ? COLOR_OVERDUE : COLOR_PENDING;
+        events.push({ label: s.completed ? `✓ ${s.title}` : s.title, color, type: s.completed ? 'completed' : 'due' });
       }
     }
   }
