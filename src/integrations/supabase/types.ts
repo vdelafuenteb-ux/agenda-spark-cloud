@@ -275,6 +275,7 @@ export type Database = {
           created_at: string
           due_date: string | null
           id: string
+          pinned: boolean
           priority: Database["public"]["Enums"]["topic_priority"]
           progress_notes: string | null
           sort_order: number
@@ -289,6 +290,7 @@ export type Database = {
           created_at?: string
           due_date?: string | null
           id?: string
+          pinned?: boolean
           priority?: Database["public"]["Enums"]["topic_priority"]
           progress_notes?: string | null
           sort_order?: number
@@ -303,6 +305,7 @@ export type Database = {
           created_at?: string
           due_date?: string | null
           id?: string
+          pinned?: boolean
           priority?: Database["public"]["Enums"]["topic_priority"]
           progress_notes?: string | null
           sort_order?: number
