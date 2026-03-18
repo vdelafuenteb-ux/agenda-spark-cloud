@@ -48,6 +48,7 @@ const statusLabels: Record<Status, string> = {
   activo: 'Activo',
   completado: 'Cerrado',
   pausado: 'Pausado',
+  seguimiento: 'Seguimiento',
 };
 
 export function TopicCard({
