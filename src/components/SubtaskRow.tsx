@@ -23,6 +23,8 @@ interface SubtaskRowProps {
 export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false, onToggleSubtask, onUpdateSubtask, onDeleteSubtask }: SubtaskRowProps) {
   const [showNotes, setShowNotes] = useState(false);
   const [notes, setNotes] = useState(subtask.notes || '');
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleDraft, setTitleDraft] = useState(subtask.title);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
   // Sync from prop
