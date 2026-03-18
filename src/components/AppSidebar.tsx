@@ -48,13 +48,13 @@ export function AppSidebar({ activeFilter, onFilterChange, topics }: AppSidebarP
           <div className={`px-3 py-4 ${collapsed ? 'text-center' : ''}`}>
             {!collapsed && (
               <>
-                <h2 className="text-sm font-semibold text-foreground tracking-tight">Progress Engine</h2>
+                <h2 className="text-sm font-semibold text-foreground tracking-tight">Agenda de Matías</h2>
                 <p className="mt-2 text-xs text-muted-foreground">
                   {activeTopics.length} activos · {progress}% avance
                 </p>
               </>
             )}
-            {collapsed && <span className="text-xs font-bold text-foreground">PE</span>}
+            {collapsed && <span className="text-xs font-bold text-foreground">AM</span>}
           </div>
           <SidebarGroupContent>
             <SidebarMenu>
