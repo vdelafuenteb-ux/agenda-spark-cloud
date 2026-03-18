@@ -64,10 +64,11 @@ const Index = () => {
         if (!selectedTagIds.some((id) => topicTagIds.includes(id))) return false;
       }
       if (selectedAssignee && topic.assignee !== selectedAssignee) return false;
+      if (filterNoDueDate && topic.due_date) return false;
       return true;
     });
     return filtered.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
-  }, [topics, statusTab, searchQuery, selectedTagIds, selectedAssignee, getTagsForTopic]);
+  }, [topics, statusTab, searchQuery, selectedTagIds, selectedAssignee, filterNoDueDate, getTagsForTopic]);
 
   const statusCounts = useMemo(() => {
     const counts = { activo: 0, seguimiento: 0, pausado: 0, completado: 0 };
