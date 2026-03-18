@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { isStoredDateToday } from '@/lib/date';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, Plus, Trash2, CalendarIcon, CheckCircle2, RotateCcw } from 'lucide-react';
+import { ChevronRight, Plus, Trash2, CalendarIcon, CheckCircle2, RotateCcw, Pause, Play } from 'lucide-react';
 import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -46,7 +46,7 @@ const priorityConfig: Record<Priority, { label: string; className: string }> = {
 
 const statusLabels: Record<Status, string> = {
   activo: 'Activo',
-  completado: 'Completado',
+  completado: 'Cerrado',
   pausado: 'Pausado',
 };
 
@@ -173,17 +173,6 @@ export function TopicCard({
                   </SelectContent>
                 </Select>
 
-                <Select value={topic.status} onValueChange={(value: Status) => onUpdate(topic.id, { status: value })}>
-                  <SelectTrigger className="w-32 h-8 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="activo">Activo</SelectItem>
-                    <SelectItem value="completado">Completado</SelectItem>
-                    <SelectItem value="pausado">Pausado</SelectItem>
-                  </SelectContent>
-                </Select>
-
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="outline" size="sm" className="h-8 text-xs gap-1">
@@ -239,22 +228,59 @@ export function TopicCard({
                 }}
               />
 
-              <Button
-                size="sm"
-                variant={isCompleted ? 'outline' : 'default'}
-                className="w-full h-9 text-xs gap-2"
-                onClick={() => onUpdate(topic.id, { status: isCompleted ? 'activo' : 'completado' })}
-              >
-                {isCompleted ? (
+              {/* Status actions — match tab names: Activo / Pausado / Cerrado */}
+              <div className="flex items-center gap-2">
+                {topic.status === 'activo' && (
                   <>
-                    <RotateCcw className="h-3.5 w-3.5" /> Reabrir Tema
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 className="h-3.5 w-3.5" /> Marcar como Completado
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1 h-9 text-xs gap-2"
+                      onClick={() => onUpdate(topic.id, { status: 'pausado' })}
+                    >
+                      <Pause className="h-3.5 w-3.5" /> Pausar
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="default"
+                      className="flex-1 h-9 text-xs gap-2"
+                      onClick={() => onUpdate(topic.id, { status: 'completado' })}
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5" /> Cerrar
+                    </Button>
                   </>
                 )}
-              </Button>
+                {topic.status === 'pausado' && (
+                  <>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1 h-9 text-xs gap-2"
+                      onClick={() => onUpdate(topic.id, { status: 'activo' })}
+                    >
+                      <Play className="h-3.5 w-3.5" /> Reactivar
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="default"
+                      className="flex-1 h-9 text-xs gap-2"
+                      onClick={() => onUpdate(topic.id, { status: 'completado' })}
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5" /> Cerrar
+                    </Button>
+                  </>
+                )}
+                {topic.status === 'completado' && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="w-full h-9 text-xs gap-2"
+                    onClick={() => onUpdate(topic.id, { status: 'activo' })}
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" /> Reabrir
+                  </Button>
+                )}
+              </div>
 
               <div className="space-y-1.5">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Subtareas</p>
