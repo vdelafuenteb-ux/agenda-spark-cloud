@@ -135,7 +135,43 @@ export function ReviewView(props: ReviewViewProps) {
         </div>
       )}
 
-      {currentTopics.length === 0 && (tab !== 'hoy' || todayReminders.length === 0) ? (
+      {/* Upcoming reminders */}
+      {tab === 'proximos' && upcomingReminders.length > 0 && (
+        <div className="space-y-1.5">
+          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Recordatorios próximos</p>
+          {upcomingReminders.map(({ reminder: r, date }) => {
+            const dateStr = format(date, 'yyyy-MM-dd');
+            const done = isCompleted(r.id, dateStr);
+            return (
+              <div
+                key={`${r.id}-${dateStr}`}
+                className="flex items-center gap-3 rounded-lg border border-border px-4 py-2.5 bg-yellow-500/5"
+              >
+                <button
+                  onClick={() => toggleCompletion.mutate({ reminder_id: r.id, completed_date: dateStr })}
+                  className="shrink-0 hover:scale-110 transition-transform"
+                >
+                  {done ? (
+                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                  ) : (
+                    <Circle className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </button>
+                <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: r.color }} />
+                <span className={`text-sm font-medium flex-1 ${done ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+                  {r.title}
+                </span>
+                <span className="text-[10px] text-muted-foreground shrink-0">
+                  {format(date, "EEE d MMM", { locale: es })}
+                </span>
+                <Badge className="text-[9px] h-4 shrink-0 bg-yellow-500/20 text-yellow-700 border-0">Recordatorio</Badge>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {currentTopics.length === 0 && (tab === 'hoy' ? todayReminders.length === 0 : tab === 'proximos' ? upcomingReminders.length === 0 : true) ? (
         <p className="text-sm text-muted-foreground text-center py-8">{emptyMessages[tab]}</p>
       ) : (
         currentTopics.map((topic) => (
