@@ -145,7 +145,7 @@ const Index = () => {
           {filter === 'notas' ? (
             <NotesView />
           ) : filter === 'revision' ? (
-            <main className="flex-1 overflow-auto p-4 md:p-6">
+            <main className="flex-1 overflow-auto p-3 md:p-4">
               <ReviewView
                 topics={topics}
                 allTags={tags}
