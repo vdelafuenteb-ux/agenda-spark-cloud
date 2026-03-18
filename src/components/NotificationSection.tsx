@@ -19,7 +19,7 @@ interface NotificationSectionProps {
 
 export function NotificationSection({ topic, assignees }: NotificationSectionProps) {
   const [sending, setSending] = useState(false);
-  const { emails, logEmail } = useNotificationEmails(topic.id);
+  const { emails, logEmail, toggleResponded } = useNotificationEmails(topic.id);
 
   const assignee = assignees.find(a => a.name === topic.assignee);
   const hasEmail = assignee?.email;
