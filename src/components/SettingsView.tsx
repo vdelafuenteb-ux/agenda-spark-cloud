@@ -17,6 +17,7 @@ import {
 import { toast } from 'sonner';
 import type { Tag } from '@/hooks/useTags';
 import type { Assignee } from '@/hooks/useAssignees';
+import { EmailScheduleSettings } from '@/components/EmailScheduleSettings';
 
 const TAG_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#8b5cf6', '#ec4899', '#6b7280'];
 
