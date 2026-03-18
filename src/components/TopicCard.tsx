@@ -115,8 +115,17 @@ export function TopicCard({
               </Badge>
             )}
             {topic.status !== 'activo' && (
-              <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+              <Badge variant="outline" className={cn(
+                "text-[10px] px-1.5 py-0",
+                isSeguimiento && "bg-[hsl(var(--seguimiento))] text-[hsl(var(--seguimiento-foreground))] border-transparent"
+              )}>
                 {statusLabels[topic.status]}
+              </Badge>
+            )}
+            {topic.assignee && (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0 gap-0.5">
+                <User className="h-2.5 w-2.5" />
+                {topic.assignee}
               </Badge>
             )}
             {topicTags.length > 0 && (
