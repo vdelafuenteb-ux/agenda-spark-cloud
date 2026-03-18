@@ -140,6 +140,11 @@ export function TopicCard({
                 📌 Subtarea hoy
               </Badge>
             )}
+            {showSubtaskUpcomingBadge && (
+              <Badge className="text-[10px] px-1.5 py-0 bg-yellow-500/20 text-yellow-700 border-transparent">
+                📅 Subtarea próxima
+              </Badge>
+            )}
             {topic.status !== 'activo' && (
               <Badge variant="outline" className={cn(
                 "text-[10px] px-1.5 py-0",
