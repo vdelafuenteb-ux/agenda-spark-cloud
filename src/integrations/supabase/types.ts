@@ -17,18 +17,21 @@ export type Database = {
       assignees: {
         Row: {
           created_at: string
+          email: string | null
           id: string
           name: string
           user_id: string
         }
         Insert: {
           created_at?: string
+          email?: string | null
           id?: string
           name: string
           user_id: string
         }
         Update: {
           created_at?: string
+          email?: string | null
           id?: string
           name?: string
           user_id?: string
@@ -150,6 +153,41 @@ export type Database = {
             columns: ["notebook_id"]
             isOneToOne: false
             referencedRelation: "notebooks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_emails: {
+        Row: {
+          assignee_email: string
+          assignee_name: string
+          id: string
+          sent_at: string
+          topic_id: string
+          user_id: string
+        }
+        Insert: {
+          assignee_email: string
+          assignee_name: string
+          id?: string
+          sent_at?: string
+          topic_id: string
+          user_id: string
+        }
+        Update: {
+          assignee_email?: string
+          assignee_name?: string
+          id?: string
+          sent_at?: string
+          topic_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_emails_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
             referencedColumns: ["id"]
           },
         ]

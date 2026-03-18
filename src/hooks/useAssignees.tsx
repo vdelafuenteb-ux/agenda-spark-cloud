@@ -5,6 +5,7 @@ export interface Assignee {
   id: string;
   user_id: string;
   name: string;
+  email: string | null;
   created_at: string;
 }
 
@@ -19,7 +20,7 @@ export function useAssignees() {
         .select('*')
         .order('name', { ascending: true });
       if (error) throw error;
-      return data || [];
+      return (data || []) as unknown as Assignee[];
     },
   });
 
@@ -35,14 +36,17 @@ export function useAssignees() {
         .select()
         .single();
       if (error) throw error;
-      return data as Assignee;
+      return data as unknown as Assignee;
     },
     onSuccess: invalidate,
   });
 
   const updateAssignee = useMutation({
-    mutationFn: async ({ id, name }: { id: string; name: string }) => {
-      const { error } = await supabase.from('assignees').update({ name: name.trim() }).eq('id', id);
+    mutationFn: async ({ id, name, email }: { id: string; name?: string; email?: string | null }) => {
+      const updateData: Record<string, any> = {};
+      if (name !== undefined) updateData.name = name.trim();
+      if (email !== undefined) updateData.email = email;
+      const { error } = await supabase.from('assignees').update(updateData).eq('id', id);
       if (error) throw error;
     },
     onSuccess: invalidate,
