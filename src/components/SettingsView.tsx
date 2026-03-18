@@ -35,6 +35,7 @@ export function SettingsView({ tags, assignees, onDeleteTag, onCreateTag, onUpda
   const [newTagName, setNewTagName] = useState('');
   const [newTagColor, setNewTagColor] = useState(TAG_COLORS[0]);
   const [newAssigneeName, setNewAssigneeName] = useState('');
+  const [newAssigneeEmail, setNewAssigneeEmail] = useState('');
   const [editingTagId, setEditingTagId] = useState<string | null>(null);
   const [editingTagName, setEditingTagName] = useState('');
   const [editingAssigneeId, setEditingAssigneeId] = useState<string | null>(null);
@@ -55,8 +56,12 @@ export function SettingsView({ tags, assignees, onDeleteTag, onCreateTag, onUpda
   const handleCreateAssignee = async () => {
     if (!newAssigneeName.trim()) return;
     try {
-      await onCreateAssignee(newAssigneeName.trim());
+      const created = await onCreateAssignee(newAssigneeName.trim());
+      if (newAssigneeEmail.trim()) {
+        onUpdateAssignee(created.id, { email: newAssigneeEmail.trim() });
+      }
       setNewAssigneeName('');
+      setNewAssigneeEmail('');
       toast.success('Responsable creado');
     } catch (e: any) {
       toast.error(e.message);
@@ -187,13 +192,21 @@ export function SettingsView({ tags, assignees, onDeleteTag, onCreateTag, onUpda
             <CardTitle className="text-base">Responsables</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <Input
                 placeholder="Nuevo responsable..."
                 value={newAssigneeName}
                 onChange={(e) => setNewAssigneeName(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleCreateAssignee()}
-                className="h-8 text-sm flex-1"
+                className="h-8 text-sm flex-1 min-w-[140px]"
+              />
+              <Input
+                placeholder="correo@ejemplo.com"
+                value={newAssigneeEmail}
+                onChange={(e) => setNewAssigneeEmail(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleCreateAssignee()}
+                className="h-8 text-sm flex-1 min-w-[180px]"
+                type="email"
               />
               <Button size="sm" className="h-8 text-xs gap-1" onClick={handleCreateAssignee} disabled={!newAssigneeName.trim()}>
                 <Plus className="h-3 w-3" />
