@@ -18,16 +18,17 @@ import { Plus, FileText } from 'lucide-react';
 import { NotesView } from '@/components/NotesView';
 import { DashboardView } from '@/components/DashboardView';
 import { ChecklistView } from '@/components/ChecklistView';
+import { SettingsView } from '@/components/SettingsView';
 import { toast } from 'sonner';
 
-type Filter = 'todos' | 'revision' | 'informes' | 'notas' | 'dashboard' | 'checklist';
+type Filter = 'todos' | 'revision' | 'informes' | 'notas' | 'dashboard' | 'checklist' | 'configuracion';
 type StatusTab = 'activo' | 'seguimiento' | 'pausado' | 'completado';
 
 const Index = () => {
   const { user, loading: authLoading } = useAuth();
   const { topics, isLoading, createTopic, updateTopic, deleteTopic, addSubtask, toggleSubtask, deleteSubtask, addProgressEntry, updateSubtask } = useTopics();
-  const { tags, getTagsForTopic, createTag, addTopicTag, removeTopicTag } = useTags();
-  const { assignees, createAssignee } = useAssignees();
+  const { tags, getTagsForTopic, createTag, deleteTag, addTopicTag, removeTopicTag } = useTags();
+  const { assignees, createAssignee, deleteAssignee } = useAssignees();
   const [filter, setFilter] = useState<Filter>('todos');
   const [statusTab, setStatusTab] = useState<StatusTab>('activo');
   const [reportOpen, setReportOpen] = useState(false);
@@ -140,10 +141,10 @@ const Index = () => {
             <div className="flex items-center gap-2">
               <SidebarTrigger />
               <h1 className="text-sm font-semibold text-foreground">
-                {filter === 'notas' ? 'Notas' : filter === 'informes' ? 'Informes' : filter === 'revision' ? 'Revisión' : filter === 'dashboard' ? 'Dashboard' : filter === 'checklist' ? 'Checklist del Día' : 'Temas'}
+                {filter === 'configuracion' ? 'Configuración' : filter === 'notas' ? 'Notas' : filter === 'informes' ? 'Informes' : filter === 'revision' ? 'Revisión' : filter === 'dashboard' ? 'Dashboard' : filter === 'checklist' ? 'Checklist del Día' : 'Temas'}
               </h1>
             </div>
-            {filter !== 'notas' && filter !== 'informes' && filter !== 'revision' && filter !== 'dashboard' && filter !== 'checklist' && (
+            {filter !== 'notas' && filter !== 'informes' && filter !== 'revision' && filter !== 'dashboard' && filter !== 'checklist' && filter !== 'configuracion' && (
               <div className="flex items-center gap-2">
                 <Button size="sm" variant="outline" className="h-8 text-xs gap-1" onClick={() => setReportOpen(true)}>
                   <FileText className="h-3 w-3" />
@@ -157,7 +158,16 @@ const Index = () => {
             )}
           </header>
 
-          {filter === 'dashboard' ? (
+          {filter === 'configuracion' ? (
+            <SettingsView
+              tags={tags}
+              assignees={assignees}
+              onDeleteTag={(id) => deleteTag.mutate(id)}
+              onCreateTag={(data) => createTag.mutateAsync(data)}
+              onDeleteAssignee={(id) => deleteAssignee.mutate(id)}
+              onCreateAssignee={(name) => createAssignee.mutateAsync(name)}
+            />
+          ) : filter === 'dashboard' ? (
             <DashboardView topics={topics} />
           ) : filter === 'checklist' ? (
             <ChecklistView />

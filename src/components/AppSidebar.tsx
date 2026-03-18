@@ -1,4 +1,4 @@
-import { Eye, LayoutList, FileText, LogOut, StickyNote, BarChart3, CheckSquare } from 'lucide-react';
+import { Eye, LayoutList, FileText, LogOut, StickyNote, BarChart3, CheckSquare, Settings } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -15,7 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import type { TopicWithSubtasks } from '@/hooks/useTopics';
 import { isStoredDateOverdue } from '@/lib/date';
 
-type Filter = 'todos' | 'revision' | 'informes' | 'notas' | 'dashboard' | 'checklist';
+type Filter = 'todos' | 'revision' | 'informes' | 'notas' | 'dashboard' | 'checklist' | 'configuracion';
 
 interface AppSidebarProps {
   activeFilter: Filter;
@@ -30,6 +30,7 @@ const filters: { key: Filter; label: string; icon: typeof LayoutList }[] = [
   { key: 'informes', label: 'Informes', icon: FileText },
   { key: 'dashboard', label: 'Dashboard', icon: BarChart3 },
   { key: 'checklist', label: 'Checklist', icon: CheckSquare },
+  { key: 'configuracion', label: 'Configuración', icon: Settings },
 ];
 
 export function AppSidebar({ activeFilter, onFilterChange, topics }: AppSidebarProps) {
