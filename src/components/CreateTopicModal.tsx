@@ -142,6 +142,18 @@ export function CreateTopicModal({ open, onOpenChange, allTags, onSubmit, isPend
               </Select>
             </div>
 
+            {status === 'seguimiento' && (
+              <div className="space-y-1.5 w-full">
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Responsable *</label>
+                <Input
+                  placeholder="Nombre del responsable..."
+                  value={assignee}
+                  onChange={(e) => setAssignee(e.target.value)}
+                  className="h-8 text-sm"
+                />
+              </div>
+            )}
+
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Fecha inicio</label>
               <Popover>
