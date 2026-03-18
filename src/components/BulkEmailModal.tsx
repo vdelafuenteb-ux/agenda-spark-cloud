@@ -69,14 +69,11 @@ export function BulkEmailModal({ open, onOpenChange, topics, assignee }: BulkEma
         )
       );
 
-      const notificationIds = records.map(r => r.id);
-
-      // 2. Send email with notification IDs for the confirm button
+      // 2. Send email
       const { error } = await supabase.functions.invoke('send-bulk-notification', {
         body: {
           to_email: assignee.email,
           to_name: assignee.name,
-          notification_ids: notificationIds,
           topics: selected.map(t => ({
             title: t.title,
             start_date: t.start_date,
