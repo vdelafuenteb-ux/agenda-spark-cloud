@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
 
     // Build consolidated HTML email body
     let mensaje = `<p>Hola ${to_name || ""},</p>`;
-    mensaje += `<p>Te escribimos para recordarte sobre las siguientes tareas:</p>`;
+    mensaje += `<p><strong>Te recordamos los siguientes temas</strong> para que por favor puedas <strong>responder sobre este correo y actualizar</strong> el estado de cada uno:</p>`;
 
     topics.forEach((topic: any, index: number) => {
       const pendingSubtasks = (topic.subtasks || []).filter((s: any) => !s.completed);
@@ -108,7 +108,9 @@ Deno.serve(async (req) => {
       mensaje += `<hr style="border:none;border-top:1px solid #eee;margin:12px 0;"/>`;
     });
 
-    mensaje += `<p>Por favor actualiza sobre el estado de estas tareas.</p>`;
+    mensaje += `<p style="font-size:1.1em;"><strong>⚠️ IMPORTANTE: Por favor responde a este correo actualizando sobre CADA UNO de los temas anteriores.</strong></p>`;
+    mensaje += `<p style="font-size:1.1em;"><strong>🕐 Plazo máximo de respuesta: 48 HORAS.</strong></p>`;
+    mensaje += `<p><strong>No olvides responder a todos</strong> para que tu respuesta llegue a todo el equipo.</p>`;
     mensaje += `<p>Gracias.</p>`;
 
     const asunto = topics.length === 1
