@@ -266,7 +266,7 @@ export function DashboardView({ topics }: DashboardViewProps) {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-0">
-            <ChartContainer config={trendChartConfig} className="h-[200px] w-full">
+            <ChartContainer config={trendChartConfig} className="aspect-auto h-[200px] w-full">
               <AreaChart data={metrics.weeklyTrend} margin={{ top: 5, right: 5, bottom: 5, left: -20 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-border/40" />
                 <XAxis dataKey="week" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
