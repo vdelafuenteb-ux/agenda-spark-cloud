@@ -35,6 +35,7 @@ export function SettingsView({ tags, assignees, onDeleteTag, onCreateTag, onUpda
   const [newTagName, setNewTagName] = useState('');
   const [newTagColor, setNewTagColor] = useState(TAG_COLORS[0]);
   const [newAssigneeName, setNewAssigneeName] = useState('');
+  const [newAssigneeEmail, setNewAssigneeEmail] = useState('');
   const [editingTagId, setEditingTagId] = useState<string | null>(null);
   const [editingTagName, setEditingTagName] = useState('');
   const [editingAssigneeId, setEditingAssigneeId] = useState<string | null>(null);
