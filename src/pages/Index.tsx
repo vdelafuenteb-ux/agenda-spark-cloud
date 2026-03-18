@@ -140,7 +140,7 @@ const Index = () => {
                 {filter === 'notas' ? 'Notas' : filter === 'informes' ? 'Informes' : filter === 'revision' ? 'Revisión' : filter === 'dashboard' ? 'Dashboard' : 'Temas'}
               </h1>
             </div>
-            {filter !== 'notas' && filter !== 'informes' && filter !== 'revision' && (
+            {filter !== 'notas' && filter !== 'informes' && filter !== 'revision' && filter !== 'dashboard' && (
               <div className="flex items-center gap-2">
                 <Button size="sm" variant="outline" className="h-8 text-xs gap-1" onClick={() => setReportOpen(true)}>
                   <FileText className="h-3 w-3" />
