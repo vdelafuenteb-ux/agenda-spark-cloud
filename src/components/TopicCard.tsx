@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { isStoredDateToday } from '@/lib/date';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, Plus, Trash2, CalendarIcon, CheckCircle2, RotateCcw } from 'lucide-react';
 import { es } from 'date-fns/locale';
