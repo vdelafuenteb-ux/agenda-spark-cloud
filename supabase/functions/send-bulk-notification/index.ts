@@ -127,9 +127,7 @@ Deno.serve(async (req) => {
     mensaje += `<p><strong>⚠️ Responde actualizando CADA tema. Plazo máximo: 48 HORAS.</strong></p>`;
     mensaje += `<p><strong>No olvides responder a todos</strong> para que tu respuesta llegue a todo el equipo.</p>`;
 
-    const asunto = topics.length === 1
-      ? `⚠️ URGENTE: "${topics[0].title}" — Actualizar a la brevedad | 48 hrs para responder`
-      : `🚨 ${topics.length} TEMAS ACTIVOS — ¡Actualizar a la brevedad! | Máx. 48 hrs para responder`;
+    const asunto = `🚨 ${topics.length} TEMA${topics.length > 1 ? "S" : ""} ACTIVO${topics.length > 1 ? "S" : ""} — ¡Actualizar a la brevedad! | Máx. 48 hrs para responder`;
 
     const CC_EMAILS = ["matias@transitglobalgroup.com", "vicente@transitglobalgroup.com"]
       .filter((cc) => cc.toLowerCase() !== to_email.toLowerCase());

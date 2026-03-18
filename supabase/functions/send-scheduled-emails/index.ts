@@ -177,9 +177,7 @@ Deno.serve(async (req) => {
         mensaje += `<p><strong>No olvides responder a todos</strong> para que tu respuesta llegue a todo el equipo.</p>`;
         mensaje += `<p style="font-size:11px;color:#aaa;">📧 Correo automático programado.</p>`;
 
-        const asunto = assigneeTopics.length === 1
-          ? `⚠️ URGENTE: "${assigneeTopics[0].title}" — Actualizar a la brevedad | 48 hrs para responder`
-          : `🚨 ${assigneeTopics.length} TEMAS ACTIVOS — ¡Actualizar a la brevedad! | Máx. 48 hrs para responder`;
+        const asunto = `🚨 ${assigneeTopics.length} TEMA${assigneeTopics.length > 1 ? "S" : ""} ACTIVO${assigneeTopics.length > 1 ? "S" : ""} — ¡Actualizar a la brevedad! | Máx. 48 hrs para responder`;
 
         const CC_EMAILS = ["matias@transitglobalgroup.com", "vicente@transitglobalgroup.com"]
           .filter((cc) => cc.toLowerCase() !== assignee.email.toLowerCase());
