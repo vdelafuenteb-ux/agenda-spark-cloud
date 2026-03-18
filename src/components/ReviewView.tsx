@@ -62,8 +62,11 @@ export function ReviewView(props: ReviewViewProps) {
     return topicUpcoming || hasSubtaskUpcoming;
   });
 
+  const upcomingReminders = useMemo(() => getUpcomingReminders(reminders, 3), [reminders]);
+
   const currentTopics = tab === 'hoy' ? todayTopics : tab === 'atrasados' ? overdueTopics : upcomingTopics;
   const todayTotalCount = todayTopics.length + todayReminders.length;
+  const upcomingTotalCount = upcomingTopics.length + upcomingReminders.length;
 
   const emptyMessages: Record<ReviewTab, string> = {
     hoy: 'No hay temas programados para hoy.',
