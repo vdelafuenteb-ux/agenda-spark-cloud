@@ -40,7 +40,7 @@ export function ReminderManager({ reminders, onCreate, onDelete }: ReminderManag
   const [type, setType] = useState<RecurrenceType>('monthly');
   const [day, setDay] = useState(1);
   const [week, setWeek] = useState(1);
-  const [color, setColor] = useState(COLORS[0]);
+  
 
   const handleCreate = async () => {
     if (!title.trim()) return;
