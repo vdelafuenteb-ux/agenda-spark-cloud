@@ -67,19 +67,9 @@ export function ReportsList({ onNewReport }: ReportsListProps) {
     toast.success('Copiado');
   };
 
-  const handlePrint = (content: string, title: string) => {
-    const w = window.open('', '_blank');
-    if (!w) return;
-    w.document.write(`<html><head><title>${title}</title><style>
-      body { font-family: system-ui, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; color: #1a1a1a; line-height: 1.6; }
-      h1 { font-size: 1.5rem; } h2 { font-size: 1.2rem; border-bottom: 1px solid #e5e5e5; padding-bottom: 4px; }
-      h3 { font-size: 1rem; } table { border-collapse: collapse; width: 100%; margin: 12px 0; }
-      th, td { border: 1px solid #e5e5e5; padding: 6px 12px; text-align: left; font-size: 0.85rem; }
-      li { font-size: 0.85rem; } hr { margin: 16px 0; border: none; border-top: 1px solid #e5e5e5; }
-      pre { white-space: pre-wrap; font-size: 0.85rem; }
-    </style></head><body><pre>${content}</pre></body></html>`);
-    w.document.close();
-    w.print();
+  const handleDownloadPdf = (content: string, title: string, periodStart: string, periodEnd: string) => {
+    downloadPdfFromContent(content, title, periodStart, periodEnd);
+    toast.success('PDF descargado');
   };
 
   const clearFilters = () => {
