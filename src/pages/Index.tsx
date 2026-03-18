@@ -134,16 +134,18 @@ const Index = () => {
                 {filter === 'notas' ? 'Notas' : filter === 'informes' ? 'Informes' : filter === 'alta' ? 'Prioridad Alta' : filter === 'hoy' ? 'Mi Día' : 'Temas'}
               </h1>
             </div>
-            <div className="flex items-center gap-2">
-              <Button size="sm" variant="outline" className="h-8 text-xs gap-1" onClick={() => setReportOpen(true)}>
-                <FileText className="h-3 w-3" />
-                Informe
-              </Button>
-              <Button size="sm" className="h-8 text-xs gap-1" onClick={() => setCreateOpen(true)}>
-                <Plus className="h-3 w-3" />
-                Nuevo Tema
-              </Button>
-            </div>
+            {filter !== 'notas' && (
+              <div className="flex items-center gap-2">
+                <Button size="sm" variant="outline" className="h-8 text-xs gap-1" onClick={() => setReportOpen(true)}>
+                  <FileText className="h-3 w-3" />
+                  Informe
+                </Button>
+                <Button size="sm" className="h-8 text-xs gap-1" onClick={() => setCreateOpen(true)}>
+                  <Plus className="h-3 w-3" />
+                  Nuevo Tema
+                </Button>
+              </div>
+            )}
           </header>
 
           <main className="flex-1 overflow-auto p-4 md:p-6">
