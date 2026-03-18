@@ -23,6 +23,7 @@ import { DashboardView } from '@/components/DashboardView';
 import { ChecklistView } from '@/components/ChecklistView';
 import { CalendarView } from '@/components/CalendarView';
 import { SettingsView } from '@/components/SettingsView';
+import { EmailHistoryView } from '@/components/EmailHistoryView';
 import { toast } from 'sonner';
 
 type Filter = 'todos' | 'revision' | 'informes' | 'notas' | 'dashboard' | 'checklist' | 'calendario' | 'configuracion';
