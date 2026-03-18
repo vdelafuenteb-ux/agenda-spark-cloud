@@ -54,6 +54,16 @@ export function useNotificationEmails(topicId?: string) {
     },
   });
 
+  const deleteEmail = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('notification_emails').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notification_emails'] });
+    },
+  });
+
   const toggleResponded = useMutation({
     mutationFn: async ({ id, responded }: { id: string; responded: boolean }) => {
       const { error } = await supabase
