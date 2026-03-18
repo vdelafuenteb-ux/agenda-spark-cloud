@@ -106,6 +106,7 @@ const Index = () => {
         start_date: data.start_date,
         due_date: data.due_date,
         assignee: data.assignee || null,
+        user_id: user!.id,
       });
 
       // Use raw supabase calls to avoid triggering refetch per item
