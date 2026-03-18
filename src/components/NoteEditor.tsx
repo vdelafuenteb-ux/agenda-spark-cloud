@@ -524,8 +524,8 @@ export function NoteEditor({
 
       {/* Formatting toolbar */}
       <div className="flex items-center gap-0.5 px-3 py-1 border-b border-border shrink-0 flex-wrap overflow-x-auto">
-        <ToolbarButton icon={Undo2} label="Deshacer" onClick={() => execCommand('undo')} />
-        <ToolbarButton icon={Redo2} label="Rehacer" onClick={() => execCommand('redo')} />
+        <ToolbarButton icon={Undo2} label="Deshacer" onClick={handleUndo} />
+        <ToolbarButton icon={Redo2} label="Rehacer" onClick={handleRedo} />
         <Separator orientation="vertical" className="h-5 mx-1" />
         <ToolbarButton icon={Bold} label="Negrita" onClick={() => execCommand('bold')} />
         <ToolbarButton icon={Italic} label="Cursiva" onClick={() => execCommand('italic')} />
