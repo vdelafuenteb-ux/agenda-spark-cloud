@@ -145,7 +145,7 @@ Deno.serve(async (req) => {
           const rowBg = isOverdue ? "background-color:#fff5f5;" : "";
           const rowColor = isOverdue ? "color:#c0392b;" : "";
           const lastEntry = (t.progress_entries || []).length > 0 ? (t.progress_entries || [])[0]?.content || "" : "";
-          const truncated = lastEntry.length > 80 ? lastEntry.substring(0, 80) + "…" : lastEntry;
+          const truncated = lastEntry;
           mensaje += `<tr style="${rowBg}${rowColor}">`;
           mensaje += `<td style="padding:6px 8px;border:1px solid #ddd;text-align:center;">${t.num}</td>`;
           mensaje += `<td style="padding:6px 8px;border:1px solid #ddd;font-weight:600;">${t.title}</td>`;
