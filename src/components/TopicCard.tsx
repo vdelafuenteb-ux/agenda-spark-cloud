@@ -237,9 +237,12 @@ export function TopicCard({
                       checked={subtask.completed}
                       onCheckedChange={(checked) => onToggleSubtask(subtask.id, !!checked)}
                     />
-                    <span className={cn('text-sm flex-1', subtask.completed && 'line-through text-muted-foreground')}>
-                      {subtask.title}
-                    </span>
+                    <div className={cn('flex-1 min-w-0', subtask.completed && 'line-through text-muted-foreground')}>
+                      <span className="text-sm">{subtask.title}</span>
+                      <span className="ml-2 text-[10px] text-muted-foreground">
+                        {formatStoredDate(subtask.created_at?.slice(0, 10), 'dd MMM', { locale: es })}
+                      </span>
+                    </div>
                     <Popover>
                       <PopoverTrigger asChild>
                         <button
