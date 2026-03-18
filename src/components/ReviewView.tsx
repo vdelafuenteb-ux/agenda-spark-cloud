@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { TopicCard } from '@/components/TopicCard';
 import type { TopicWithSubtasks } from '@/hooks/useTopics';
 import type { Tag } from '@/hooks/useTags';
+import type { Assignee } from '@/hooks/useAssignees';
 import { isStoredDateToday, isStoredDateOverdue, isStoredDateUpcoming } from '@/lib/date';
 
 type ReviewTab = 'hoy' | 'atrasados' | 'proximos';
