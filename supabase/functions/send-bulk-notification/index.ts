@@ -63,52 +63,58 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Build consolidated HTML email body
+    // Build executive HTML email body with summary table
+    const topicsWithPending = topics.map((topic: any, index: number) => {
+      const pending = (topic.subtasks || []).filter((s: any) => !s.completed);
+      return { ...topic, pendingSubtasks: pending, num: index + 1 };
+    });
+
     let mensaje = `<p>Hola ${to_name || ""},</p>`;
-    mensaje += `<p><strong>Te recordamos los siguientes temas</strong> para que por favor puedas <strong>responder sobre este correo y actualizar</strong> el estado de cada uno:</p>`;
+    mensaje += `<p>Tienes <strong>${topics.length} tema${topics.length > 1 ? "s" : ""}</strong> pendiente${topics.length > 1 ? "s" : ""} de actualizar. <strong>Responde este correo</strong> con el estado de cada uno.</p>`;
 
-    topics.forEach((topic: any, index: number) => {
-      const pendingSubtasks = (topic.subtasks || []).filter((s: any) => !s.completed);
-      mensaje += `<h3 style="margin-bottom:4px;">${index + 1}. ${topic.title}</h3>`;
+    // Summary table
+    mensaje += `<table style="width:100%;border-collapse:collapse;margin:16px 0;font-size:14px;">`;
+    mensaje += `<thead><tr style="background-color:#f2f2f2;text-align:left;">`;
+    mensaje += `<th style="padding:8px;border:1px solid #ddd;width:30px;">#</th>`;
+    mensaje += `<th style="padding:8px;border:1px solid #ddd;">Tema</th>`;
+    mensaje += `<th style="padding:8px;border:1px solid #ddd;width:100px;">Inicio</th>`;
+    mensaje += `<th style="padding:8px;border:1px solid #ddd;width:100px;">Vencimiento</th>`;
+    mensaje += `<th style="padding:8px;border:1px solid #ddd;width:120px;">Pendientes</th>`;
+    mensaje += `</tr></thead><tbody>`;
 
-      if (topic.start_date || topic.due_date) {
-        mensaje += `<p style="color:#555;margin:2px 0;">`;
-        if (topic.start_date) mensaje += `📅 Inicio: <strong>${formatDate(topic.start_date)}</strong>`;
-        if (topic.start_date && topic.due_date) mensaje += ` &nbsp;|&nbsp; `;
-        if (topic.due_date) mensaje += `⏰ Vencimiento: <strong>${formatDate(topic.due_date)}</strong>`;
-        mensaje += `</p>`;
-      }
+    topicsWithPending.forEach((t: any) => {
+      const pendingText = t.pendingSubtasks.length > 0
+        ? `${t.pendingSubtasks.length} subtarea${t.pendingSubtasks.length > 1 ? "s" : ""}`
+        : "Sin pendientes";
+      const pendingColor = t.pendingSubtasks.length > 0 ? "#c0392b" : "#888";
+      mensaje += `<tr>`;
+      mensaje += `<td style="padding:6px 8px;border:1px solid #ddd;text-align:center;">${t.num}</td>`;
+      mensaje += `<td style="padding:6px 8px;border:1px solid #ddd;font-weight:600;">${t.title}</td>`;
+      mensaje += `<td style="padding:6px 8px;border:1px solid #ddd;">${formatDate(t.start_date) || "—"}</td>`;
+      mensaje += `<td style="padding:6px 8px;border:1px solid #ddd;">${formatDate(t.due_date) || "—"}</td>`;
+      mensaje += `<td style="padding:6px 8px;border:1px solid #ddd;color:${pendingColor};">${pendingText}</td>`;
+      mensaje += `</tr>`;
+    });
+    mensaje += `</tbody></table>`;
 
-      if (pendingSubtasks.length > 0) {
-        mensaje += `<ul style="margin-top:4px;">`;
-        pendingSubtasks.forEach((s: any) => {
+    // Detail section — only topics with pending subtasks
+    const withPending = topicsWithPending.filter((t: any) => t.pendingSubtasks.length > 0);
+    if (withPending.length > 0) {
+      mensaje += `<p style="margin-top:16px;"><strong>Detalle de subtareas pendientes:</strong></p>`;
+      withPending.forEach((t: any) => {
+        mensaje += `<p style="margin:8px 0 2px;"><strong>${t.num}. ${t.title}</strong></p><ul style="margin:0;">`;
+        t.pendingSubtasks.forEach((s: any) => {
           mensaje += `<li>${s.title}`;
-          if (s.due_date) mensaje += ` <em>(vence: ${formatDate(s.due_date)})</em>`;
-          if (s.notes) mensaje += `<br/><span style="color:#666;font-size:0.9em;">📝 ${s.notes}</span>`;
+          if (s.due_date) mensaje += ` <em style="color:#888;">(vence: ${formatDate(s.due_date)})</em>`;
           mensaje += `</li>`;
         });
         mensaje += `</ul>`;
-      } else {
-        mensaje += `<p style="margin-left:20px;color:#888;"><em>Sin subtareas pendientes</em></p>`;
-      }
+      });
+    }
 
-      const entries = (topic.progress_entries || []).slice(0, 3);
-      if (entries.length > 0) {
-        mensaje += `<p style="margin-bottom:2px;"><strong>Bitácora:</strong></p><ul style="color:#555;">`;
-        entries.forEach((e: any) => {
-          const dateStr = e.created_at ? formatDate(e.created_at) : "";
-          mensaje += `<li>${e.content}${dateStr ? ` <em style="color:#999;">(${dateStr})</em>` : ""}</li>`;
-        });
-        mensaje += `</ul>`;
-      }
-
-      mensaje += `<hr style="border:none;border-top:1px solid #eee;margin:12px 0;"/>`;
-    });
-
-    mensaje += `<p style="font-size:1.1em;"><strong>⚠️ IMPORTANTE: Por favor responde a este correo actualizando sobre CADA UNO de los temas anteriores.</strong></p>`;
-    mensaje += `<p style="font-size:1.1em;"><strong>🕐 Plazo máximo de respuesta: 48 HORAS.</strong></p>`;
+    mensaje += `<hr style="border:none;border-top:1px solid #ddd;margin:20px 0 12px;"/>`;
+    mensaje += `<p><strong>⚠️ Responde actualizando CADA tema. Plazo máximo: 48 HORAS.</strong></p>`;
     mensaje += `<p><strong>No olvides responder a todos</strong> para que tu respuesta llegue a todo el equipo.</p>`;
-    mensaje += `<p>Gracias.</p>`;
 
     const asunto = topics.length === 1
       ? `⚠️ URGENTE: "${topics[0].title}" — Actualizar a la brevedad | 48 hrs para responder`
