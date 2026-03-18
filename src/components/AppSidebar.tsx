@@ -1,4 +1,4 @@
-import { Eye, LayoutList, FileText, LogOut, StickyNote } from 'lucide-react';
+import { Eye, LayoutList, FileText, LogOut, StickyNote, BarChart3 } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
