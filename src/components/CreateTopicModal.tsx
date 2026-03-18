@@ -151,12 +151,61 @@ export function CreateTopicModal({ open, onOpenChange, allTags, assignees, onCre
             {status === 'seguimiento' && (
               <div className="space-y-1.5 w-full">
                 <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Responsable *</label>
-                <Input
-                  placeholder="Nombre del responsable..."
-                  value={assignee}
-                  onChange={(e) => setAssignee(e.target.value)}
-                  className="h-8 text-sm"
-                />
+                {assignees.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mb-1.5">
+                    {assignees.map((a) => (
+                      <button
+                        key={a.id}
+                        type="button"
+                        onClick={() => setAssignee(a.name)}
+                        className={cn(
+                          'inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium border transition-all',
+                          assignee === a.name
+                            ? 'bg-primary text-primary-foreground border-primary'
+                            : 'bg-transparent text-foreground border-border hover:border-primary/50'
+                        )}
+                      >
+                        <User className="h-2.5 w-2.5 mr-1" />
+                        {a.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <Input
+                    placeholder="Nuevo responsable..."
+                    value={newAssigneeName}
+                    onChange={(e) => setNewAssigneeName(e.target.value)}
+                    onKeyDown={async (e) => {
+                      if (e.key === 'Enter' && newAssigneeName.trim()) {
+                        e.preventDefault();
+                        const created = await onCreateAssignee(newAssigneeName.trim());
+                        setAssignee(created.name);
+                        setNewAssigneeName('');
+                      }
+                    }}
+                    className="h-8 text-sm"
+                  />
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 shrink-0"
+                    disabled={!newAssigneeName.trim()}
+                    onClick={async () => {
+                      if (!newAssigneeName.trim()) return;
+                      const created = await onCreateAssignee(newAssigneeName.trim());
+                      setAssignee(created.name);
+                      setNewAssigneeName('');
+                    }}
+                  >
+                    <Plus className="h-3 w-3" />
+                  </Button>
+                </div>
+                {assignee && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Seleccionado: <span className="font-medium text-foreground">{assignee}</span>
+                  </p>
+                )}
               </div>
             )}
 
