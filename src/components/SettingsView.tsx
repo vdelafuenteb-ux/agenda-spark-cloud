@@ -56,8 +56,12 @@ export function SettingsView({ tags, assignees, onDeleteTag, onCreateTag, onUpda
   const handleCreateAssignee = async () => {
     if (!newAssigneeName.trim()) return;
     try {
-      await onCreateAssignee(newAssigneeName.trim());
+      const created = await onCreateAssignee(newAssigneeName.trim());
+      if (newAssigneeEmail.trim()) {
+        onUpdateAssignee(created.id, { email: newAssigneeEmail.trim() });
+      }
       setNewAssigneeName('');
+      setNewAssigneeEmail('');
       toast.success('Responsable creado');
     } catch (e: any) {
       toast.error(e.message);
