@@ -65,7 +65,8 @@ Deno.serve(async (req) => {
 
     // Build HTML email body
     let mensaje = `<p>Hola ${to_name || ""},</p>`;
-    mensaje += `<p>Te escribimos para recordarte sobre la tarea: <strong>"${topic_title}"</strong>.</p>`;
+    mensaje += `<p><strong>Te recordamos el siguiente tema</strong> para que por favor puedas <strong>responder sobre este correo y actualizar</strong> el estado:</p>`;
+    mensaje += `<h3>${topic_title}</h3>`;
 
     // Dates
     if (start_date || due_date) {
@@ -100,7 +101,9 @@ Deno.serve(async (req) => {
       mensaje += `</ul>`;
     }
 
-    mensaje += `<p>Por favor actualiza sobre el estado de esta tarea.</p>`;
+    mensaje += `<p style="font-size:1.1em;"><strong>⚠️ IMPORTANTE: Por favor responde a este correo actualizando sobre este tema.</strong></p>`;
+    mensaje += `<p style="font-size:1.1em;"><strong>🕐 Plazo máximo de respuesta: 48 HORAS.</strong></p>`;
+    mensaje += `<p><strong>No olvides responder a todos</strong> para que tu respuesta llegue a todo el equipo.</p>`;
     mensaje += `<p>Gracias.</p>`;
 
     const CC_EMAILS = ["matias@transitglobalgroup.com", "vicente@transitglobalgroup.com"];
