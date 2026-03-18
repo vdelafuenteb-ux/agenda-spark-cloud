@@ -17,7 +17,7 @@ import { Plus, FileText } from 'lucide-react';
 import { NotesView } from '@/components/NotesView';
 import { toast } from 'sonner';
 
-type Filter = 'todos' | 'hoy' | 'alta' | 'informes';
+type Filter = 'todos' | 'hoy' | 'alta' | 'informes' | 'notas';
 type StatusTab = 'activo' | 'pausado' | 'completado';
 
 const Index = () => {
