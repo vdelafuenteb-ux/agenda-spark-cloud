@@ -73,7 +73,7 @@ export function TopicCard({
   onCreateTag,
 }: TopicCardProps) {
   const [expanded, setExpanded] = useState(highlightToday);
-  const [subtasksExpanded, setSubtasksExpanded] = useState(true);
+  const [subtasksExpanded, setSubtasksExpanded] = useState(false);
   const [newSubtask, setNewSubtask] = useState('');
   const [newAssigneeName, setNewAssigneeName] = useState('');
 
