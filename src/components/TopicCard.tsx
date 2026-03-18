@@ -54,6 +54,7 @@ export function TopicCard({
   topic,
   allTags,
   topicTags,
+  highlightToday = false,
   onUpdate,
   onDelete,
   onAddSubtask,
@@ -65,8 +66,16 @@ export function TopicCard({
   onRemoveTag,
   onCreateTag,
 }: TopicCardProps) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(highlightToday);
   const [newSubtask, setNewSubtask] = useState('');
+
+  useEffect(() => {
+    if (highlightToday) setExpanded(true);
+  }, [highlightToday]);
+
+  const topicDueToday = isStoredDateToday(topic.due_date);
+  const hasSubtaskDueToday = topic.subtasks.some(s => isStoredDateToday(s.due_date));
+  const showSubtaskTodayBadge = highlightToday && !topicDueToday && hasSubtaskDueToday;
 
   const completedCount = topic.subtasks.filter((s) => s.completed).length;
   const totalCount = topic.subtasks.length;
