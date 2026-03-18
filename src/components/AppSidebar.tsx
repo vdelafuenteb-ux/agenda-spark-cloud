@@ -24,12 +24,12 @@ interface AppSidebarProps {
 }
 
 const filters: { key: Filter; label: string; icon: typeof LayoutList }[] = [
+  { key: 'dashboard', label: 'Dashboard', icon: BarChart3 },
   { key: 'todos', label: 'Todos los temas', icon: LayoutList },
   { key: 'revision', label: 'Revisión', icon: Eye },
+  { key: 'checklist', label: 'Checklist', icon: CheckSquare },
   { key: 'notas', label: 'Notas', icon: StickyNote },
   { key: 'informes', label: 'Informes', icon: FileText },
-  { key: 'dashboard', label: 'Dashboard', icon: BarChart3 },
-  { key: 'checklist', label: 'Checklist', icon: CheckSquare },
   { key: 'configuracion', label: 'Configuración', icon: Settings },
 ];
 
