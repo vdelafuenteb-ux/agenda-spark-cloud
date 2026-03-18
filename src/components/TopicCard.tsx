@@ -202,7 +202,17 @@ export function TopicCard({
                   </PopoverContent>
                 </Popover>
 
-                <Button
+              <TagSelector
+                allTags={allTags}
+                topicTags={topicTags}
+                onAddTag={(tagId) => onAddTag(topic.id, tagId)}
+                onRemoveTag={(tagId) => onRemoveTag(topic.id, tagId)}
+                onCreateTag={async (name, color) => {
+                  const newTag = await onCreateTag(name, color);
+                  if (newTag) onAddTag(topic.id, newTag.id);
+                }}
+              />
+
                   variant="ghost"
                   size="sm"
                   className="h-8 text-xs text-destructive hover:text-destructive ml-auto"
