@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import {
   addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek,
   eachDayOfInterval, format, isSameMonth, isToday, isSameDay, getDay, getDate, getYear,
+  lastDayOfMonth,
 } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -34,9 +35,24 @@ function getEventsForDay(
   const dayOfWeek = getDay(date);
 
   for (const r of reminders) {
+    let matches = false;
     if (r.recurrence_type === 'monthly' && r.recurrence_day === dayOfMonth) {
-      events.push({ label: r.title, color: r.color, type: 'reminder' });
+      matches = true;
     } else if (r.recurrence_type === 'weekly' && r.recurrence_day === dayOfWeek) {
+      matches = true;
+    } else if (r.recurrence_type === 'monthly_weekday' && r.recurrence_day === dayOfWeek && r.recurrence_week != null) {
+      // Check nth weekday of month
+      if (r.recurrence_week === -1) {
+        // Last occurrence: check if adding 7 days would exceed the month
+        const lastDay = getDate(lastDayOfMonth(date));
+        matches = dayOfMonth + 7 > lastDay;
+      } else {
+        // Nth occurrence: day falls in the nth week range
+        const nth = r.recurrence_week;
+        matches = dayOfMonth > (nth - 1) * 7 && dayOfMonth <= nth * 7;
+      }
+    }
+    if (matches) {
       events.push({ label: r.title, color: r.color, type: 'reminder' });
     }
   }
