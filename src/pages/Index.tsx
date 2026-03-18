@@ -293,6 +293,8 @@ const Index = () => {
                       forceExpand={forceExpand}
                       onToggleExpand={() => setForceExpand(prev => !prev)}
                       onBulkEmail={bulkEmailAssignee ? () => setBulkEmailOpen(true) : undefined}
+                      filterNoDueDate={filterNoDueDate}
+                      onToggleNoDueDate={() => setFilterNoDueDate(prev => !prev)}
                     />
 
                     {isLoading ? (
