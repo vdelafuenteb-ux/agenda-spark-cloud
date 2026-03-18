@@ -40,6 +40,8 @@ interface TopicCardProps {
   onUpdateSubtask: (id: string, data: any) => void;
   onDeleteSubtask: (id: string) => void;
   onAddProgressEntry: (topicId: string, content: string) => void;
+  onUpdateProgressEntry?: (id: string, content: string) => void;
+  onDeleteProgressEntry?: (id: string) => void;
   onAddTag: (topicId: string, tagId: string) => void;
   onRemoveTag: (topicId: string, tagId: string) => void;
   onCreateTag: (name: string, color: string) => Promise<any>;
