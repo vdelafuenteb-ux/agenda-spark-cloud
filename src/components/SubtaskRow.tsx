@@ -9,7 +9,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import type { Database } from '@/integrations/supabase/types';
 
-type Subtask = Database['public']['Tables']['subtasks']['Row'];
+type Subtask = Database['public']['Tables']['subtasks']['Row'] & { notes?: string };
 
 interface SubtaskRowProps {
   subtask: Subtask;
