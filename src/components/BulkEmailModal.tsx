@@ -65,11 +65,18 @@ export function BulkEmailModal({ open, onOpenChange, topics, assignee }: BulkEma
           to_name: assignee.name,
           topics: selected.map(t => ({
             title: t.title,
+            start_date: t.start_date,
+            due_date: t.due_date,
             subtasks: t.subtasks.map(s => ({
               title: s.title,
               completed: s.completed,
               due_date: s.due_date,
+              notes: s.notes || null,
             })),
+            progress_entries: t.progress_entries
+              .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+              .slice(0, 3)
+              .map(e => ({ content: e.content, created_at: e.created_at })),
           })),
         },
       });

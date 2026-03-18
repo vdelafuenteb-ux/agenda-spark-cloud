@@ -6,13 +6,22 @@ const corsHeaders = {
 
 const FIREBASE_EMAIL_URL = "https://us-central1-sistemattransit.cloudfunctions.net/correoAdministracion";
 
+function formatDate(dateStr?: string | null): string {
+  if (!dateStr) return "";
+  try {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString("es-CL", { day: "2-digit", month: "short", year: "numeric" });
+  } catch {
+    return dateStr;
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    // Verify auth
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(
@@ -45,7 +54,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { to_email, to_name, topic_title, subtasks } = await req.json();
+    const { to_email, to_name, topic_title, subtasks, start_date, due_date, progress_entries } = await req.json();
 
     if (!to_email || !topic_title) {
       return new Response(
@@ -55,14 +64,38 @@ Deno.serve(async (req) => {
     }
 
     // Build HTML email body
-    const pendingSubtasks = (subtasks || []).filter((s: any) => !s.completed);
     let mensaje = `<p>Hola ${to_name || ""},</p>`;
     mensaje += `<p>Te escribimos para recordarte sobre la tarea: <strong>"${topic_title}"</strong>.</p>`;
 
+    // Dates
+    if (start_date || due_date) {
+      mensaje += `<p style="color:#555;">`;
+      if (start_date) mensaje += `📅 Inicio: <strong>${formatDate(start_date)}</strong>`;
+      if (start_date && due_date) mensaje += ` &nbsp;|&nbsp; `;
+      if (due_date) mensaje += `⏰ Vencimiento: <strong>${formatDate(due_date)}</strong>`;
+      mensaje += `</p>`;
+    }
+
+    // Pending subtasks
+    const pendingSubtasks = (subtasks || []).filter((s: any) => !s.completed);
     if (pendingSubtasks.length > 0) {
       mensaje += `<p><strong>Subtareas pendientes:</strong></p><ul>`;
       pendingSubtasks.forEach((s: any) => {
-        mensaje += `<li>${s.title}${s.due_date ? ` <em>(vence: ${s.due_date})</em>` : ""}</li>`;
+        mensaje += `<li>${s.title}`;
+        if (s.due_date) mensaje += ` <em>(vence: ${formatDate(s.due_date)})</em>`;
+        if (s.notes) mensaje += `<br/><span style="color:#666;font-size:0.9em;">📝 ${s.notes}</span>`;
+        mensaje += `</li>`;
+      });
+      mensaje += `</ul>`;
+    }
+
+    // Progress entries (last 5)
+    const entries = (progress_entries || []).slice(0, 5);
+    if (entries.length > 0) {
+      mensaje += `<p><strong>Últimas notas de bitácora:</strong></p><ul style="color:#555;">`;
+      entries.forEach((e: any) => {
+        const dateStr = e.created_at ? formatDate(e.created_at) : "";
+        mensaje += `<li>${e.content}${dateStr ? ` <em style="color:#999;">(${dateStr})</em>` : ""}</li>`;
       });
       mensaje += `</ul>`;
     }
@@ -70,10 +103,8 @@ Deno.serve(async (req) => {
     mensaje += `<p>Por favor actualiza sobre el estado de esta tarea.</p>`;
     mensaje += `<p>Gracias.</p>`;
 
-    // CC recipients
     const CC_EMAILS = ["matias@transitglobalgroup.com", "vicente@transitglobalgroup.com"];
 
-    // Call Firebase endpoint for main recipient
     const response = await fetch(FIREBASE_EMAIL_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -84,7 +115,6 @@ Deno.serve(async (req) => {
       }),
     });
 
-    // Send CC copies in parallel
     await Promise.allSettled(
       CC_EMAILS
         .filter((cc) => cc.toLowerCase() !== to_email.toLowerCase())
