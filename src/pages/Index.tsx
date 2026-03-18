@@ -224,6 +224,8 @@ const Index = () => {
                           topic={topic}
                           allTags={tags}
                           topicTags={getTagsForTopic(topic.id)}
+                          assignees={assignees}
+                          onCreateAssignee={(name) => createAssignee.mutateAsync(name)}
                           onUpdate={(id, data) => updateTopic.mutate({ id, ...data })}
                           onDelete={(id) => deleteTopic.mutate(id, { onSuccess: () => toast.success('Tema eliminado') })}
                           onAddSubtask={(topicId, title) => addSubtask.mutate({ topic_id: topicId, title })}

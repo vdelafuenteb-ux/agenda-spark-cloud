@@ -93,6 +93,8 @@ export function ReviewView(props: ReviewViewProps) {
             topic={topic}
             allTags={allTags}
             topicTags={getTagsForTopic(topic.id)}
+            assignees={assignees}
+            onCreateAssignee={onCreateAssignee}
             highlightToday={tab === 'hoy'}
             onUpdate={handlers.onUpdate}
             onDelete={handlers.onDelete}
