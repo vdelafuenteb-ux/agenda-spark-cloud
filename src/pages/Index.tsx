@@ -209,6 +209,7 @@ const Index = () => {
               )}
             </div>
           </main>
+          )}
         </div>
 
         <ReportModal open={reportOpen} onOpenChange={setReportOpen} topics={topics} />
