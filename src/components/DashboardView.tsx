@@ -191,6 +191,59 @@ export function DashboardView({ topics }: DashboardViewProps) {
           ))}
         </div>
 
+        {/* Overdue + Due Soon - compact side by side */}
+        {(metrics.overdue.length > 0 || metrics.dueSoon.length > 0) && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            {/* Overdue */}
+            {metrics.overdue.length > 0 && (
+              <Card className="border-destructive/30">
+                <CardHeader className="pb-1 p-3">
+                  <CardTitle className="text-xs font-medium flex items-center gap-1.5 text-destructive">
+                    <AlertTriangle className="h-3.5 w-3.5" />
+                    Atrasados ({metrics.overdue.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-3 pt-0">
+                  <div className="space-y-1.5">
+                    {metrics.overdue.slice(0, 6).map((t) => (
+                      <div key={t.id} className="flex items-center justify-between text-xs">
+                        <span className="text-foreground truncate flex-1">{t.title}</span>
+                        <Badge variant="destructive" className="text-[9px] ml-2 shrink-0">
+                          {t.due_date}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Due Soon */}
+            {metrics.dueSoon.length > 0 && (
+              <Card className="border-yellow-500/30">
+                <CardHeader className="pb-1 p-3">
+                  <CardTitle className="text-xs font-medium flex items-center gap-1.5 text-yellow-600">
+                    <CalendarClock className="h-3.5 w-3.5" />
+                    Por Vencer Pronto ({metrics.dueSoon.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-3 pt-0">
+                  <div className="space-y-1.5">
+                    {metrics.dueSoon.slice(0, 6).map((t) => (
+                      <div key={t.id} className="flex items-center justify-between text-xs">
+                        <span className="text-foreground truncate flex-1">{t.title}</span>
+                        <Badge variant="outline" className="text-[9px] ml-2 shrink-0 border-yellow-500/50 text-yellow-600">
+                          {t.due_date}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
+
         {/* Charts Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
           {/* Status Bar Chart */}
@@ -278,59 +331,6 @@ export function DashboardView({ topics }: DashboardViewProps) {
             </ChartContainer>
           </CardContent>
         </Card>
-
-        {/* Overdue Topics */}
-        {metrics.overdue.length > 0 && (
-          <Card className="border-destructive/30">
-            <CardHeader className="pb-2 p-4">
-              <CardTitle className="text-sm font-medium flex items-center gap-2 text-destructive">
-                <CalendarClock className="h-4 w-4" />
-                Temas Atrasados ({metrics.overdue.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 pt-0">
-              <div className="space-y-2">
-                {metrics.overdue.slice(0, 8).map((t) => (
-                  <div key={t.id} className="flex items-center justify-between text-sm">
-                    <span className="text-foreground truncate flex-1">{t.title}</span>
-                    <div className="flex items-center gap-2 shrink-0 ml-2">
-                      {t.assignee && (
-                        <Badge variant="outline" className="text-[10px]">{t.assignee}</Badge>
-                      )}
-                      <Badge variant="destructive" className="text-[10px]">
-                        Vence: {t.due_date}
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Due Soon */}
-        {metrics.dueSoon.length > 0 && (
-          <Card className="border-yellow-500/30">
-            <CardHeader className="pb-2 p-4">
-              <CardTitle className="text-sm font-medium flex items-center gap-2 text-yellow-600">
-                <Clock className="h-4 w-4" />
-                Por Vencer Pronto ({metrics.dueSoon.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 pt-0">
-              <div className="space-y-2">
-                {metrics.dueSoon.map((t) => (
-                  <div key={t.id} className="flex items-center justify-between text-sm">
-                    <span className="text-foreground truncate flex-1">{t.title}</span>
-                    <Badge variant="outline" className="text-[10px] border-yellow-500/50 text-yellow-600">
-                      Vence: {t.due_date}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Assignee Ranking */}
         {metrics.assigneeRanking.length > 0 && (
