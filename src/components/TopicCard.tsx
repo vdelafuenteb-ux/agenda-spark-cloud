@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { isStoredDateToday } from '@/lib/date';
+import { isStoredDateToday, isStoredDateUpcoming } from '@/lib/date';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, ChevronDown, Plus, Trash2, CalendarIcon, CheckCircle2, RotateCcw, Pause, Play, User, Pin } from 'lucide-react';
 import { es } from 'date-fns/locale';
@@ -29,6 +29,7 @@ interface TopicCardProps {
   assignees: Assignee[];
   onCreateAssignee: (name: string) => Promise<Assignee>;
   highlightToday?: boolean;
+  highlightUpcoming?: boolean;
   onUpdate: (id: string, data: any) => void;
   onDelete: (id: string) => void;
   onAddSubtask: (topicId: string, title: string) => void;
@@ -61,6 +62,7 @@ export function TopicCard({
   assignees,
   onCreateAssignee,
   highlightToday = false,
+  highlightUpcoming = false,
   onUpdate,
   onDelete,
   onAddSubtask,
@@ -72,18 +74,22 @@ export function TopicCard({
   onRemoveTag,
   onCreateTag,
 }: TopicCardProps) {
-  const [expanded, setExpanded] = useState(highlightToday);
-  const [subtasksExpanded, setSubtasksExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(highlightToday || highlightUpcoming);
+  const [subtasksExpanded, setSubtasksExpanded] = useState(highlightToday || highlightUpcoming);
   const [newSubtask, setNewSubtask] = useState('');
   const [newAssigneeName, setNewAssigneeName] = useState('');
 
   useEffect(() => {
-    if (highlightToday) setExpanded(true);
-  }, [highlightToday]);
+    if (highlightToday || highlightUpcoming) setExpanded(true);
+  }, [highlightToday, highlightUpcoming]);
 
   const topicDueToday = isStoredDateToday(topic.due_date);
   const hasSubtaskDueToday = topic.subtasks.some(s => isStoredDateToday(s.due_date));
   const showSubtaskTodayBadge = highlightToday && !topicDueToday && hasSubtaskDueToday;
+
+  const hasSubtaskUpcoming = topic.subtasks.some(s => !s.completed && isStoredDateUpcoming(s.due_date, 3));
+  const topicUpcoming = isStoredDateUpcoming(topic.due_date, 3);
+  const showSubtaskUpcomingBadge = highlightUpcoming && !topicUpcoming && hasSubtaskUpcoming;
 
   const completedCount = topic.subtasks.filter((s) => s.completed).length;
   const totalCount = topic.subtasks.length;
@@ -132,6 +138,11 @@ export function TopicCard({
             {showSubtaskTodayBadge && (
               <Badge className="text-[10px] px-1.5 py-0 bg-accent text-accent-foreground border-transparent">
                 📌 Subtarea hoy
+              </Badge>
+            )}
+            {showSubtaskUpcomingBadge && (
+              <Badge className="text-[10px] px-1.5 py-0 bg-yellow-500/20 text-yellow-700 border-transparent">
+                📅 Subtarea próxima
               </Badge>
             )}
             {topic.status !== 'activo' && (
@@ -396,11 +407,13 @@ export function TopicCard({
                     >
                 {topic.subtasks.map((subtask) => {
                   const subtaskIsToday = highlightToday && isStoredDateToday(subtask.due_date);
+                  const subtaskIsUpcoming = highlightUpcoming && !subtask.completed && isStoredDateUpcoming(subtask.due_date, 3);
                   return (
                   <SubtaskRow
                     key={subtask.id}
                     subtask={subtask}
                     subtaskIsToday={subtaskIsToday}
+                    subtaskIsUpcoming={subtaskIsUpcoming}
                     onToggleSubtask={onToggleSubtask}
                     onUpdateSubtask={onUpdateSubtask}
                     onDeleteSubtask={onDeleteSubtask}

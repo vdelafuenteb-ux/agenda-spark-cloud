@@ -96,6 +96,7 @@ export function ReviewView(props: ReviewViewProps) {
             assignees={assignees}
             onCreateAssignee={onCreateAssignee}
             highlightToday={tab === 'hoy'}
+            highlightUpcoming={tab === 'proximos'}
             onUpdate={handlers.onUpdate}
             onDelete={handlers.onDelete}
             onAddSubtask={handlers.onAddSubtask}
