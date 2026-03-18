@@ -57,7 +57,7 @@ export function ReviewView(props: ReviewViewProps) {
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-3">
+    <div className="max-w-5xl mx-auto space-y-3">
       <Tabs value={tab} onValueChange={(v) => setTab(v as ReviewTab)}>
         <TabsList className="w-full">
           <TabsTrigger value="hoy" className="flex-1 text-xs gap-1.5">

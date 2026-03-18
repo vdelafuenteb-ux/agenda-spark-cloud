@@ -163,8 +163,8 @@ const Index = () => {
               />
             </main>
           ) : (
-            <main className="flex-1 overflow-auto p-4 md:p-6">
-              <div className="max-w-3xl mx-auto space-y-3">
+            <main className="flex-1 overflow-auto p-3 md:p-4">
+              <div className="max-w-5xl mx-auto space-y-3">
                 {filter === 'informes' ? (
                   <ReportsList onNewReport={() => setReportOpen(true)} />
                 ) : (
