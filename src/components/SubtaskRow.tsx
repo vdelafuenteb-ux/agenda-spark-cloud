@@ -76,7 +76,10 @@ export function SubtaskRow({ subtask, subtaskIsToday, onToggleSubtask, onUpdateS
           <PopoverTrigger asChild>
             <button
               type="button"
-              className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors shrink-0"
+              className={cn(
+                'flex items-center gap-1 text-[10px] transition-colors shrink-0',
+                isOverdue ? 'text-destructive font-medium' : 'text-muted-foreground hover:text-foreground'
+              )}
             >
               <CalendarIcon className="h-3 w-3" />
               {subtask.due_date ? (
