@@ -177,6 +177,22 @@ export function useTopics() {
     onSuccess: invalidateTopics,
   });
 
+  const updateProgressEntry = useMutation({
+    mutationFn: async ({ id, content }: { id: string; content: string }) => {
+      const { error } = await supabase.from('progress_entries').update({ content }).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: invalidateTopics,
+  });
+
+  const deleteProgressEntry = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('progress_entries').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: invalidateTopics,
+  });
+
   const updateSubtask = useMutation({
     mutationFn: async ({ id, ...data }: { id: string; [key: string]: any }) => {
       const { error } = await supabase.from('subtasks').update(data).eq('id', id);
