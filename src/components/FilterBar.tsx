@@ -64,6 +64,14 @@ export function FilterBar({ searchQuery, onSearchChange, allTags, selectedTagIds
             </SelectContent>
           </Select>
         )}
+
+        {/* Bulk email button */}
+        {onBulkEmail && selectedAssignee && selectedAssignee !== '_all' && selectedAssignee !== '' && (
+          <Button size="sm" variant="outline" className="h-9 text-xs gap-1 shrink-0" onClick={onBulkEmail}>
+            <Mail className="h-3.5 w-3.5" />
+            Correo masivo
+          </Button>
+        )}
       </div>
 
       {/* Tag chips */}
