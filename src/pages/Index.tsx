@@ -40,6 +40,7 @@ const Index = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [selectedAssignee, setSelectedAssignee] = useState<string>('');
+  const [forceExpand, setForceExpand] = useState<boolean | null>(null);
 
   const toggleTagFilter = useCallback((tagId: string) => {
     setSelectedTagIds((prev) => (prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]));
