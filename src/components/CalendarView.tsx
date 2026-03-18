@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import {
   addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek,
-  eachDayOfInterval, format, isSameMonth, isToday, isSameDay, getDay, getDate,
+  eachDayOfInterval, format, isSameMonth, isToday, isSameDay, getDay, getDate, getYear,
 } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -10,6 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Badge } from '@/components/ui/badge';
 import { ReminderManager } from '@/components/ReminderManager';
 import { useReminders, type Reminder } from '@/hooks/useReminders';
+import { useHolidays } from '@/hooks/useHolidays';
 import type { TopicWithSubtasks } from '@/hooks/useTopics';
 import { parseStoredDate } from '@/lib/date';
 
@@ -20,7 +21,7 @@ interface CalendarViewProps {
 interface DayEvent {
   label: string;
   color: string;
-  type: 'reminder' | 'due' | 'completed';
+  type: 'reminder' | 'due' | 'completed' | 'holiday';
 }
 
 function getEventsForDay(
@@ -58,6 +59,7 @@ function getEventsForDay(
 export function CalendarView({ topics }: CalendarViewProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const { reminders, createReminder, deleteReminder } = useReminders();
+  const { holidayMap } = useHolidays(getYear(currentMonth));
 
   const calendarDays = useMemo(() => {
     const start = startOfWeek(startOfMonth(currentMonth), { weekStartsOn: 1 });
@@ -71,11 +73,19 @@ export function CalendarView({ topics }: CalendarViewProps) {
     const map = new Map<string, DayEvent[]>();
     for (const day of calendarDays) {
       const key = format(day, 'yyyy-MM-dd');
-      const events = getEventsForDay(day, reminders, activeTopics);
+      const events: DayEvent[] = [];
+
+      // Add holiday first
+      const holidayName = holidayMap.get(key);
+      if (holidayName) {
+        events.push({ label: holidayName, color: '#fca5a5', type: 'holiday' });
+      }
+
+      events.push(...getEventsForDay(day, reminders, activeTopics));
       if (events.length > 0) map.set(key, events);
     }
     return map;
-  }, [calendarDays, reminders, topics]);
+  }, [calendarDays, reminders, activeTopics, holidayMap]);
 
   const weekDays = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
@@ -107,15 +117,17 @@ export function CalendarView({ topics }: CalendarViewProps) {
             const events = eventsByDay.get(key) ?? [];
             const inMonth = isSameMonth(day, currentMonth);
             const today = isToday(day);
+            const isHoliday = holidayMap.has(key);
 
             return (
               <Popover key={key}>
                 <PopoverTrigger asChild>
                   <button
-                    className={`bg-background min-h-[72px] md:min-h-[88px] p-1 text-left align-top transition-colors hover:bg-accent/50 focus:outline-none ${!inMonth ? 'opacity-40' : ''}`}
+                    className={`min-h-[72px] md:min-h-[88px] p-1 text-left align-top transition-colors hover:bg-accent/50 focus:outline-none ${!inMonth ? 'opacity-40' : ''}`}
+                    style={{ backgroundColor: isHoliday && inMonth ? '#fef2f2' : undefined }}
                   >
                     <span
-                      className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-medium ${today ? 'bg-primary text-primary-foreground' : 'text-foreground'}`}
+                      className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-medium ${today ? 'bg-primary text-primary-foreground' : isHoliday ? 'text-red-500 font-bold' : 'text-foreground'}`}
                     >
                       {format(day, 'd')}
                     </span>
@@ -123,7 +135,7 @@ export function CalendarView({ topics }: CalendarViewProps) {
                       {events.slice(0, 3).map((ev, i) => (
                         <div key={i} className="flex items-center gap-1 truncate">
                           <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ backgroundColor: ev.color }} />
-                          <span className="text-[9px] md:text-[10px] truncate text-muted-foreground">{ev.label}</span>
+                          <span className={`text-[9px] md:text-[10px] truncate ${ev.type === 'holiday' ? 'text-red-400 font-medium' : 'text-muted-foreground'}`}>{ev.label}</span>
                         </div>
                       ))}
                       {events.length > 3 && (
@@ -142,8 +154,8 @@ export function CalendarView({ topics }: CalendarViewProps) {
                         <span className="h-2.5 w-2.5 rounded-full mt-0.5 shrink-0" style={{ backgroundColor: ev.color }} />
                         <div className="min-w-0">
                           <p className="text-xs font-medium truncate">{ev.label}</p>
-                          <Badge variant="outline" className="text-[9px] h-4 mt-0.5">
-                            {ev.type === 'reminder' ? 'Recordatorio' : ev.type === 'due' ? 'Vencimiento' : 'Completada'}
+                          <Badge variant={ev.type === 'holiday' ? 'destructive' : 'outline'} className="text-[9px] h-4 mt-0.5">
+                            {ev.type === 'holiday' ? 'Feriado' : ev.type === 'reminder' ? 'Recordatorio' : ev.type === 'due' ? 'Vencimiento' : 'Completada'}
                           </Badge>
                         </div>
                       </div>
