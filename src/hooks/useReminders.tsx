@@ -6,7 +6,7 @@ export interface Reminder {
   id: string;
   user_id: string;
   title: string;
-  recurrence_type: 'monthly' | 'weekly' | 'monthly_weekday';
+  recurrence_type: 'monthly' | 'weekly' | 'monthly_weekday' | 'last_business_day';
   recurrence_day: number;
   recurrence_week: number | null;
   color: string;

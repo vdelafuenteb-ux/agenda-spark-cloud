@@ -1,5 +1,18 @@
-import { getDate, getDay, lastDayOfMonth } from 'date-fns';
+import { getDate, getDay, lastDayOfMonth, getMonth, getYear } from 'date-fns';
 import type { Reminder } from '@/hooks/useReminders';
+
+/**
+ * Get the last business day (Mon-Fri) of a given month/year.
+ */
+function getLastBusinessDay(year: number, month: number): number {
+  let d = getDate(lastDayOfMonth(new Date(year, month)));
+  const date = new Date(year, month, d);
+  while (getDay(date) === 0 || getDay(date) === 6) {
+    d--;
+    date.setDate(d);
+  }
+  return d;
+}
 
 /**
  * Check if a reminder matches a given date based on its recurrence pattern.
@@ -14,6 +27,11 @@ export function reminderMatchesDate(r: Reminder, date: Date): boolean {
 
   if (r.recurrence_type === 'weekly' && r.recurrence_day === dayOfWeek) {
     return true;
+  }
+
+  if (r.recurrence_type === 'last_business_day') {
+    const lbd = getLastBusinessDay(getYear(date), getMonth(date));
+    return dayOfMonth === lbd;
   }
 
   if (r.recurrence_type === 'monthly_weekday' && r.recurrence_day === dayOfWeek && r.recurrence_week != null) {

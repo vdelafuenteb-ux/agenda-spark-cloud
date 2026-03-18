@@ -16,11 +16,12 @@ const ORDINALS = [
   { value: '-1', label: 'Último' },
 ];
 
-type RecurrenceType = 'weekly' | 'monthly' | 'monthly_weekday';
+type RecurrenceType = 'weekly' | 'monthly' | 'monthly_weekday' | 'last_business_day';
 
 function describeReminder(r: Reminder): string {
   if (r.recurrence_type === 'monthly') return `Día ${r.recurrence_day} de cada mes`;
   if (r.recurrence_type === 'weekly') return `Cada ${DAYS_OF_WEEK[r.recurrence_day]}`;
+  if (r.recurrence_type === 'last_business_day') return 'Último día hábil del mes';
   if (r.recurrence_type === 'monthly_weekday') {
     const ord = ORDINALS.find(o => o.value === String(r.recurrence_week));
     return `${ord?.label ?? ''} ${DAYS_OF_WEEK[r.recurrence_day]} de cada mes`;
@@ -79,6 +80,7 @@ export function ReminderManager({ reminders, onCreate, onDelete }: ReminderManag
               <SelectItem value="monthly">Día del mes</SelectItem>
               <SelectItem value="weekly">Cada semana</SelectItem>
               <SelectItem value="monthly_weekday">Día específico del mes</SelectItem>
+              <SelectItem value="last_business_day">Último día hábil del mes</SelectItem>
             </SelectContent>
           </Select>
 
