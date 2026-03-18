@@ -1,12 +1,18 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { ArrowLeft, Trash2, Tag } from 'lucide-react';
+import {
+  ArrowLeft, Trash2, Tag, Bold, Italic, Underline as UnderlineIcon,
+  Strikethrough, List, ListOrdered, AlignLeft, AlignCenter, AlignRight,
+  Heading1, Heading2, Heading3, Minus, ImagePlus, FileUp, Type, Undo2, Redo2,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { Note, Notebook } from '@/hooks/useNotes';
 import type { Tag as TagType } from '@/hooks/useTags';
 
@@ -21,6 +27,25 @@ interface NoteEditorProps {
   onRemoveTag: (noteId: string, tagId: string) => void;
   onBack: () => void;
   onUploadImage: (file: File) => Promise<string>;
+}
+
+function ToolbarButton({ icon: Icon, label, onClick, active }: { icon: any; label: string; onClick: () => void; active?: boolean }) {
+  return (
+    <TooltipProvider delayDuration={300}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            onMouseDown={(e) => { e.preventDefault(); onClick(); }}
+            className={`h-7 w-7 flex items-center justify-center rounded transition-colors ${active ? 'bg-accent text-accent-foreground' : 'hover:bg-muted text-muted-foreground hover:text-foreground'}`}
+          >
+            <Icon className="h-3.5 w-3.5" />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom" className="text-xs">{label}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
 }
 
 export function NoteEditor({
@@ -38,14 +63,39 @@ export function NoteEditor({
   const [title, setTitle] = useState(note.title);
   const editorRef = useRef<HTMLDivElement>(null);
   const saveTimeout = useRef<ReturnType<typeof setTimeout>>();
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [resizingImage, setResizingImage] = useState<HTMLImageElement | null>(null);
 
-  // Sync when note changes
   useEffect(() => {
     setTitle(note.title);
     if (editorRef.current && editorRef.current.innerHTML !== note.content) {
       editorRef.current.innerHTML = note.content;
     }
   }, [note.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Make images interactive (resize handles + drag)
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    const handleImageClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'IMG') {
+        e.preventDefault();
+        // Remove previous selection highlights
+        editor.querySelectorAll('img.note-img-selected').forEach(img => img.classList.remove('note-img-selected'));
+        target.classList.add('note-img-selected');
+        setResizingImage(target as HTMLImageElement);
+      } else {
+        editor.querySelectorAll('img.note-img-selected').forEach(img => img.classList.remove('note-img-selected'));
+        setResizingImage(null);
+      }
+    };
+
+    editor.addEventListener('click', handleImageClick);
+    return () => editor.removeEventListener('click', handleImageClick);
+  }, []);
 
   const saveContent = useCallback(() => {
     if (!editorRef.current) return;
@@ -63,6 +113,34 @@ export function NoteEditor({
     saveTimeout.current = setTimeout(() => onUpdate(note.id, { title: val }), 800);
   };
 
+  // Fix: handle Enter key to prevent cursor jumping
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      // Let the browser handle Enter naturally for contentEditable
+      // but ensure we save after
+      setTimeout(handleContentInput, 50);
+    }
+  };
+
+  const execCommand = (command: string, value?: string) => {
+    editorRef.current?.focus();
+    document.execCommand(command, false, value);
+    handleContentInput();
+  };
+
+  const handleFontSize = (size: string) => {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return;
+    editorRef.current?.focus();
+    // Use fontSize command (1-7 scale)
+    document.execCommand('fontSize', false, size);
+    handleContentInput();
+  };
+
+  const insertHorizontalRule = () => {
+    execCommand('insertHorizontalRule');
+  };
+
   const handlePaste = async (e: React.ClipboardEvent) => {
     const items = e.clipboardData?.items;
     if (!items) return;
@@ -73,23 +151,7 @@ export function NoteEditor({
         if (!file) continue;
         try {
           const url = await onUploadImage(file);
-          const img = document.createElement('img');
-          img.src = url;
-          img.style.maxWidth = '100%';
-          img.style.borderRadius = '8px';
-          img.style.margin = '8px 0';
-          const selection = window.getSelection();
-          if (selection && selection.rangeCount > 0) {
-            const range = selection.getRangeAt(0);
-            range.deleteContents();
-            range.insertNode(img);
-            range.setStartAfter(img);
-            range.collapse(true);
-            selection.removeAllRanges();
-            selection.addRange(range);
-          } else {
-            editorRef.current?.appendChild(img);
-          }
+          insertImageAtCursor(url);
           handleContentInput();
         } catch {
           // silently fail
@@ -99,24 +161,81 @@ export function NoteEditor({
     }
   };
 
+  const insertImageAtCursor = (url: string) => {
+    const img = document.createElement('img');
+    img.src = url;
+    img.style.maxWidth = '100%';
+    img.style.borderRadius = '8px';
+    img.style.margin = '8px 0';
+    img.style.cursor = 'pointer';
+    img.draggable = true;
+
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+      range.deleteContents();
+      range.insertNode(img);
+      // Add a paragraph after so cursor can go after the image
+      const br = document.createElement('br');
+      range.setStartAfter(img);
+      range.insertNode(br);
+      range.setStartAfter(br);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    } else {
+      editorRef.current?.appendChild(img);
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const url = await onUploadImage(file);
+      editorRef.current?.focus();
+      insertImageAtCursor(url);
+      handleContentInput();
+    } catch { /* silently fail */ }
+    e.target.value = '';
+  };
+
+  const handleFileInsert = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    editorRef.current?.focus();
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = reader.result as string;
+      document.execCommand('insertText', false, text);
+      handleContentInput();
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
+  const resizeSelectedImage = (width: number) => {
+    if (!resizingImage) return;
+    resizingImage.style.width = `${width}%`;
+    resizingImage.style.maxWidth = `${width}%`;
+    resizingImage.style.height = 'auto';
+    handleContentInput();
+  };
+
   const noteTags = allTags.filter((t) => noteTagIds.includes(t.id));
   const availableTags = allTags.filter((t) => !noteTagIds.includes(t.id));
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Toolbar */}
-      <div className="flex items-center gap-2 px-4 py-2 border-b border-border shrink-0">
+    <div className="flex flex-col h-full w-full">
+      {/* Top bar - meta info */}
+      <div className="flex items-center gap-2 px-3 py-1.5 border-b border-border shrink-0">
         <Button variant="ghost" size="icon" className="h-7 w-7 md:hidden" onClick={onBack}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
-
         <span className="text-[10px] text-muted-foreground">
           {format(new Date(note.created_at), "d MMM yyyy, HH:mm", { locale: es })}
         </span>
-
         <div className="flex-1" />
-
-        {/* Notebook selector */}
         <Select
           value={note.notebook_id ?? '__none__'}
           onValueChange={(v) => onUpdate(note.id, { notebook_id: v === '__none__' ? null : v })}
@@ -131,8 +250,6 @@ export function NoteEditor({
             ))}
           </SelectContent>
         </Select>
-
-        {/* Tags */}
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="ghost" size="icon" className="h-7 w-7">
@@ -143,13 +260,9 @@ export function NoteEditor({
             {noteTags.length > 0 && (
               <div className="flex flex-wrap gap-1 pb-1 border-b border-border mb-1">
                 {noteTags.map((t) => (
-                  <Badge
-                    key={t.id}
-                    variant="secondary"
-                    className="text-[10px] cursor-pointer hover:line-through"
+                  <Badge key={t.id} variant="secondary" className="text-[10px] cursor-pointer hover:line-through"
                     style={{ backgroundColor: t.color + '22', color: t.color, borderColor: t.color + '44' }}
-                    onClick={() => onRemoveTag(note.id, t.id)}
-                  >
+                    onClick={() => onRemoveTag(note.id, t.id)}>
                     {t.name} ×
                   </Badge>
                 ))}
@@ -159,25 +272,86 @@ export function NoteEditor({
               <p className="text-[10px] text-muted-foreground text-center py-2">No hay etiquetas</p>
             )}
             {availableTags.map((t) => (
-              <button
-                key={t.id}
-                className="w-full text-left px-2 py-1 text-xs rounded hover:bg-muted flex items-center gap-2"
-                onClick={() => onAddTag(note.id, t.id)}
-              >
+              <button key={t.id} className="w-full text-left px-2 py-1 text-xs rounded hover:bg-muted flex items-center gap-2"
+                onClick={() => onAddTag(note.id, t.id)}>
                 <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: t.color }} />
                 {t.name}
               </button>
             ))}
           </PopoverContent>
         </Popover>
-
         <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => onDelete(note.id)}>
           <Trash2 className="h-3.5 w-3.5" />
         </Button>
       </div>
 
+      {/* Formatting toolbar */}
+      <div className="flex items-center gap-0.5 px-3 py-1 border-b border-border shrink-0 flex-wrap overflow-x-auto">
+        <ToolbarButton icon={Undo2} label="Deshacer" onClick={() => execCommand('undo')} />
+        <ToolbarButton icon={Redo2} label="Rehacer" onClick={() => execCommand('redo')} />
+        <Separator orientation="vertical" className="h-5 mx-1" />
+        <ToolbarButton icon={Bold} label="Negrita" onClick={() => execCommand('bold')} />
+        <ToolbarButton icon={Italic} label="Cursiva" onClick={() => execCommand('italic')} />
+        <ToolbarButton icon={UnderlineIcon} label="Subrayado" onClick={() => execCommand('underline')} />
+        <ToolbarButton icon={Strikethrough} label="Tachado" onClick={() => execCommand('strikeThrough')} />
+        <Separator orientation="vertical" className="h-5 mx-1" />
+        <ToolbarButton icon={Heading1} label="Título 1" onClick={() => execCommand('formatBlock', 'h1')} />
+        <ToolbarButton icon={Heading2} label="Título 2" onClick={() => execCommand('formatBlock', 'h2')} />
+        <ToolbarButton icon={Heading3} label="Título 3" onClick={() => execCommand('formatBlock', 'h3')} />
+        <ToolbarButton icon={Type} label="Párrafo" onClick={() => execCommand('formatBlock', 'p')} />
+        <Separator orientation="vertical" className="h-5 mx-1" />
+
+        {/* Font size */}
+        <Select onValueChange={handleFontSize} defaultValue="3">
+          <SelectTrigger className="h-7 w-20 text-[10px]">
+            <SelectValue placeholder="Tamaño" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="1" className="text-[10px]">Muy pequeño</SelectItem>
+            <SelectItem value="2" className="text-[10px]">Pequeño</SelectItem>
+            <SelectItem value="3" className="text-[10px]">Normal</SelectItem>
+            <SelectItem value="4" className="text-[10px]">Mediano</SelectItem>
+            <SelectItem value="5" className="text-[10px]">Grande</SelectItem>
+            <SelectItem value="6" className="text-[10px]">Muy grande</SelectItem>
+            <SelectItem value="7" className="text-[10px]">Enorme</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Separator orientation="vertical" className="h-5 mx-1" />
+        <ToolbarButton icon={List} label="Viñetas" onClick={() => execCommand('insertUnorderedList')} />
+        <ToolbarButton icon={ListOrdered} label="Lista numerada" onClick={() => execCommand('insertOrderedList')} />
+        <Separator orientation="vertical" className="h-5 mx-1" />
+        <ToolbarButton icon={AlignLeft} label="Alinear izquierda" onClick={() => execCommand('justifyLeft')} />
+        <ToolbarButton icon={AlignCenter} label="Centrar" onClick={() => execCommand('justifyCenter')} />
+        <ToolbarButton icon={AlignRight} label="Alinear derecha" onClick={() => execCommand('justifyRight')} />
+        <Separator orientation="vertical" className="h-5 mx-1" />
+        <ToolbarButton icon={Minus} label="Línea horizontal" onClick={insertHorizontalRule} />
+        <ToolbarButton icon={ImagePlus} label="Insertar imagen" onClick={() => imageInputRef.current?.click()} />
+        <ToolbarButton icon={FileUp} label="Insertar texto desde archivo" onClick={() => fileInputRef.current?.click()} />
+
+        <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+        <input ref={fileInputRef} type="file" accept=".txt,.md,.csv,.json" className="hidden" onChange={handleFileInsert} />
+      </div>
+
+      {/* Image resize controls */}
+      {resizingImage && (
+        <div className="flex items-center gap-2 px-3 py-1 border-b border-border bg-muted/30 shrink-0">
+          <span className="text-[10px] text-muted-foreground">Tamaño de imagen:</span>
+          {[25, 50, 75, 100].map(pct => (
+            <Button key={pct} variant="outline" size="sm" className="h-6 text-[10px] px-2"
+              onMouseDown={(e) => { e.preventDefault(); resizeSelectedImage(pct); }}>
+              {pct}%
+            </Button>
+          ))}
+          <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2 text-destructive"
+            onMouseDown={(e) => { e.preventDefault(); resizingImage.remove(); setResizingImage(null); handleContentInput(); }}>
+            Eliminar
+          </Button>
+        </div>
+      )}
+
       {/* Title */}
-      <div className="px-4 pt-4">
+      <div className="px-4 pt-3">
         <Input
           value={title}
           onChange={(e) => handleTitleChange(e.target.value)}
@@ -190,12 +364,8 @@ export function NoteEditor({
       {noteTags.length > 0 && (
         <div className="flex flex-wrap gap-1 px-4 pt-1">
           {noteTags.map((t) => (
-            <Badge
-              key={t.id}
-              variant="secondary"
-              className="text-[9px] h-4"
-              style={{ backgroundColor: t.color + '22', color: t.color }}
-            >
+            <Badge key={t.id} variant="secondary" className="text-[9px] h-4"
+              style={{ backgroundColor: t.color + '22', color: t.color }}>
               {t.name}
             </Badge>
           ))}
@@ -207,9 +377,17 @@ export function NoteEditor({
         ref={editorRef}
         contentEditable
         suppressContentEditableWarning
-        className="flex-1 overflow-auto px-4 py-3 text-sm text-foreground outline-none prose prose-sm max-w-none [&_img]:rounded-lg [&_img]:max-w-full"
+        className="flex-1 overflow-auto px-4 py-3 text-sm text-foreground outline-none prose prose-sm max-w-none
+          [&_img]:rounded-lg [&_img]:max-w-full [&_img]:cursor-pointer
+          [&_img.note-img-selected]:ring-2 [&_img.note-img-selected]:ring-primary [&_img.note-img-selected]:ring-offset-2
+          [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:mb-2 [&_h1]:mt-4
+          [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:mb-2 [&_h2]:mt-3
+          [&_h3]:text-lg [&_h3]:font-medium [&_h3]:mb-1 [&_h3]:mt-2
+          [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5
+          [&_hr]:my-4 [&_hr]:border-border"
         onInput={handleContentInput}
         onPaste={handlePaste}
+        onKeyDown={handleKeyDown}
         dangerouslySetInnerHTML={{ __html: note.content }}
         data-placeholder="Empieza a escribir..."
         style={{ minHeight: 200 }}
