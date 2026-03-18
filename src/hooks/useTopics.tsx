@@ -226,6 +226,8 @@ export function useTopics() {
     toggleSubtask,
     deleteSubtask,
     addProgressEntry,
+    updateProgressEntry,
+    deleteProgressEntry,
     updateSubtask,
   };
 }
