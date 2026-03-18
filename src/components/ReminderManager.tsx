@@ -50,7 +50,7 @@ export function ReminderManager({ reminders, onCreate, onDelete }: ReminderManag
         recurrence_type: type,
         recurrence_day: type === 'monthly' ? day : type === 'weekly' ? day : day,
         recurrence_week: type === 'monthly_weekday' ? week : null,
-        color,
+        color: DEFAULT_COLOR,
       });
       setTitle('');
       toast.success('Recordatorio creado');
