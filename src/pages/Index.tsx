@@ -15,9 +15,10 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Plus, FileText } from 'lucide-react';
 import { NotesView } from '@/components/NotesView';
+import { DashboardView } from '@/components/DashboardView';
 import { toast } from 'sonner';
 
-type Filter = 'todos' | 'revision' | 'informes' | 'notas';
+type Filter = 'todos' | 'revision' | 'informes' | 'notas' | 'dashboard';
 type StatusTab = 'activo' | 'seguimiento' | 'pausado' | 'completado';
 
 const Index = () => {
@@ -136,10 +137,10 @@ const Index = () => {
             <div className="flex items-center gap-2">
               <SidebarTrigger />
               <h1 className="text-sm font-semibold text-foreground">
-                {filter === 'notas' ? 'Notas' : filter === 'informes' ? 'Informes' : filter === 'revision' ? 'Revisión' : 'Temas'}
+                {filter === 'notas' ? 'Notas' : filter === 'informes' ? 'Informes' : filter === 'revision' ? 'Revisión' : filter === 'dashboard' ? 'Dashboard' : 'Temas'}
               </h1>
             </div>
-            {filter !== 'notas' && filter !== 'informes' && filter !== 'revision' && (
+            {filter !== 'notas' && filter !== 'informes' && filter !== 'revision' && filter !== 'dashboard' && (
               <div className="flex items-center gap-2">
                 <Button size="sm" variant="outline" className="h-8 text-xs gap-1" onClick={() => setReportOpen(true)}>
                   <FileText className="h-3 w-3" />
@@ -153,7 +154,9 @@ const Index = () => {
             )}
           </header>
 
-          {filter === 'notas' ? (
+          {filter === 'dashboard' ? (
+            <DashboardView topics={topics} />
+          ) : filter === 'notas' ? (
             <NotesView />
           ) : filter === 'revision' ? (
             <main className="flex-1 overflow-auto p-3 md:p-4">
