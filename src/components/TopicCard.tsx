@@ -305,7 +305,8 @@ export function TopicCard({
                       <Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" />
                     </button>
                   </div>
-                ))}
+                  );
+                })}
                 <div className="flex items-center gap-2 mt-2">
                   <Input
                     placeholder="Nueva subtarea..."
