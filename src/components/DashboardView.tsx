@@ -223,7 +223,7 @@ export function DashboardView({ topics }: DashboardViewProps) {
               {metrics.priorityData.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-16">Sin datos</p>
               ) : (
-                <ChartContainer config={priorityChartConfig} className="h-[200px] w-full">
+                <ChartContainer config={priorityChartConfig} className="aspect-auto h-[200px] w-full">
                   <PieChart>
                     <ChartTooltip content={<ChartTooltipContent />} />
                     <Pie
@@ -236,6 +236,7 @@ export function DashboardView({ topics }: DashboardViewProps) {
                       outerRadius={80}
                       strokeWidth={2}
                       stroke="hsl(var(--background))"
+                      isAnimationActive={false}
                     >
                       {metrics.priorityData.map((entry, i) => (
                         <Cell key={i} fill={entry.fill} />
