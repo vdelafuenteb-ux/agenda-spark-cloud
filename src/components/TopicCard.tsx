@@ -288,16 +288,6 @@ export function TopicCard({
                 </div>
               </div>
 
-              <TagSelector
-                allTags={allTags}
-                topicTags={topicTags}
-                onAddTag={(tagId) => onAddTag(topic.id, tagId)}
-                onRemoveTag={(tagId) => onRemoveTag(topic.id, tagId)}
-                onCreateTag={async (name, color) => {
-                  const newTag = await onCreateTag(name, color);
-                  if (newTag) onAddTag(topic.id, newTag.id);
-                }}
-              />
 
               <ProgressLog entries={topic.progress_entries} onAdd={(content) => onAddProgressEntry(topic.id, content)} />
             </div>
