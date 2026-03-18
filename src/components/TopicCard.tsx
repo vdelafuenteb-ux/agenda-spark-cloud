@@ -172,7 +172,24 @@ export function TopicCard({
                   <PopoverTrigger asChild>
                     <Button variant="outline" size="sm" className="h-8 text-xs gap-1">
                       <CalendarIcon className="h-3 w-3" />
-                      {topic.due_date ? formatStoredDate(topic.due_date, 'dd MMM yyyy', { locale: es }) : 'Fecha cierre'}
+                      {topic.start_date ? formatStoredDate(topic.start_date, 'dd MMM', { locale: es }) : 'Inicio'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={parseStoredDate(topic.start_date)}
+                      onSelect={(date) => onUpdate(topic.id, { start_date: toStoredDate(date) })}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-8 text-xs gap-1">
+                      <CalendarIcon className="h-3 w-3" />
+                      {topic.due_date ? formatStoredDate(topic.due_date, 'dd MMM', { locale: es }) : 'Cierre'}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
