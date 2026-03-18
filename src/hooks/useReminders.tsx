@@ -9,6 +9,7 @@ export interface Reminder {
   recurrence_type: 'monthly' | 'weekly' | 'monthly_weekday' | 'last_business_day';
   recurrence_day: number;
   recurrence_week: number | null;
+  recurrence_months: number;
   color: string;
   created_at: string;
 }

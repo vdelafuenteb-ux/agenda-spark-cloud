@@ -18,13 +18,23 @@ const ORDINALS = [
 
 type RecurrenceType = 'weekly' | 'monthly' | 'monthly_weekday' | 'last_business_day';
 
+const MONTH_INTERVALS = [
+  { value: '1', label: 'Cada mes' },
+  { value: '2', label: 'Cada 2 meses' },
+  { value: '3', label: 'Cada 3 meses' },
+  { value: '4', label: 'Cada 4 meses' },
+  { value: '6', label: 'Cada 6 meses' },
+  { value: '12', label: 'Cada 12 meses' },
+];
+
 function describeReminder(r: Reminder): string {
-  if (r.recurrence_type === 'monthly') return `Día ${r.recurrence_day} de cada mes`;
+  const monthSuffix = (r.recurrence_months ?? 1) > 1 ? ` (cada ${r.recurrence_months} meses)` : '';
+  if (r.recurrence_type === 'monthly') return `Día ${r.recurrence_day} de cada mes${monthSuffix}`;
   if (r.recurrence_type === 'weekly') return `Cada ${DAYS_OF_WEEK[r.recurrence_day]}`;
-  if (r.recurrence_type === 'last_business_day') return 'Último día hábil del mes';
+  if (r.recurrence_type === 'last_business_day') return `Último día hábil del mes${monthSuffix}`;
   if (r.recurrence_type === 'monthly_weekday') {
     const ord = ORDINALS.find(o => o.value === String(r.recurrence_week));
-    return `${ord?.label ?? ''} ${DAYS_OF_WEEK[r.recurrence_day]} de cada mes`;
+    return `${ord?.label ?? ''} ${DAYS_OF_WEEK[r.recurrence_day]} de cada mes${monthSuffix}`;
   }
   return '';
 }
@@ -40,7 +50,9 @@ export function ReminderManager({ reminders, onCreate, onDelete }: ReminderManag
   const [type, setType] = useState<RecurrenceType>('monthly');
   const [day, setDay] = useState(1);
   const [week, setWeek] = useState(1);
-  
+  const [monthInterval, setMonthInterval] = useState(1);
+
+  const isMonthlyType = type !== 'weekly';
 
   const handleCreate = async () => {
     if (!title.trim()) return;
@@ -48,8 +60,9 @@ export function ReminderManager({ reminders, onCreate, onDelete }: ReminderManag
       await onCreate({
         title: title.trim(),
         recurrence_type: type,
-        recurrence_day: type === 'monthly' ? day : type === 'weekly' ? day : day,
+        recurrence_day: day,
         recurrence_week: type === 'monthly_weekday' ? week : null,
+        recurrence_months: isMonthlyType ? monthInterval : 1,
         color: DEFAULT_COLOR,
       });
       setTitle('');
@@ -135,6 +148,18 @@ export function ReminderManager({ reminders, onCreate, onDelete }: ReminderManag
             </>
           )}
 
+          {isMonthlyType && (
+            <Select value={String(monthInterval)} onValueChange={(v) => setMonthInterval(Number(v))}>
+              <SelectTrigger className="h-8 text-xs w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {MONTH_INTERVALS.map((m) => (
+                  <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
 
           <Button size="sm" className="h-8 text-xs gap-1" onClick={handleCreate}>
             <Plus className="h-3 w-3" /> Agregar
