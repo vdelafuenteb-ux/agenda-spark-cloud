@@ -54,7 +54,7 @@ export function AppSidebar({ activeFilter, onFilterChange, topics }: AppSidebarP
                 </p>
               </>
             )}
-            {collapsed && <span className="text-xs font-bold text-foreground">PE</span>}
+            {collapsed && <span className="text-xs font-bold text-foreground">AM</span>}
           </div>
           <SidebarGroupContent>
             <SidebarMenu>

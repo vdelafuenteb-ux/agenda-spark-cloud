@@ -35,7 +35,7 @@ export function AuthPage() {
       <div className="w-full max-w-sm space-y-8 px-4">
         <div className="text-center">
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            Progress Engine
+            Personal Agenda
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
             {isLogin ? 'Inicia sesión para continuar' : 'Crea tu cuenta'}
