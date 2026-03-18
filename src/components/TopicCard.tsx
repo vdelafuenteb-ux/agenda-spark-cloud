@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { isStoredDateToday } from '@/lib/date';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, Plus, Trash2, CalendarIcon, CheckCircle2, RotateCcw, Pause, Play } from 'lucide-react';
+import { ChevronRight, Plus, Trash2, CalendarIcon, CheckCircle2, RotateCcw, Pause, Play, User } from 'lucide-react';
 import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -48,6 +48,7 @@ const statusLabels: Record<Status, string> = {
   activo: 'Activo',
   completado: 'Cerrado',
   pausado: 'Pausado',
+  seguimiento: 'Seguimiento',
 };
 
 export function TopicCard({
@@ -81,6 +82,7 @@ export function TopicCard({
   const totalCount = topic.subtasks.length;
   const progress = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
   const isCompleted = topic.status === 'completado';
+  const isSeguimiento = topic.status === 'seguimiento';
 
   const handleAddSubtask = () => {
     if (!newSubtask.trim()) return;
@@ -89,7 +91,11 @@ export function TopicCard({
   };
 
   return (
-    <div className={cn('bg-card rounded-lg shadow-sm hover:shadow-md transition-shadow', isCompleted && 'opacity-75')}>
+    <div className={cn(
+      'bg-card rounded-lg shadow-sm hover:shadow-md transition-shadow',
+      isCompleted && 'opacity-75',
+      isSeguimiento && 'border-l-4 border-l-[hsl(var(--seguimiento))] bg-[hsl(var(--seguimiento-bg))]'
+    )}>
       <button onClick={() => setExpanded(!expanded)} className="w-full flex items-center gap-3 p-4 text-left">
         <motion.div animate={{ rotate: expanded ? 90 : 0 }} transition={{ duration: 0.15 }}>
           <ChevronRight className="h-4 w-4 text-muted-foreground" />
@@ -109,8 +115,17 @@ export function TopicCard({
               </Badge>
             )}
             {topic.status !== 'activo' && (
-              <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+              <Badge variant="outline" className={cn(
+                "text-[10px] px-1.5 py-0",
+                isSeguimiento && "bg-[hsl(var(--seguimiento))] text-[hsl(var(--seguimiento-foreground))] border-transparent"
+              )}>
                 {statusLabels[topic.status]}
+              </Badge>
+            )}
+            {topic.assignee && (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0 gap-0.5">
+                <User className="h-2.5 w-2.5" />
+                {topic.assignee}
               </Badge>
             )}
             {topicTags.length > 0 && (
@@ -230,9 +245,22 @@ export function TopicCard({
                 }}
               />
 
-              {/* Status actions — match tab names: Activo / Pausado / Cerrado */}
+              {/* Assignee field for seguimiento */}
+              {isSeguimiento && (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Responsable</label>
+                  <Input
+                    placeholder="Nombre del responsable..."
+                    value={topic.assignee || ''}
+                    onChange={(e) => onUpdate(topic.id, { assignee: e.target.value })}
+                    className="h-8 text-sm"
+                  />
+                </div>
+              )}
+
+              {/* Status actions */}
               <div className="flex items-center gap-2">
-                {topic.status === 'activo' && (
+                {(topic.status === 'activo' || topic.status === 'seguimiento') && (
                   <>
                     <Button
                       size="sm"

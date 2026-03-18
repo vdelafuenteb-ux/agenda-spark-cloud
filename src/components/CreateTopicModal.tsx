@@ -33,6 +33,7 @@ interface CreateTopicModalProps {
     tagIds: string[];
     newTags: { name: string; color: string }[];
     notes: string;
+    assignee?: string;
   }) => Promise<void> | void;
   isPending: boolean;
 }
@@ -41,6 +42,7 @@ export function CreateTopicModal({ open, onOpenChange, allTags, onSubmit, isPend
   const [title, setTitle] = useState('');
   const [priority, setPriority] = useState<Priority>('media');
   const [status, setStatus] = useState<Status>('activo');
+  const [assignee, setAssignee] = useState('');
   const [dueDate, setDueDate] = useState<Date>();
   const [startDate, setStartDate] = useState<Date>(new Date());
   const [subtasks, setSubtasks] = useState<string[]>([]);
@@ -55,6 +57,7 @@ export function CreateTopicModal({ open, onOpenChange, allTags, onSubmit, isPend
     setTitle('');
     setPriority('media');
     setStatus('activo');
+    setAssignee('');
     setDueDate(undefined);
     setStartDate(new Date());
     setSubtasks([]);
@@ -80,6 +83,7 @@ export function CreateTopicModal({ open, onOpenChange, allTags, onSubmit, isPend
 
   const handleSubmit = async () => {
     if (!title.trim()) return;
+    if (status === 'seguimiento' && !assignee.trim()) return;
     await onSubmit({
       title: title.trim(),
       priority,
@@ -90,6 +94,7 @@ export function CreateTopicModal({ open, onOpenChange, allTags, onSubmit, isPend
       tagIds: selectedTagIds,
       newTags: pendingNewTags,
       notes,
+      assignee: status === 'seguimiento' ? assignee.trim() : undefined,
     });
     reset();
   };
@@ -131,11 +136,24 @@ export function CreateTopicModal({ open, onOpenChange, allTags, onSubmit, isPend
                 <SelectTrigger className="w-32 h-8 text-xs"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="activo">Activo</SelectItem>
+                  <SelectItem value="seguimiento">Seguimiento</SelectItem>
                   <SelectItem value="completado">Completado</SelectItem>
                   <SelectItem value="pausado">Pausado</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+
+            {status === 'seguimiento' && (
+              <div className="space-y-1.5 w-full">
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Responsable *</label>
+                <Input
+                  placeholder="Nombre del responsable..."
+                  value={assignee}
+                  onChange={(e) => setAssignee(e.target.value)}
+                  className="h-8 text-sm"
+                />
+              </div>
+            )}
 
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Fecha inicio</label>

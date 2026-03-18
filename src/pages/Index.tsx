@@ -18,7 +18,7 @@ import { NotesView } from '@/components/NotesView';
 import { toast } from 'sonner';
 
 type Filter = 'todos' | 'revision' | 'informes' | 'notas';
-type StatusTab = 'activo' | 'pausado' | 'completado';
+type StatusTab = 'activo' | 'seguimiento' | 'pausado' | 'completado';
 
 const Index = () => {
   const { user, loading: authLoading } = useAuth();
@@ -30,6 +30,7 @@ const Index = () => {
   const [createOpen, setCreateOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+  const [selectedAssignee, setSelectedAssignee] = useState<string>('');
 
   const toggleTagFilter = useCallback((tagId: string) => {
     setSelectedTagIds((prev) => (prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]));
@@ -48,15 +49,22 @@ const Index = () => {
         const topicTagIds = getTagsForTopic(topic.id).map((t) => t.id);
         if (!selectedTagIds.some((id) => topicTagIds.includes(id))) return false;
       }
+      if (selectedAssignee && topic.assignee !== selectedAssignee) return false;
       return true;
     });
-  }, [topics, statusTab, searchQuery, selectedTagIds, getTagsForTopic]);
+  }, [topics, statusTab, searchQuery, selectedTagIds, selectedAssignee, getTagsForTopic]);
 
   const statusCounts = useMemo(() => ({
     activo: topics.filter((t) => t.status === 'activo').length,
+    seguimiento: topics.filter((t) => t.status === 'seguimiento').length,
     pausado: topics.filter((t) => t.status === 'pausado').length,
     completado: topics.filter((t) => t.status === 'completado').length,
   }), [topics]);
+
+  const uniqueAssignees = useMemo(() => {
+    const names = topics.filter(t => t.status === 'seguimiento' && t.assignee).map(t => t.assignee!);
+    return [...new Set(names)].sort();
+  }, [topics]);
 
   if (authLoading) {
     return (
@@ -78,6 +86,7 @@ const Index = () => {
     tagIds: string[];
     newTags: { name: string; color: string }[];
     notes: string;
+    assignee?: string;
   }) => {
     try {
       const created = await createTopic.mutateAsync({
@@ -86,6 +95,7 @@ const Index = () => {
         status: data.status,
         start_date: data.start_date,
         due_date: data.due_date,
+        assignee: data.assignee || null,
       });
 
       // Run subtasks and existing tags in parallel
@@ -172,6 +182,7 @@ const Index = () => {
                     <Tabs value={statusTab} onValueChange={(value) => setStatusTab(value as StatusTab)}>
                       <TabsList className="w-full">
                         <TabsTrigger value="activo" className="flex-1 text-xs">Activos ({statusCounts.activo})</TabsTrigger>
+                        <TabsTrigger value="seguimiento" className="flex-1 text-xs">Seguimiento ({statusCounts.seguimiento})</TabsTrigger>
                         <TabsTrigger value="pausado" className="flex-1 text-xs">Pausados ({statusCounts.pausado})</TabsTrigger>
                         <TabsTrigger value="completado" className="flex-1 text-xs">Cerrados ({statusCounts.completado})</TabsTrigger>
                       </TabsList>
@@ -183,6 +194,9 @@ const Index = () => {
                       allTags={tags}
                       selectedTagIds={selectedTagIds}
                       onToggleTag={toggleTagFilter}
+                      assignees={statusTab === 'seguimiento' ? uniqueAssignees : undefined}
+                      selectedAssignee={selectedAssignee}
+                      onAssigneeChange={setSelectedAssignee}
                     />
 
                     {isLoading ? (

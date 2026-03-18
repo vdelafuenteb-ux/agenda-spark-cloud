@@ -36,6 +36,7 @@ export function AppSidebar({ activeFilter, onFilterChange, topics }: AppSidebarP
   const { signOut } = useAuth();
 
   const activeTopics = topics.filter(t => t.status === 'activo');
+  const seguimientoCount = topics.filter(t => t.status === 'seguimiento').length;
   const overdueCount = activeTopics.filter(t => isStoredDateOverdue(t.due_date)).length;
   const totalSubtasks = activeTopics.reduce((acc, t) => acc + t.subtasks.length, 0);
   const completedSubtasks = activeTopics.reduce((acc, t) => acc + t.subtasks.filter(s => s.completed).length, 0);
@@ -49,8 +50,8 @@ export function AppSidebar({ activeFilter, onFilterChange, topics }: AppSidebarP
             {!collapsed && (
               <>
                 <h2 className="text-sm font-semibold text-foreground tracking-tight">Agenda de Matías</h2>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  {activeTopics.length} activos · {progress}% avance
+              <p className="mt-2 text-xs text-muted-foreground">
+                  {activeTopics.length} activos · {seguimientoCount} seguimiento · {progress}% avance
                 </p>
               </>
             )}
