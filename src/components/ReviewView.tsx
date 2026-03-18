@@ -39,8 +39,13 @@ export function ReviewView(props: ReviewViewProps) {
   const [tab, setTab] = useState<ReviewTab>('hoy');
   const { reminders } = useReminders();
   const { isCompleted, toggleCompletion } = useReminderCompletions();
+  const { items: checklistItems, toggleItem } = useChecklist();
 
   const activeTopics = topics.filter(t => t.status === 'activo' || t.status === 'seguimiento');
+
+  const todayChecklist = checklistItems.filter(i => !i.completed && isStoredDateToday(i.due_date));
+  const upcomingChecklist = checklistItems.filter(i => !i.completed && isStoredDateUpcoming(i.due_date, 3));
+  const overdueChecklist = checklistItems.filter(i => !i.completed && isStoredDateOverdue(i.due_date));
 
   const getTodayMatchCount = (topic: TopicWithSubtasks) => {
     const subtaskCount = topic.subtasks.filter(s => isStoredDateToday(s.due_date)).length;
