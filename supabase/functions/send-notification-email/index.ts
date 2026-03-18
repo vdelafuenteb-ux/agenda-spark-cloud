@@ -69,7 +69,7 @@ Deno.serve(async (req) => {
     const pendingSubtasks = (subtasks || []).filter((s: any) => !s.completed);
     const entries = (progress_entries || []).slice(0, 5);
     const lastEntry = entries.length > 0 ? entries[0]?.content || "" : "";
-    const truncated = lastEntry.length > 80 ? lastEntry.substring(0, 80) + "…" : lastEntry;
+    const truncated = lastEntry;
     const pendingCount = pendingSubtasks.length;
     const pendingText = pendingCount > 0
       ? `${pendingCount} subtarea${pendingCount > 1 ? "s" : ""}`
@@ -84,20 +84,20 @@ Deno.serve(async (req) => {
     mensaje += `<p>Tienes <strong>1 tema</strong> pendiente de actualizar. <strong>Responde este correo</strong> con el estado.</p>`;
 
     // Summary table
-    mensaje += `<table style="width:100%;border-collapse:collapse;margin:16px 0;font-size:14px;">`;
+    mensaje += `<table style="width:100%;border-collapse:collapse;margin:16px 0;font-size:14px;table-layout:fixed;">`;
     mensaje += `<thead><tr style="background-color:#f2f2f2;text-align:left;">`;
-    mensaje += `<th style="padding:8px;border:1px solid #ddd;width:30px;">#</th>`;
-    mensaje += `<th style="padding:8px;border:1px solid #ddd;">Tema</th>`;
+    mensaje += `<th style="padding:8px;border:1px solid #ddd;width:28px;">#</th>`;
+    mensaje += `<th style="padding:8px;border:1px solid #ddd;width:20%;">Tema</th>`;
     mensaje += `<th style="padding:8px;border:1px solid #ddd;">Último comentario</th>`;
-    mensaje += `<th style="padding:8px;border:1px solid #ddd;width:90px;">Inicio</th>`;
-    mensaje += `<th style="padding:8px;border:1px solid #ddd;width:90px;">Vencimiento</th>`;
-    mensaje += `<th style="padding:8px;border:1px solid #ddd;width:110px;">Pendientes</th>`;
+    mensaje += `<th style="padding:8px;border:1px solid #ddd;width:80px;">Inicio</th>`;
+    mensaje += `<th style="padding:8px;border:1px solid #ddd;width:80px;">Vencimiento</th>`;
+    mensaje += `<th style="padding:8px;border:1px solid #ddd;width:90px;">Pendientes</th>`;
     mensaje += `</tr></thead><tbody>`;
 
     mensaje += `<tr style="${rowBg}${rowColor}">`;
     mensaje += `<td style="padding:6px 8px;border:1px solid #ddd;text-align:center;">1</td>`;
     mensaje += `<td style="padding:6px 8px;border:1px solid #ddd;font-weight:600;">${topic_title}</td>`;
-    mensaje += `<td style="padding:6px 8px;border:1px solid #ddd;${isOverdue ? '' : 'color:#555;'}font-size:13px;">${truncated || "<em style='color:#aaa;'>—</em>"}</td>`;
+    mensaje += `<td style="padding:6px 8px;border:1px solid #ddd;${isOverdue ? '' : 'color:#555;'}font-size:13px;word-wrap:break-word;">${truncated || "<em style='color:#aaa;'>—</em>"}</td>`;
     mensaje += `<td style="padding:6px 8px;border:1px solid #ddd;">${formatDate(start_date) || "—"}</td>`;
     mensaje += `<td style="padding:6px 8px;border:1px solid #ddd;">${formatDate(due_date) || "—"}</td>`;
     mensaje += `<td style="padding:6px 8px;border:1px solid #ddd;color:${pendingColor};">${pendingText}</td>`;
