@@ -229,7 +229,7 @@ export function CalendarView({ topics }: CalendarViewProps) {
                             <span className="h-2.5 w-2.5 rounded-full mt-0.5 shrink-0" style={{ backgroundColor: ev.color }} />
                           )}
                           <div className="min-w-0 flex-1">
-                            <p className={`text-xs font-medium truncate ${done ? 'line-through text-muted-foreground' : ''}`}>
+                            <p className={`text-xs font-medium break-words ${done ? 'line-through text-muted-foreground' : ''}`}>
                               {ev.label}
                             </p>
                             <div className="flex items-center gap-1.5 mt-0.5">
