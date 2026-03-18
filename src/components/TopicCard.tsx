@@ -81,6 +81,8 @@ export function TopicCard({
   const [subtasksExpanded, setSubtasksExpanded] = useState(false);
   const [newSubtask, setNewSubtask] = useState('');
   const [newAssigneeName, setNewAssigneeName] = useState('');
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleDraft, setTitleDraft] = useState(topic.title);
 
   useEffect(() => {
     if (highlightToday || highlightUpcoming) setExpanded(true);
