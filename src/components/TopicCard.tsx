@@ -77,6 +77,8 @@ export function TopicCard({
   onUpdateSubtask,
   onDeleteSubtask,
   onAddProgressEntry,
+  onUpdateProgressEntry,
+  onDeleteProgressEntry,
   onAddTag,
   onRemoveTag,
   onCreateTag,
