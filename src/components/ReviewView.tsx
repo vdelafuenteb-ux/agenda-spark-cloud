@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, Circle } from 'lucide-react';
@@ -9,7 +10,7 @@ import type { Tag } from '@/hooks/useTags';
 import type { Assignee } from '@/hooks/useAssignees';
 import { useReminders } from '@/hooks/useReminders';
 import { useReminderCompletions } from '@/hooks/useReminderCompletions';
-import { getRemindersForDate } from '@/lib/reminderMatch';
+import { getRemindersForDate, getUpcomingReminders } from '@/lib/reminderMatch';
 import { isStoredDateToday, isStoredDateOverdue, isStoredDateUpcoming } from '@/lib/date';
 
 type ReviewTab = 'hoy' | 'atrasados' | 'proximos';
@@ -61,8 +62,11 @@ export function ReviewView(props: ReviewViewProps) {
     return topicUpcoming || hasSubtaskUpcoming;
   });
 
+  const upcomingReminders = useMemo(() => getUpcomingReminders(reminders, 3), [reminders]);
+
   const currentTopics = tab === 'hoy' ? todayTopics : tab === 'atrasados' ? overdueTopics : upcomingTopics;
   const todayTotalCount = todayTopics.length + todayReminders.length;
+  const upcomingTotalCount = upcomingTopics.length + upcomingReminders.length;
 
   const emptyMessages: Record<ReviewTab, string> = {
     hoy: 'No hay temas programados para hoy.',
@@ -92,8 +96,8 @@ export function ReviewView(props: ReviewViewProps) {
           </TabsTrigger>
           <TabsTrigger value="proximos" className="flex-1 text-xs gap-1.5">
             Próximos
-            {upcomingTopics.length > 0 && (
-              <Badge className="h-5 min-w-5 px-1.5 text-[10px] bg-yellow-500 text-white border-0 hover:bg-yellow-500/80">{upcomingTopics.length}</Badge>
+            {upcomingTotalCount > 0 && (
+              <Badge className="h-5 min-w-5 px-1.5 text-[10px] bg-yellow-500 text-white border-0 hover:bg-yellow-500/80">{upcomingTotalCount}</Badge>
             )}
           </TabsTrigger>
         </TabsList>
@@ -131,7 +135,43 @@ export function ReviewView(props: ReviewViewProps) {
         </div>
       )}
 
-      {currentTopics.length === 0 && (tab !== 'hoy' || todayReminders.length === 0) ? (
+      {/* Upcoming reminders */}
+      {tab === 'proximos' && upcomingReminders.length > 0 && (
+        <div className="space-y-1.5">
+          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Recordatorios próximos</p>
+          {upcomingReminders.map(({ reminder: r, date }) => {
+            const dateStr = format(date, 'yyyy-MM-dd');
+            const done = isCompleted(r.id, dateStr);
+            return (
+              <div
+                key={`${r.id}-${dateStr}`}
+                className="flex items-center gap-3 rounded-lg border border-border px-4 py-2.5 bg-yellow-500/5"
+              >
+                <button
+                  onClick={() => toggleCompletion.mutate({ reminder_id: r.id, completed_date: dateStr })}
+                  className="shrink-0 hover:scale-110 transition-transform"
+                >
+                  {done ? (
+                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                  ) : (
+                    <Circle className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </button>
+                <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: r.color }} />
+                <span className={`text-sm font-medium flex-1 ${done ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+                  {r.title}
+                </span>
+                <span className="text-[10px] text-muted-foreground shrink-0">
+                  {format(date, "EEE d MMM", { locale: es })}
+                </span>
+                <Badge className="text-[9px] h-4 shrink-0 bg-yellow-500/20 text-yellow-700 border-0">Recordatorio</Badge>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {currentTopics.length === 0 && (tab === 'hoy' ? todayReminders.length === 0 : tab === 'proximos' ? upcomingReminders.length === 0 : true) ? (
         <p className="text-sm text-muted-foreground text-center py-8">{emptyMessages[tab]}</p>
       ) : (
         currentTopics.map((topic) => (
