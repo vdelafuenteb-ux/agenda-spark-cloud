@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { isStoredDateToday, isStoredDateUpcoming, isStoredDateOverdue } from '@/lib/date';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ChevronDown, Plus, Trash2, CalendarIcon, CheckCircle2, RotateCcw, Pause, Play, User, Pin } from 'lucide-react';
+import { ChevronRight, ChevronDown, Plus, Trash2, CalendarIcon, CheckCircle2, RotateCcw, Pause, Play, User, Pin, Pencil, Check, X } from 'lucide-react';
 import { NotificationSection } from '@/components/NotificationSection';
 import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
