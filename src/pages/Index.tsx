@@ -249,6 +249,8 @@ const Index = () => {
           open={createOpen}
           onOpenChange={setCreateOpen}
           allTags={tags}
+          assignees={assignees}
+          onCreateAssignee={(name) => createAssignee.mutateAsync(name)}
           onSubmit={handleCreateTopic}
           isPending={createTopic.isPending}
         />
