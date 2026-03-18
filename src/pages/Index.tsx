@@ -10,11 +10,11 @@ import { AuthPage } from '@/components/AuthPage';
 import { useAuth } from '@/hooks/useAuth';
 import { useTopics } from '@/hooks/useTopics';
 import { useTags } from '@/hooks/useTags';
+import { isStoredDateToday } from '@/lib/date';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Plus, FileText } from 'lucide-react';
 import { toast } from 'sonner';
-import { isToday } from 'date-fns';
 
 type Filter = 'todos' | 'hoy' | 'alta' | 'informes';
 type StatusTab = 'activo' | 'pausado' | 'completado';
@@ -41,27 +41,32 @@ const Index = () => {
   if (!user) return <AuthPage />;
 
   const toggleTagFilter = (tagId: string) => {
-    setSelectedTagIds(prev =>
-      prev.includes(tagId) ? prev.filter(id => id !== tagId) : [...prev, tagId]
-    );
+    setSelectedTagIds((prev) => (prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]));
   };
 
-  const filteredTopics = topics.filter(t => {
-    if (t.status !== statusTab) return false;
+  const filteredTopics = topics.filter((topic) => {
+    if (topic.status !== statusTab) return false;
+
     if (filter === 'hoy') {
-      const topicDueToday = t.due_date && isToday(new Date(t.due_date));
-      const hasSubtaskDueToday = t.subtasks.some(s => s.due_date && isToday(new Date(s.due_date)));
+      const topicDueToday = isStoredDateToday(topic.due_date);
+      const hasSubtaskDueToday = topic.subtasks.some((subtask) => isStoredDateToday(subtask.due_date));
       if (!topicDueToday && !hasSubtaskDueToday) return false;
     }
-    if (filter === 'alta' && t.priority !== 'alta') return false;
+
+    if (filter === 'alta' && topic.priority !== 'alta') return false;
+
     if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      if (!t.title.toLowerCase().includes(q) && !t.subtasks.some(s => s.title.toLowerCase().includes(q))) return false;
+      const query = searchQuery.toLowerCase();
+      const matchesTitle = topic.title.toLowerCase().includes(query);
+      const matchesSubtask = topic.subtasks.some((subtask) => subtask.title.toLowerCase().includes(query));
+      if (!matchesTitle && !matchesSubtask) return false;
     }
+
     if (selectedTagIds.length > 0) {
-      const topicTagIds = getTagsForTopic(t.id).map(tag => tag.id);
-      if (!selectedTagIds.some(id => topicTagIds.includes(id))) return false;
+      const topicTagIds = getTagsForTopic(topic.id).map((tag) => tag.id);
+      if (!selectedTagIds.some((id) => topicTagIds.includes(id))) return false;
     }
+
     return true;
   });
 
@@ -83,38 +88,34 @@ const Index = () => {
         due_date: data.due_date,
       });
 
-      // Add subtasks
       for (const subtaskTitle of data.subtasks) {
         await addSubtask.mutateAsync({ topic_id: created.id, title: subtaskTitle });
       }
 
-      // Add existing tags
       for (const tagId of data.tagIds) {
         await addTopicTag.mutateAsync({ topic_id: created.id, tag_id: tagId });
       }
 
-      // Create new tags and link
       for (const newTag of data.newTags) {
         const createdTag = await createTag.mutateAsync({ name: newTag.name, color: newTag.color });
         await addTopicTag.mutateAsync({ topic_id: created.id, tag_id: createdTag.id });
       }
 
-      // Add initial note
       if (data.notes.trim()) {
         await addProgressEntry.mutateAsync({ topic_id: created.id, content: data.notes.trim() });
       }
 
       setCreateOpen(false);
       toast.success('Tema creado');
-    } catch (e: any) {
-      toast.error(e.message);
+    } catch (error: any) {
+      toast.error(error.message);
     }
   };
 
   const statusCounts = {
-    activo: topics.filter(t => t.status === 'activo').length,
-    pausado: topics.filter(t => t.status === 'pausado').length,
-    completado: topics.filter(t => t.status === 'completado').length,
+    activo: topics.filter((topic) => topic.status === 'activo').length,
+    pausado: topics.filter((topic) => topic.status === 'pausado').length,
+    completado: topics.filter((topic) => topic.status === 'completado').length,
   };
 
   return (
@@ -148,17 +149,11 @@ const Index = () => {
                 <ReportsList />
               ) : (
                 <>
-                  <Tabs value={statusTab} onValueChange={(v) => setStatusTab(v as StatusTab)}>
+                  <Tabs value={statusTab} onValueChange={(value) => setStatusTab(value as StatusTab)}>
                     <TabsList className="w-full">
-                      <TabsTrigger value="activo" className="flex-1 text-xs">
-                        Activos ({statusCounts.activo})
-                      </TabsTrigger>
-                      <TabsTrigger value="pausado" className="flex-1 text-xs">
-                        Pausados ({statusCounts.pausado})
-                      </TabsTrigger>
-                      <TabsTrigger value="completado" className="flex-1 text-xs">
-                        Cerrados ({statusCounts.completado})
-                      </TabsTrigger>
+                      <TabsTrigger value="activo" className="flex-1 text-xs">Activos ({statusCounts.activo})</TabsTrigger>
+                      <TabsTrigger value="pausado" className="flex-1 text-xs">Pausados ({statusCounts.pausado})</TabsTrigger>
+                      <TabsTrigger value="completado" className="flex-1 text-xs">Cerrados ({statusCounts.completado})</TabsTrigger>
                     </TabsList>
                   </Tabs>
 
@@ -176,10 +171,14 @@ const Index = () => {
                     <p className="text-sm text-muted-foreground text-center py-8">
                       {searchQuery || selectedTagIds.length > 0
                         ? 'No hay temas que coincidan con tu búsqueda.'
-                        : statusTab === 'activo' ? 'No hay temas activos.' : statusTab === 'pausado' ? 'No hay temas pausados.' : 'No hay temas cerrados.'}
+                        : statusTab === 'activo'
+                          ? 'No hay temas activos.'
+                          : statusTab === 'pausado'
+                            ? 'No hay temas pausados.'
+                            : 'No hay temas cerrados.'}
                     </p>
                   ) : (
-                    filteredTopics.map(topic => (
+                    filteredTopics.map((topic) => (
                       <TopicCard
                         key={topic.id}
                         topic={topic}
@@ -194,10 +193,7 @@ const Index = () => {
                         onAddProgressEntry={(topicId, content) => addProgressEntry.mutate({ topic_id: topicId, content })}
                         onAddTag={(topicId, tagId) => addTopicTag.mutate({ topic_id: topicId, tag_id: tagId })}
                         onRemoveTag={(topicId, tagId) => removeTopicTag.mutate({ topic_id: topicId, tag_id: tagId })}
-                        onCreateTag={async (name, color) => {
-                          const result = await createTag.mutateAsync({ name, color });
-                          return result;
-                        }}
+                        onCreateTag={(name, color) => createTag.mutateAsync({ name, color })}
                       />
                     ))
                   )}

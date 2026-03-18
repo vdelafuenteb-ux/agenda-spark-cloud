@@ -44,10 +44,10 @@ export function useTopics() {
 
       if (entError) throw entError;
 
-      return (topics || []).map(t => ({
-        ...t,
-        subtasks: (subtasks || []).filter(s => s.topic_id === t.id),
-        progress_entries: (entries || []).filter(e => e.topic_id === t.id),
+      return (topics || []).map((topic) => ({
+        ...topic,
+        subtasks: (subtasks || []).filter((subtask) => subtask.topic_id === topic.id),
+        progress_entries: (entries || []).filter((entry) => entry.topic_id === topic.id),
       }));
     },
   });
@@ -56,7 +56,11 @@ export function useTopics() {
     mutationFn: async (data: Omit<TopicInsert, 'user_id'>) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
-      const { data: created, error } = await supabase.from('topics').insert({ ...data, user_id: user.id }).select().single();
+      const { data: created, error } = await supabase
+        .from('topics')
+        .insert({ ...data, user_id: user.id })
+        .select()
+        .single();
       if (error) throw error;
       return created;
     },
@@ -68,7 +72,20 @@ export function useTopics() {
       const { error } = await supabase.from('topics').update(data).eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['topics'] }),
+    onMutate: async ({ id, ...data }) => {
+      await queryClient.cancelQueries({ queryKey: ['topics'] });
+      const previousTopics = queryClient.getQueryData<TopicWithSubtasks[]>(['topics']);
+      queryClient.setQueryData<TopicWithSubtasks[]>(['topics'], (old = []) =>
+        old.map((topic) => (topic.id === id ? { ...topic, ...data } : topic)),
+      );
+      return { previousTopics };
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.previousTopics) {
+        queryClient.setQueryData(['topics'], context.previousTopics);
+      }
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['topics'] }),
   });
 
   const deleteTopic = useMutation({
@@ -119,7 +136,25 @@ export function useTopics() {
       const { error } = await supabase.from('subtasks').update(data).eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['topics'] }),
+    onMutate: async ({ id, ...data }) => {
+      await queryClient.cancelQueries({ queryKey: ['topics'] });
+      const previousTopics = queryClient.getQueryData<TopicWithSubtasks[]>(['topics']);
+      queryClient.setQueryData<TopicWithSubtasks[]>(['topics'], (old = []) =>
+        old.map((topic) => ({
+          ...topic,
+          subtasks: topic.subtasks.map((subtask) =>
+            subtask.id === id ? { ...subtask, ...data } : subtask,
+          ),
+        })),
+      );
+      return { previousTopics };
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.previousTopics) {
+        queryClient.setQueryData(['topics'], context.previousTopics);
+      }
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['topics'] }),
   });
 
   return {

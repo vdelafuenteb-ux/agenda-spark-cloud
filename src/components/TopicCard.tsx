@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, Plus, Trash2, CalendarIcon, CheckCircle2, RotateCcw } from 'lucide-react';
-import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -13,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ProgressLog } from '@/components/ProgressLog';
 import { TagSelector } from '@/components/TagSelector';
 import { cn } from '@/lib/utils';
+import { formatStoredDate, parseStoredDate, toStoredDate } from '@/lib/date';
 import type { TopicWithSubtasks } from '@/hooks/useTopics';
 import type { Tag } from '@/hooks/useTags';
 import type { Database } from '@/integrations/supabase/types';
@@ -48,13 +48,28 @@ const statusLabels: Record<Status, string> = {
   pausado: 'Pausado',
 };
 
-export function TopicCard({ topic, allTags, topicTags, onUpdate, onDelete, onAddSubtask, onToggleSubtask, onUpdateSubtask, onDeleteSubtask, onAddProgressEntry, onAddTag, onRemoveTag, onCreateTag }: TopicCardProps) {
+export function TopicCard({
+  topic,
+  allTags,
+  topicTags,
+  onUpdate,
+  onDelete,
+  onAddSubtask,
+  onToggleSubtask,
+  onUpdateSubtask,
+  onDeleteSubtask,
+  onAddProgressEntry,
+  onAddTag,
+  onRemoveTag,
+  onCreateTag,
+}: TopicCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [newSubtask, setNewSubtask] = useState('');
 
-  const completedCount = topic.subtasks.filter(s => s.completed).length;
+  const completedCount = topic.subtasks.filter((s) => s.completed).length;
   const totalCount = topic.subtasks.length;
   const progress = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
+  const isCompleted = topic.status === 'completado';
 
   const handleAddSubtask = () => {
     if (!newSubtask.trim()) return;
@@ -62,25 +77,18 @@ export function TopicCard({ topic, allTags, topicTags, onUpdate, onDelete, onAdd
     setNewSubtask('');
   };
 
-  const isCompleted = topic.status === 'completado';
-
   return (
-    <div className={cn("bg-card rounded-lg shadow-sm hover:shadow-md transition-shadow", isCompleted && "opacity-75")}>
-      {/* Compact row */}
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center gap-3 p-4 text-left"
-      >
-        <motion.div
-          animate={{ rotate: expanded ? 90 : 0 }}
-          transition={{ duration: 0.15 }}
-        >
+    <div className={cn('bg-card rounded-lg shadow-sm hover:shadow-md transition-shadow', isCompleted && 'opacity-75')}>
+      <button onClick={() => setExpanded(!expanded)} className="w-full flex items-center gap-3 p-4 text-left">
+        <motion.div animate={{ rotate: expanded ? 90 : 0 }} transition={{ duration: 0.15 }}>
           <ChevronRight className="h-4 w-4 text-muted-foreground" />
         </motion.div>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className={cn("font-medium text-sm text-card-foreground truncate", isCompleted && "line-through")}>{topic.title}</span>
+            <span className={cn('font-medium text-sm text-card-foreground truncate', isCompleted && 'line-through')}>
+              {topic.title}
+            </span>
             <Badge className={cn('text-[10px] px-1.5 py-0', priorityConfig[topic.priority].className)}>
               {priorityConfig[topic.priority].label}
             </Badge>
@@ -91,7 +99,7 @@ export function TopicCard({ topic, allTags, topicTags, onUpdate, onDelete, onAdd
             )}
             {topicTags.length > 0 && (
               <div className="flex items-center gap-1 ml-1">
-                {topicTags.slice(0, 3).map(tag => (
+                {topicTags.slice(0, 3).map((tag) => (
                   <span
                     key={tag.id}
                     className="inline-block rounded-full px-1.5 py-0 text-[9px] text-white font-medium"
@@ -108,10 +116,7 @@ export function TopicCard({ topic, allTags, topicTags, onUpdate, onDelete, onAdd
           </div>
           {totalCount > 0 && (
             <div className="mt-1.5 h-[2px] w-full bg-muted rounded-full overflow-hidden">
-              <div
-                className="h-full bg-foreground/40 transition-all duration-300"
-                style={{ width: `${progress}%` }}
-              />
+              <div className="h-full bg-foreground/40 transition-all duration-300" style={{ width: `${progress}%` }} />
             </div>
           )}
         </div>
@@ -124,13 +129,12 @@ export function TopicCard({ topic, allTags, topicTags, onUpdate, onDelete, onAdd
           )}
           {topic.due_date && (
             <span className="text-xs text-muted-foreground font-mono">
-              {format(new Date(topic.due_date), 'dd MMM', { locale: es })}
+              {formatStoredDate(topic.due_date, 'dd MMM', { locale: es })}
             </span>
           )}
         </div>
       </button>
 
-      {/* Expanded detail */}
       <AnimatePresence>
         {expanded && (
           <motion.div
@@ -141,12 +145,8 @@ export function TopicCard({ topic, allTags, topicTags, onUpdate, onDelete, onAdd
             className="overflow-hidden"
           >
             <div className="px-4 pb-4 pt-0 space-y-4 border-t border-border">
-              {/* Controls row */}
               <div className="flex items-center gap-3 pt-3 flex-wrap">
-                <Select
-                  value={topic.priority}
-                  onValueChange={(v: Priority) => onUpdate(topic.id, { priority: v })}
-                >
+                <Select value={topic.priority} onValueChange={(value: Priority) => onUpdate(topic.id, { priority: value })}>
                   <SelectTrigger className="w-28 h-8 text-xs">
                     <SelectValue />
                   </SelectTrigger>
@@ -157,10 +157,7 @@ export function TopicCard({ topic, allTags, topicTags, onUpdate, onDelete, onAdd
                   </SelectContent>
                 </Select>
 
-                <Select
-                  value={topic.status}
-                  onValueChange={(v: Status) => onUpdate(topic.id, { status: v })}
-                >
+                <Select value={topic.status} onValueChange={(value: Status) => onUpdate(topic.id, { status: value })}>
                   <SelectTrigger className="w-32 h-8 text-xs">
                     <SelectValue />
                   </SelectTrigger>
@@ -175,17 +172,15 @@ export function TopicCard({ topic, allTags, topicTags, onUpdate, onDelete, onAdd
                   <PopoverTrigger asChild>
                     <Button variant="outline" size="sm" className="h-8 text-xs gap-1">
                       <CalendarIcon className="h-3 w-3" />
-                      {topic.due_date
-                        ? format(new Date(topic.due_date), 'dd MMM yyyy', { locale: es })
-                        : 'Fecha cierre'}
+                      {topic.due_date ? formatStoredDate(topic.due_date, 'dd MMM yyyy', { locale: es }) : 'Fecha cierre'}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
                       mode="single"
-                      selected={topic.due_date ? new Date(topic.due_date) : undefined}
-                      onSelect={(d) => onUpdate(topic.id, { due_date: d ? format(d, 'yyyy-MM-dd') : null })}
-                      className="p-3 pointer-events-auto"
+                      selected={parseStoredDate(topic.due_date)}
+                      onSelect={(date) => onUpdate(topic.id, { due_date: toStoredDate(date) })}
+                      initialFocus
                     />
                   </PopoverContent>
                 </Popover>
@@ -200,7 +195,6 @@ export function TopicCard({ topic, allTags, topicTags, onUpdate, onDelete, onAdd
                 </Button>
               </div>
 
-              {/* Complete / Reopen button */}
               <Button
                 size="sm"
                 variant={isCompleted ? 'outline' : 'default'}
@@ -208,46 +202,52 @@ export function TopicCard({ topic, allTags, topicTags, onUpdate, onDelete, onAdd
                 onClick={() => onUpdate(topic.id, { status: isCompleted ? 'activo' : 'completado' })}
               >
                 {isCompleted ? (
-                  <><RotateCcw className="h-3.5 w-3.5" /> Reabrir Tema</>
+                  <>
+                    <RotateCcw className="h-3.5 w-3.5" /> Reabrir Tema
+                  </>
                 ) : (
-                  <><CheckCircle2 className="h-3.5 w-3.5" /> Marcar como Completado</>
+                  <>
+                    <CheckCircle2 className="h-3.5 w-3.5" /> Marcar como Completado
+                  </>
                 )}
               </Button>
 
-              {/* Subtasks checklist */}
               <div className="space-y-1.5">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Subtareas</p>
-                {topic.subtasks.map(sub => (
-                  <div key={sub.id} className="flex items-center gap-2 group">
+                {topic.subtasks.map((subtask) => (
+                  <div key={subtask.id} className="flex items-center gap-2 group">
                     <Checkbox
-                      checked={sub.completed}
-                      onCheckedChange={(checked) => onToggleSubtask(sub.id, !!checked)}
+                      checked={subtask.completed}
+                      onCheckedChange={(checked) => onToggleSubtask(subtask.id, !!checked)}
                     />
-                    <span className={cn(
-                      'text-sm flex-1',
-                      sub.completed && 'line-through text-muted-foreground'
-                    )}>
-                      {sub.title}
+                    <span className={cn('text-sm flex-1', subtask.completed && 'line-through text-muted-foreground')}>
+                      {subtask.title}
                     </span>
                     <Popover>
                       <PopoverTrigger asChild>
-                        <button className="text-[10px] text-muted-foreground hover:text-foreground transition-colors shrink-0">
-                          {sub.due_date
-                            ? format(new Date(sub.due_date), 'dd MMM', { locale: es })
-                            : <CalendarIcon className="h-3 w-3" />}
+                        <button
+                          type="button"
+                          className="text-[10px] text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                        >
+                          {subtask.due_date ? (
+                            formatStoredDate(subtask.due_date, 'dd MMM', { locale: es })
+                          ) : (
+                            <CalendarIcon className="h-3 w-3" />
+                          )}
                         </button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="end">
                         <Calendar
                           mode="single"
-                          selected={sub.due_date ? new Date(sub.due_date) : undefined}
-                          onSelect={(d) => onUpdateSubtask(sub.id, { due_date: d ? format(d, 'yyyy-MM-dd') : null })}
-                          className="p-3 pointer-events-auto"
+                          selected={parseStoredDate(subtask.due_date)}
+                          onSelect={(date) => onUpdateSubtask(subtask.id, { due_date: toStoredDate(date) })}
+                          initialFocus
                         />
                       </PopoverContent>
                     </Popover>
                     <button
-                      onClick={() => onDeleteSubtask(sub.id)}
+                      type="button"
+                      onClick={() => onDeleteSubtask(subtask.id)}
                       className="opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" />
@@ -258,8 +258,8 @@ export function TopicCard({ topic, allTags, topicTags, onUpdate, onDelete, onAdd
                   <Input
                     placeholder="Nueva subtarea..."
                     value={newSubtask}
-                    onChange={e => setNewSubtask(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && handleAddSubtask()}
+                    onChange={(event) => setNewSubtask(event.target.value)}
+                    onKeyDown={(event) => event.key === 'Enter' && handleAddSubtask()}
                     className="h-8 text-sm"
                   />
                   <Button size="sm" variant="ghost" className="h-8 shrink-0" onClick={handleAddSubtask}>
@@ -268,7 +268,6 @@ export function TopicCard({ topic, allTags, topicTags, onUpdate, onDelete, onAdd
                 </div>
               </div>
 
-              {/* Tags */}
               <TagSelector
                 allTags={allTags}
                 topicTags={topicTags}
@@ -280,11 +279,7 @@ export function TopicCard({ topic, allTags, topicTags, onUpdate, onDelete, onAdd
                 }}
               />
 
-              {/* Progress log (bitácora) */}
-              <ProgressLog
-                entries={topic.progress_entries}
-                onAdd={(content) => onAddProgressEntry(topic.id, content)}
-              />
+              <ProgressLog entries={topic.progress_entries} onAdd={(content) => onAddProgressEntry(topic.id, content)} />
             </div>
           </motion.div>
         )}

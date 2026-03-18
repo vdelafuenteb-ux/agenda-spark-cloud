@@ -6,9 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CalendarIcon, Copy, Printer } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { formatStoredDate } from '@/lib/date';
 import type { TopicWithSubtasks } from '@/hooks/useTopics';
 
 interface ReportModalProps {
@@ -33,11 +33,11 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
   }, [period, customStart, customEnd]);
 
   const report = useMemo(() => {
-    const active = topics.filter(t => t.status === 'activo');
-    const completed = topics.filter(t => t.status === 'completado');
-    const paused = topics.filter(t => t.status === 'pausado');
-    const totalSubs = topics.reduce((a, t) => a + t.subtasks.length, 0);
-    const doneSubs = topics.reduce((a, t) => a + t.subtasks.filter(s => s.completed).length, 0);
+    const active = topics.filter((topic) => topic.status === 'activo');
+    const completed = topics.filter((topic) => topic.status === 'completado');
+    const paused = topics.filter((topic) => topic.status === 'pausado');
+    const totalSubs = topics.reduce((acc, topic) => acc + topic.subtasks.length, 0);
+    const doneSubs = topics.reduce((acc, topic) => acc + topic.subtasks.filter((subtask) => subtask.completed).length, 0);
     const pct = totalSubs > 0 ? Math.round((doneSubs / totalSubs) * 100) : 0;
 
     const periodStr = `${format(start, 'dd MMM yyyy', { locale: es })} — ${format(end, 'dd MMM yyyy', { locale: es })}`;
@@ -50,40 +50,45 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
     md += `| Temas completados | ${completed.length} |\n`;
     md += `| Temas pausados | ${paused.length} |\n`;
     md += `| Subtareas completadas | ${doneSubs}/${totalSubs} (${pct}%) |\n\n`;
-
     md += `## Detalle por Tema\n\n`;
 
     const renderTopicSection = (list: TopicWithSubtasks[], sectionTitle: string) => {
       if (list.length === 0) return '';
       let section = `### ${sectionTitle}\n\n`;
-      list.forEach(t => {
-        const tDone = t.subtasks.filter(s => s.completed).length;
-        const tTotal = t.subtasks.length;
-        section += `#### ${t.title}\n`;
-        section += `- **Prioridad:** ${t.priority.charAt(0).toUpperCase() + t.priority.slice(1)}\n`;
-        section += `- **Estado:** ${t.status.charAt(0).toUpperCase() + t.status.slice(1)}\n`;
-        if (t.due_date) section += `- **Fecha cierre:** ${format(new Date(t.due_date), 'dd MMM yyyy', { locale: es })}\n`;
-        if (tTotal > 0) section += `- **Progreso:** ${tDone}/${tTotal} subtareas completadas\n`;
 
-        if (t.subtasks.length > 0) {
+      list.forEach((topic) => {
+        const done = topic.subtasks.filter((subtask) => subtask.completed).length;
+        const total = topic.subtasks.length;
+
+        section += `#### ${topic.title}\n`;
+        section += `- **Prioridad:** ${topic.priority.charAt(0).toUpperCase() + topic.priority.slice(1)}\n`;
+        section += `- **Estado:** ${topic.status.charAt(0).toUpperCase() + topic.status.slice(1)}\n`;
+        if (topic.due_date) section += `- **Fecha cierre:** ${formatStoredDate(topic.due_date, 'dd MMM yyyy', { locale: es })}\n`;
+        if (total > 0) section += `- **Progreso:** ${done}/${total} subtareas completadas\n`;
+
+        if (topic.subtasks.length > 0) {
           section += `- **Subtareas:**\n`;
-          t.subtasks.forEach(s => {
-            section += `  - [${s.completed ? 'x' : ' '}] ${s.title}\n`;
+          topic.subtasks.forEach((subtask) => {
+            section += `  - [${subtask.completed ? 'x' : ' '}] ${subtask.title}\n`;
           });
         }
 
-        if (t.progress_notes) {
-          section += `- **Avances:** ${t.progress_notes}\n`;
+        if (topic.progress_entries.length > 0) {
+          section += `- **Avances:**\n`;
+          topic.progress_entries.forEach((entry) => {
+            section += `  - ${entry.content}\n`;
+          });
         }
+
         section += '\n';
       });
+
       return section;
     };
 
     md += renderTopicSection(active, 'Temas Activos');
     md += renderTopicSection(completed, 'Temas Completados');
     md += renderTopicSection(paused, 'Temas Pausados');
-
     md += `---\n*Generado el ${format(new Date(), "dd MMM yyyy 'a las' HH:mm", { locale: es })}*\n`;
 
     return md;
@@ -104,7 +109,6 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
       table { border-collapse: collapse; width: 100%; } th, td { border: 1px solid #e5e5e5; padding: 6px 12px; text-align: left; font-size: 0.85rem; }
       li { font-size: 0.85rem; } hr { margin-top: 24px; border: none; border-top: 1px solid #e5e5e5; }
     </style></head><body>`);
-    // Simple md→html
     const html = report
       .replace(/^#### (.+)$/gm, '<h4>$1</h4>')
       .replace(/^### (.+)$/gm, '<h3>$1</h3>')
@@ -114,8 +118,8 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
       .replace(/\*(.+?)\*/g, '<em>$1</em>')
       .replace(/^---$/gm, '<hr>')
       .replace(/^\| (.+) \|$/gm, (match) => {
-        const cells = match.split('|').filter(Boolean).map(c => c.trim());
-        return '<tr>' + cells.map(c => `<td>${c}</td>`).join('') + '</tr>';
+        const cells = match.split('|').filter(Boolean).map((cell) => cell.trim());
+        return '<tr>' + cells.map((cell) => `<td>${cell}</td>`).join('') + '</tr>';
       })
       .replace(/^- (.+)$/gm, '<li>$1</li>')
       .replace(/^  - (.+)$/gm, '<li style="margin-left:20px">$1</li>')
@@ -140,8 +144,8 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
       });
       if (error) throw error;
       toast.success('Informe guardado');
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (error: any) {
+      toast.error(error.message);
     } finally {
       setSaving(false);
     }
@@ -155,17 +159,16 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
           <DialogDescription>Genera un resumen ejecutivo de tus temas y avances.</DialogDescription>
         </DialogHeader>
 
-        {/* Period selector */}
         <div className="flex items-center gap-2 flex-wrap">
-          {(['week', 'month', 'custom'] as Period[]).map(p => (
+          {(['week', 'month', 'custom'] as Period[]).map((value) => (
             <Button
-              key={p}
+              key={value}
               size="sm"
-              variant={period === p ? 'default' : 'outline'}
+              variant={period === value ? 'default' : 'outline'}
               className="h-7 text-xs"
-              onClick={() => setPeriod(p)}
+              onClick={() => setPeriod(value)}
             >
-              {p === 'week' ? 'Esta semana' : p === 'month' ? 'Este mes' : 'Personalizado'}
+              {value === 'week' ? 'Esta semana' : value === 'month' ? 'Este mes' : 'Personalizado'}
             </Button>
           ))}
           {period === 'custom' && (
@@ -177,7 +180,9 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
                     {format(customStart, 'dd/MM')}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={customStart} onSelect={d => d && setCustomStart(d)} className="p-3 pointer-events-auto" /></PopoverContent>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={customStart} onSelect={(date) => date && setCustomStart(date)} initialFocus />
+                </PopoverContent>
               </Popover>
               <span className="text-xs text-muted-foreground">a</span>
               <Popover>
@@ -187,28 +192,22 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
                     {format(customEnd, 'dd/MM')}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={customEnd} onSelect={d => d && setCustomEnd(d)} className="p-3 pointer-events-auto" /></PopoverContent>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={customEnd} onSelect={(date) => date && setCustomEnd(date)} initialFocus />
+                </PopoverContent>
               </Popover>
             </div>
           )}
         </div>
 
-        {/* Report preview */}
         <div className="flex-1 overflow-auto rounded-md border border-border bg-muted/30 p-4">
           <pre className="text-xs whitespace-pre-wrap font-mono text-foreground leading-relaxed">{report}</pre>
         </div>
 
-        {/* Actions */}
         <div className="flex items-center gap-2 justify-end">
-          <Button variant="outline" size="sm" onClick={handleCopy}>
-            <Copy className="h-3 w-3 mr-1" /> Copiar
-          </Button>
-          <Button variant="outline" size="sm" onClick={handlePrint}>
-            <Printer className="h-3 w-3 mr-1" /> Imprimir
-          </Button>
-          <Button size="sm" onClick={handleSave} disabled={saving}>
-            {saving ? 'Guardando...' : 'Guardar informe'}
-          </Button>
+          <Button variant="outline" size="sm" onClick={handleCopy}><Copy className="h-3 w-3 mr-1" /> Copiar</Button>
+          <Button variant="outline" size="sm" onClick={handlePrint}><Printer className="h-3 w-3 mr-1" /> Imprimir</Button>
+          <Button size="sm" onClick={handleSave} disabled={saving}>{saving ? 'Guardando...' : 'Guardar informe'}</Button>
         </div>
       </DialogContent>
     </Dialog>
