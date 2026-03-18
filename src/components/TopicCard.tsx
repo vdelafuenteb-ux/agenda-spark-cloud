@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { isStoredDateToday } from '@/lib/date';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, Plus, Trash2, CalendarIcon, CheckCircle2, RotateCcw, Pause, Play, User } from 'lucide-react';
+import { ChevronRight, Plus, Trash2, CalendarIcon, CheckCircle2, RotateCcw, Pause, Play, User, Pin } from 'lucide-react';
 import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -94,12 +94,25 @@ export function TopicCard({
     <div className={cn(
       'bg-card rounded-lg shadow-sm hover:shadow-md transition-shadow',
       isCompleted && 'opacity-75',
-      isSeguimiento && 'border-l-4 border-l-[hsl(var(--seguimiento))] bg-[hsl(var(--seguimiento-bg))]'
+      isSeguimiento && 'border-l-4 border-l-[hsl(var(--seguimiento))] bg-[hsl(var(--seguimiento-bg))]',
+      topic.pinned && !isSeguimiento && 'border-l-4 border-l-primary'
     )}>
       <button onClick={() => setExpanded(!expanded)} className="w-full flex items-center gap-3 p-4 text-left">
-        <motion.div animate={{ rotate: expanded ? 90 : 0 }} transition={{ duration: 0.15 }}>
-          <ChevronRight className="h-4 w-4 text-muted-foreground" />
-        </motion.div>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={(e) => { e.stopPropagation(); onUpdate(topic.id, { pinned: !topic.pinned }); }}
+            className={cn(
+              'p-0.5 rounded hover:bg-accent transition-colors',
+              topic.pinned ? 'text-primary' : 'text-muted-foreground/40 hover:text-muted-foreground'
+            )}
+            title={topic.pinned ? 'Desfijar' : 'Fijar arriba'}
+          >
+            <Pin className={cn('h-3.5 w-3.5', topic.pinned && 'fill-current')} />
+          </button>
+          <motion.div animate={{ rotate: expanded ? 90 : 0 }} transition={{ duration: 0.15 }}>
+            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          </motion.div>
+        </div>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">

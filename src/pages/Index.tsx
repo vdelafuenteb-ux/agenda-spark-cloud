@@ -37,7 +37,7 @@ const Index = () => {
   }, []);
 
   const filteredTopics = useMemo(() => {
-    return topics.filter((topic) => {
+    const filtered = topics.filter((topic) => {
       if (topic.status !== statusTab) return false;
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
@@ -52,6 +52,7 @@ const Index = () => {
       if (selectedAssignee && topic.assignee !== selectedAssignee) return false;
       return true;
     });
+    return filtered.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
   }, [topics, statusTab, searchQuery, selectedTagIds, selectedAssignee, getTagsForTopic]);
 
   const statusCounts = useMemo(() => ({
