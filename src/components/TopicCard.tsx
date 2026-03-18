@@ -6,7 +6,7 @@ import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
+import { SubtaskRow } from '@/components/SubtaskRow';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -287,48 +287,14 @@ export function TopicCard({
                 {topic.subtasks.map((subtask) => {
                   const subtaskIsToday = highlightToday && isStoredDateToday(subtask.due_date);
                   return (
-                  <div key={subtask.id} className={cn('flex items-center gap-2 group rounded-md px-1.5 py-1 -mx-1.5 transition-colors', subtaskIsToday && 'bg-accent/50 ring-1 ring-accent')}>
-                    <Checkbox
-                      checked={subtask.completed}
-                      onCheckedChange={(checked) => onToggleSubtask(subtask.id, !!checked)}
-                    />
-                    <div className={cn('flex-1 min-w-0 flex items-center gap-1.5', subtask.completed && 'line-through text-muted-foreground')}>
-                      <span className="text-sm truncate">{subtask.title}</span>
-                      {subtaskIsToday && (
-                        <Badge className="text-[9px] px-1 py-0 bg-primary text-primary-foreground border-transparent shrink-0">Hoy</Badge>
-                      )}
-                    </div>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <button
-                          type="button"
-                          className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors shrink-0"
-                        >
-                          <CalendarIcon className="h-3 w-3" />
-                          {subtask.due_date ? (
-                            formatStoredDate(subtask.due_date, 'dd MMM', { locale: es })
-                          ) : (
-                            <span>Sin fecha</span>
-                          )}
-                        </button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="end">
-                        <Calendar
-                          mode="single"
-                          selected={parseStoredDate(subtask.due_date)}
-                          onSelect={(date) => onUpdateSubtask(subtask.id, { due_date: toStoredDate(date) })}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <button
-                      type="button"
-                      onClick={() => onDeleteSubtask(subtask.id)}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" />
-                    </button>
-                  </div>
+                  <SubtaskRow
+                    key={subtask.id}
+                    subtask={subtask}
+                    subtaskIsToday={subtaskIsToday}
+                    onToggleSubtask={onToggleSubtask}
+                    onUpdateSubtask={onUpdateSubtask}
+                    onDeleteSubtask={onDeleteSubtask}
+                  />
                   );
                 })}
                 <div className="flex items-center gap-2 mt-2">

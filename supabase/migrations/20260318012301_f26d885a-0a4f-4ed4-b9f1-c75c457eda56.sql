@@ -1,0 +1,1 @@
+ALTER TABLE public.subtasks ADD COLUMN notes text DEFAULT '' NOT NULL;
