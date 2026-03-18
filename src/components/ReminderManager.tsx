@@ -1,0 +1,119 @@
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Trash2, Plus } from 'lucide-react';
+import { toast } from 'sonner';
+import type { Reminder } from '@/hooks/useReminders';
+
+const COLORS = ['#3b82f6', '#ef4444', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899', '#6b7280'];
+const DAYS_OF_WEEK = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
+interface ReminderManagerProps {
+  reminders: Reminder[];
+  onCreate: (r: Omit<Reminder, 'id' | 'user_id' | 'created_at'>) => Promise<any>;
+  onDelete: (id: string) => void;
+}
+
+export function ReminderManager({ reminders, onCreate, onDelete }: ReminderManagerProps) {
+  const [title, setTitle] = useState('');
+  const [type, setType] = useState<'monthly' | 'weekly'>('monthly');
+  const [day, setDay] = useState(1);
+  const [color, setColor] = useState(COLORS[0]);
+
+  const handleCreate = async () => {
+    if (!title.trim()) return;
+    try {
+      await onCreate({ title: title.trim(), recurrence_type: type, recurrence_day: day, color });
+      setTitle('');
+      toast.success('Recordatorio creado');
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <h3 className="text-sm font-semibold text-foreground">Recordatorios periódicos</h3>
+
+      <div className="flex flex-col gap-2">
+        <Input
+          placeholder="Ej: Pagar cuenta de luz"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          className="h-8 text-xs"
+          onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
+        />
+        <div className="flex gap-2 items-center flex-wrap">
+          <Select value={type} onValueChange={(v) => { setType(v as any); setDay(v === 'weekly' ? 1 : 1); }}>
+            <SelectTrigger className="h-8 text-xs w-28">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="monthly">Mensual</SelectItem>
+              <SelectItem value="weekly">Semanal</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {type === 'monthly' ? (
+            <Select value={String(day)} onValueChange={(v) => setDay(Number(v))}>
+              <SelectTrigger className="h-8 text-xs w-24">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: 31 }, (_, i) => (
+                  <SelectItem key={i + 1} value={String(i + 1)}>Día {i + 1}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <Select value={String(day)} onValueChange={(v) => setDay(Number(v))}>
+              <SelectTrigger className="h-8 text-xs w-28">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {DAYS_OF_WEEK.map((name, i) => (
+                  <SelectItem key={i} value={String(i)}>{name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+
+          <div className="flex gap-1">
+            {COLORS.map((c) => (
+              <button
+                key={c}
+                className={`h-5 w-5 rounded-full border-2 transition-transform ${color === c ? 'border-foreground scale-110' : 'border-transparent'}`}
+                style={{ backgroundColor: c }}
+                onClick={() => setColor(c)}
+              />
+            ))}
+          </div>
+
+          <Button size="sm" className="h-8 text-xs gap-1" onClick={handleCreate}>
+            <Plus className="h-3 w-3" /> Agregar
+          </Button>
+        </div>
+      </div>
+
+      {reminders.length > 0 && (
+        <div className="space-y-1">
+          {reminders.map((r) => (
+            <div key={r.id} className="flex items-center justify-between gap-2 rounded-md border border-border px-3 py-1.5 text-xs">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: r.color }} />
+                <span className="truncate font-medium">{r.title}</span>
+                <span className="text-muted-foreground shrink-0">
+                  {r.recurrence_type === 'monthly' ? `Día ${r.recurrence_day}` : DAYS_OF_WEEK[r.recurrence_day]}
+                </span>
+              </div>
+              <button onClick={() => onDelete(r.id)} className="text-muted-foreground hover:text-destructive shrink-0">
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
