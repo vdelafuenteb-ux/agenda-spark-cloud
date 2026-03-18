@@ -28,6 +28,7 @@ type Filter = 'todos' | 'revision' | 'informes' | 'notas' | 'dashboard' | 'check
 type StatusTab = 'activo' | 'seguimiento' | 'pausado' | 'completado';
 
 const Index = () => {
+  const queryClient = useQueryClient();
   const { user, loading: authLoading } = useAuth();
   const { topics, isLoading, createTopic, updateTopic, deleteTopic, addSubtask, toggleSubtask, deleteSubtask, addProgressEntry, updateSubtask } = useTopics();
   const { tags, getTagsForTopic, createTag, deleteTag, addTopicTag, removeTopicTag } = useTags();
