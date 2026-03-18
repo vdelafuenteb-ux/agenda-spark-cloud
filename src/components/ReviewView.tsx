@@ -28,7 +28,7 @@ interface ReviewViewProps {
 }
 
 export function ReviewView(props: ReviewViewProps) {
-  const { topics, allTags, getTagsForTopic, ...handlers } = props;
+  const { topics, allTags, assignees, onCreateAssignee, getTagsForTopic, ...handlers } = props;
   const [tab, setTab] = useState<ReviewTab>('hoy');
 
   const activeTopics = topics.filter(t => t.status === 'activo' || t.status === 'seguimiento');
