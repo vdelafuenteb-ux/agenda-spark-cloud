@@ -48,6 +48,10 @@ function getEventsForDay(
       events.push({ label: t.title, color: '#f59e0b', type: 'due' });
     }
     for (const s of t.subtasks) {
+      const sDue = parseStoredDate(s.due_date);
+      if (sDue && isSameDay(sDue, date) && !s.completed) {
+        events.push({ label: s.title, color: '#f59e0b', type: 'due' });
+      }
       if (s.completed_at && isSameDay(new Date(s.completed_at), date)) {
         events.push({ label: `✓ ${s.title}`, color: '#10b981', type: 'completed' });
       }
