@@ -261,6 +261,8 @@ const Index = () => {
                 onDeleteSubtask={(id) => deleteSubtask.mutate(id)}
                 onUpdateSubtask={(id, data) => updateSubtask.mutate({ id, ...data })}
                 onAddProgressEntry={(topicId, content) => addProgressEntry.mutate({ topic_id: topicId, content })}
+                onUpdateProgressEntry={(id, content) => updateProgressEntry.mutate({ id, content })}
+                onDeleteProgressEntry={(id) => deleteProgressEntry.mutate(id)}
                 onAddTag={(topicId, tagId) => addTopicTag.mutate({ topic_id: topicId, tag_id: tagId })}
                 onRemoveTag={(topicId, tagId) => removeTopicTag.mutate({ topic_id: topicId, tag_id: tagId })}
                 onCreateTag={(name, color) => createTag.mutateAsync({ name, color })}
