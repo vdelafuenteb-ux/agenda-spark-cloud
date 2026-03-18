@@ -25,7 +25,7 @@ export function useTopics() {
       // Run all 3 queries in parallel instead of sequentially
       const [topicsRes, subtasksRes, entriesRes] = await Promise.all([
         supabase.from('topics').select('*').order('sort_order', { ascending: true }).order('created_at', { ascending: false }),
-        supabase.from('subtasks').select('*').order('sort_order', { ascending: true }),
+        supabase.from('subtasks').select('*').order('sort_order', { ascending: true }).order('created_at', { ascending: true }),
         supabase.from('progress_entries').select('*').order('created_at', { ascending: true }),
       ]);
 
