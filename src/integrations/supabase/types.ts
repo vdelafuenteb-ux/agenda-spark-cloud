@@ -183,6 +183,36 @@ export type Database = {
           },
         ]
       }
+      reminders: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          recurrence_day: number
+          recurrence_type: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          id?: string
+          recurrence_day: number
+          recurrence_type: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          recurrence_day?: number
+          recurrence_type?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       reports: {
         Row: {
           content: string
