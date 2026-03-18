@@ -308,6 +308,9 @@ export function SettingsView({ tags, assignees, topics, onDeleteTag, onCreateTag
             )}
           </CardContent>
         </Card>
+
+        {/* Email Schedules */}
+        <EmailScheduleSettings assignees={assignees} topics={topics} />
       </div>
     </main>
   );
