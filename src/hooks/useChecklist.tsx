@@ -31,12 +31,32 @@ export function useChecklist() {
     mutationFn: async (title: string) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('checklist_items')
-        .insert({ user_id: user.id, title: title.trim() });
+        .insert({ user_id: user.id, title: title.trim() })
+        .select()
+        .single();
       if (error) throw error;
+      return data as ChecklistItem;
     },
-    onSuccess: invalidate,
+    // Optimistic: add item instantly
+    onMutate: async (title) => {
+      await qc.cancelQueries({ queryKey: key });
+      const previous = qc.getQueryData<ChecklistItem[]>(key);
+      const optimistic: ChecklistItem = {
+        id: crypto.randomUUID(),
+        user_id: '',
+        title: title.trim(),
+        completed: false,
+        created_at: new Date().toISOString(),
+      };
+      qc.setQueryData<ChecklistItem[]>(key, (old = []) => [...old, optimistic]);
+      return { previous };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous) qc.setQueryData(key, ctx.previous);
+    },
+    onSettled: invalidate,
   });
 
   const toggleItem = useMutation({
@@ -47,7 +67,18 @@ export function useChecklist() {
         .eq('id', id);
       if (error) throw error;
     },
-    onSuccess: invalidate,
+    onMutate: async ({ id, completed }) => {
+      await qc.cancelQueries({ queryKey: key });
+      const previous = qc.getQueryData<ChecklistItem[]>(key);
+      qc.setQueryData<ChecklistItem[]>(key, (old = []) =>
+        old.map((i) => (i.id === id ? { ...i, completed } : i)),
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous) qc.setQueryData(key, ctx.previous);
+    },
+    onSettled: invalidate,
   });
 
   const deleteItem = useMutation({
@@ -55,7 +86,16 @@ export function useChecklist() {
       const { error } = await supabase.from('checklist_items').delete().eq('id', id);
       if (error) throw error;
     },
-    onSuccess: invalidate,
+    onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: key });
+      const previous = qc.getQueryData<ChecklistItem[]>(key);
+      qc.setQueryData<ChecklistItem[]>(key, (old = []) => old.filter((i) => i.id !== id));
+      return { previous };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous) qc.setQueryData(key, ctx.previous);
+    },
+    onSettled: invalidate,
   });
 
   const clearCompleted = useMutation({
@@ -69,7 +109,16 @@ export function useChecklist() {
         .eq('completed', true);
       if (error) throw error;
     },
-    onSuccess: invalidate,
+    onMutate: async () => {
+      await qc.cancelQueries({ queryKey: key });
+      const previous = qc.getQueryData<ChecklistItem[]>(key);
+      qc.setQueryData<ChecklistItem[]>(key, (old = []) => old.filter((i) => !i.completed));
+      return { previous };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous) qc.setQueryData(key, ctx.previous);
+    },
+    onSettled: invalidate,
   });
 
   return {

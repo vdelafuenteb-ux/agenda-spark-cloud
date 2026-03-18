@@ -30,9 +30,10 @@ function getTrafficLight(dueDateStr: string | null | undefined): { icon: string;
   if (!dueDate) return { icon: '🟢', label: 'Al día' };
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  dueDate.setHours(0, 0, 0, 0);
-  if (isBefore(dueDate, today)) return { icon: '🔴', label: 'Atrasado' };
-  if (isBefore(dueDate, addDays(today, 4))) return { icon: '🟡', label: 'Próximo a vencer' };
+  const dueCopy = new Date(dueDate);
+  dueCopy.setHours(0, 0, 0, 0);
+  if (isBefore(dueCopy, today)) return { icon: '🔴', label: 'Atrasado' };
+  if (isBefore(dueCopy, addDays(today, 4))) return { icon: '🟡', label: 'Próximo a vencer' };
   return { icon: '🟢', label: 'Al día' };
 }
 

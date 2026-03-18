@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Tag {
@@ -40,6 +41,25 @@ export function useTags() {
       return data || [];
     },
   });
+
+  // Pre-compute lookup maps for O(1) access
+  const tagsByTopicMap = useMemo(() => {
+    const map = new Map<string, string[]>();
+    for (const tt of topicTagsQuery.data || []) {
+      const arr = map.get(tt.topic_id);
+      if (arr) arr.push(tt.tag_id);
+      else map.set(tt.topic_id, [tt.tag_id]);
+    }
+    return map;
+  }, [topicTagsQuery.data]);
+
+  const tagsById = useMemo(() => {
+    const map = new Map<string, Tag>();
+    for (const t of tagsQuery.data || []) {
+      map.set(t.id, t);
+    }
+    return map;
+  }, [tagsQuery.data]);
 
   const createTag = useMutation({
     mutationFn: async ({ name, color }: { name: string; color: string }) => {
@@ -87,12 +107,11 @@ export function useTags() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['topic_tags'] }),
   });
 
-  const getTagsForTopic = (topicId: string): Tag[] => {
-    const tagIds = (topicTagsQuery.data || [])
-      .filter(tt => tt.topic_id === topicId)
-      .map(tt => tt.tag_id);
-    return (tagsQuery.data || []).filter(t => tagIds.includes(t.id));
-  };
+  const getTagsForTopic = useCallback((topicId: string): Tag[] => {
+    const tagIds = tagsByTopicMap.get(topicId);
+    if (!tagIds) return [];
+    return tagIds.map((id) => tagsById.get(id)).filter(Boolean) as Tag[];
+  }, [tagsByTopicMap, tagsById]);
 
   return {
     tags: tagsQuery.data || [],

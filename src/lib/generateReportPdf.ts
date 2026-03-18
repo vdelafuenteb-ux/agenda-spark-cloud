@@ -11,9 +11,10 @@ function getTrafficLight(dueDateStr: string | null | undefined): { label: string
   if (!dueDate) return { label: 'Al día', color: [34, 197, 94] };
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  dueDate.setHours(0, 0, 0, 0);
-  if (isBefore(dueDate, today)) return { label: 'Atrasado', color: [239, 68, 68] };
-  if (isBefore(dueDate, addDays(today, 4))) return { label: 'Próximo', color: [234, 179, 8] };
+  const dueCopy = new Date(dueDate);
+  dueCopy.setHours(0, 0, 0, 0);
+  if (isBefore(dueCopy, today)) return { label: 'Atrasado', color: [239, 68, 68] };
+  if (isBefore(dueCopy, addDays(today, 4))) return { label: 'Próximo', color: [234, 179, 8] };
   return { label: 'Al día', color: [34, 197, 94] };
 }
 
