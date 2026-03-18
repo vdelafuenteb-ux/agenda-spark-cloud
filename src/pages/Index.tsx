@@ -194,6 +194,9 @@ const Index = () => {
                       allTags={tags}
                       selectedTagIds={selectedTagIds}
                       onToggleTag={toggleTagFilter}
+                      assignees={statusTab === 'seguimiento' ? uniqueAssignees : undefined}
+                      selectedAssignee={selectedAssignee}
+                      onAssigneeChange={setSelectedAssignee}
                     />
 
                     {isLoading ? (

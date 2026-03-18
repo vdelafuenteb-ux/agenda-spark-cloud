@@ -33,6 +33,7 @@ interface CreateTopicModalProps {
     tagIds: string[];
     newTags: { name: string; color: string }[];
     notes: string;
+    assignee?: string;
   }) => Promise<void> | void;
   isPending: boolean;
 }

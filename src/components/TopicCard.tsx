@@ -245,9 +245,22 @@ export function TopicCard({
                 }}
               />
 
-              {/* Status actions — match tab names: Activo / Pausado / Cerrado */}
+              {/* Assignee field for seguimiento */}
+              {isSeguimiento && (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Responsable</label>
+                  <Input
+                    placeholder="Nombre del responsable..."
+                    value={topic.assignee || ''}
+                    onChange={(e) => onUpdate(topic.id, { assignee: e.target.value })}
+                    className="h-8 text-sm"
+                  />
+                </div>
+              )}
+
+              {/* Status actions */}
               <div className="flex items-center gap-2">
-                {topic.status === 'activo' && (
+                {(topic.status === 'activo' || topic.status === 'seguimiento') && (
                   <>
                     <Button
                       size="sm"

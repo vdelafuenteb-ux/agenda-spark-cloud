@@ -96,6 +96,11 @@
     --priority-alta: 0 72% 51%;
     --priority-media: 38 92% 50%;
     --priority-baja: 142 71% 45%;
+
+    --seguimiento: 187 72% 45%;
+    --seguimiento-foreground: 0 0% 100%;
+    --seguimiento-bg: 187 20% 15%;
+    --seguimiento-border: 187 50% 35%;
   }
 }
 

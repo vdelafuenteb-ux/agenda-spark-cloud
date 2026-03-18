@@ -50,8 +50,8 @@ export function AppSidebar({ activeFilter, onFilterChange, topics }: AppSidebarP
             {!collapsed && (
               <>
                 <h2 className="text-sm font-semibold text-foreground tracking-tight">Agenda de Matías</h2>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  {activeTopics.length} activos · {progress}% avance
+              <p className="mt-2 text-xs text-muted-foreground">
+                  {activeTopics.length} activos · {seguimientoCount} seguimiento · {progress}% avance
                 </p>
               </>
             )}
