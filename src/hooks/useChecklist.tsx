@@ -6,6 +6,7 @@ export interface ChecklistItem {
   user_id: string;
   title: string;
   completed: boolean;
+  due_date: string | null;
   created_at: string;
 }
 
