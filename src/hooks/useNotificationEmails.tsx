@@ -8,6 +8,8 @@ export interface NotificationEmail {
   assignee_name: string;
   assignee_email: string;
   sent_at: string;
+  responded: boolean;
+  responded_at: string | null;
 }
 
 export function useNotificationEmails(topicId?: string) {
