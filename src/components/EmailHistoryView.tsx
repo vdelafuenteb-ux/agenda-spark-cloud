@@ -493,6 +493,7 @@ export function EmailHistoryView() {
               );
             })}
           </div>
+          </>
         )}
       </div>
     </div>
