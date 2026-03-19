@@ -161,7 +161,7 @@ export function CalendarView({ topics }: CalendarViewProps) {
         </div>
         <div className="grid grid-cols-7 gap-px bg-border rounded-lg overflow-hidden">
           {weekDays.map((d) => (
-            <div key={d} className="bg-muted px-1 py-1.5 text-center text-[10px] font-medium text-muted-foreground">
+            <div key={d} className="bg-muted px-0.5 sm:px-1 py-1 sm:py-1.5 text-center text-[9px] sm:text-[10px] font-medium text-muted-foreground">
               {d}
             </div>
           ))}
