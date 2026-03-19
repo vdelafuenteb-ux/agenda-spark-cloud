@@ -27,7 +27,7 @@ export function ProgressLog({ entries, onAdd, onUpdate, onDelete }: ProgressLogP
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }, [entries.length]);
 
   const handleSend = () => {
