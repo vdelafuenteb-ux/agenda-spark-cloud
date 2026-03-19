@@ -7,6 +7,15 @@ type TopicInsert = Database['public']['Tables']['topics']['Insert'];
 type TopicUpdate = Database['public']['Tables']['topics']['Update'];
 type Subtask = Database['public']['Tables']['subtasks']['Row'];
 
+export interface SubtaskEntry {
+  id: string;
+  subtask_id: string;
+  content: string;
+  created_at: string;
+}
+
+type SubtaskWithEntries = Subtask & { subtask_entries: SubtaskEntry[] };
+
 export interface ProgressEntry {
   id: string;
   topic_id: string;
