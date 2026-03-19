@@ -2,6 +2,10 @@ import { useState } from 'react';
 import { Mail, Send, Loader2, CheckCircle2, X, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 import { supabase } from '@/integrations/supabase/client';
 import { useNotificationEmails } from '@/hooks/useNotificationEmails';
@@ -19,6 +23,7 @@ interface NotificationSectionProps {
 
 export function NotificationSection({ topic, assignees }: NotificationSectionProps) {
   const [sending, setSending] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const { emails, logEmail, toggleConfirmed, deleteEmail } = useNotificationEmails(topic.id);
 
   const assignee = assignees.find(a => a.name === topic.assignee);
@@ -90,7 +95,7 @@ export function NotificationSection({ topic, assignees }: NotificationSectionPro
             "h-7 text-xs gap-1.5",
             hasEmail && "hover:bg-primary hover:text-primary-foreground"
           )}
-          onClick={handleSendEmail}
+          onClick={() => setConfirmOpen(true)}
           disabled={sending || !hasEmail}
           title={!hasEmail ? 'Agrega un correo al responsable en Configuración' : `Enviar recordatorio a ${assignee?.email}`}
         >
@@ -101,6 +106,23 @@ export function NotificationSection({ topic, assignees }: NotificationSectionPro
           )}
           {sending ? 'Enviando...' : 'Enviar recordatorio'}
         </Button>
+
+        <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>¿Enviar recordatorio?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Se enviará un correo de recordatorio a <strong>{assignee?.name}</strong> ({assignee?.email}) sobre el tema "<strong>{topic.title}</strong>".
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={() => { setConfirmOpen(false); handleSendEmail(); }}>
+                Sí, enviar
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
 
       {!hasEmail && topic.assignee && (

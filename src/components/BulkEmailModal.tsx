@@ -2,6 +2,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Mail, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNotificationEmails } from '@/hooks/useNotificationEmails';
@@ -19,6 +23,7 @@ interface BulkEmailModalProps {
 export function BulkEmailModal({ open, onOpenChange, topics, assignee }: BulkEmailModalProps) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set(topics.map(t => t.id)));
   const [sending, setSending] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const { logEmail } = useNotificationEmails();
 
   useEffect(() => {
@@ -159,7 +164,7 @@ export function BulkEmailModal({ open, onOpenChange, topics, assignee }: BulkEma
           </Button>
           <Button
             size="sm"
-            onClick={handleSend}
+            onClick={() => setConfirmOpen(true)}
             disabled={sending || selectedCount === 0 || !assignee.email}
             className="gap-1"
           >
@@ -168,6 +173,23 @@ export function BulkEmailModal({ open, onOpenChange, topics, assignee }: BulkEma
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Enviar correo masivo?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se enviará un correo a <strong>{assignee.name}</strong> ({assignee.email}) con {selectedCount} tema{selectedCount > 1 ? 's' : ''} seleccionado{selectedCount > 1 ? 's' : ''}.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { setConfirmOpen(false); handleSend(); }}>
+              Sí, enviar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }
