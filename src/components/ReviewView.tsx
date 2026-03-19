@@ -34,6 +34,9 @@ interface ReviewViewProps {
   onAddProgressEntry: (topicId: string, content: string) => void;
   onUpdateProgressEntry?: (id: string, content: string) => void;
   onDeleteProgressEntry?: (id: string) => void;
+  onAddSubtaskEntry: (subtaskId: string, content: string) => void;
+  onUpdateSubtaskEntry?: (id: string, content: string) => void;
+  onDeleteSubtaskEntry?: (id: string) => void;
   onAddTag: (topicId: string, tagId: string) => void;
   onRemoveTag: (topicId: string, tagId: string) => void;
   onCreateTag: (name: string, color: string) => Promise<any>;

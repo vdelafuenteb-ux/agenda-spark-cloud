@@ -502,6 +502,9 @@ export function TopicCard({
                     onToggleSubtask={onToggleSubtask}
                     onUpdateSubtask={onUpdateSubtask}
                     onDeleteSubtask={onDeleteSubtask}
+                    onAddSubtaskEntry={onAddSubtaskEntry}
+                    onUpdateSubtaskEntry={onUpdateSubtaskEntry}
+                    onDeleteSubtaskEntry={onDeleteSubtaskEntry}
                   />
                   );
                 })}

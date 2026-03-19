@@ -328,6 +328,9 @@ const Index = () => {
                           onToggleSubtask={(id, completed) => toggleSubtask.mutate({ id, completed })}
                           onDeleteSubtask={(id) => deleteSubtask.mutate(id)}
                           onUpdateSubtask={(id, data) => updateSubtask.mutate({ id, ...data })}
+                          onAddSubtaskEntry={(subtaskId, content) => addSubtaskEntry.mutate({ subtask_id: subtaskId, content })}
+                          onUpdateSubtaskEntry={(id, content) => updateSubtaskEntry.mutate({ id, content })}
+                          onDeleteSubtaskEntry={(id) => deleteSubtaskEntry.mutate(id)}
                           onAddProgressEntry={(topicId, content) => addProgressEntry.mutate({ topic_id: topicId, content })}
                           onUpdateProgressEntry={(id, content) => updateProgressEntry.mutate({ id, content })}
                           onDeleteProgressEntry={(id) => deleteProgressEntry.mutate(id)}
