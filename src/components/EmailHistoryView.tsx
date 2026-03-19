@@ -215,7 +215,7 @@ export function EmailHistoryView() {
 
         {/* Filters */}
         <div className="flex flex-wrap items-center gap-2">
-          <div className="relative flex-1 min-w-[180px]">
+          <div className="relative w-full sm:flex-1 sm:min-w-[180px]">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <Input
               placeholder="Buscar por nombre o email..."
@@ -226,7 +226,7 @@ export function EmailHistoryView() {
           </div>
 
           <Select value={selectedAssignee} onValueChange={setSelectedAssignee}>
-            <SelectTrigger className="w-[160px] h-8 text-xs">
+            <SelectTrigger className="w-full sm:w-[160px] h-8 text-xs">
               <SelectValue placeholder="Persona" />
             </SelectTrigger>
             <SelectContent>
@@ -238,7 +238,7 @@ export function EmailHistoryView() {
           </Select>
 
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[140px] h-8 text-xs">
+            <SelectTrigger className="w-full sm:w-[140px] h-8 text-xs">
               <SelectValue placeholder="Estado" />
             </SelectTrigger>
             <SelectContent>
@@ -248,36 +248,38 @@ export function EmailHistoryView() {
             </SelectContent>
           </Select>
 
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className={cn("h-8 text-xs gap-1", dateFrom && "text-foreground")}>
-                <CalendarIcon className="h-3 w-3" />
-                {dateFrom ? format(dateFrom, "dd MMM yy", { locale: es }) : "Desde"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar mode="single" selected={dateFrom} onSelect={setDateFrom} className="p-3 pointer-events-auto" />
-            </PopoverContent>
-          </Popover>
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className={cn("h-8 text-xs gap-1 flex-1 sm:flex-none", dateFrom && "text-foreground")}>
+                  <CalendarIcon className="h-3 w-3" />
+                  {dateFrom ? format(dateFrom, "dd MMM yy", { locale: es }) : "Desde"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar mode="single" selected={dateFrom} onSelect={setDateFrom} className="p-3 pointer-events-auto" />
+              </PopoverContent>
+            </Popover>
 
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className={cn("h-8 text-xs gap-1", dateTo && "text-foreground")}>
-                <CalendarIcon className="h-3 w-3" />
-                {dateTo ? format(dateTo, "dd MMM yy", { locale: es }) : "Hasta"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar mode="single" selected={dateTo} onSelect={setDateTo} className="p-3 pointer-events-auto" />
-            </PopoverContent>
-          </Popover>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className={cn("h-8 text-xs gap-1 flex-1 sm:flex-none", dateTo && "text-foreground")}>
+                  <CalendarIcon className="h-3 w-3" />
+                  {dateTo ? format(dateTo, "dd MMM yy", { locale: es }) : "Hasta"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar mode="single" selected={dateTo} onSelect={setDateTo} className="p-3 pointer-events-auto" />
+              </PopoverContent>
+            </Popover>
 
-          {hasFilters && (
-            <Button variant="ghost" size="sm" className="h-8 text-xs gap-1" onClick={clearFilters}>
-              <X className="h-3 w-3" />
-              Limpiar
-            </Button>
-          )}
+            {hasFilters && (
+              <Button variant="ghost" size="sm" className="h-8 text-xs gap-1" onClick={clearFilters}>
+                <X className="h-3 w-3" />
+                Limpiar
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Table */}
@@ -291,7 +293,9 @@ export function EmailHistoryView() {
             </p>
           </div>
         ) : (
-          <div className="rounded-lg border border-border overflow-hidden">
+          <>
+          {/* Desktop table */}
+          <div className="rounded-lg border border-border overflow-hidden hidden md:block">
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
                 <thead>
@@ -328,7 +332,6 @@ export function EmailHistoryView() {
                               checked={batch.allConfirmed}
                               onCheckedChange={(checked) => toggleBatchConfirmed.mutate({ ids: batchIds, confirmed: !!checked })}
                               className="h-4 w-4"
-                              title={batch.allConfirmed ? 'Desmarcar confirmación' : 'Confirmar todos'}
                             />
                           </td>
                           <td className="px-3 py-2.5">
@@ -359,7 +362,6 @@ export function EmailHistoryView() {
                             <button
                               onClick={() => deleteBatch.mutate(batchIds)}
                               className="text-muted-foreground hover:text-destructive transition-colors"
-                              title="Eliminar registros"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
                             </button>
@@ -403,6 +405,95 @@ export function EmailHistoryView() {
               </table>
             </div>
           </div>
+
+          {/* Mobile card layout */}
+          <div className="md:hidden space-y-2">
+            {filtered.map(batch => {
+              const isExpanded = expandedBatches.has(batch.key);
+              const batchIds = batch.emails.map(e => e.id);
+
+              return (
+                <div
+                  key={batch.key}
+                  className={cn(
+                    "rounded-lg border border-border overflow-hidden",
+                    batch.allConfirmed && "bg-green-50/50 dark:bg-green-950/10"
+                  )}
+                >
+                  <div
+                    className="p-3 cursor-pointer"
+                    onClick={() => toggleExpand(batch.key)}
+                  >
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-sm font-medium text-foreground">{batch.assignee_name}</span>
+                      <div className="flex items-center gap-2">
+                        {batch.allConfirmed ? (
+                          <Badge className="text-[10px] bg-green-100 text-green-700 border-0 dark:bg-green-900/30 dark:text-green-400">Confirmado</Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-[10px]">Pendiente</Badge>
+                        )}
+                        {isExpanded ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground truncate">{batch.assignee_email}</p>
+                    <div className="flex items-center justify-between mt-2">
+                      <Badge variant="secondary" className="text-[10px] gap-1">
+                        <FileText className="h-2.5 w-2.5" />
+                        {batch.topicCount} {batch.topicCount === 1 ? 'tema' : 'temas'}
+                      </Badge>
+                      <span className="text-[10px] text-muted-foreground">
+                        {format(new Date(batch.sent_at), "dd MMM yyyy HH:mm", { locale: es })}
+                      </span>
+                    </div>
+                  </div>
+
+                  {isExpanded && (
+                    <div className="border-t border-border bg-muted/20 p-3 space-y-1.5">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Temas</p>
+                        <div className="flex items-center gap-2">
+                          <div onClick={e => e.stopPropagation()}>
+                            <Checkbox
+                              checked={batch.allConfirmed}
+                              onCheckedChange={(checked) => toggleBatchConfirmed.mutate({ ids: batchIds, confirmed: !!checked })}
+                              className="h-4 w-4"
+                            />
+                          </div>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); deleteBatch.mutate(batchIds); }}
+                            className="text-muted-foreground hover:text-destructive transition-colors"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                      {batch.emails.map((email, i) => (
+                        <div key={email.id} className="flex items-center justify-between gap-2 py-1 border-b border-border/50 last:border-0">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="text-[10px] text-muted-foreground shrink-0">{i + 1}.</span>
+                            <span className="text-xs text-foreground truncate">{email.topic_title}</span>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0" onClick={e => e.stopPropagation()}>
+                            {email.confirmed ? (
+                              <CheckCircle2 className="h-3 w-3 text-green-600" />
+                            ) : (
+                              <Clock className="h-3 w-3 text-muted-foreground" />
+                            )}
+                            <Checkbox
+                              checked={email.confirmed}
+                              onCheckedChange={(checked) => toggleConfirmed.mutate({ id: email.id, confirmed: !!checked })}
+                              className="h-3.5 w-3.5"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          </>
         )}
       </div>
     </div>
