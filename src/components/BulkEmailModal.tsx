@@ -164,7 +164,7 @@ export function BulkEmailModal({ open, onOpenChange, topics, assignee }: BulkEma
           </Button>
           <Button
             size="sm"
-            onClick={handleSend}
+            onClick={() => setConfirmOpen(true)}
             disabled={sending || selectedCount === 0 || !assignee.email}
             className="gap-1"
           >
@@ -173,6 +173,23 @@ export function BulkEmailModal({ open, onOpenChange, topics, assignee }: BulkEma
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Enviar correo masivo?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se enviará un correo a <strong>{assignee.name}</strong> ({assignee.email}) con {selectedCount} tema{selectedCount > 1 ? 's' : ''} seleccionado{selectedCount > 1 ? 's' : ''}.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { setConfirmOpen(false); handleSend(); }}>
+              Sí, enviar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }
