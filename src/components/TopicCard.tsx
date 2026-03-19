@@ -39,6 +39,9 @@ interface TopicCardProps {
   onToggleSubtask: (id: string, completed: boolean) => void;
   onUpdateSubtask: (id: string, data: any) => void;
   onDeleteSubtask: (id: string) => void;
+  onAddSubtaskEntry: (subtaskId: string, content: string) => void;
+  onUpdateSubtaskEntry?: (id: string, content: string) => void;
+  onDeleteSubtaskEntry?: (id: string) => void;
   onAddProgressEntry: (topicId: string, content: string) => void;
   onUpdateProgressEntry?: (id: string, content: string) => void;
   onDeleteProgressEntry?: (id: string) => void;
@@ -76,6 +79,9 @@ export function TopicCard({
   onToggleSubtask,
   onUpdateSubtask,
   onDeleteSubtask,
+  onAddSubtaskEntry,
+  onUpdateSubtaskEntry,
+  onDeleteSubtaskEntry,
   onAddProgressEntry,
   onUpdateProgressEntry,
   onDeleteProgressEntry,
@@ -496,6 +502,9 @@ export function TopicCard({
                     onToggleSubtask={onToggleSubtask}
                     onUpdateSubtask={onUpdateSubtask}
                     onDeleteSubtask={onDeleteSubtask}
+                    onAddSubtaskEntry={onAddSubtaskEntry}
+                    onUpdateSubtaskEntry={onUpdateSubtaskEntry}
+                    onDeleteSubtaskEntry={onDeleteSubtaskEntry}
                   />
                   );
                 })}

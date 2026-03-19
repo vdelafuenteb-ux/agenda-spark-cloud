@@ -7,6 +7,15 @@ type TopicInsert = Database['public']['Tables']['topics']['Insert'];
 type TopicUpdate = Database['public']['Tables']['topics']['Update'];
 type Subtask = Database['public']['Tables']['subtasks']['Row'];
 
+export interface SubtaskEntry {
+  id: string;
+  subtask_id: string;
+  content: string;
+  created_at: string;
+}
+
+type SubtaskWithEntries = Subtask & { subtask_entries: SubtaskEntry[] };
+
 export interface ProgressEntry {
   id: string;
   topic_id: string;
@@ -14,7 +23,7 @@ export interface ProgressEntry {
   created_at: string;
 }
 
-export type TopicWithSubtasks = Topic & { subtasks: Subtask[]; progress_entries: ProgressEntry[] };
+export type TopicWithSubtasks = Topic & { subtasks: SubtaskWithEntries[]; progress_entries: ProgressEntry[] };
 
 export function useTopics() {
   const queryClient = useQueryClient();
@@ -22,26 +31,37 @@ export function useTopics() {
   const topicsQuery = useQuery({
     queryKey: ['topics'],
     queryFn: async (): Promise<TopicWithSubtasks[]> => {
-      // Run all 3 queries in parallel instead of sequentially
-      const [topicsRes, subtasksRes, entriesRes] = await Promise.all([
+      const [topicsRes, subtasksRes, entriesRes, subtaskEntriesRes] = await Promise.all([
         supabase.from('topics').select('*').order('sort_order', { ascending: true }).order('created_at', { ascending: false }),
         supabase.from('subtasks').select('*').order('sort_order', { ascending: true }).order('created_at', { ascending: true }),
         supabase.from('progress_entries').select('*').order('created_at', { ascending: true }),
+        supabase.from('subtask_entries').select('*').order('created_at', { ascending: true }),
       ]);
 
       if (topicsRes.error) throw topicsRes.error;
       if (subtasksRes.error) throw subtasksRes.error;
       if (entriesRes.error) throw entriesRes.error;
+      if (subtaskEntriesRes.error) throw subtaskEntriesRes.error;
 
       const subtasks = subtasksRes.data || [];
       const entries = entriesRes.data || [];
+      const subtaskEntries = subtaskEntriesRes.data || [];
+
+      // Build lookup map for subtask entries
+      const entriesBySubtask = new Map<string, SubtaskEntry[]>();
+      for (const e of subtaskEntries) {
+        const arr = entriesBySubtask.get(e.subtask_id);
+        if (arr) arr.push(e);
+        else entriesBySubtask.set(e.subtask_id, [e]);
+      }
 
       // Build lookup maps for O(n) instead of O(n*m)
-      const subtasksByTopic = new Map<string, Subtask[]>();
+      const subtasksByTopic = new Map<string, SubtaskWithEntries[]>();
       for (const s of subtasks) {
+        const enriched: SubtaskWithEntries = { ...s, subtask_entries: entriesBySubtask.get(s.id) || [] };
         const arr = subtasksByTopic.get(s.topic_id);
-        if (arr) arr.push(s);
-        else subtasksByTopic.set(s.topic_id, [s]);
+        if (arr) arr.push(enriched);
+        else subtasksByTopic.set(s.topic_id, [enriched]);
       }
 
       const entriesByTopic = new Map<string, ProgressEntry[]>();
@@ -215,6 +235,30 @@ export function useTopics() {
     onSettled: invalidateTopics,
   });
 
+  const addSubtaskEntry = useMutation({
+    mutationFn: async ({ subtask_id, content }: { subtask_id: string; content: string }) => {
+      const { error } = await supabase.from('subtask_entries').insert({ subtask_id, content });
+      if (error) throw error;
+    },
+    onSuccess: invalidateTopics,
+  });
+
+  const updateSubtaskEntry = useMutation({
+    mutationFn: async ({ id, content }: { id: string; content: string }) => {
+      const { error } = await supabase.from('subtask_entries').update({ content }).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: invalidateTopics,
+  });
+
+  const deleteSubtaskEntry = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('subtask_entries').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: invalidateTopics,
+  });
+
   return {
     topics: topicsQuery.data || [],
     isLoading: topicsQuery.isLoading,
@@ -229,5 +273,8 @@ export function useTopics() {
     updateProgressEntry,
     deleteProgressEntry,
     updateSubtask,
+    addSubtaskEntry,
+    updateSubtaskEntry,
+    deleteSubtaskEntry,
   };
 }

@@ -32,7 +32,7 @@ type StatusTab = 'activo' | 'seguimiento' | 'pausado' | 'completado';
 const Index = () => {
   const queryClient = useQueryClient();
   const { user, loading: authLoading } = useAuth();
-  const { topics, isLoading, createTopic, updateTopic, deleteTopic, addSubtask, toggleSubtask, deleteSubtask, addProgressEntry, updateProgressEntry, deleteProgressEntry, updateSubtask } = useTopics();
+  const { topics, isLoading, createTopic, updateTopic, deleteTopic, addSubtask, toggleSubtask, deleteSubtask, addProgressEntry, updateProgressEntry, deleteProgressEntry, updateSubtask, addSubtaskEntry, updateSubtaskEntry, deleteSubtaskEntry } = useTopics();
   const { tags, getTagsForTopic, createTag, updateTag, deleteTag, addTopicTag, removeTopicTag } = useTags();
   const { assignees, createAssignee, updateAssignee, deleteAssignee } = useAssignees();
   const [filter, setFilter] = useState<Filter>('todos');
@@ -263,6 +263,9 @@ const Index = () => {
                 onAddProgressEntry={(topicId, content) => addProgressEntry.mutate({ topic_id: topicId, content })}
                 onUpdateProgressEntry={(id, content) => updateProgressEntry.mutate({ id, content })}
                 onDeleteProgressEntry={(id) => deleteProgressEntry.mutate(id)}
+                onAddSubtaskEntry={(subtaskId, content) => addSubtaskEntry.mutate({ subtask_id: subtaskId, content })}
+                onUpdateSubtaskEntry={(id, content) => updateSubtaskEntry.mutate({ id, content })}
+                onDeleteSubtaskEntry={(id) => deleteSubtaskEntry.mutate(id)}
                 onAddTag={(topicId, tagId) => addTopicTag.mutate({ topic_id: topicId, tag_id: tagId })}
                 onRemoveTag={(topicId, tagId) => removeTopicTag.mutate({ topic_id: topicId, tag_id: tagId })}
                 onCreateTag={(name, color) => createTag.mutateAsync({ name, color })}
@@ -328,6 +331,9 @@ const Index = () => {
                           onToggleSubtask={(id, completed) => toggleSubtask.mutate({ id, completed })}
                           onDeleteSubtask={(id) => deleteSubtask.mutate(id)}
                           onUpdateSubtask={(id, data) => updateSubtask.mutate({ id, ...data })}
+                          onAddSubtaskEntry={(subtaskId, content) => addSubtaskEntry.mutate({ subtask_id: subtaskId, content })}
+                          onUpdateSubtaskEntry={(id, content) => updateSubtaskEntry.mutate({ id, content })}
+                          onDeleteSubtaskEntry={(id) => deleteSubtaskEntry.mutate(id)}
                           onAddProgressEntry={(topicId, content) => addProgressEntry.mutate({ topic_id: topicId, content })}
                           onUpdateProgressEntry={(id, content) => updateProgressEntry.mutate({ id, content })}
                           onDeleteProgressEntry={(id) => deleteProgressEntry.mutate(id)}

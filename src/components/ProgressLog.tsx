@@ -5,10 +5,16 @@ import { Send, Pencil, Trash2, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import type { ProgressEntry } from '@/hooks/useTopics';
+
+
+interface GenericEntry {
+  id: string;
+  content: string;
+  created_at: string;
+}
 
 interface ProgressLogProps {
-  entries: ProgressEntry[];
+  entries: GenericEntry[];
   onAdd: (content: string) => void;
   onUpdate?: (id: string, content: string) => void;
   onDelete?: (id: string) => void;
@@ -30,7 +36,7 @@ export function ProgressLog({ entries, onAdd, onUpdate, onDelete }: ProgressLogP
     setText('');
   };
 
-  const handleStartEdit = (entry: ProgressEntry) => {
+  const handleStartEdit = (entry: GenericEntry) => {
     setEditingId(entry.id);
     setEditText(entry.content);
   };
