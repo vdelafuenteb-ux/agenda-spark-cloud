@@ -95,27 +95,29 @@ export function SettingsView({ tags, assignees, topics, onDeleteTag, onCreateTag
   };
 
   return (
-    <main className="flex-1 overflow-hidden flex">
-      {/* Sidebar navigation */}
-      <nav className="w-48 shrink-0 border-r border-border bg-muted/30 p-3 space-y-1 overflow-y-auto">
-        {SECTIONS.map((s) => {
-          const Icon = s.icon;
-          return (
-            <button
-              key={s.key}
-              onClick={() => setSection(s.key)}
-              className={cn(
-                'w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors text-left',
-                section === s.key
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
-              )}
-            >
-              <Icon className="h-4 w-4 shrink-0" />
-              {s.label}
-            </button>
-          );
-        })}
+    <main className="flex-1 overflow-hidden flex flex-col md:flex-row">
+      {/* Navigation - horizontal tabs on mobile, sidebar on desktop */}
+      <nav className="shrink-0 border-b md:border-b-0 md:border-r border-border bg-muted/30 overflow-x-auto md:overflow-y-auto md:w-48">
+        <div className="flex md:flex-col p-2 md:p-3 gap-1">
+          {SECTIONS.map((s) => {
+            const Icon = s.icon;
+            return (
+              <button
+                key={s.key}
+                onClick={() => setSection(s.key)}
+                className={cn(
+                  'flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors text-left whitespace-nowrap shrink-0',
+                  section === s.key
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
+                )}
+              >
+                <Icon className="h-4 w-4 shrink-0" />
+                {s.label}
+              </button>
+            );
+          })}
+        </div>
       </nav>
 
       {/* Content area */}
