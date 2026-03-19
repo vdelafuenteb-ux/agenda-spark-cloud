@@ -235,6 +235,30 @@ export function useTopics() {
     onSettled: invalidateTopics,
   });
 
+  const addSubtaskEntry = useMutation({
+    mutationFn: async ({ subtask_id, content }: { subtask_id: string; content: string }) => {
+      const { error } = await supabase.from('subtask_entries').insert({ subtask_id, content });
+      if (error) throw error;
+    },
+    onSuccess: invalidateTopics,
+  });
+
+  const updateSubtaskEntry = useMutation({
+    mutationFn: async ({ id, content }: { id: string; content: string }) => {
+      const { error } = await supabase.from('subtask_entries').update({ content }).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: invalidateTopics,
+  });
+
+  const deleteSubtaskEntry = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('subtask_entries').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: invalidateTopics,
+  });
+
   return {
     topics: topicsQuery.data || [],
     isLoading: topicsQuery.isLoading,
@@ -249,5 +273,9 @@ export function useTopics() {
     updateProgressEntry,
     deleteProgressEntry,
     updateSubtask,
+    addSubtaskEntry,
+    updateSubtaskEntry,
+    deleteSubtaskEntry,
   };
+}
 }
