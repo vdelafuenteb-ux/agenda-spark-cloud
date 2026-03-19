@@ -176,7 +176,7 @@ export function CalendarView({ topics }: CalendarViewProps) {
               <Popover key={key}>
                 <PopoverTrigger asChild>
                   <button
-                    className={`min-h-[72px] md:min-h-[88px] p-1 text-left align-top transition-colors hover:bg-accent/30 focus:outline-none bg-background ${!inMonth ? 'opacity-40' : ''}`}
+                    className={`min-h-[56px] sm:min-h-[72px] md:min-h-[88px] p-0.5 sm:p-1 text-left align-top transition-colors hover:bg-accent/30 focus:outline-none bg-background ${!inMonth ? 'opacity-40' : ''}`}
                     style={isHoliday && inMonth ? { backgroundColor: 'hsl(0 86% 97%)' } : undefined}
                   >
                     <span

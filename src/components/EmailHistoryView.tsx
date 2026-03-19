@@ -215,7 +215,7 @@ export function EmailHistoryView() {
 
         {/* Filters */}
         <div className="flex flex-wrap items-center gap-2">
-          <div className="relative flex-1 min-w-[180px]">
+          <div className="relative w-full sm:flex-1 sm:min-w-[180px]">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <Input
               placeholder="Buscar por nombre o email..."
@@ -226,7 +226,7 @@ export function EmailHistoryView() {
           </div>
 
           <Select value={selectedAssignee} onValueChange={setSelectedAssignee}>
-            <SelectTrigger className="w-[160px] h-8 text-xs">
+            <SelectTrigger className="w-full sm:w-[160px] h-8 text-xs">
               <SelectValue placeholder="Persona" />
             </SelectTrigger>
             <SelectContent>
@@ -238,7 +238,7 @@ export function EmailHistoryView() {
           </Select>
 
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[140px] h-8 text-xs">
+            <SelectTrigger className="w-full sm:w-[140px] h-8 text-xs">
               <SelectValue placeholder="Estado" />
             </SelectTrigger>
             <SelectContent>
@@ -248,36 +248,38 @@ export function EmailHistoryView() {
             </SelectContent>
           </Select>
 
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className={cn("h-8 text-xs gap-1", dateFrom && "text-foreground")}>
-                <CalendarIcon className="h-3 w-3" />
-                {dateFrom ? format(dateFrom, "dd MMM yy", { locale: es }) : "Desde"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar mode="single" selected={dateFrom} onSelect={setDateFrom} className="p-3 pointer-events-auto" />
-            </PopoverContent>
-          </Popover>
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className={cn("h-8 text-xs gap-1 flex-1 sm:flex-none", dateFrom && "text-foreground")}>
+                  <CalendarIcon className="h-3 w-3" />
+                  {dateFrom ? format(dateFrom, "dd MMM yy", { locale: es }) : "Desde"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar mode="single" selected={dateFrom} onSelect={setDateFrom} className="p-3 pointer-events-auto" />
+              </PopoverContent>
+            </Popover>
 
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className={cn("h-8 text-xs gap-1", dateTo && "text-foreground")}>
-                <CalendarIcon className="h-3 w-3" />
-                {dateTo ? format(dateTo, "dd MMM yy", { locale: es }) : "Hasta"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar mode="single" selected={dateTo} onSelect={setDateTo} className="p-3 pointer-events-auto" />
-            </PopoverContent>
-          </Popover>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className={cn("h-8 text-xs gap-1 flex-1 sm:flex-none", dateTo && "text-foreground")}>
+                  <CalendarIcon className="h-3 w-3" />
+                  {dateTo ? format(dateTo, "dd MMM yy", { locale: es }) : "Hasta"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar mode="single" selected={dateTo} onSelect={setDateTo} className="p-3 pointer-events-auto" />
+              </PopoverContent>
+            </Popover>
 
-          {hasFilters && (
-            <Button variant="ghost" size="sm" className="h-8 text-xs gap-1" onClick={clearFilters}>
-              <X className="h-3 w-3" />
-              Limpiar
-            </Button>
-          )}
+            {hasFilters && (
+              <Button variant="ghost" size="sm" className="h-8 text-xs gap-1" onClick={clearFilters}>
+                <X className="h-3 w-3" />
+                Limpiar
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Table */}

@@ -129,7 +129,7 @@ export function SettingsView({ tags, assignees, topics, onDeleteTag, onCreateTag
                 <CardTitle className="text-base">Etiquetas</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <Input
                     placeholder="Nueva etiqueta..."
                     value={newTagName}
@@ -137,19 +137,21 @@ export function SettingsView({ tags, assignees, topics, onDeleteTag, onCreateTag
                     onKeyDown={(e) => e.key === 'Enter' && handleCreateTag()}
                     className="h-8 text-sm flex-1"
                   />
-                  <div className="flex gap-1 items-center">
-                    {TAG_COLORS.map((c) => (
-                      <button
-                        key={c}
-                        className="w-5 h-5 rounded-full border-2 shrink-0"
-                        style={{ backgroundColor: c, borderColor: c === newTagColor ? 'hsl(var(--foreground))' : 'transparent' }}
-                        onClick={() => setNewTagColor(c)}
-                      />
-                    ))}
+                  <div className="flex gap-1 items-center justify-between sm:justify-start">
+                    <div className="flex gap-1 items-center">
+                      {TAG_COLORS.map((c) => (
+                        <button
+                          key={c}
+                          className="w-5 h-5 rounded-full border-2 shrink-0"
+                          style={{ backgroundColor: c, borderColor: c === newTagColor ? 'hsl(var(--foreground))' : 'transparent' }}
+                          onClick={() => setNewTagColor(c)}
+                        />
+                      ))}
+                    </div>
+                    <Button size="sm" className="h-8 text-xs gap-1" onClick={handleCreateTag} disabled={!newTagName.trim()}>
+                      <Plus className="h-3 w-3" />
+                    </Button>
                   </div>
-                  <Button size="sm" className="h-8 text-xs gap-1" onClick={handleCreateTag} disabled={!newTagName.trim()}>
-                    <Plus className="h-3 w-3" />
-                  </Button>
                 </div>
 
                 {tags.length === 0 ? (

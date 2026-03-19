@@ -344,31 +344,49 @@ export function DashboardView({ topics }: DashboardViewProps) {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-4 pt-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-xs">Nombre</TableHead>
-                    <TableHead className="text-xs text-center">Temas</TableHead>
-                    <TableHead className="text-xs text-center">Subtareas</TableHead>
-                    <TableHead className="text-xs">Avance</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {metrics.assigneeRanking.map((a) => (
-                    <TableRow key={a.name}>
-                      <TableCell className="text-sm font-medium">{a.name}</TableCell>
-                      <TableCell className="text-sm text-center">{a.total}</TableCell>
-                      <TableCell className="text-sm text-center">{a.subtasksDone}/{a.subtasksTotal}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Progress value={a.progress} className="h-2 flex-1" />
-                          <span className="text-xs text-muted-foreground w-8">{a.progress}%</span>
-                        </div>
-                      </TableCell>
+              {/* Desktop table */}
+              <div className="hidden sm:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-xs">Nombre</TableHead>
+                      <TableHead className="text-xs text-center">Temas</TableHead>
+                      <TableHead className="text-xs text-center">Subtareas</TableHead>
+                      <TableHead className="text-xs">Avance</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {metrics.assigneeRanking.map((a) => (
+                      <TableRow key={a.name}>
+                        <TableCell className="text-sm font-medium">{a.name}</TableCell>
+                        <TableCell className="text-sm text-center">{a.total}</TableCell>
+                        <TableCell className="text-sm text-center">{a.subtasksDone}/{a.subtasksTotal}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Progress value={a.progress} className="h-2 flex-1" />
+                            <span className="text-xs text-muted-foreground w-8">{a.progress}%</span>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              {/* Mobile cards */}
+              <div className="sm:hidden space-y-2">
+                {metrics.assigneeRanking.map((a) => (
+                  <div key={a.name} className="rounded-md border border-border p-3 space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">{a.name}</span>
+                      <span className="text-xs text-muted-foreground">{a.total} temas</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Progress value={a.progress} className="h-2 flex-1" />
+                      <span className="text-xs text-muted-foreground">{a.subtasksDone}/{a.subtasksTotal} ({a.progress}%)</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
         )}
