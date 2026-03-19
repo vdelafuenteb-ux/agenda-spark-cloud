@@ -79,9 +79,9 @@ const Index = () => {
   }, [topics]);
 
   const uniqueAssignees = useMemo(() => {
-    const names = topics.filter(t => t.status === 'seguimiento' && t.assignee).map(t => t.assignee!);
+    const names = topics.filter(t => t.status === statusTab && t.assignee).map(t => t.assignee!);
     return [...new Set(names)].sort();
-  }, [topics]);
+  }, [topics, statusTab]);
 
   const bulkEmailAssignee = useMemo(() => {
     if (statusTab !== 'seguimiento' || !selectedAssignee) return null;
@@ -293,7 +293,7 @@ const Index = () => {
                       allTags={tags}
                       selectedTagIds={selectedTagIds}
                       onToggleTag={toggleTagFilter}
-                      assignees={statusTab === 'seguimiento' ? uniqueAssignees : undefined}
+                      assignees={uniqueAssignees.length > 0 ? uniqueAssignees : undefined}
                       selectedAssignee={selectedAssignee}
                       onAssigneeChange={setSelectedAssignee}
                       forceExpand={forceExpand}

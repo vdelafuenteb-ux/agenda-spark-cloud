@@ -274,7 +274,12 @@ export function TopicCard({
               {completedCount}/{totalCount}
             </span>
           )}
-          {topic.due_date && (
+          {isCompleted && topic.updated_at && (
+            <span className="text-[10px] text-muted-foreground font-mono" title="Fecha de cierre">
+              Cerrado {formatStoredDate(topic.updated_at.split('T')[0], 'dd MMM yy', { locale: es })}
+            </span>
+          )}
+          {topic.due_date && !isCompleted && (
             <span className="text-xs text-muted-foreground font-mono">
               {formatStoredDate(topic.due_date, 'dd MMM', { locale: es })}
             </span>
