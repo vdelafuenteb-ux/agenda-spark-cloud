@@ -7,6 +7,12 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { ProgressEntry } from '@/hooks/useTopics';
 
+interface GenericEntry {
+  id: string;
+  content: string;
+  created_at: string;
+}
+
 interface ProgressLogProps {
   entries: ProgressEntry[];
   onAdd: (content: string) => void;
