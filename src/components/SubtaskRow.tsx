@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { formatStoredDate, parseStoredDate, toStoredDate, isStoredDateOverdue } from '@/lib/date';
 import { CalendarIcon, Trash2, MessageSquare } from 'lucide-react';
 import { es } from 'date-fns/locale';
@@ -6,10 +6,12 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { ProgressLog } from '@/components/ProgressLog';
 import { cn } from '@/lib/utils';
 import type { Database } from '@/integrations/supabase/types';
+import type { SubtaskEntry } from '@/hooks/useTopics';
 
-type Subtask = Database['public']['Tables']['subtasks']['Row'] & { notes?: string };
+type Subtask = Database['public']['Tables']['subtasks']['Row'] & { subtask_entries: SubtaskEntry[] };
 
 interface SubtaskRowProps {
   subtask: Subtask;
@@ -18,30 +20,17 @@ interface SubtaskRowProps {
   onToggleSubtask: (id: string, completed: boolean) => void;
   onUpdateSubtask: (id: string, data: any) => void;
   onDeleteSubtask: (id: string) => void;
+  onAddSubtaskEntry: (subtaskId: string, content: string) => void;
+  onUpdateSubtaskEntry?: (id: string, content: string) => void;
+  onDeleteSubtaskEntry?: (id: string) => void;
 }
 
-export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false, onToggleSubtask, onUpdateSubtask, onDeleteSubtask }: SubtaskRowProps) {
-  const [showNotes, setShowNotes] = useState(false);
-  const [notes, setNotes] = useState(subtask.notes || '');
+export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false, onToggleSubtask, onUpdateSubtask, onDeleteSubtask, onAddSubtaskEntry, onUpdateSubtaskEntry, onDeleteSubtaskEntry }: SubtaskRowProps) {
+  const [showEntries, setShowEntries] = useState(false);
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState(subtask.title);
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
-  // Sync from prop
-  useEffect(() => {
-    setNotes(subtask.notes || '');
-  }, [subtask.notes]);
-
-  const handleNotesChange = (value: string) => {
-    setNotes(value);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      onUpdateSubtask(subtask.id, { notes: value });
-    }, 600);
-  };
-
-  const hasNotes = (subtask.notes || '').trim().length > 0;
-
+  const hasEntries = (subtask.subtask_entries || []).length > 0;
   const isOverdue = !subtask.completed && isStoredDateOverdue(subtask.due_date);
 
   return (
@@ -106,14 +95,15 @@ export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false,
         </div>
         <button
           type="button"
-          onClick={() => setShowNotes(!showNotes)}
+          onClick={() => setShowEntries(!showEntries)}
           className={cn(
             'flex items-center gap-0.5 text-[10px] transition-colors shrink-0',
-            hasNotes || showNotes ? 'text-primary' : 'text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100'
+            hasEntries || showEntries ? 'text-primary' : 'text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100'
           )}
-          title="Comentarios"
+          title="Bitácora de avances"
         >
           <MessageSquare className="h-3 w-3" />
+          {hasEntries && <span>{subtask.subtask_entries.length}</span>}
         </button>
         <Popover>
           <PopoverTrigger asChild>
@@ -149,14 +139,13 @@ export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false,
           <Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" />
         </button>
       </div>
-      {showNotes && (
+      {showEntries && (
         <div className="mt-1.5 ml-6">
-          <textarea
-            value={notes}
-            onChange={(e) => handleNotesChange(e.target.value)}
-            placeholder="Agregar comentario..."
-            className="w-full text-xs bg-muted/50 border border-border rounded-md px-2 py-1.5 resize-none focus:outline-none focus:ring-1 focus:ring-ring min-h-[48px] placeholder:text-muted-foreground"
-            rows={2}
+          <ProgressLog
+            entries={subtask.subtask_entries || []}
+            onAdd={(content) => onAddSubtaskEntry(subtask.id, content)}
+            onUpdate={onUpdateSubtaskEntry ? (id, content) => onUpdateSubtaskEntry(id, content) : undefined}
+            onDelete={onDeleteSubtaskEntry}
           />
         </div>
       )}
