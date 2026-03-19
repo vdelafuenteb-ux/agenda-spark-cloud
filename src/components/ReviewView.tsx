@@ -307,6 +307,9 @@ export function ReviewView(props: ReviewViewProps) {
             onAddProgressEntry={handlers.onAddProgressEntry}
             onUpdateProgressEntry={handlers.onUpdateProgressEntry}
             onDeleteProgressEntry={handlers.onDeleteProgressEntry}
+            onAddSubtaskEntry={handlers.onAddSubtaskEntry}
+            onUpdateSubtaskEntry={handlers.onUpdateSubtaskEntry}
+            onDeleteSubtaskEntry={handlers.onDeleteSubtaskEntry}
             onAddTag={handlers.onAddTag}
             onRemoveTag={handlers.onRemoveTag}
             onCreateTag={handlers.onCreateTag}
