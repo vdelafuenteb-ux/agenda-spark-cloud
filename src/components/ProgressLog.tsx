@@ -36,7 +36,7 @@ export function ProgressLog({ entries, onAdd, onUpdate, onDelete }: ProgressLogP
     setText('');
   };
 
-  const handleStartEdit = (entry: ProgressEntry) => {
+  const handleStartEdit = (entry: GenericEntry) => {
     setEditingId(entry.id);
     setEditText(entry.content);
   };
