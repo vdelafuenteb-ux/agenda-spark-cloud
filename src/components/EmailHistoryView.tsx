@@ -293,6 +293,7 @@ export function EmailHistoryView() {
             </p>
           </div>
         ) : (
+          <>
           {/* Desktop table */}
           <div className="rounded-lg border border-border overflow-hidden hidden md:block">
             <div className="overflow-x-auto">
