@@ -79,9 +79,9 @@ const Index = () => {
   }, [topics]);
 
   const uniqueAssignees = useMemo(() => {
-    const names = topics.filter(t => t.status === 'seguimiento' && t.assignee).map(t => t.assignee!);
+    const names = topics.filter(t => t.status === statusTab && t.assignee).map(t => t.assignee!);
     return [...new Set(names)].sort();
-  }, [topics]);
+  }, [topics, statusTab]);
 
   const bulkEmailAssignee = useMemo(() => {
     if (statusTab !== 'seguimiento' || !selectedAssignee) return null;
