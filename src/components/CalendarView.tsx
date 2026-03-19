@@ -133,8 +133,8 @@ export function CalendarView({ topics }: CalendarViewProps) {
           </Button>
         </div>
 
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-3 flex-wrap">
             <div className="flex items-center gap-1.5">
               <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: COLOR_PENDING }} />
               <span className="text-[10px] text-muted-foreground">Pendiente</span>
@@ -153,10 +153,10 @@ export function CalendarView({ topics }: CalendarViewProps) {
               Mostrar recordatorios
             </Label>
             <Switch
-            id="show-periodic"
-            checked={showPeriodicEvents}
-            onCheckedChange={setShowPeriodicEvents}
-          />
+              id="show-periodic"
+              checked={showPeriodicEvents}
+              onCheckedChange={setShowPeriodicEvents}
+            />
           </div>
         </div>
         <div className="grid grid-cols-7 gap-px bg-border rounded-lg overflow-hidden">
