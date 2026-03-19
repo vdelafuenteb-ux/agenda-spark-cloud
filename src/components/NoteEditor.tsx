@@ -616,7 +616,7 @@ export function NoteEditor({
           onInput={handleContentInput}
           onPaste={handlePaste}
           onKeyDown={handleKeyDown}
-          dangerouslySetInnerHTML={{ __html: note.content }}
+          
           data-placeholder="Empieza a escribir..."
         />
 
