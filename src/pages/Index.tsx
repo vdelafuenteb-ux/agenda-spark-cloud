@@ -293,7 +293,7 @@ const Index = () => {
                       allTags={tags}
                       selectedTagIds={selectedTagIds}
                       onToggleTag={toggleTagFilter}
-                      assignees={statusTab === 'seguimiento' ? uniqueAssignees : undefined}
+                      assignees={uniqueAssignees.length > 0 ? uniqueAssignees : undefined}
                       selectedAssignee={selectedAssignee}
                       onAssigneeChange={setSelectedAssignee}
                       forceExpand={forceExpand}
