@@ -14,7 +14,7 @@ interface GenericEntry {
 }
 
 interface ProgressLogProps {
-  entries: ProgressEntry[];
+  entries: GenericEntry[];
   onAdd: (content: string) => void;
   onUpdate?: (id: string, content: string) => void;
   onDelete?: (id: string) => void;
