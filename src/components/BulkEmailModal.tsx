@@ -23,6 +23,7 @@ interface BulkEmailModalProps {
 export function BulkEmailModal({ open, onOpenChange, topics, assignee }: BulkEmailModalProps) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set(topics.map(t => t.id)));
   const [sending, setSending] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const { logEmail } = useNotificationEmails();
 
   useEffect(() => {
