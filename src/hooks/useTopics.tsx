@@ -23,7 +23,7 @@ export interface ProgressEntry {
   created_at: string;
 }
 
-export type TopicWithSubtasks = Topic & { subtasks: Subtask[]; progress_entries: ProgressEntry[] };
+export type TopicWithSubtasks = Topic & { subtasks: SubtaskWithEntries[]; progress_entries: ProgressEntry[] };
 
 export function useTopics() {
   const queryClient = useQueryClient();
