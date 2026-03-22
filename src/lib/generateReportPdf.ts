@@ -223,8 +223,7 @@ export function generateReportPdf(opts: PdfOptions) {
   // ==========================================
   // Helper: draw department subtitle
   // ==========================================
-  function drawDeptSubtitle(deptName: string, hasMultipleDepts: boolean) {
-    if (!hasMultipleDepts) return;
+  function drawDeptSubtitle(deptName: string) {
     y = checkPageBreak(doc, y, 12, 20);
     doc.setFillColor(...PURPLE_100);
     doc.roundedRect(margin, y - 3, contentW, 7, 1, 1, 'F');
@@ -247,10 +246,10 @@ export function generateReportPdf(opts: PdfOptions) {
     y += 4;
 
     const completedGroups = groupByDepartment(completedTopics, departments);
-    const hasMultipleDepts = completedGroups.length > 1;
+    
 
     completedGroups.forEach(group => {
-      drawDeptSubtitle(group.deptName, hasMultipleDepts);
+      drawDeptSubtitle(group.deptName);
       autoTable(doc, {
         startY: y,
         margin: { left: margin, right: margin },
@@ -260,13 +259,12 @@ export function generateReportPdf(opts: PdfOptions) {
           const lastEntry = t.progress_entries.length > 0
             ? t.progress_entries[t.progress_entries.length - 1].content
             : '—';
-          const truncated = lastEntry.length > 80 ? lastEntry.substring(0, 77) + '...' : lastEntry;
-          return [t.title, t.assignee || 'Yo', closeDateStr, truncated];
+          return [t.title, t.assignee || 'Yo', closeDateStr, lastEntry];
         }),
         styles: { fontSize: 7.5, cellPadding: 2.5, overflow: 'linebreak' },
         headStyles: { fillColor: GREEN as any, textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
         alternateRowStyles: { fillColor: SLATE_50 as any },
-        columnStyles: { 0: { cellWidth: 45 }, 1: { cellWidth: 28 }, 2: { cellWidth: 25 }, 3: { cellWidth: 'auto' } },
+        columnStyles: { 0: { cellWidth: 40 }, 1: { cellWidth: 28 }, 2: { cellWidth: 25 }, 3: { cellWidth: 'auto' } },
       });
       y = (doc as any).lastAutoTable.finalY + 4;
     });
@@ -285,30 +283,34 @@ export function generateReportPdf(opts: PdfOptions) {
     y += 4;
 
     const activeGroups = groupByDepartment(activeTopics, departments);
-    const hasMultipleDepts = activeGroups.length > 1;
+    
 
     activeGroups.forEach(group => {
-      drawDeptSubtitle(group.deptName, hasMultipleDepts);
+      drawDeptSubtitle(group.deptName);
       autoTable(doc, {
         startY: y,
         margin: { left: margin, right: margin },
-        head: [['Tema', 'Responsable', 'Prioridad', 'Estado', 'Fecha Cierre', 'Progreso']],
+        head: [['Tema', 'Responsable', 'Prioridad', 'Estado', 'Fecha Cierre', 'Progreso', 'Último Comentario']],
         body: group.topics.map(t => {
           const tl = getTrafficLight(t.due_date);
           const done = t.subtasks.filter(s => s.completed).length;
           const total = t.subtasks.length;
           const dueStr = t.due_date ? formatStoredDate(t.due_date, 'dd MMM yyyy', { locale: es }) : '—';
+          const lastEntry = t.progress_entries.length > 0
+            ? t.progress_entries[t.progress_entries.length - 1].content
+            : '—';
           return [
             t.title, t.assignee || 'Yo',
             t.priority.charAt(0).toUpperCase() + t.priority.slice(1),
             tl.label, dueStr,
             total > 0 ? `${done}/${total}` : '—',
+            lastEntry,
           ];
         }),
-        styles: { fontSize: 7.5, cellPadding: 2.5 },
+        styles: { fontSize: 7.5, cellPadding: 2.5, overflow: 'linebreak' },
         headStyles: { fillColor: PURPLE_900 as any, textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
         alternateRowStyles: { fillColor: SLATE_50 as any },
-        columnStyles: { 0: { cellWidth: 'auto' }, 3: { cellWidth: 22 }, 5: { cellWidth: 18 } },
+        columnStyles: { 0: { cellWidth: 35 }, 1: { cellWidth: 25 }, 2: { cellWidth: 16 }, 3: { cellWidth: 18 }, 4: { cellWidth: 22 }, 5: { cellWidth: 14 }, 6: { cellWidth: 'auto' } },
         didParseCell: (data) => {
           if (data.section === 'body' && data.column.index === 3) {
             const val = data.cell.raw as string;
@@ -336,10 +338,9 @@ export function generateReportPdf(opts: PdfOptions) {
     y += 4;
 
     const pausedGroups = groupByDepartment(pausedTopics, departments);
-    const hasMultipleDepts = pausedGroups.length > 1;
 
     pausedGroups.forEach(group => {
-      drawDeptSubtitle(group.deptName, hasMultipleDepts);
+      drawDeptSubtitle(group.deptName);
       autoTable(doc, {
         startY: y,
         margin: { left: margin, right: margin },
@@ -349,8 +350,7 @@ export function generateReportPdf(opts: PdfOptions) {
           const pausedAt = t.paused_at
             ? format(new Date(t.paused_at), 'dd MMM yyyy', { locale: es })
             : '—';
-          const truncatedReason = pauseReason.length > 80 ? pauseReason.substring(0, 77) + '...' : pauseReason;
-          return [t.title, t.assignee || 'Yo', truncatedReason, pausedAt];
+          return [t.title, t.assignee || 'Yo', pauseReason, pausedAt];
         }),
         styles: { fontSize: 7.5, cellPadding: 2.5, overflow: 'linebreak' },
         headStyles: { fillColor: SLATE_500 as any, textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
