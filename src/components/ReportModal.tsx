@@ -484,7 +484,7 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
               </div>
               {availableTopics.map(t => {
                 const tl = getTrafficLight(t.due_date);
-                const responsable = t.assignee || 'Yo';
+                const responsable = t.assignee || ownerLabel;
                 const statusLabel = STATUS_LABELS[t.status] || t.status;
                 return (
                   <label key={t.id} className="flex items-center gap-2 cursor-pointer hover:bg-muted/40 rounded px-1 py-0.5">
