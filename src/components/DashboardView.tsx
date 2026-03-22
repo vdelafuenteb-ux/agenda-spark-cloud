@@ -239,6 +239,19 @@ export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardVie
     Baja: { label: 'Baja', color: PRIORITY_COLORS.baja },
   };
 
+  // Show assignee profile if selected
+  if (selectedAssignee) {
+    const assigneeObj = assignees.find(a => a.name === selectedAssignee);
+    return (
+      <AssigneeProfileView
+        assigneeName={selectedAssignee}
+        assignee={assigneeObj}
+        topics={topics}
+        onBack={() => setSelectedAssignee(null)}
+      />
+    );
+  }
+
   return (
     <div className="flex-1 overflow-auto p-3 md:p-4">
       <div className="max-w-6xl mx-auto space-y-4">
