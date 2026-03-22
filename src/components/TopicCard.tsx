@@ -533,11 +533,23 @@ export function TopicCard({
                 )}
                 {topic.status === 'pausado' && (
                   <>
+                    {/* Show pause reason and date */}
+                    {((topic as any).pause_reason || (topic as any).paused_at) && (
+                      <div className="w-full bg-muted/50 rounded-md p-3 mb-2 border border-border">
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Motivo de pausa</p>
+                        <p className="text-sm text-foreground">{(topic as any).pause_reason || 'Sin motivo registrado'}</p>
+                        {(topic as any).paused_at && (
+                          <p className="text-[10px] text-muted-foreground mt-1">
+                            Pausado el {formatStoredDate((topic as any).paused_at.split('T')[0], 'dd MMM yyyy', { locale: es })}
+                          </p>
+                        )}
+                      </div>
+                    )}
                     <Button
                       size="sm"
                       variant="outline"
                       className="flex-1 h-9 text-xs gap-2"
-                      onClick={() => onUpdate(topic.id, { status: 'activo' })}
+                      onClick={() => onUpdate(topic.id, { status: 'activo', pause_reason: '', paused_at: null })}
                     >
                       <Play className="h-3.5 w-3.5" /> Reactivar
                     </Button>
@@ -545,7 +557,7 @@ export function TopicCard({
                       size="sm"
                       variant="default"
                       className="flex-1 h-9 text-xs gap-2"
-                      onClick={() => onUpdate(topic.id, { status: 'completado' })}
+                      onClick={() => onUpdate(topic.id, { status: 'completado', pause_reason: '', paused_at: null })}
                     >
                       <CheckCircle2 className="h-3.5 w-3.5" /> Cerrar
                     </Button>
