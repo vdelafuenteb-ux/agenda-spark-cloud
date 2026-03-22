@@ -135,10 +135,8 @@ export function ProgressLog({ entries, onAdd, onUpdate, onDelete, hideTitle = fa
     setText('');
   };
 
-  const handleKeyDown = useCallback((_e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // Enter always creates a new line (default textarea behavior)
-    // Send only via the send button
-  }, []);
+
+
 
   const handleStartEdit = (entry: GenericEntry) => {
     setEditingId(entry.id);
