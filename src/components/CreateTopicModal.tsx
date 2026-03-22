@@ -27,6 +27,7 @@ interface CreateTopicModalProps {
   onOpenChange: (open: boolean) => void;
   allTags: TagType[];
   assignees: Assignee[];
+  departments: Department[];
   onCreateAssignee: (name: string) => Promise<Assignee>;
   onSubmit: (data: {
     title: string;
@@ -39,6 +40,7 @@ interface CreateTopicModalProps {
     newTags: { name: string; color: string }[];
     notes: string;
     assignee?: string;
+    department_id?: string;
   }) => Promise<void> | void;
   isPending: boolean;
 }
