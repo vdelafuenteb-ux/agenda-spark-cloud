@@ -30,6 +30,7 @@ interface TopicCardProps {
   allTags: Tag[];
   topicTags: Tag[];
   assignees: Assignee[];
+  departments: Department[];
   onCreateAssignee: (name: string) => Promise<Assignee>;
   highlightToday?: boolean;
   highlightUpcoming?: boolean;
