@@ -289,6 +289,7 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
       includeCompleted,
       includeBitacora,
       includeResponsables,
+      departments,
     });
     toast.success('PDF descargado');
   };
