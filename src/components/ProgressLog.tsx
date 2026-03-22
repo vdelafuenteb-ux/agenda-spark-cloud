@@ -219,7 +219,6 @@ export function ProgressLog({ entries, onAdd, onUpdate, onDelete, hideTitle = fa
                       value={editText}
                       onChange={(e) => setEditText(e.target.value)}
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSaveEdit(); }
                         if (e.key === 'Escape') handleCancelEdit();
                       }}
                       className="min-h-[60px] text-sm resize-none"
