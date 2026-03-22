@@ -285,8 +285,13 @@ export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false,
               </label>
               <Input
                 placeholder="Ej: María López"
-                value={(subtask as any).responsible || ''}
-                onChange={(e) => onUpdateSubtask(subtask.id, { responsible: e.target.value })}
+                value={responsibleDraft}
+                onChange={(e) => setResponsibleDraft(e.target.value)}
+                onBlur={() => {
+                  if (responsibleDraft !== ((subtask as any).responsible || '')) {
+                    onUpdateSubtask(subtask.id, { responsible: responsibleDraft });
+                  }
+                }}
                 className="h-8 text-sm"
               />
             </div>
