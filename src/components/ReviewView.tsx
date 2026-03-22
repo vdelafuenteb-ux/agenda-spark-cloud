@@ -3,13 +3,9 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle2, Circle, ChevronsDownUp, ChevronsUpDown, User } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { CheckCircle2, Circle, User, ArrowRight } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { TopicCard } from '@/components/TopicCard';
 import type { TopicWithSubtasks } from '@/hooks/useTopics';
-import type { Tag } from '@/hooks/useTags';
-import type { Assignee } from '@/hooks/useAssignees';
 import { useReminders } from '@/hooks/useReminders';
 import { useReminderCompletions } from '@/hooks/useReminderCompletions';
 import { useChecklist } from '@/hooks/useChecklist';
@@ -19,33 +15,31 @@ import { isStoredDateToday, isStoredDateOverdue, isStoredDateUpcoming, formatSto
 type ReviewTab = 'hoy' | 'atrasados' | 'proximos';
 type StatusFilter = 'todos' | 'activo' | 'seguimiento';
 
-interface ReviewViewProps {
-  topics: TopicWithSubtasks[];
-  allTags: Tag[];
-  assignees: Assignee[];
-  onCreateAssignee: (name: string) => Promise<Assignee>;
-  getTagsForTopic: (id: string) => Tag[];
-  onUpdate: (id: string, data: any) => void;
-  onDelete: (id: string) => void;
-  onAddSubtask: (topicId: string, title: string) => void;
-  onToggleSubtask: (id: string, completed: boolean) => void;
-  onDeleteSubtask: (id: string) => void;
-  onUpdateSubtask: (id: string, data: any) => void;
-  onAddProgressEntry: (topicId: string, content: string) => void;
-  onUpdateProgressEntry?: (id: string, content: string) => void;
-  onDeleteProgressEntry?: (id: string) => void;
-  onAddSubtaskEntry: (subtaskId: string, content: string) => void;
-  onUpdateSubtaskEntry?: (id: string, content: string) => void;
-  onDeleteSubtaskEntry?: (id: string) => void;
-  onAddTag: (topicId: string, tagId: string) => void;
-  onRemoveTag: (topicId: string, tagId: string) => void;
-  onCreateTag: (name: string, color: string) => Promise<any>;
+interface ReviewItem {
+  type: 'subtask' | 'topic' | 'reminder' | 'checklist';
+  id: string;
+  title: string;
+  parentTopicTitle?: string;
+  assignee?: string;
+  priority?: string;
+  dueDate?: string | null;
+  completed: boolean;
+  onToggle: () => void;
 }
 
-export function ReviewView(props: ReviewViewProps) {
-  const { topics, allTags, assignees, onCreateAssignee, getTagsForTopic, ...handlers } = props;
+const priorityConfig: Record<string, { label: string; className: string }> = {
+  alta: { label: 'Alta', className: 'bg-destructive/15 text-destructive border-destructive/30' },
+  media: { label: 'Media', className: 'bg-yellow-500/15 text-yellow-700 border-yellow-500/30' },
+  baja: { label: 'Baja', className: 'bg-muted text-muted-foreground border-border' },
+};
+
+interface ReviewViewProps {
+  topics: TopicWithSubtasks[];
+  onToggleSubtask: (id: string, completed: boolean) => void;
+}
+
+export function ReviewView({ topics, onToggleSubtask }: ReviewViewProps) {
   const [tab, setTab] = useState<ReviewTab>('hoy');
-  const [forceExpand, setForceExpand] = useState<boolean | null>(false); // collapsed by default
   const [selectedAssignee, setSelectedAssignee] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('todos');
   const { reminders } = useReminders();
@@ -56,21 +50,12 @@ export function ReviewView(props: ReviewViewProps) {
     setTab(v as ReviewTab);
     setSelectedAssignee('');
     setStatusFilter('todos');
-    setForceExpand(false);
-  };
-
-  const toggleExpand = () => {
-    setForceExpand(prev => prev === true ? false : true);
   };
 
   const activeTopics = useMemo(() => {
     let filtered = topics.filter(t => t.status === 'activo' || t.status === 'seguimiento');
-    if (statusFilter !== 'todos') {
-      filtered = filtered.filter(t => t.status === statusFilter);
-    }
-    if (selectedAssignee) {
-      filtered = filtered.filter(t => t.assignee === selectedAssignee);
-    }
+    if (statusFilter !== 'todos') filtered = filtered.filter(t => t.status === statusFilter);
+    if (selectedAssignee) filtered = filtered.filter(t => t.assignee === selectedAssignee);
     return filtered;
   }, [topics, statusFilter, selectedAssignee]);
 
@@ -82,49 +67,115 @@ export function ReviewView(props: ReviewViewProps) {
     return Array.from(names).sort();
   }, [topics]);
 
+  const todayDateStr = format(new Date(), 'yyyy-MM-dd');
+  const todayReminders = useMemo(() => getRemindersForDate(reminders, new Date()), [reminders]);
+  const upcomingReminders = useMemo(() => getUpcomingReminders(reminders, 3), [reminders]);
+
   const todayChecklist = checklistItems.filter(i => !i.completed && isStoredDateToday(i.due_date));
   const upcomingChecklist = checklistItems.filter(i => !i.completed && isStoredDateUpcoming(i.due_date, 3));
   const overdueChecklist = checklistItems.filter(i => !i.completed && isStoredDateOverdue(i.due_date));
 
-  const getTodayMatchCount = (topic: TopicWithSubtasks) => {
-    const subtaskCount = topic.subtasks.filter(s => isStoredDateToday(s.due_date)).length;
-    return subtaskCount > 0 ? subtaskCount : (isStoredDateToday(topic.due_date) ? 1 : 0);
+  // Build flat review items per tab
+  const buildItems = (
+    matchFn: (date: string | null) => boolean,
+    includeCompleted: boolean
+  ): ReviewItem[] => {
+    const items: ReviewItem[] = [];
+    activeTopics.forEach(topic => {
+      // Check subtasks first
+      const matchingSubs = topic.subtasks.filter(s =>
+        (includeCompleted || !s.completed) && matchFn(s.due_date)
+      );
+      matchingSubs.forEach(sub => {
+        items.push({
+          type: 'subtask',
+          id: sub.id,
+          title: sub.title,
+          parentTopicTitle: topic.title,
+          assignee: sub.responsible || topic.assignee || undefined,
+          priority: topic.priority,
+          dueDate: sub.due_date,
+          completed: sub.completed,
+          onToggle: () => onToggleSubtask(sub.id, !sub.completed),
+        });
+      });
+      // If no subtasks match but topic itself matches
+      if (matchingSubs.length === 0 && matchFn(topic.due_date)) {
+        items.push({
+          type: 'topic',
+          id: topic.id,
+          title: topic.title,
+          assignee: topic.assignee || undefined,
+          priority: topic.priority,
+          dueDate: topic.due_date,
+          completed: false,
+          onToggle: () => {},
+        });
+      }
+    });
+    return items;
   };
 
-  const getOverdueMatchCount = (topic: TopicWithSubtasks) => {
-    const subtaskCount = topic.subtasks.filter(s => !s.completed && isStoredDateOverdue(s.due_date)).length;
-    return subtaskCount > 0 ? subtaskCount : (isStoredDateOverdue(topic.due_date) ? 1 : 0);
+  const todayItems = buildItems(isStoredDateToday, true);
+  const overdueItems = buildItems(d => isStoredDateOverdue(d), false);
+  const upcomingItems = buildItems(d => isStoredDateUpcoming(d, 3), false);
+
+  // Reminder items
+  const todayReminderItems: ReviewItem[] = todayReminders.map(r => ({
+    type: 'reminder' as const,
+    id: r.id,
+    title: r.title,
+    dueDate: todayDateStr,
+    completed: isCompleted(r.id, todayDateStr),
+    onToggle: () => toggleCompletion.mutate({ reminder_id: r.id, completed_date: todayDateStr }),
+  }));
+
+  const upcomingReminderItems: ReviewItem[] = upcomingReminders.map(({ reminder: r, date }) => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    return {
+      type: 'reminder' as const,
+      id: `${r.id}-${dateStr}`,
+      title: r.title,
+      dueDate: dateStr,
+      completed: isCompleted(r.id, dateStr),
+      onToggle: () => toggleCompletion.mutate({ reminder_id: r.id, completed_date: dateStr }),
+    };
+  });
+
+  // Checklist items
+  const toChecklistItem = (item: typeof checklistItems[0]): ReviewItem => ({
+    type: 'checklist',
+    id: item.id,
+    title: item.title,
+    dueDate: item.due_date,
+    completed: false,
+    onToggle: () => toggleItem.mutate({ id: item.id, completed: true }),
+  });
+
+  const allItems: Record<ReviewTab, ReviewItem[]> = {
+    hoy: [...todayItems, ...todayReminderItems, ...todayChecklist.map(toChecklistItem)],
+    atrasados: [...overdueItems, ...overdueChecklist.map(toChecklistItem)],
+    proximos: [...upcomingItems, ...upcomingReminderItems, ...upcomingChecklist.map(toChecklistItem)],
   };
 
-  const getUpcomingMatchCount = (topic: TopicWithSubtasks) => {
-    const subtaskCount = topic.subtasks.filter(s => !s.completed && isStoredDateUpcoming(s.due_date, 3)).length;
-    return subtaskCount > 0 ? subtaskCount : (isStoredDateUpcoming(topic.due_date, 3) ? 1 : 0);
+  const currentItems = allItems[tab];
+  const counts = {
+    hoy: allItems.hoy.length,
+    atrasados: allItems.atrasados.length,
+    proximos: allItems.proximos.length,
   };
-
-  const todayTopics = activeTopics.filter(t => getTodayMatchCount(t) > 0);
-
-  const todayReminders = useMemo(() => getRemindersForDate(reminders, new Date()), [reminders]);
-  const todayDateStr = format(new Date(), 'yyyy-MM-dd');
-
-  const overdueTopics = activeTopics.filter(t => getOverdueMatchCount(t) > 0);
-
-  const upcomingTopics = activeTopics.filter(t => getUpcomingMatchCount(t) > 0);
-
-  const upcomingReminders = useMemo(() => getUpcomingReminders(reminders, 3), [reminders]);
-
-  const currentTopics = tab === 'hoy' ? todayTopics : tab === 'atrasados' ? overdueTopics : upcomingTopics;
-  const todayTotalCount = todayTopics.reduce((sum, topic) => sum + getTodayMatchCount(topic), 0) + todayReminders.length + todayChecklist.length;
-  const overdueTotalCount = overdueTopics.reduce((sum, topic) => sum + getOverdueMatchCount(topic), 0) + overdueChecklist.length;
-  const upcomingTotalCount = upcomingTopics.reduce((sum, topic) => sum + getUpcomingMatchCount(topic), 0) + upcomingReminders.length + upcomingChecklist.length;
 
   const emptyMessages: Record<ReviewTab, string> = {
-    hoy: 'No hay temas programados para hoy.',
-    atrasados: '¡Todo al día! No hay temas atrasados.',
-    proximos: 'No hay temas próximos a vencer.',
+    hoy: 'No hay pendientes para hoy. 🎉',
+    atrasados: '¡Todo al día! No hay nada atrasado. ✅',
+    proximos: 'No hay pendientes próximos.',
   };
 
-  const handleToggleCompletion = (reminderId: string) => {
-    toggleCompletion.mutate({ reminder_id: reminderId, completed_date: todayDateStr });
+  const typeBadge: Record<string, { label: string; className: string }> = {
+    subtask: { label: 'Hito', className: 'bg-primary/10 text-primary border-primary/20' },
+    topic: { label: 'Tema', className: 'bg-secondary text-secondary-foreground border-border' },
+    reminder: { label: 'Recordatorio', className: 'bg-accent text-accent-foreground border-border' },
+    checklist: { label: 'Checklist', className: 'bg-muted text-muted-foreground border-border' },
   };
 
   return (
@@ -133,32 +184,21 @@ export function ReviewView(props: ReviewViewProps) {
         <TabsList className="w-full">
           <TabsTrigger value="hoy" className="flex-1 text-xs gap-1.5">
             Mi día
-            {todayTotalCount > 0 && (
-              <Badge variant="secondary" className="h-5 min-w-5 px-1.5 text-[10px]">{todayTotalCount}</Badge>
-            )}
+            {counts.hoy > 0 && <Badge variant="secondary" className="h-5 min-w-5 px-1.5 text-[10px]">{counts.hoy}</Badge>}
           </TabsTrigger>
           <TabsTrigger value="atrasados" className="flex-1 text-xs gap-1.5">
             Atrasados
-            {overdueTotalCount > 0 && (
-              <Badge variant="destructive" className="h-5 min-w-5 px-1.5 text-[10px]">{overdueTotalCount}</Badge>
-            )}
+            {counts.atrasados > 0 && <Badge variant="destructive" className="h-5 min-w-5 px-1.5 text-[10px]">{counts.atrasados}</Badge>}
           </TabsTrigger>
           <TabsTrigger value="proximos" className="flex-1 text-xs gap-1.5">
             Próximos
-            {upcomingTotalCount > 0 && (
-              <Badge className="h-5 min-w-5 px-1.5 text-[10px] bg-yellow-500 text-white border-0 hover:bg-yellow-500/80">{upcomingTotalCount}</Badge>
-            )}
+            {counts.proximos > 0 && <Badge className="h-5 min-w-5 px-1.5 text-[10px] bg-yellow-500 text-white border-0 hover:bg-yellow-500/80">{counts.proximos}</Badge>}
           </TabsTrigger>
         </TabsList>
       </Tabs>
 
-      {/* Filters bar */}
+      {/* Filters */}
       <div className="flex items-center gap-2 flex-wrap">
-        <Button size="sm" variant="outline" className="h-8 text-xs gap-1 shrink-0" onClick={toggleExpand}>
-          {forceExpand ? <ChevronsDownUp className="h-3.5 w-3.5" /> : <ChevronsUpDown className="h-3.5 w-3.5" />}
-          {forceExpand ? 'Contraer' : 'Expandir'}
-        </Button>
-
         {assigneeNames.length > 0 && (
           <Select value={selectedAssignee || '_all'} onValueChange={(v) => setSelectedAssignee(v === '_all' ? '' : v)}>
             <SelectTrigger className="w-44 h-8 text-xs gap-1">
@@ -173,7 +213,6 @@ export function ReviewView(props: ReviewViewProps) {
             </SelectContent>
           </Select>
         )}
-
         <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
           <SelectTrigger className="w-40 h-8 text-xs gap-1">
             <SelectValue placeholder="Estado" />
@@ -186,171 +225,72 @@ export function ReviewView(props: ReviewViewProps) {
         </Select>
       </div>
 
-      {/* Today's reminders */}
-      {tab === 'hoy' && todayReminders.length > 0 && (
-        <div className="space-y-1.5">
-          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Recordatorios de hoy</p>
-          {todayReminders.map((r) => {
-            const done = isCompleted(r.id, todayDateStr);
-            return (
-              <div
-                key={r.id}
-                className="flex items-center gap-3 rounded-lg border border-border px-4 py-2.5 bg-background"
-              >
-                <button
-                  onClick={() => handleToggleCompletion(r.id)}
-                  className="shrink-0 hover:scale-110 transition-transform"
-                >
-                  {done ? (
-                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                  ) : (
-                    <Circle className="h-4 w-4 text-muted-foreground" />
-                  )}
-                </button>
-                <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: r.color }} />
-                <span className={`text-sm font-medium flex-1 ${done ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
-                  {r.title}
-                </span>
-                <Badge variant="outline" className="text-[9px] h-4 shrink-0">Recordatorio</Badge>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Today's checklist items */}
-      {tab === 'hoy' && todayChecklist.length > 0 && (
-        <ChecklistSection
-          label="Checklist de hoy"
-          items={todayChecklist}
-          onToggle={(id) => toggleItem.mutate({ id, completed: true })}
-        />
-      )}
-
-      {/* Upcoming reminders */}
-      {tab === 'proximos' && upcomingReminders.length > 0 && (
-        <div className="space-y-1.5">
-          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Recordatorios próximos</p>
-          {upcomingReminders.map(({ reminder: r, date }) => {
-            const dateStr = format(date, 'yyyy-MM-dd');
-            const done = isCompleted(r.id, dateStr);
-            return (
-              <div
-                key={`${r.id}-${dateStr}`}
-                className="flex items-center gap-3 rounded-lg border border-border px-4 py-2.5 bg-yellow-500/5"
-              >
-                <button
-                  onClick={() => toggleCompletion.mutate({ reminder_id: r.id, completed_date: dateStr })}
-                  className="shrink-0 hover:scale-110 transition-transform"
-                >
-                  {done ? (
-                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                  ) : (
-                    <Circle className="h-4 w-4 text-muted-foreground" />
-                  )}
-                </button>
-                <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: r.color }} />
-                <span className={`text-sm font-medium flex-1 ${done ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
-                  {r.title}
-                </span>
-                <span className="text-[10px] text-muted-foreground shrink-0">
-                  {format(date, "EEE d MMM", { locale: es })}
-                </span>
-                <Badge className="text-[9px] h-4 shrink-0 bg-yellow-500/20 text-yellow-700 border-0">Recordatorio</Badge>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Upcoming checklist items */}
-      {tab === 'proximos' && upcomingChecklist.length > 0 && (
-        <ChecklistSection
-          label="Checklist próximos"
-          items={upcomingChecklist}
-          onToggle={(id) => toggleItem.mutate({ id, completed: true })}
-          variant="upcoming"
-        />
-      )}
-
-      {/* Overdue checklist items */}
-      {tab === 'atrasados' && overdueChecklist.length > 0 && (
-        <ChecklistSection
-          label="Checklist atrasados"
-          items={overdueChecklist}
-          onToggle={(id) => toggleItem.mutate({ id, completed: true })}
-          variant="overdue"
-        />
-      )}
-
-      {currentTopics.length === 0 && (tab === 'hoy' ? (todayReminders.length === 0 && todayChecklist.length === 0) : tab === 'proximos' ? (upcomingReminders.length === 0 && upcomingChecklist.length === 0) : overdueChecklist.length === 0) ? (
+      {/* Items list */}
+      {currentItems.length === 0 ? (
         <p className="text-sm text-muted-foreground text-center py-8">{emptyMessages[tab]}</p>
       ) : (
-        currentTopics.map((topic) => (
-          <TopicCard
-            key={topic.id}
-            topic={topic}
-            allTags={allTags}
-            topicTags={getTagsForTopic(topic.id)}
-            assignees={assignees}
-            onCreateAssignee={onCreateAssignee}
-            highlightToday={tab === 'hoy'}
-            highlightUpcoming={tab === 'proximos'}
-            highlightOverdue={tab === 'atrasados'}
-            forceExpand={forceExpand}
-            onUpdate={handlers.onUpdate}
-            onDelete={handlers.onDelete}
-            onAddSubtask={handlers.onAddSubtask}
-            onToggleSubtask={handlers.onToggleSubtask}
-            onDeleteSubtask={handlers.onDeleteSubtask}
-            onUpdateSubtask={handlers.onUpdateSubtask}
-            onAddProgressEntry={handlers.onAddProgressEntry}
-            onUpdateProgressEntry={handlers.onUpdateProgressEntry}
-            onDeleteProgressEntry={handlers.onDeleteProgressEntry}
-            onAddSubtaskEntry={handlers.onAddSubtaskEntry}
-            onUpdateSubtaskEntry={handlers.onUpdateSubtaskEntry}
-            onDeleteSubtaskEntry={handlers.onDeleteSubtaskEntry}
-            onAddTag={handlers.onAddTag}
-            onRemoveTag={handlers.onRemoveTag}
-            onCreateTag={handlers.onCreateTag}
-          />
-        ))
-      )}
-    </div>
-  );
-}
+        <div className="space-y-1">
+          {currentItems.map((item) => {
+            const tb = typeBadge[item.type];
+            const pc = item.priority ? priorityConfig[item.priority] : null;
+            return (
+              <div
+                key={`${item.type}-${item.id}`}
+                className={`flex items-center gap-3 rounded-lg border border-border px-3 py-2 transition-colors ${
+                  item.completed ? 'bg-muted/50' : tab === 'atrasados' ? 'bg-destructive/5' : tab === 'proximos' ? 'bg-yellow-500/5' : 'bg-background'
+                }`}
+              >
+                <button
+                  onClick={item.onToggle}
+                  className="shrink-0 hover:scale-110 transition-transform"
+                  disabled={item.type === 'topic'}
+                >
+                  {item.completed ? (
+                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                  ) : (
+                    <Circle className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </button>
 
-function ChecklistSection({ label, items, onToggle, variant }: {
-  label: string;
-  items: { id: string; title: string; due_date: string | null }[];
-  onToggle: (id: string) => void;
-  variant?: 'upcoming' | 'overdue';
-}) {
-  return (
-    <div className="space-y-1.5">
-      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{label}</p>
-      {items.map((item) => (
-        <div
-          key={item.id}
-          className={`flex items-center gap-3 rounded-lg border border-border px-4 py-2.5 ${
-            variant === 'overdue' ? 'bg-destructive/5' : variant === 'upcoming' ? 'bg-yellow-500/5' : 'bg-background'
-          }`}
-        >
-          <button
-            onClick={() => onToggle(item.id)}
-            className="shrink-0 hover:scale-110 transition-transform"
-          >
-            <Circle className="h-4 w-4 text-muted-foreground" />
-          </button>
-          <span className="text-sm font-medium flex-1 text-foreground">{item.title}</span>
-          {item.due_date && (
-            <span className="text-[10px] text-muted-foreground shrink-0">
-              {formatStoredDate(item.due_date, "d MMM")}
-            </span>
-          )}
-          <Badge variant="outline" className="text-[9px] h-4 shrink-0">Checklist</Badge>
+                <div className="flex-1 min-w-0">
+                  <span className={`text-sm font-medium ${item.completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+                    {item.title}
+                  </span>
+                  {item.parentTopicTitle && (
+                    <span className="flex items-center gap-1 text-[11px] text-muted-foreground mt-0.5">
+                      <ArrowRight className="h-2.5 w-2.5" />
+                      {item.parentTopicTitle}
+                    </span>
+                  )}
+                </div>
+
+                {item.assignee && (
+                  <span className="hidden sm:flex items-center gap-1 text-[11px] text-muted-foreground shrink-0">
+                    <User className="h-3 w-3" />
+                    {item.assignee}
+                  </span>
+                )}
+
+                {pc && (
+                  <Badge variant="outline" className={`hidden sm:inline-flex text-[9px] h-4 shrink-0 ${pc.className}`}>
+                    {pc.label}
+                  </Badge>
+                )}
+
+                <Badge variant="outline" className={`text-[9px] h-4 shrink-0 ${tb.className}`}>
+                  {tb.label}
+                </Badge>
+
+                {item.dueDate && (
+                  <span className="text-[10px] text-muted-foreground shrink-0 tabular-nums">
+                    {formatStoredDate(item.dueDate, "d MMM")}
+                  </span>
+                )}
+              </div>
+            );
+          })}
         </div>
-      ))}
+      )}
     </div>
   );
 }
