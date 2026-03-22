@@ -389,7 +389,7 @@ export function generateReportPdf(opts: PdfOptions) {
     groups.forEach((group, gi) => {
       y = drawChapterHeading(doc, `${gi + 1}. ${group.deptName}`, y, margin, contentW);
 
-      const { body, subtaskRowIndices } = buildIntegratedRows(group.topics, mode, ownerName);
+      const { body, subtaskRowIndices } = buildIntegratedRows(group.topics, mode, ownerName, gi + 1);
 
       autoTable(doc, {
         startY: y,
