@@ -94,13 +94,22 @@ export function DashboardView({ topics }: DashboardViewProps) {
     }
 
     // Assignee ranking
-    const assigneeMap = new Map<string, { total: number; subtasksTotal: number; subtasksDone: number }>();
+    const assigneeMap = new Map<string, { total: number; subtasksTotal: number; subtasksDone: number; overdueCount: number; dueSoonCount: number; closedCount: number }>();
     for (const t of topics) {
       if (!t.assignee) continue;
-      const entry = assigneeMap.get(t.assignee) || { total: 0, subtasksTotal: 0, subtasksDone: 0 };
+      const entry = assigneeMap.get(t.assignee) || { total: 0, subtasksTotal: 0, subtasksDone: 0, overdueCount: 0, dueSoonCount: 0, closedCount: 0 };
       entry.total++;
       entry.subtasksTotal += t.subtasks.length;
       entry.subtasksDone += t.subtasks.filter(s => s.completed).length;
+      if (t.status === 'completado') {
+        entry.closedCount++;
+      } else if (t.status === 'activo' || t.status === 'seguimiento') {
+        if (isStoredDateOverdue(t.due_date)) entry.overdueCount++;
+        else if (t.due_date && !isStoredDateOverdue(t.due_date)) {
+          const due = new Date(t.due_date + 'T23:59:59');
+          if (isBefore(due, threeDaysFromNow)) entry.dueSoonCount++;
+        }
+      }
       assigneeMap.set(t.assignee, entry);
     }
     const assigneeRanking = [...assigneeMap.entries()]
