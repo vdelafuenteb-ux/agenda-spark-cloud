@@ -231,6 +231,7 @@ const Index = () => {
             <SettingsView
               tags={tags}
               assignees={assignees}
+              departments={departments}
               topics={topics}
               onDeleteTag={(id) => deleteTag.mutate(id)}
               onCreateTag={(data) => createTag.mutateAsync(data)}
@@ -238,6 +239,9 @@ const Index = () => {
               onDeleteAssignee={(id) => deleteAssignee.mutate(id)}
               onCreateAssignee={(name) => createAssignee.mutateAsync(name)}
               onUpdateAssignee={(id, data) => updateAssignee.mutate({ id, ...data })}
+              onCreateDepartment={(name) => createDepartment.mutateAsync(name)}
+              onUpdateDepartment={(id, name) => updateDepartment.mutate({ id, name })}
+              onDeleteDepartment={(id) => deleteDepartment.mutate(id)}
             />
           ) : filter === 'dashboard' ? (
             <DashboardView topics={topics} assignees={assignees} onUpdateTopic={(id, data) => updateTopic.mutate({ id, ...data })} />
