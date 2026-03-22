@@ -237,7 +237,7 @@ const Index = () => {
               onUpdateAssignee={(id, data) => updateAssignee.mutate({ id, ...data })}
             />
           ) : filter === 'dashboard' ? (
-            <DashboardView topics={topics} />
+            <DashboardView topics={topics} onUpdateTopic={(id, data) => updateTopic.mutate({ id, ...data })} />
           ) : filter === 'historial_correos' ? (
             <EmailHistoryView />
           ) : filter === 'checklist' ? (

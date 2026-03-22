@@ -5,7 +5,11 @@ import { BarChart, Bar, XAxis, YAxis, PieChart, Pie, Cell, AreaChart, Area, Cart
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { CheckCircle2, Clock, TrendingUp, ListChecks, Users, Target, CalendarClock, AlertTriangle, Infinity as InfinityIcon } from 'lucide-react';
+import { CheckCircle2, Clock, TrendingUp, ListChecks, Users, Target, CalendarClock, AlertTriangle, Infinity as InfinityIcon, CalendarIcon } from 'lucide-react';
+
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { toStoredDate } from '@/lib/date';
 import type { TopicWithSubtasks } from '@/hooks/useTopics';
 import { isStoredDateOverdue } from '@/lib/date';
 import { startOfWeek, subWeeks, isAfter, isBefore, addDays, format } from 'date-fns';
@@ -13,6 +17,7 @@ import { es } from 'date-fns/locale';
 
 interface DashboardViewProps {
   topics: TopicWithSubtasks[];
+  onUpdateTopic?: (id: string, data: any) => void;
 }
 
 const PRIORITY_COLORS = {
@@ -28,7 +33,7 @@ const STATUS_COLORS = {
   completado: 'hsl(142 71% 45%)',
 };
 
-export function DashboardView({ topics }: DashboardViewProps) {
+export function DashboardView({ topics, onUpdateTopic }: DashboardViewProps) {
   const metrics = useMemo(() => {
     const now = new Date();
     const threeDaysFromNow = addDays(now, 3);
@@ -279,9 +284,25 @@ export function DashboardView({ topics }: DashboardViewProps) {
                   {metrics.missingDates.slice(0, 6).map((t) => (
                     <div key={t.id} className="flex items-center justify-between text-xs">
                       <span className="text-foreground truncate flex-1">{t.title}</span>
-                      <Badge variant="outline" className="text-[9px] ml-2 shrink-0 border-orange-500/50 text-orange-600">
-                        Agregar fecha
-                      </Badge>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <button className="inline-flex items-center gap-1 rounded-full border border-orange-500/50 text-orange-600 px-2 py-0.5 text-[9px] font-medium hover:bg-orange-50 dark:hover:bg-orange-950/20 transition-colors shrink-0 ml-2">
+                            <CalendarIcon className="h-2.5 w-2.5" />
+                            Agregar fecha
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="end">
+                          <Calendar
+                            mode="single"
+                            onSelect={(date) => {
+                              if (date && onUpdateTopic) {
+                                onUpdateTopic(t.id, { due_date: toStoredDate(date) });
+                              }
+                            }}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
                     </div>
                   ))}
                   {metrics.missingDates.length > 6 && (
