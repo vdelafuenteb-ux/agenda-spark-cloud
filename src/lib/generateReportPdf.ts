@@ -514,8 +514,8 @@ export function generateReportPdf(opts: PdfOptions) {
 
 export function downloadReportPdf(options: PdfOptions) {
   const doc = generateReportPdf(options);
-  const fileName = `informe_${format(options.periodStart, 'yyyyMMdd')}_${format(options.periodEnd, 'yyyyMMdd')}.pdf`;
-  doc.save(fileName);
+  const baseName = (options.title || 'Informe Ejecutivo').replace(/[\/\\:*?"<>|]/g, '_').trim();
+  doc.save(`${baseName}.pdf`);
 }
 
 export function downloadPdfFromContent(content: string, title: string, periodStart: string, periodEnd: string) {
