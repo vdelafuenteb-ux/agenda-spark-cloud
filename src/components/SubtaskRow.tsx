@@ -34,6 +34,8 @@ export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false,
   const [titleDraft, setTitleDraft] = useState(subtask.title);
   const [editingTitleInSheet, setEditingTitleInSheet] = useState(false);
   const [sheetTitleDraft, setSheetTitleDraft] = useState(subtask.title);
+  const [contactDraft, setContactDraft] = useState((subtask as any).contact || '');
+  const [responsibleDraft, setResponsibleDraft] = useState((subtask as any).responsible || '');
 
   const entries = subtask.subtask_entries || [];
   const hasEntries = entries.length > 0;
