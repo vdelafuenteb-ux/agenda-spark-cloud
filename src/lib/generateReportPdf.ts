@@ -78,6 +78,7 @@ export interface PdfOptions {
   includeBitacora?: boolean;
   includeResponsables?: boolean;
   departments?: { id: string; name: string }[];
+  subtaskFilter?: Record<string, string[]>;
 }
 
 function drawKpiBox(doc: jsPDF, x: number, y: number, w: number, h: number, value: string, label: string, color: [number, number, number]) {

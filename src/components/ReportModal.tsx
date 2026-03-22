@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subDays, isAfter, isBefore, addDays, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -6,12 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CalendarIcon, Copy, FileDown, Save, ChevronDown, ChevronRight, Settings2 } from 'lucide-react';
+import { CalendarIcon, Copy, FileDown, Save, ChevronDown, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { formatStoredDate, parseStoredDate } from '@/lib/date';
@@ -20,6 +18,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 import type { TopicWithSubtasks } from '@/hooks/useTopics';
 import { useDepartments } from '@/hooks/useDepartments';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface ReportModalProps {
   open: boolean;
@@ -36,6 +35,8 @@ const STATUS_LABELS: Record<string, string> = {
   pausado: 'Pausados',
 };
 
+const STATUS_ORDER = ['activo', 'seguimiento', 'completado', 'pausado'];
+
 function getTrafficLight(dueDateStr: string | null | undefined): { icon: string; label: string } {
   if (!dueDateStr) return { icon: '🟢', label: 'Al día' };
   const dueDate = parseStoredDate(dueDateStr);
@@ -45,7 +46,7 @@ function getTrafficLight(dueDateStr: string | null | undefined): { icon: string;
   const dueCopy = new Date(dueDate);
   dueCopy.setHours(0, 0, 0, 0);
   if (isBefore(dueCopy, today)) return { icon: '🔴', label: 'Atrasado' };
-  if (isBefore(dueCopy, addDays(today, 4))) return { icon: '🟡', label: 'Próximo a vencer' };
+  if (isBefore(dueCopy, addDays(today, 4))) return { icon: '🟡', label: 'Próximo' };
   return { icon: '🟢', label: 'Al día' };
 }
 
@@ -63,64 +64,41 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
   const [customStart, setCustomStart] = useState<Date>(subDays(new Date(), 30));
   const [customEnd, setCustomEnd] = useState<Date>(new Date());
   const [saving, setSaving] = useState(false);
-  const [topicSelectorOpen, setTopicSelectorOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
 
-  // Personalización
+  // Config
   const [reportTitle, setReportTitle] = useState('Informe Ejecutivo');
   const [authorName, setAuthorName] = useState('');
   const [authorRole, setAuthorRole] = useState('');
   const ownerLabel = authorName || 'Yo';
 
-  // Filtros de estado
-  const [includeStatuses, setIncludeStatuses] = useState<string[]>(['activo', 'seguimiento', 'completado', 'pausado']);
-  
-  // Filtro de responsable
-  const [filterAssignee, setFilterAssignee] = useState<string>('todos');
-
-  // Toggles de secciones
+  // Section toggles
   const [includeCompleted, setIncludeCompleted] = useState(true);
   const [includeBitacora, setIncludeBitacora] = useState(true);
   const [includeResponsables, setIncludeResponsables] = useState(true);
 
-  // Temas disponibles según filtros
-  const availableTopics = useMemo(() => {
-    let filtered = topics.filter(t => includeStatuses.includes(t.status));
-    if (filterAssignee !== 'todos') {
-      if (filterAssignee === 'yo') {
-        filtered = filtered.filter(t => !t.assignee);
-      } else {
-        filtered = filtered.filter(t => t.assignee === filterAssignee);
-      }
-    }
-    return filtered;
-  }, [topics, includeStatuses, filterAssignee]);
+  // Selection state
+  const [selectedTopicIds, setSelectedTopicIds] = useState<Set<string>>(new Set());
+  const [excludedSubtaskIds, setExcludedSubtaskIds] = useState<Set<string>>(new Set());
+  const [expandedTopicIds, setExpandedTopicIds] = useState<Set<string>>(new Set());
 
-  const [selectedTopicIds, setSelectedTopicIds] = useState<string[]>([]);
-
-  // Responsables únicos
-  const uniqueAssignees = useMemo(() => {
-    const set = new Set<string>();
-    topics.forEach(t => { if (t.assignee) set.add(t.assignee); });
-    return Array.from(set).sort();
+  // Group topics by status
+  const topicsByStatus = useMemo(() => {
+    const grouped: Record<string, TopicWithSubtasks[]> = {};
+    STATUS_ORDER.forEach(s => { grouped[s] = []; });
+    topics.forEach(t => {
+      if (grouped[t.status]) grouped[t.status].push(t);
+    });
+    return grouped;
   }, [topics]);
 
-  // Initialize selected topics when modal opens
+  // Initialize all selected when modal opens
   useEffect(() => {
     if (open) {
-      setSelectedTopicIds(availableTopics.map(t => t.id));
+      setSelectedTopicIds(new Set(topics.map(t => t.id)));
+      setExcludedSubtaskIds(new Set());
+      setExpandedTopicIds(new Set());
     }
   }, [open]);
-
-  // Update selection when filters change
-  useEffect(() => {
-    setSelectedTopicIds(prev => {
-      const availableIds = new Set(availableTopics.map(t => t.id));
-      const kept = prev.filter(id => availableIds.has(id));
-      const newIds = availableTopics.filter(t => !prev.includes(t.id)).map(t => t.id);
-      return [...kept, ...newIds];
-    });
-  }, [availableTopics]);
 
   const { start, end } = useMemo(() => {
     const now = new Date();
@@ -129,16 +107,76 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
     return { start: customStart, end: customEnd };
   }, [period, customStart, customEnd]);
 
-  const selectedTopics = useMemo(
-    () => availableTopics.filter(t => selectedTopicIds.includes(t.id)),
-    [availableTopics, selectedTopicIds]
-  );
+  // Build filtered topics with filtered subtasks
+  const selectedTopics = useMemo(() => {
+    return topics
+      .filter(t => selectedTopicIds.has(t.id))
+      .map(t => ({
+        ...t,
+        subtasks: t.subtasks.filter(s => !excludedSubtaskIds.has(s.id)),
+      }));
+  }, [topics, selectedTopicIds, excludedSubtaskIds]);
 
+  // Build subtaskFilter for PDF
+  const subtaskFilter = useMemo(() => {
+    const filter: Record<string, string[]> = {};
+    selectedTopics.forEach(t => {
+      filter[t.id] = t.subtasks.map(s => s.id);
+    });
+    return filter;
+  }, [selectedTopics]);
+
+  const toggleTopic = useCallback((id: string) => {
+    setSelectedTopicIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const toggleSubtask = useCallback((id: string) => {
+    setExcludedSubtaskIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const toggleExpand = useCallback((id: string) => {
+    setExpandedTopicIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const selectAllInStatus = useCallback((status: string) => {
+    const ids = topicsByStatus[status]?.map(t => t.id) || [];
+    setSelectedTopicIds(prev => {
+      const next = new Set(prev);
+      ids.forEach(id => next.add(id));
+      return next;
+    });
+  }, [topicsByStatus]);
+
+  const selectNoneInStatus = useCallback((status: string) => {
+    const ids = new Set(topicsByStatus[status]?.map(t => t.id) || []);
+    setSelectedTopicIds(prev => {
+      const next = new Set(prev);
+      ids.forEach(id => next.delete(id));
+      return next;
+    });
+  }, [topicsByStatus]);
+
+  // Markdown report
   const report = useMemo(() => {
     const activeTopics = selectedTopics.filter(t => t.status === 'activo' || t.status === 'seguimiento');
     const completedTopics = selectedTopics.filter(t => t.status === 'completado');
     const pausedTopics = selectedTopics.filter(t => t.status === 'pausado');
-    
+
     const totalSubs = selectedTopics.reduce((a, t) => a + t.subtasks.length, 0);
     const doneSubs = selectedTopics.reduce((a, t) => a + t.subtasks.filter(s => s.completed).length, 0);
     const pct = totalSubs > 0 ? Math.round((doneSubs / totalSubs) * 100) : 0;
@@ -152,73 +190,51 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
     let md = `# 📊 ${reportTitle}\n\n`;
     md += `**Período:** ${periodStr}\n`;
     if (authorName) md += `**Elaborado por:** ${authorName}${authorRole ? ` — ${authorRole}` : ''}\n`;
-    md += `**Emitido:** ${format(new Date(), "dd MMM yyyy 'a las' HH:mm", { locale: es })}\n\n`;
-    md += `---\n\n`;
+    md += `**Emitido:** ${format(new Date(), "dd MMM yyyy 'a las' HH:mm", { locale: es })}\n\n---\n\n`;
 
-    // Resumen Ejecutivo narrativo
     md += `## Resumen Ejecutivo\n\n`;
     md += `Durante el período evaluado se gestionaron **${selectedTopics.length} temas** en total. `;
     if (completedTopics.length > 0) md += `Se completaron **${completedTopics.length} temas** exitosamente. `;
     md += `De los ${activeTopics.length} temas activos, **${onTrack}** están al día`;
     if (warning > 0) md += `, **${warning}** próximos a vencer`;
     if (delayed > 0) md += ` y **${delayed}** presentan atrasos`;
-    md += `. `;
-    md += `El avance global en subtareas es de **${pct}%** (${doneSubs}/${totalSubs}).\n\n`;
+    md += `. El avance global en subtareas es de **${pct}%** (${doneSubs}/${totalSubs}).\n\n`;
 
-    // KPIs
-    md += `### Indicadores Clave\n\n`;
-    md += `| Indicador | Valor |\n|---|---|\n`;
-    md += `| Temas totales | ${selectedTopics.length} |\n`;
-    md += `| 🟢 Al día | ${onTrack} |\n`;
-    md += `| 🟡 Próximos a vencer | ${warning} |\n`;
-    md += `| 🔴 Atrasados | ${delayed} |\n`;
+    md += `### Indicadores Clave\n\n| Indicador | Valor |\n|---|---|\n`;
+    md += `| Temas totales | ${selectedTopics.length} |\n| 🟢 Al día | ${onTrack} |\n| 🟡 Próximos | ${warning} |\n| 🔴 Atrasados | ${delayed} |\n`;
     if (completedTopics.length > 0) md += `| ✅ Completados | ${completedTopics.length} |\n`;
     if (pausedTopics.length > 0) md += `| ⏸️ Pausados | ${pausedTopics.length} |\n`;
     md += `| Subtareas completadas | ${doneSubs}/${totalSubs} (${pct}%) |\n\n`;
 
-    // Logros del período (completados)
     if (includeCompleted && completedTopics.length > 0) {
       md += `## ✅ Logros del Período\n\n`;
       completedTopics.forEach(t => {
-        const responsable = t.assignee || ownerLabel;
-        md += `- **${t.title}** — Responsable: ${responsable}\n`;
+        md += `- **${t.title}** — Responsable: ${t.assignee || ownerLabel}\n`;
       });
       md += `\n`;
     }
 
-    // Semáforo General (activos)
     if (activeTopics.length > 0) {
-      md += `## Semáforo General\n\n`;
-      md += `| Tema | Responsable | Prioridad | Estado | Fecha cierre | Progreso |\n`;
-      md += `|---|---|---|---|---|---|\n`;
+      md += `## Semáforo General\n\n| Tema | Responsable | Prioridad | Estado | Fecha cierre | Progreso |\n|---|---|---|---|---|---|\n`;
       activeTopics.forEach(t => {
         const tl = getTrafficLight(t.due_date);
         const done = t.subtasks.filter(s => s.completed).length;
         const total = t.subtasks.length;
         const dueStr = t.due_date ? formatStoredDate(t.due_date, 'dd MMM', { locale: es }) : '—';
-        const responsable = t.assignee || ownerLabel;
-        md += `| ${t.title} | ${responsable} | ${t.priority.charAt(0).toUpperCase() + t.priority.slice(1)} | ${tl.icon} ${tl.label} | ${dueStr} | ${total > 0 ? `${done}/${total}` : '—'} |\n`;
+        md += `| ${t.title} | ${t.assignee || ownerLabel} | ${t.priority.charAt(0).toUpperCase() + t.priority.slice(1)} | ${tl.icon} ${tl.label} | ${dueStr} | ${total > 0 ? `${done}/${total}` : '—'} |\n`;
       });
       md += `\n`;
     }
 
-    // Detalle por Tema
     md += `## Detalle por Tema\n\n`;
     selectedTopics.forEach(t => {
       const tl = getTrafficLight(t.due_date);
       const done = t.subtasks.filter(s => s.completed).length;
       const total = t.subtasks.length;
-      const responsable = t.assignee || ownerLabel;
-      const statusLabel = STATUS_LABELS[t.status] || t.status;
-
-      md += `### ${tl.icon} ${t.title}\n\n`;
-      md += `- **Estado:** ${statusLabel}\n`;
-      md += `- **Responsable:** ${responsable}\n`;
-      md += `- **Prioridad:** ${t.priority.charAt(0).toUpperCase() + t.priority.slice(1)}\n`;
+      md += `### ${tl.icon} ${t.title}\n\n- **Estado:** ${STATUS_LABELS[t.status] || t.status}\n- **Responsable:** ${t.assignee || ownerLabel}\n- **Prioridad:** ${t.priority.charAt(0).toUpperCase() + t.priority.slice(1)}\n`;
       if (t.due_date) md += `- **Fecha cierre:** ${formatStoredDate(t.due_date, 'dd MMM yyyy', { locale: es })}\n`;
       if (total > 0) md += `- **Progreso:** ${done}/${total} subtareas (${Math.round((done / total) * 100)}%)\n`;
       md += `\n`;
-
       if (t.subtasks.length > 0) {
         md += `**Subtareas:**\n`;
         t.subtasks.forEach(s => {
@@ -227,11 +243,9 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
         });
         md += `\n`;
       }
-
       if (includeBitacora) {
         const recentEntries = t.progress_entries.filter(e => isWithinPeriod(e.created_at, start, end));
         const olderEntries = t.progress_entries.filter(e => !isWithinPeriod(e.created_at, start, end));
-
         if (recentEntries.length > 0) {
           md += `**📌 Novedades (este período):**\n`;
           recentEntries.forEach(e => { md += `- ⭐ ${e.content}\n`; });
@@ -243,11 +257,9 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
           md += `\n`;
         }
       }
-
       md += `---\n\n`;
     });
 
-    // Resumen por Responsable
     if (includeResponsables) {
       const assigneeMap = new Map<string, TopicWithSubtasks[]>();
       selectedTopics.forEach(t => {
@@ -255,11 +267,8 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
         if (!assigneeMap.has(key)) assigneeMap.set(key, []);
         assigneeMap.get(key)!.push(t);
       });
-
       if (assigneeMap.size > 0) {
-        md += `## Resumen por Responsable\n\n`;
-        md += `| Responsable | Temas | Activos | Completados | Atrasados |\n`;
-        md += `|---|---|---|---|---|\n`;
+        md += `## Resumen por Responsable\n\n| Responsable | Temas | Activos | Completados | Atrasados |\n|---|---|---|---|---|\n`;
         assigneeMap.forEach((tList, name) => {
           const active = tList.filter(t => t.status === 'activo' || t.status === 'seguimiento').length;
           const completed = tList.filter(t => t.status === 'completado').length;
@@ -291,6 +300,7 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
       includeBitacora,
       includeResponsables,
       departments,
+      subtaskFilter,
     });
     toast.success('PDF descargado');
   };
@@ -320,6 +330,7 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
         includeBitacora,
         includeResponsables,
         departments,
+        subtaskFilter,
       });
       queryClient.invalidateQueries({ queryKey: ['reports'] });
       toast.success('Informe emitido y PDF descargado');
@@ -331,191 +342,204 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
     }
   };
 
-  const toggleTopic = (id: string) => {
-    setSelectedTopicIds(prev =>
-      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-    );
-  };
-
-  const toggleStatus = (status: string) => {
-    setIncludeStatuses(prev =>
-      prev.includes(status) ? prev.filter(s => s !== status) : [...prev, status]
-    );
-  };
+  const totalSelected = selectedTopicIds.size;
+  const totalTopics = topics.length;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader>
-          <DialogTitle>Emitir Informe Ejecutivo</DialogTitle>
-          <DialogDescription>Personaliza y genera un informe profesional en PDF.</DialogDescription>
+      <DialogContent className="max-w-4xl max-h-[92vh] overflow-hidden flex flex-col gap-3 p-5">
+        <DialogHeader className="pb-0">
+          <DialogTitle className="text-base">Emitir Informe</DialogTitle>
+          <DialogDescription className="text-xs">
+            Selecciona temas, subtareas y configura tu informe.
+          </DialogDescription>
         </DialogHeader>
 
-        {/* Personalización */}
-        <Collapsible open={settingsOpen} onOpenChange={setSettingsOpen}>
-          <CollapsibleTrigger asChild>
-            <Button variant="outline" size="sm" className="h-8 text-xs w-full justify-between">
-              <span className="flex items-center gap-1.5"><Settings2 className="h-3.5 w-3.5" /> Personalización del informe</span>
-              {settingsOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="mt-2">
-            <div className="rounded-md border border-border bg-muted/20 p-3 space-y-3">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="space-y-1">
-                  <Label className="text-[11px]">Título del informe</Label>
-                  <Input value={reportTitle} onChange={e => setReportTitle(e.target.value)} className="h-8 text-xs" placeholder="Informe Ejecutivo" />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-[11px]">Tu nombre</Label>
-                  <Input value={authorName} onChange={e => setAuthorName(e.target.value)} className="h-8 text-xs" placeholder="Ej: Juan Pérez" />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-[11px]">Cargo / Rol</Label>
-                  <Input value={authorRole} onChange={e => setAuthorRole(e.target.value)} className="h-8 text-xs" placeholder="Ej: Gerente General Interino" />
-                </div>
-              </div>
+        {/* ===== ZONA 1: Config rápida ===== */}
+        <div className="grid grid-cols-3 gap-2">
+          <Input value={reportTitle} onChange={e => setReportTitle(e.target.value)} className="h-7 text-xs" placeholder="Título del informe" />
+          <Input value={authorName} onChange={e => setAuthorName(e.target.value)} className="h-7 text-xs" placeholder="Tu nombre" />
+          <Input value={authorRole} onChange={e => setAuthorRole(e.target.value)} className="h-7 text-xs" placeholder="Cargo / Rol" />
+        </div>
 
-              {/* Filtros de estado */}
-              <div className="space-y-1.5">
-                <Label className="text-[11px]">Estados a incluir</Label>
-                <div className="flex flex-wrap gap-2">
-                  {Object.entries(STATUS_LABELS).map(([key, label]) => (
-                    <label key={key} className="flex items-center gap-1.5 cursor-pointer">
-                      <Checkbox checked={includeStatuses.includes(key)} onCheckedChange={() => toggleStatus(key)} />
-                      <span className="text-xs">{label}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* Filtro responsable */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <Label className="text-[11px]">Filtrar por responsable</Label>
-                  <Select value={filterAssignee} onValueChange={setFilterAssignee}>
-                    <SelectTrigger className="h-8 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="todos">Todos</SelectItem>
-                      <SelectItem value="yo">{ownerLabel} (sin asignar)</SelectItem>
-                      {uniqueAssignees.map(a => (
-                        <SelectItem key={a} value={a}>{a}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {/* Secciones */}
-              <div className="space-y-1.5">
-                <Label className="text-[11px]">Secciones del informe</Label>
-                <div className="flex flex-wrap gap-4">
-                  <label className="flex items-center gap-1.5 cursor-pointer">
-                    <Switch checked={includeCompleted} onCheckedChange={setIncludeCompleted} className="scale-75" />
-                    <span className="text-xs">Logros (completados)</span>
-                  </label>
-                  <label className="flex items-center gap-1.5 cursor-pointer">
-                    <Switch checked={includeBitacora} onCheckedChange={setIncludeBitacora} className="scale-75" />
-                    <span className="text-xs">Bitácoras</span>
-                  </label>
-                  <label className="flex items-center gap-1.5 cursor-pointer">
-                    <Switch checked={includeResponsables} onCheckedChange={setIncludeResponsables} className="scale-75" />
-                    <span className="text-xs">Resumen por responsable</span>
-                  </label>
-                </div>
-              </div>
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
-
-        {/* Period selector */}
+        {/* Period + section toggles row */}
         <div className="flex items-center gap-2 flex-wrap">
           {(['week', 'month', 'custom'] as Period[]).map(value => (
-            <Button key={value} size="sm" variant={period === value ? 'default' : 'outline'} className="h-7 text-xs" onClick={() => setPeriod(value)}>
-              {value === 'week' ? 'Esta semana' : value === 'month' ? 'Este mes' : 'Personalizado'}
+            <Button key={value} size="sm" variant={period === value ? 'default' : 'outline'} className="h-6 text-[11px] px-2" onClick={() => setPeriod(value)}>
+              {value === 'week' ? 'Semana' : value === 'month' ? 'Mes' : 'Custom'}
             </Button>
           ))}
           {period === 'custom' && (
-            <div className="flex items-center gap-1">
+            <>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-7 text-xs">
+                  <Button variant="outline" size="sm" className="h-6 text-[11px] px-2">
                     <CalendarIcon className="h-3 w-3 mr-1" />{format(customStart, 'dd/MM')}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar mode="single" selected={customStart} onSelect={d => d && setCustomStart(d)} initialFocus className={cn("p-3 pointer-events-auto")} />
+                  <Calendar mode="single" selected={customStart} onSelect={d => d && setCustomStart(d)} initialFocus className="p-3 pointer-events-auto" />
                 </PopoverContent>
               </Popover>
-              <span className="text-xs text-muted-foreground">a</span>
+              <span className="text-[10px] text-muted-foreground">—</span>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-7 text-xs">
+                  <Button variant="outline" size="sm" className="h-6 text-[11px] px-2">
                     <CalendarIcon className="h-3 w-3 mr-1" />{format(customEnd, 'dd/MM')}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar mode="single" selected={customEnd} onSelect={d => d && setCustomEnd(d)} initialFocus className={cn("p-3 pointer-events-auto")} />
+                  <Calendar mode="single" selected={customEnd} onSelect={d => d && setCustomEnd(d)} initialFocus className="p-3 pointer-events-auto" />
                 </PopoverContent>
               </Popover>
-            </div>
+            </>
           )}
+          <div className="ml-auto flex items-center gap-3">
+            <label className="flex items-center gap-1 cursor-pointer">
+              <Switch checked={includeCompleted} onCheckedChange={setIncludeCompleted} className="scale-[0.6]" />
+              <span className="text-[10px] text-muted-foreground">Logros</span>
+            </label>
+            <label className="flex items-center gap-1 cursor-pointer">
+              <Switch checked={includeBitacora} onCheckedChange={setIncludeBitacora} className="scale-[0.6]" />
+              <span className="text-[10px] text-muted-foreground">Bitácora</span>
+            </label>
+            <label className="flex items-center gap-1 cursor-pointer">
+              <Switch checked={includeResponsables} onCheckedChange={setIncludeResponsables} className="scale-[0.6]" />
+              <span className="text-[10px] text-muted-foreground">Responsables</span>
+            </label>
+          </div>
         </div>
 
-        {/* Topic selector */}
-        <Collapsible open={topicSelectorOpen} onOpenChange={setTopicSelectorOpen}>
-          <CollapsibleTrigger asChild>
-            <Button variant="outline" size="sm" className="h-8 text-xs w-full justify-between">
-              <span>Temas incluidos ({selectedTopicIds.length} de {availableTopics.length})</span>
-              {topicSelectorOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+        {/* ===== ZONA 2: Selector de temas con subtareas ===== */}
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-medium text-foreground">
+            {totalSelected} de {totalTopics} temas seleccionados
+          </span>
+          <div className="flex gap-1">
+            <Button variant="ghost" size="sm" className="h-5 text-[10px] px-1.5" onClick={() => setSelectedTopicIds(new Set(topics.map(t => t.id)))}>
+              Todos
             </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="mt-2">
-            <div className="rounded-md border border-border bg-muted/20 p-3 space-y-1 max-h-40 overflow-auto">
-              <div className="flex gap-2 mb-2">
-                <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2" onClick={() => setSelectedTopicIds(availableTopics.map(t => t.id))}>
-                  Todos
-                </Button>
-                <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2" onClick={() => setSelectedTopicIds([])}>
-                  Ninguno
-                </Button>
-              </div>
-              {availableTopics.map(t => {
-                const tl = getTrafficLight(t.due_date);
-                const responsable = t.assignee || ownerLabel;
-                const statusLabel = STATUS_LABELS[t.status] || t.status;
-                return (
-                  <label key={t.id} className="flex items-center gap-2 cursor-pointer hover:bg-muted/40 rounded px-1 py-0.5">
-                    <Checkbox
-                      checked={selectedTopicIds.includes(t.id)}
-                      onCheckedChange={() => toggleTopic(t.id)}
-                    />
-                    <span className="text-xs">{tl.icon}</span>
-                    <span className="text-xs text-foreground truncate flex-1">{t.title}</span>
-                    <span className="text-[10px] text-muted-foreground shrink-0">{responsable}</span>
-                    <span className="text-[10px] text-muted-foreground shrink-0">({statusLabel})</span>
-                  </label>
-                );
-              })}
-              {availableTopics.length === 0 && (
-                <p className="text-xs text-muted-foreground">No hay temas con los filtros seleccionados.</p>
-              )}
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
-
-        {/* Preview */}
-        <div className="flex-1 overflow-auto rounded-md border border-border bg-muted/30 p-4 min-h-[200px]">
-          <pre className="text-xs whitespace-pre-wrap font-mono text-foreground leading-relaxed">{report}</pre>
+            <Button variant="ghost" size="sm" className="h-5 text-[10px] px-1.5" onClick={() => setSelectedTopicIds(new Set())}>
+              Ninguno
+            </Button>
+          </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-2 justify-end">
-          <Button variant="outline" size="sm" onClick={handleCopy}><Copy className="h-3 w-3 mr-1" /> Copiar</Button>
-          <Button variant="outline" size="sm" onClick={handleDownloadPdf}><FileDown className="h-3 w-3 mr-1" /> PDF</Button>
-          <Button size="sm" onClick={handleEmit} disabled={saving || selectedTopicIds.length === 0}>
+        <ScrollArea className="flex-1 min-h-0 max-h-[40vh] rounded-md border border-border bg-muted/10">
+          <div className="p-2 space-y-3">
+            {STATUS_ORDER.map(status => {
+              const statusTopics = topicsByStatus[status];
+              if (!statusTopics || statusTopics.length === 0) return null;
+              const selectedInStatus = statusTopics.filter(t => selectedTopicIds.has(t.id)).length;
+
+              return (
+                <div key={status}>
+                  {/* Status header */}
+                  <div className="flex items-center gap-2 mb-1 px-1">
+                    <span className="text-[11px] font-semibold text-foreground uppercase tracking-wide">
+                      {STATUS_LABELS[status]} ({selectedInStatus}/{statusTopics.length})
+                    </span>
+                    <div className="flex-1 h-px bg-border" />
+                    <Button variant="ghost" size="sm" className="h-4 text-[9px] px-1" onClick={() => selectAllInStatus(status)}>
+                      ✓ Todos
+                    </Button>
+                    <Button variant="ghost" size="sm" className="h-4 text-[9px] px-1" onClick={() => selectNoneInStatus(status)}>
+                      ✗
+                    </Button>
+                  </div>
+
+                  {/* Topics in this status */}
+                  <div className="space-y-0.5">
+                    {statusTopics.map(t => {
+                      const isSelected = selectedTopicIds.has(t.id);
+                      const isExpanded = expandedTopicIds.has(t.id);
+                      const tl = getTrafficLight(t.due_date);
+                      const hasSubtasks = t.subtasks.length > 0;
+                      const excludedCount = t.subtasks.filter(s => excludedSubtaskIds.has(s.id)).length;
+                      const subtaskLabel = hasSubtasks
+                        ? `${t.subtasks.length - excludedCount}/${t.subtasks.length}`
+                        : '';
+
+                      return (
+                        <div key={t.id}>
+                          <div className={cn(
+                            "flex items-center gap-1.5 rounded px-1.5 py-1 transition-colors",
+                            isSelected ? "bg-muted/40" : "opacity-50"
+                          )}>
+                            {/* Expand button */}
+                            {hasSubtasks ? (
+                              <button
+                                onClick={() => toggleExpand(t.id)}
+                                className="p-0 h-4 w-4 flex items-center justify-center text-muted-foreground hover:text-foreground shrink-0"
+                              >
+                                {isExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                              </button>
+                            ) : (
+                              <span className="w-4 shrink-0" />
+                            )}
+
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={() => toggleTopic(t.id)}
+                              className="h-3.5 w-3.5"
+                            />
+                            <span className="text-xs shrink-0">{tl.icon}</span>
+                            <span className="text-xs truncate flex-1 text-foreground">{t.title}</span>
+                            {subtaskLabel && (
+                              <span className="text-[9px] text-muted-foreground shrink-0 tabular-nums">
+                                sub: {subtaskLabel}
+                              </span>
+                            )}
+                            <span className="text-[10px] text-muted-foreground shrink-0 max-w-[80px] truncate">
+                              {t.assignee || ownerLabel}
+                            </span>
+                          </div>
+
+                          {/* Subtasks */}
+                          {isExpanded && hasSubtasks && (
+                            <div className="ml-8 pl-2 border-l border-border/50 space-y-0.5 py-0.5">
+                              {t.subtasks.map(s => {
+                                const isSubExcluded = excludedSubtaskIds.has(s.id);
+                                return (
+                                  <label key={s.id} className={cn(
+                                    "flex items-center gap-1.5 cursor-pointer rounded px-1 py-0.5 hover:bg-muted/30",
+                                    isSubExcluded && "opacity-40"
+                                  )}>
+                                    <Checkbox
+                                      checked={!isSubExcluded}
+                                      onCheckedChange={() => toggleSubtask(s.id)}
+                                      className="h-3 w-3"
+                                    />
+                                    <span className={cn("text-[11px]", s.completed ? "line-through text-muted-foreground" : "text-foreground")}>
+                                      {s.title}
+                                    </span>
+                                    {s.responsible && (
+                                      <span className="text-[9px] text-muted-foreground ml-auto shrink-0">{s.responsible}</span>
+                                    )}
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </ScrollArea>
+
+        {/* ===== ZONA 3: Acciones ===== */}
+        <div className="flex items-center gap-2 justify-end pt-1">
+          <Button variant="outline" size="sm" className="h-7 text-xs" onClick={handleCopy}>
+            <Copy className="h-3 w-3 mr-1" /> Copiar
+          </Button>
+          <Button variant="outline" size="sm" className="h-7 text-xs" onClick={handleDownloadPdf}>
+            <FileDown className="h-3 w-3 mr-1" /> PDF
+          </Button>
+          <Button size="sm" className="h-7 text-xs" onClick={handleEmit} disabled={saving || totalSelected === 0}>
             <Save className="h-3 w-3 mr-1" />
             {saving ? 'Emitiendo...' : 'Emitir Informe'}
           </Button>
