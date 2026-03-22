@@ -258,6 +258,32 @@ export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false,
               </span>
             </div>
 
+            {/* Contact person */}
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                <User className="h-3 w-3" /> Persona de contacto
+              </label>
+              <Input
+                placeholder="Ej: Juan Pérez"
+                value={(subtask as any).contact || ''}
+                onChange={(e) => onUpdateSubtask(subtask.id, { contact: e.target.value })}
+                className="h-8 text-sm"
+              />
+            </div>
+
+            {/* Responsible */}
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                <User className="h-3 w-3" /> Responsable de cerrar
+              </label>
+              <Input
+                placeholder="Ej: María López"
+                value={(subtask as any).responsible || ''}
+                onChange={(e) => onUpdateSubtask(subtask.id, { responsible: e.target.value })}
+                className="h-8 text-sm"
+              />
+            </div>
+
             {/* Bitácora */}
             <div className="space-y-1.5">
               <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
@@ -268,6 +294,7 @@ export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false,
                 onAdd={(content) => onAddSubtaskEntry(subtask.id, content)}
                 onUpdate={onUpdateSubtaskEntry ? (id, content) => onUpdateSubtaskEntry(id, content) : undefined}
                 onDelete={onDeleteSubtaskEntry}
+                hideTitle
               />
             </div>
 
