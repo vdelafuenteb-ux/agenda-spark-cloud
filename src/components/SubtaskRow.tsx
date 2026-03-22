@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { formatStoredDate, parseStoredDate, toStoredDate, isStoredDateOverdue } from '@/lib/date';
+import { differenceInDays } from 'date-fns';
 import { CalendarIcon, Trash2, Eye, Pencil, Check, X, User } from 'lucide-react';
 import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
@@ -40,6 +41,12 @@ export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false,
   const entries = subtask.subtask_entries || [];
   const hasEntries = entries.length > 0;
   const isOverdue = !subtask.completed && isStoredDateOverdue(subtask.due_date);
+
+  // Last activity from bitácora
+  const lastEntry = hasEntries ? entries[entries.length - 1] : null;
+  const lastActivityDate = lastEntry ? new Date(lastEntry.created_at) : null;
+  const daysSinceActivity = lastActivityDate ? differenceInDays(new Date(), lastActivityDate) : null;
+  const isStale = daysSinceActivity !== null && daysSinceActivity > 5;
 
   const saveTitle = (draft: string) => {
     if (draft.trim() && draft.trim() !== subtask.title) {
@@ -120,6 +127,17 @@ export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false,
             <Eye className="h-3.5 w-3.5" />
             {hasEntries && <span className="text-primary font-medium">{entries.length}</span>}
           </button>
+
+          {/* Last activity indicator */}
+          {lastActivityDate && !subtask.completed && (
+            <span className={cn(
+              'text-[10px] whitespace-nowrap shrink-0',
+              isStale ? 'text-destructive font-medium' : 'text-muted-foreground'
+            )}>
+              últ: {formatStoredDate(lastEntry!.created_at.split('T')[0], 'dd MMM', { locale: es })}
+              {daysSinceActivity !== null && ` (${daysSinceActivity}d)`}
+            </span>
+          )}
 
           {/* Date */}
           <span
