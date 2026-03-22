@@ -263,12 +263,10 @@ export function ReviewView({ topics, onToggleSubtask }: ReviewViewProps) {
                   )}
                 </div>
 
-                {item.assignee && (
-                  <span className="hidden sm:flex items-center gap-1 text-[11px] text-muted-foreground shrink-0">
-                    <User className="h-3 w-3" />
-                    {item.assignee}
-                  </span>
-                )}
+                <span className="hidden sm:flex items-center gap-1 text-[11px] text-muted-foreground shrink-0">
+                  <User className="h-3 w-3" />
+                  {item.assignee || 'Yo'}
+                </span>
 
                 {pc && (
                   <Badge variant="outline" className={`hidden sm:inline-flex text-[9px] h-4 shrink-0 ${pc.className}`}>
