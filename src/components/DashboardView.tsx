@@ -17,6 +17,7 @@ import { es } from 'date-fns/locale';
 
 interface DashboardViewProps {
   topics: TopicWithSubtasks[];
+  onUpdateTopic?: (id: string, data: any) => void;
 }
 
 const PRIORITY_COLORS = {
