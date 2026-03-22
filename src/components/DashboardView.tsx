@@ -18,6 +18,7 @@ import type { TopicWithSubtasks } from '@/hooks/useTopics';
 import { isStoredDateOverdue } from '@/lib/date';
 import { startOfWeek, subWeeks, isAfter, isBefore, addDays, format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { AssigneeProfileView } from './AssigneeProfileView';
 
 interface DashboardViewProps {
   topics: TopicWithSubtasks[];
@@ -40,6 +41,7 @@ const STATUS_COLORS = {
 
 export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardViewProps) {
   const [sendingId, setSendingId] = useState<string | null>(null);
+  const [selectedAssignee, setSelectedAssignee] = useState<string | null>(null);
 
   const handleSendReminder = async (topic: TopicWithSubtasks) => {
     if (!topic.assignee) {
@@ -236,6 +238,19 @@ export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardVie
     Media: { label: 'Media', color: PRIORITY_COLORS.media },
     Baja: { label: 'Baja', color: PRIORITY_COLORS.baja },
   };
+
+  // Show assignee profile if selected
+  if (selectedAssignee) {
+    const assigneeObj = assignees.find(a => a.name === selectedAssignee);
+    return (
+      <AssigneeProfileView
+        assigneeName={selectedAssignee}
+        assignee={assigneeObj}
+        topics={topics}
+        onBack={() => setSelectedAssignee(null)}
+      />
+    );
+  }
 
   return (
     <div className="flex-1 overflow-auto p-3 md:p-4">
@@ -518,8 +533,8 @@ export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardVie
                   </TableHeader>
                   <TableBody>
                     {metrics.assigneeRanking.map((a) => (
-                      <TableRow key={a.name}>
-                        <TableCell className="text-sm font-medium">{a.name}</TableCell>
+                      <TableRow key={a.name} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedAssignee(a.name)}>
+                        <TableCell className="text-sm font-medium text-primary underline underline-offset-2">{a.name}</TableCell>
                         <TableCell className="text-sm text-center">{a.total}</TableCell>
                         <TableCell className="text-sm text-center">{a.subtasksDone}/{a.subtasksTotal}</TableCell>
                         <TableCell className="text-sm text-center">
@@ -553,9 +568,9 @@ export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardVie
               {/* Mobile cards */}
               <div className="sm:hidden space-y-2">
                 {metrics.assigneeRanking.map((a) => (
-                  <div key={a.name} className="rounded-md border border-border p-3 space-y-1.5">
+                  <div key={a.name} className="rounded-md border border-border p-3 space-y-1.5 cursor-pointer hover:bg-muted/50" onClick={() => setSelectedAssignee(a.name)}>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">{a.name}</span>
+                      <span className="text-sm font-medium text-primary underline underline-offset-2">{a.name}</span>
                       <span className="text-xs text-muted-foreground">{a.total} temas</span>
                     </div>
                     <div className="flex items-center gap-2">
