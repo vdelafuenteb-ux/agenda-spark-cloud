@@ -27,8 +27,7 @@ import { SettingsView } from '@/components/SettingsView';
 import { EmailHistoryView } from '@/components/EmailHistoryView';
 import { toast } from 'sonner';
 
-type Filter = 'todos' | 'revision' | 'informes' | 'notas' | 'dashboard' | 'checklist' | 'calendario' | 'configuracion' | 'historial_correos';
-type StatusTab = 'activo' | 'seguimiento' | 'pausado' | 'completado';
+import type { Filter, StatusTab } from '@/types/filters';
 
 const Index = () => {
   const queryClient = useQueryClient();
