@@ -21,6 +21,7 @@ import { es } from 'date-fns/locale';
 
 interface DashboardViewProps {
   topics: TopicWithSubtasks[];
+  assignees: Assignee[];
   onUpdateTopic?: (id: string, data: any) => void;
 }
 
