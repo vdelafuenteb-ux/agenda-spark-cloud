@@ -246,7 +246,7 @@ export function generateReportPdf(opts: PdfOptions) {
     y += 4;
 
     const completedGroups = groupByDepartment(completedTopics, departments);
-    const hasMultipleDepts = completedGroups.length > 1;
+    
 
     completedGroups.forEach(group => {
       drawDeptSubtitle(group.deptName);
