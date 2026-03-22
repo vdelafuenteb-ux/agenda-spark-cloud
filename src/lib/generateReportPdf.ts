@@ -401,7 +401,8 @@ export function downloadPdfFromContent(content: string, title: string, periodSta
   doc.setFillColor(...PURPLE_900);
   doc.rect(0, 0, pageW, 32, 'F');
   doc.setFillColor(...PURPLE_500);
-  doc.rect(0, 32, pageW, 1, 'F');
+  doc.rect(0, 32, pageW, 1.5, 'F');
+  try { doc.addImage(logoIcon, 'PNG', pageW - margin - 10, 6, 10, 10); } catch {}
   
   doc.setTextColor(...WHITE);
   doc.setFontSize(14);
