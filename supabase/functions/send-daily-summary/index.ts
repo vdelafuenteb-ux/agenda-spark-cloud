@@ -141,7 +141,7 @@ Deno.serve(async (req) => {
 
       if (totalItems === 0) {
         console.log(`No items for user ${user.id}, skipping`);
-        continue;
+        return new Response(JSON.stringify({ message: "No pending items" }), { status: 200, headers: corsHeaders });
       }
 
       // Build HTML email
