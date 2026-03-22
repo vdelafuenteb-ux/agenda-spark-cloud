@@ -272,11 +272,19 @@ export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardVie
               ) : (
                 <div className="space-y-1.5">
                   {metrics.overdue.slice(0, 6).map((t) => (
-                    <div key={t.id} className="flex items-center justify-between text-xs">
+                    <div key={t.id} className="flex items-center justify-between text-xs gap-1">
                       <span className="text-foreground truncate flex-1">{t.title}</span>
-                      <Badge variant="destructive" className="text-[9px] ml-2 shrink-0">
+                      <Badge variant="destructive" className="text-[9px] shrink-0">
                         {t.due_date}
                       </Badge>
+                      <button
+                        onClick={() => handleSendReminder(t)}
+                        disabled={sendingId === t.id}
+                        className="shrink-0 p-1 rounded-full hover:bg-destructive/10 text-destructive transition-colors disabled:opacity-50"
+                        title={`Enviar recordatorio a ${t.assignee || 'responsable'}`}
+                      >
+                        {sendingId === t.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Bell className="h-3.5 w-3.5" />}
+                      </button>
                     </div>
                   ))}
                 </div>
