@@ -286,27 +286,31 @@ export function generateReportPdf(opts: PdfOptions) {
     const hasMultipleDepts = activeGroups.length > 1;
 
     activeGroups.forEach(group => {
-      drawDeptSubtitle(group.deptName, hasMultipleDepts);
+      drawDeptSubtitle(group.deptName);
       autoTable(doc, {
         startY: y,
         margin: { left: margin, right: margin },
-        head: [['Tema', 'Responsable', 'Prioridad', 'Estado', 'Fecha Cierre', 'Progreso']],
+        head: [['Tema', 'Responsable', 'Prioridad', 'Estado', 'Fecha Cierre', 'Progreso', 'Último Comentario']],
         body: group.topics.map(t => {
           const tl = getTrafficLight(t.due_date);
           const done = t.subtasks.filter(s => s.completed).length;
           const total = t.subtasks.length;
           const dueStr = t.due_date ? formatStoredDate(t.due_date, 'dd MMM yyyy', { locale: es }) : '—';
+          const lastEntry = t.progress_entries.length > 0
+            ? t.progress_entries[t.progress_entries.length - 1].content
+            : '—';
           return [
             t.title, t.assignee || 'Yo',
             t.priority.charAt(0).toUpperCase() + t.priority.slice(1),
             tl.label, dueStr,
             total > 0 ? `${done}/${total}` : '—',
+            lastEntry,
           ];
         }),
-        styles: { fontSize: 7.5, cellPadding: 2.5 },
+        styles: { fontSize: 7.5, cellPadding: 2.5, overflow: 'linebreak' },
         headStyles: { fillColor: PURPLE_900 as any, textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
         alternateRowStyles: { fillColor: SLATE_50 as any },
-        columnStyles: { 0: { cellWidth: 'auto' }, 3: { cellWidth: 22 }, 5: { cellWidth: 18 } },
+        columnStyles: { 0: { cellWidth: 35 }, 1: { cellWidth: 25 }, 2: { cellWidth: 16 }, 3: { cellWidth: 18 }, 4: { cellWidth: 22 }, 5: { cellWidth: 14 }, 6: { cellWidth: 'auto' } },
         didParseCell: (data) => {
           if (data.section === 'body' && data.column.index === 3) {
             const val = data.cell.raw as string;
