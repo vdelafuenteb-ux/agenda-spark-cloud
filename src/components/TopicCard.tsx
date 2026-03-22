@@ -231,6 +231,16 @@ export function TopicCard({
                 📅 {subtaskUpcomingCount} subtarea{subtaskUpcomingCount === 1 ? '' : 's'} próxima{subtaskUpcomingCount === 1 ? '' : 's'}
               </Badge>
             )}
+            {(topic as any).is_ongoing && (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0 gap-0.5 border-primary/50 text-primary">
+                <InfinityIcon className="h-2.5 w-2.5" /> Continuo
+              </Badge>
+            )}
+            {!isCompleted && !(topic as any).is_ongoing && !topic.due_date && (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0 gap-0.5 border-destructive/50 text-destructive">
+                <AlertCircle className="h-2.5 w-2.5" /> Sin fecha
+              </Badge>
+            )}
             {topic.status !== 'activo' && (
               <Badge variant="outline" className={cn(
                 "text-[10px] px-1.5 py-0",
