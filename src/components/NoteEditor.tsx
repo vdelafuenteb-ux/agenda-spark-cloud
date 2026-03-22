@@ -468,7 +468,7 @@ export function NoteEditor({
     <div className="flex flex-col h-full w-full">
       {/* Top bar */}
       <div className="flex items-center gap-2 px-3 py-1.5 border-b border-border shrink-0">
-        <Button variant="ghost" size="icon" className="h-7 w-7 md:hidden" onClick={onBack}>
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onBack}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <span className="text-[10px] text-muted-foreground">
