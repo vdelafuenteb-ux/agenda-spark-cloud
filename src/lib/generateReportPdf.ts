@@ -111,7 +111,8 @@ function checkPageBreak(doc: jsPDF, y: number, needed: number, margin: number): 
 /** Build rows for a department group: topic rows + indented subtask rows */
 function buildIntegratedRows(
   topics: TopicWithSubtasks[],
-  columnsMode: 'active' | 'completed' | 'paused'
+  columnsMode: 'active' | 'completed' | 'paused',
+  ownerName: string = 'Yo'
 ): { body: string[][]; subtaskRowIndices: Set<number> } {
   const body: string[][] = [];
   const subtaskRowIndices = new Set<number>();
