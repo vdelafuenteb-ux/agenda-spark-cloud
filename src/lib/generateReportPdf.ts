@@ -293,25 +293,27 @@ export function generateReportPdf(opts: PdfOptions) {
     autoTable(doc, {
       startY: y,
       margin: { left: margin, right: margin },
-      head: [['Tema', 'Responsable', 'Prioridad', 'Último Comentario']],
+      head: [['Tema', 'Responsable', 'Motivo de Pausa', 'Fecha Pausa']],
       body: pausedTopics.map(t => {
-        const lastEntry = t.progress_entries.length > 0
-          ? t.progress_entries[t.progress_entries.length - 1].content
+        const pauseReason = (t as any).pause_reason || '—';
+        const pausedAt = (t as any).paused_at
+          ? formatStoredDate((t as any).paused_at.split('T')[0], 'dd MMM yyyy', { locale: es })
           : '—';
-        const truncated = lastEntry.length > 80 ? lastEntry.substring(0, 77) + '...' : lastEntry;
+        const truncatedReason = pauseReason.length > 80 ? pauseReason.substring(0, 77) + '...' : pauseReason;
         return [
           t.title,
           t.assignee || 'Yo',
-          t.priority.charAt(0).toUpperCase() + t.priority.slice(1),
-          truncated,
+          truncatedReason,
+          pausedAt,
         ];
       }),
       styles: { fontSize: 7.5, cellPadding: 2.5, overflow: 'linebreak' },
       headStyles: { fillColor: SLATE_500 as any, textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
       alternateRowStyles: { fillColor: SLATE_50 as any },
       columnStyles: {
-        0: { cellWidth: 45 },
-        3: { cellWidth: 'auto' },
+        0: { cellWidth: 40 },
+        2: { cellWidth: 55 },
+        3: { cellWidth: 25 },
       },
     });
     y = (doc as any).lastAutoTable.finalY + 8;
