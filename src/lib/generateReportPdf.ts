@@ -6,16 +6,17 @@ import { parseStoredDate, formatStoredDate } from '@/lib/date';
 import type { TopicWithSubtasks } from '@/hooks/useTopics';
 import logoIcon from '@/assets/logo_tt_icon.png';
 
-// --- Corporate Colors (T&Transit purple palette) ---
-const PURPLE_900: [number, number, number] = [59, 21, 132];   // Deep purple for headers
-const PURPLE_700: [number, number, number] = [109, 40, 217];  // Primary purple
-const PURPLE_500: [number, number, number] = [139, 92, 246];  // Medium purple
-const PURPLE_100: [number, number, number] = [237, 233, 254]; // Light purple bg
-const PURPLE_50: [number, number, number] = [245, 243, 255];  // Very light purple
+// --- Executive palette: minimal, professional ---
+const PURPLE_900: [number, number, number] = [59, 21, 132];
+const PURPLE_700: [number, number, number] = [109, 40, 217];
+const PURPLE_500: [number, number, number] = [139, 92, 246];
 
+const SLATE_800: [number, number, number] = [30, 41, 59];
 const SLATE_700: [number, number, number] = [51, 65, 85];
 const SLATE_500: [number, number, number] = [100, 116, 139];
+const SLATE_300: [number, number, number] = [203, 213, 225];
 const SLATE_200: [number, number, number] = [226, 232, 240];
+const SLATE_100: [number, number, number] = [241, 245, 249];
 const SLATE_50: [number, number, number] = [248, 250, 252];
 const WHITE: [number, number, number] = [255, 255, 255];
 const RED: [number, number, number] = [220, 38, 38];
@@ -23,18 +24,17 @@ const AMBER: [number, number, number] = [217, 119, 6];
 const GREEN: [number, number, number] = [22, 163, 74];
 
 function getTrafficLight(dueDateStr: string | null | undefined): { label: string; color: [number, number, number] } {
-  if (!dueDateStr) return { label: 'Al día', color: GREEN };
+  if (!dueDateStr) return { label: 'Al dia', color: GREEN };
   const dueDate = parseStoredDate(dueDateStr);
-  if (!dueDate) return { label: 'Al día', color: GREEN };
+  if (!dueDate) return { label: 'Al dia', color: GREEN };
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const dueCopy = new Date(dueDate);
   dueCopy.setHours(0, 0, 0, 0);
   if (isBefore(dueCopy, today)) return { label: 'Atrasado', color: RED };
-  if (isBefore(dueCopy, addDays(today, 4))) return { label: 'Próximo', color: AMBER };
-  return { label: 'Al día', color: GREEN };
+  if (isBefore(dueCopy, addDays(today, 4))) return { label: 'Proximo', color: AMBER };
+  return { label: 'Al dia', color: GREEN };
 }
-
 
 interface DeptGroup {
   deptName: string;
@@ -55,10 +55,8 @@ function groupByDepartment(
     groups.get(deptName)!.push(t);
   });
 
-  // Sort each group by assignee
   groups.forEach(list => list.sort((a, b) => (a.assignee || 'Yo').localeCompare(b.assignee || 'Yo')));
 
-  // Sort groups alphabetically, "Sin Departamento" last
   const sorted = Array.from(groups.entries()).sort(([a], [b]) => {
     if (a === 'Sin Departamento') return 1;
     if (b === 'Sin Departamento') return -1;
@@ -86,16 +84,15 @@ function drawKpiBox(doc: jsPDF, x: number, y: number, w: number, h: number, valu
   doc.roundedRect(x, y, w, h, 2, 2, 'F');
   doc.setDrawColor(...SLATE_200);
   doc.roundedRect(x, y, w, h, 2, 2, 'S');
-  
-  // Color accent bar at top
+
   doc.setFillColor(...color);
   doc.rect(x, y, w, 1.5, 'F');
-  
+
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...color);
   doc.text(value, x + w / 2, y + 12, { align: 'center' });
-  
+
   doc.setFontSize(7);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(...SLATE_500);
@@ -110,67 +107,83 @@ function checkPageBreak(doc: jsPDF, y: number, needed: number, margin: number): 
   return y;
 }
 
-function drawSubtaskDetails(doc: jsPDF, topics: TopicWithSubtasks[], yStart: number, margin: number, contentW: number): number {
-  let y = yStart;
-  const pageH = doc.internal.pageSize.getHeight();
+/** Build rows for a department group: topic rows + indented subtask rows */
+function buildIntegratedRows(
+  topics: TopicWithSubtasks[],
+  columnsMode: 'active' | 'completed' | 'paused'
+): { body: string[][]; subtaskRowIndices: Set<number> } {
+  const body: string[][] = [];
+  const subtaskRowIndices = new Set<number>();
 
-  for (const topic of topics) {
-    if (topic.subtasks.length === 0) continue;
+  for (const t of topics) {
+    const lastEntry = t.progress_entries.length > 0
+      ? t.progress_entries[t.progress_entries.length - 1].content
+      : '';
 
-    // Topic subtitle
-    y = checkPageBreak(doc, y, 16, margin);
-    doc.setFontSize(7.5);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(...PURPLE_700);
-    doc.text(`▸ ${topic.title}`, margin + 2, y);
-    y += 3;
+    if (columnsMode === 'active') {
+      const tl = getTrafficLight(t.due_date);
+      const done = t.subtasks.filter(s => s.completed).length;
+      const total = t.subtasks.length;
+      const dueStr = t.due_date ? formatStoredDate(t.due_date, 'dd MMM yyyy', { locale: es }) : '';
+      body.push([
+        t.title,
+        t.assignee || 'Yo',
+        t.priority.charAt(0).toUpperCase() + t.priority.slice(1),
+        tl.label,
+        dueStr,
+        total > 0 ? `${done}/${total}` : '',
+        lastEntry,
+      ]);
+    } else if (columnsMode === 'completed') {
+      const closeDateStr = t.updated_at ? format(new Date(t.updated_at), 'dd MMM yyyy', { locale: es }) : '';
+      body.push([t.title, t.assignee || 'Yo', closeDateStr, lastEntry]);
+    } else {
+      const pauseReason = t.pause_reason || '';
+      const pausedAt = t.paused_at ? format(new Date(t.paused_at), 'dd MMM yyyy', { locale: es }) : '';
+      body.push([t.title, t.assignee || 'Yo', pauseReason, pausedAt]);
+    }
 
-    // Build subtask rows with their last bitácora entry
-    const subtaskRows = topic.subtasks.map(s => {
-      const status = s.completed ? '✓' : '○';
-      const dueStr = s.due_date ? formatStoredDate(s.due_date, 'dd MMM yyyy', { locale: es }) : '—';
-      const lastEntry = s.subtask_entries && s.subtask_entries.length > 0
+    // Add subtask rows indented
+    for (const s of t.subtasks) {
+      const idx = body.length;
+      subtaskRowIndices.add(idx);
+      const status = s.completed ? 'Hecho' : 'Pendiente';
+      const dueStr = s.due_date ? formatStoredDate(s.due_date, 'dd MMM yyyy', { locale: es }) : '';
+      const lastSubEntry = s.subtask_entries && s.subtask_entries.length > 0
         ? s.subtask_entries[s.subtask_entries.length - 1].content
-        : '—';
-      return [status, s.title, s.responsible || '—', dueStr, lastEntry];
-    });
+        : '';
 
-    autoTable(doc, {
-      startY: y,
-      margin: { left: margin + 3, right: margin },
-      head: [['', 'Subtarea', 'Responsable', 'Fecha', 'Último Comentario']],
-      body: subtaskRows,
-      styles: { fontSize: 6.5, cellPadding: 1.8, overflow: 'linebreak' },
-      headStyles: { fillColor: PURPLE_100 as any, textColor: PURPLE_900 as any, fontStyle: 'bold', fontSize: 6.5 },
-      alternateRowStyles: { fillColor: PURPLE_50 as any },
-      columnStyles: {
-        0: { cellWidth: 6, halign: 'center' },
-        1: { cellWidth: 35 },
-        2: { cellWidth: 22 },
-        3: { cellWidth: 22 },
-        4: { cellWidth: 'auto' },
-      },
-      didParseCell: (data) => {
-        if (data.section === 'body' && data.column.index === 0) {
-          const val = data.cell.raw as string;
-          if (val === '✓') {
-            data.cell.styles.textColor = GREEN as any;
-            data.cell.styles.fontStyle = 'bold';
-          } else {
-            data.cell.styles.textColor = SLATE_500 as any;
-          }
-        }
-      },
-    });
-    y = (doc as any).lastAutoTable.finalY + 3;
+      if (columnsMode === 'active') {
+        body.push([`    ${s.title}`, s.responsible || '', '', status, dueStr, '', lastSubEntry]);
+      } else if (columnsMode === 'completed') {
+        body.push([`    ${s.title}`, s.responsible || '', dueStr, lastSubEntry]);
+      } else {
+        body.push([`    ${s.title}`, s.responsible || '', '', dueStr]);
+      }
+    }
   }
 
+  return { body, subtaskRowIndices };
+}
+
+/** Draw a chapter-style department heading */
+function drawChapterHeading(doc: jsPDF, label: string, y: number, margin: number, contentW: number): number {
+  y = checkPageBreak(doc, y, 14, margin);
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...SLATE_800);
+  doc.text(label, margin, y);
+  y += 1.5;
+  doc.setDrawColor(...SLATE_300);
+  doc.setLineWidth(0.3);
+  doc.line(margin, y, margin + contentW, y);
+  y += 4;
   return y;
 }
 
 export function generateReportPdf(opts: PdfOptions) {
   const { topics, periodStart, periodEnd, title, authorName, authorRole, includeCompleted = true, includeResponsables = true, departments } = opts;
-  
+
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const pageW = doc.internal.pageSize.getWidth();
   const margin = 14;
@@ -181,29 +194,23 @@ export function generateReportPdf(opts: PdfOptions) {
   const emittedStr = format(new Date(), "dd MMM yyyy 'a las' HH:mm", { locale: es });
   const reportTitle = title || 'Informe Ejecutivo';
 
-  // Classify topics
   const activeTopics = topics.filter(t => t.status === 'activo' || t.status === 'seguimiento');
   const completedTopics = topics.filter(t => t.status === 'completado');
   const pausedTopics = topics.filter(t => t.status === 'pausado');
 
   // ==========================================
-  // HEADER - Corporate purple bar with logo
+  // HEADER
   // ==========================================
   const headerH = authorName ? 44 : 38;
   doc.setFillColor(...PURPLE_900);
   doc.rect(0, 0, pageW, headerH, 'F');
-  
-  // Accent line
   doc.setFillColor(...PURPLE_500);
   doc.rect(0, headerH, pageW, 1.5, 'F');
 
-  // Logo in header (right side)
   try {
     const logoSize = 14;
     doc.addImage(logoIcon, 'PNG', pageW - margin - logoSize, (headerH - logoSize) / 2, logoSize, logoSize);
-  } catch (e) {
-    // Logo loading failed, continue without it
-  }
+  } catch (e) {}
 
   y = 16;
   doc.setTextColor(...WHITE);
@@ -211,11 +218,11 @@ export function generateReportPdf(opts: PdfOptions) {
   doc.setFont('helvetica', 'bold');
   doc.text(reportTitle, margin, y);
   y += 7;
-  
+
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
-  doc.text(`Período: ${periodStr}`, margin, y);
-  
+  doc.text(`Periodo: ${periodStr}`, margin, y);
+
   if (authorName) {
     y += 5;
     const authorText = authorRole ? `${authorName} — ${authorRole}` : authorName;
@@ -231,7 +238,6 @@ export function generateReportPdf(opts: PdfOptions) {
   }
 
   y = headerH + 8;
-  doc.setTextColor(...PURPLE_900);
 
   // ==========================================
   // KPIs
@@ -240,21 +246,21 @@ export function generateReportPdf(opts: PdfOptions) {
   const doneSubs = topics.reduce((a, t) => a + t.subtasks.filter(s => s.completed).length, 0);
   const pct = totalSubs > 0 ? Math.round((doneSubs / totalSubs) * 100) : 0;
   const delayed = activeTopics.filter(t => getTrafficLight(t.due_date).label === 'Atrasado').length;
-  const warning = activeTopics.filter(t => getTrafficLight(t.due_date).label === 'Próximo').length;
+  const warning = activeTopics.filter(t => getTrafficLight(t.due_date).label === 'Proximo').length;
   const onTrack = activeTopics.length - delayed - warning;
 
   doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...SLATE_800);
   doc.text('Resumen Ejecutivo', margin, y);
   y += 3;
 
-  // KPI boxes
   const kpiW = (contentW - 12) / 5;
   const kpiH = 22;
   const kpis = [
     { value: String(topics.length), label: 'Temas Totales', color: PURPLE_700 },
-    { value: String(onTrack), label: 'Al Día', color: GREEN },
-    { value: String(warning), label: 'Próximos', color: AMBER },
+    { value: String(onTrack), label: 'Al Dia', color: GREEN },
+    { value: String(warning), label: 'Proximos', color: AMBER },
     { value: String(delayed), label: 'Atrasados', color: RED },
     { value: `${pct}%`, label: 'Avance Subtareas', color: PURPLE_500 },
   ];
@@ -265,173 +271,127 @@ export function generateReportPdf(opts: PdfOptions) {
 
   y += kpiH + 6;
 
-  // Narrative summary
+  // Narrative
   doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(...SLATE_700);
-  let narrative = `Durante el período evaluado se gestionaron ${topics.length} temas en total.`;
+  let narrative = `Durante el periodo evaluado se gestionaron ${topics.length} temas en total.`;
   if (completedTopics.length > 0) narrative += ` Se completaron ${completedTopics.length} exitosamente.`;
-  if (delayed > 0) narrative += ` ${delayed} tema(s) presentan atrasos que requieren atención.`;
+  if (delayed > 0) narrative += ` ${delayed} tema(s) presentan atrasos que requieren atencion.`;
   narrative += ` El avance global en subtareas es de ${pct}% (${doneSubs}/${totalSubs}).`;
-  
+
   const narrativeLines = doc.splitTextToSize(narrative, contentW);
   doc.text(narrativeLines, margin, y);
   y += narrativeLines.length * 3.5 + 6;
 
   // ==========================================
-  // Helper: draw department subtitle
+  // SECTION HELPER: render grouped table
   // ==========================================
-  function drawDeptSubtitle(deptName: string) {
-    y = checkPageBreak(doc, y, 12, 20);
-    doc.setFillColor(...PURPLE_100);
-    doc.roundedRect(margin, y - 3, contentW, 7, 1, 1, 'F');
-    doc.setFontSize(8);
+  function renderSection(
+    sectionTitle: string,
+    sectionTopics: TopicWithSubtasks[],
+    mode: 'active' | 'completed' | 'paused',
+    headerColor: [number, number, number]
+  ) {
+    y = checkPageBreak(doc, y, 20, 20);
+    doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
-    doc.setTextColor(...PURPLE_700);
-    doc.text(deptName, margin + 3, y + 1);
+    doc.setTextColor(...SLATE_800);
+    doc.text(sectionTitle, margin, y);
+    y += 2;
+    doc.setDrawColor(...SLATE_800);
+    doc.setLineWidth(0.5);
+    doc.line(margin, y, margin + contentW, y);
     y += 6;
-  }
 
-  // ==========================================
-  // LOGROS DEL PERÍODO (Completados)
-  // ==========================================
-  if (includeCompleted && completedTopics.length > 0) {
-    y = checkPageBreak(doc, y, 20, 20);
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(...PURPLE_900);
-    doc.text('Logros del Período', margin, y);
-    y += 4;
+    const groups = groupByDepartment(sectionTopics, departments);
 
-    const completedGroups = groupByDepartment(completedTopics, departments);
-    
+    const heads: Record<string, string[]> = {
+      active: ['Tema', 'Responsable', 'Prioridad', 'Estado', 'Fecha Cierre', 'Progreso', 'Ultimo Comentario'],
+      completed: ['Tema Completado', 'Responsable', 'Fecha Cierre', 'Ultimo Comentario'],
+      paused: ['Tema', 'Responsable', 'Motivo de Pausa', 'Fecha Pausa'],
+    };
 
-    completedGroups.forEach(group => {
-      drawDeptSubtitle(group.deptName);
+    const colStyles: Record<string, any> = {
+      active: { 0: { cellWidth: 32 }, 1: { cellWidth: 22 }, 2: { cellWidth: 14 }, 3: { cellWidth: 16 }, 4: { cellWidth: 22 }, 5: { cellWidth: 13 }, 6: { cellWidth: 'auto' } },
+      completed: { 0: { cellWidth: 40 }, 1: { cellWidth: 25 }, 2: { cellWidth: 25 }, 3: { cellWidth: 'auto' } },
+      paused: { 0: { cellWidth: 40 }, 1: { cellWidth: 25 }, 2: { cellWidth: 'auto' }, 3: { cellWidth: 25 } },
+    };
+
+    groups.forEach((group, gi) => {
+      y = drawChapterHeading(doc, `${gi + 1}. ${group.deptName}`, y, margin, contentW);
+
+      const { body, subtaskRowIndices } = buildIntegratedRows(group.topics, mode);
+
       autoTable(doc, {
         startY: y,
         margin: { left: margin, right: margin },
-        head: [['Tema Completado', 'Responsable', 'Fecha Cierre', 'Último Comentario']],
-        body: group.topics.map(t => {
-          const closeDateStr = t.updated_at ? format(new Date(t.updated_at), 'dd MMM yyyy', { locale: es }) : '—';
-          const lastEntry = t.progress_entries.length > 0
-            ? t.progress_entries[t.progress_entries.length - 1].content
-            : '—';
-          return [t.title, t.assignee || 'Yo', closeDateStr, lastEntry];
-        }),
-        styles: { fontSize: 7.5, cellPadding: 2.5, overflow: 'linebreak' },
-        headStyles: { fillColor: GREEN as any, textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
-        alternateRowStyles: { fillColor: SLATE_50 as any },
-        columnStyles: { 0: { cellWidth: 40 }, 1: { cellWidth: 28 }, 2: { cellWidth: 25 }, 3: { cellWidth: 'auto' } },
-      });
-      y = (doc as any).lastAutoTable.finalY + 2;
-      // Subtask details for completed topics
-      const topicsWithSubs = group.topics.filter(t => t.subtasks.length > 0);
-      if (topicsWithSubs.length > 0) {
-        y = drawSubtaskDetails(doc, topicsWithSubs, y, margin, contentW);
-      }
-    });
-    y += 4;
-  }
-
-  // ==========================================
-  // TEMAS ACTIVOS (activo + seguimiento)
-  // ==========================================
-  if (activeTopics.length > 0) {
-    y = checkPageBreak(doc, y, 20, 20);
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(...PURPLE_900);
-    doc.text('Temas Activos', margin, y);
-    y += 4;
-
-    const activeGroups = groupByDepartment(activeTopics, departments);
-    
-
-    activeGroups.forEach(group => {
-      drawDeptSubtitle(group.deptName);
-      autoTable(doc, {
-        startY: y,
-        margin: { left: margin, right: margin },
-        head: [['Tema', 'Responsable', 'Prioridad', 'Estado', 'Fecha Cierre', 'Progreso', 'Último Comentario']],
-        body: group.topics.map(t => {
-          const tl = getTrafficLight(t.due_date);
-          const done = t.subtasks.filter(s => s.completed).length;
-          const total = t.subtasks.length;
-          const dueStr = t.due_date ? formatStoredDate(t.due_date, 'dd MMM yyyy', { locale: es }) : '—';
-          const lastEntry = t.progress_entries.length > 0
-            ? t.progress_entries[t.progress_entries.length - 1].content
-            : '—';
-          return [
-            t.title, t.assignee || 'Yo',
-            t.priority.charAt(0).toUpperCase() + t.priority.slice(1),
-            tl.label, dueStr,
-            total > 0 ? `${done}/${total}` : '—',
-            lastEntry,
-          ];
-        }),
-        styles: { fontSize: 7.5, cellPadding: 2.5, overflow: 'linebreak' },
-        headStyles: { fillColor: PURPLE_900 as any, textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
-        alternateRowStyles: { fillColor: SLATE_50 as any },
-        columnStyles: { 0: { cellWidth: 35 }, 1: { cellWidth: 25 }, 2: { cellWidth: 16 }, 3: { cellWidth: 18 }, 4: { cellWidth: 22 }, 5: { cellWidth: 14 }, 6: { cellWidth: 'auto' } },
+        head: [heads[mode]],
+        body,
+        styles: { fontSize: 7, cellPadding: 2, overflow: 'linebreak', lineColor: SLATE_200 as any, lineWidth: 0.2 },
+        headStyles: { fillColor: headerColor as any, textColor: WHITE as any, fontStyle: 'bold', fontSize: 7 },
+        columnStyles: colStyles[mode],
         didParseCell: (data) => {
-          if (data.section === 'body' && data.column.index === 3) {
-            const val = data.cell.raw as string;
-            if (val === 'Atrasado') data.cell.styles.textColor = RED as any;
-            else if (val === 'Próximo') data.cell.styles.textColor = AMBER as any;
-            else data.cell.styles.textColor = GREEN as any;
-            data.cell.styles.fontStyle = 'bold';
+          if (data.section !== 'body') return;
+          const isSubtask = subtaskRowIndices.has(data.row.index);
+
+          if (isSubtask) {
+            data.cell.styles.fillColor = SLATE_100 as any;
+            data.cell.styles.fontSize = 6.5;
+            data.cell.styles.fontStyle = 'italic';
+            data.cell.styles.textColor = SLATE_500 as any;
+
+            // Status column coloring for subtasks
+            if (mode === 'active' && data.column.index === 3) {
+              const val = data.cell.raw as string;
+              if (val === 'Hecho') {
+                data.cell.styles.textColor = GREEN as any;
+                data.cell.styles.fontStyle = 'bold';
+              } else if (val === 'Pendiente') {
+                data.cell.styles.textColor = AMBER as any;
+              }
+            }
+          } else {
+            // Topic row: alternate white
+            data.cell.styles.fillColor = (data.row.index % 2 === 0 ? WHITE : SLATE_50) as any;
+            data.cell.styles.fontStyle = 'normal';
+            data.cell.styles.textColor = SLATE_700 as any;
+
+            // Bold topic name
+            if (data.column.index === 0) {
+              data.cell.styles.fontStyle = 'bold';
+              data.cell.styles.textColor = SLATE_800 as any;
+            }
+
+            // Traffic light for active topics
+            if (mode === 'active' && data.column.index === 3) {
+              const val = data.cell.raw as string;
+              if (val === 'Atrasado') data.cell.styles.textColor = RED as any;
+              else if (val === 'Proximo') data.cell.styles.textColor = AMBER as any;
+              else data.cell.styles.textColor = GREEN as any;
+              data.cell.styles.fontStyle = 'bold';
+            }
           }
         },
       });
-      y = (doc as any).lastAutoTable.finalY + 2;
-      // Subtask details for active topics
-      const topicsWithSubs = group.topics.filter(t => t.subtasks.length > 0);
-      if (topicsWithSubs.length > 0) {
-        y = drawSubtaskDetails(doc, topicsWithSubs, y, margin, contentW);
-      }
+      y = (doc as any).lastAutoTable.finalY + 6;
     });
-    y += 4;
+    y += 2;
   }
 
   // ==========================================
-  // TEMAS EN PAUSA
+  // SECTIONS
   // ==========================================
+  if (includeCompleted && completedTopics.length > 0) {
+    renderSection('Logros del Periodo', completedTopics, 'completed', GREEN);
+  }
+
+  if (activeTopics.length > 0) {
+    renderSection('Temas Activos', activeTopics, 'active', SLATE_700);
+  }
+
   if (pausedTopics.length > 0) {
-    y = checkPageBreak(doc, y, 20, 20);
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(...PURPLE_900);
-    doc.text('Temas en Pausa', margin, y);
-    y += 4;
-
-    const pausedGroups = groupByDepartment(pausedTopics, departments);
-
-    pausedGroups.forEach(group => {
-      drawDeptSubtitle(group.deptName);
-      autoTable(doc, {
-        startY: y,
-        margin: { left: margin, right: margin },
-        head: [['Tema', 'Responsable', 'Motivo de Pausa', 'Fecha Pausa']],
-        body: group.topics.map(t => {
-          const pauseReason = t.pause_reason || '—';
-          const pausedAt = t.paused_at
-            ? format(new Date(t.paused_at), 'dd MMM yyyy', { locale: es })
-            : '—';
-          return [t.title, t.assignee || 'Yo', pauseReason, pausedAt];
-        }),
-        styles: { fontSize: 7.5, cellPadding: 2.5, overflow: 'linebreak' },
-        headStyles: { fillColor: SLATE_500 as any, textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
-        alternateRowStyles: { fillColor: SLATE_50 as any },
-        columnStyles: { 0: { cellWidth: 40 }, 2: { cellWidth: 55 }, 3: { cellWidth: 25 } },
-      });
-      y = (doc as any).lastAutoTable.finalY + 2;
-      const topicsWithSubs = group.topics.filter(t => t.subtasks.length > 0);
-      if (topicsWithSubs.length > 0) {
-        y = drawSubtaskDetails(doc, topicsWithSubs, y, margin, contentW);
-      }
-    });
-    y += 4;
+    renderSection('Temas en Pausa', pausedTopics, 'paused', SLATE_500);
   }
 
   // ==========================================
@@ -447,11 +407,15 @@ export function generateReportPdf(opts: PdfOptions) {
 
     if (assigneeMap.size > 0) {
       y = checkPageBreak(doc, y, 20, 20);
-      doc.setFontSize(11);
+      doc.setFontSize(12);
       doc.setFont('helvetica', 'bold');
-      doc.setTextColor(...PURPLE_900);
+      doc.setTextColor(...SLATE_800);
       doc.text('Resumen por Responsable', margin, y);
       y += 2;
+      doc.setDrawColor(...SLATE_800);
+      doc.setLineWidth(0.5);
+      doc.line(margin, y, margin + contentW, y);
+      y += 6;
 
       autoTable(doc, {
         startY: y,
@@ -463,8 +427,8 @@ export function generateReportPdf(opts: PdfOptions) {
           const overdue = tList.filter(t => getTrafficLight(t.due_date).label === 'Atrasado').length;
           return [name, String(tList.length), String(active), String(completed), String(overdue)];
         }),
-        styles: { fontSize: 7.5, cellPadding: 2.5 },
-        headStyles: { fillColor: PURPLE_700 as any, textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
+        styles: { fontSize: 7.5, cellPadding: 2.5, lineColor: SLATE_200 as any, lineWidth: 0.2 },
+        headStyles: { fillColor: SLATE_700 as any, textColor: WHITE as any, fontStyle: 'bold', fontSize: 7.5 },
         alternateRowStyles: { fillColor: SLATE_50 as any },
         didParseCell: (data) => {
           if (data.section === 'body' && data.column.index === 4) {
@@ -487,16 +451,14 @@ export function generateReportPdf(opts: PdfOptions) {
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
     const pageH = doc.internal.pageSize.getHeight();
-    
-    // Bottom accent line (purple)
-    doc.setFillColor(...PURPLE_500);
-    doc.rect(0, pageH - 12, pageW, 0.5, 'F');
-    
+    doc.setDrawColor(...SLATE_300);
+    doc.setLineWidth(0.3);
+    doc.line(margin, pageH - 12, pageW - margin, pageH - 12);
     doc.setFontSize(6.5);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(...SLATE_500);
-    doc.text(`Generado automáticamente — ${emittedStr}`, margin, pageH - 6);
-    doc.text(`Página ${i} de ${totalPages}`, pageW - margin, pageH - 6, { align: 'right' });
+    doc.text(`Generado automaticamente — ${emittedStr}`, margin, pageH - 7);
+    doc.text(`Pagina ${i} de ${totalPages}`, pageW - margin, pageH - 7, { align: 'right' });
   }
 
   return doc;
@@ -514,20 +476,19 @@ export function downloadPdfFromContent(content: string, title: string, periodSta
   const margin = 14;
   let y = 20;
 
-  // Header
   doc.setFillColor(...PURPLE_900);
   doc.rect(0, 0, pageW, 32, 'F');
   doc.setFillColor(...PURPLE_500);
   doc.rect(0, 32, pageW, 1.5, 'F');
   try { doc.addImage(logoIcon, 'PNG', pageW - margin - 10, 6, 10, 10); } catch {}
-  
+
   doc.setTextColor(...WHITE);
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
   doc.text(title, margin, y);
   y = 40;
 
-  doc.setTextColor(...PURPLE_900);
+  doc.setTextColor(...SLATE_800);
   doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
 
