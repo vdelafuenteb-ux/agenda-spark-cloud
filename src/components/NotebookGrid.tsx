@@ -161,7 +161,7 @@ export function NotebookGrid({ notebooks, sections, notes, onSelect, onSelectSec
               >
                 {/* Dropdown */}
                 <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                  {sCount > 0 && (
+                  {true && (
                     <Button
                       variant="ghost"
                       size="icon"
