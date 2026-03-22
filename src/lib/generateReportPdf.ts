@@ -4,9 +4,15 @@ import { format, isBefore, addDays, parseISO, isAfter } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { parseStoredDate, formatStoredDate } from '@/lib/date';
 import type { TopicWithSubtasks } from '@/hooks/useTopics';
+import logoIcon from '@/assets/logo_tt_icon.png';
 
-// --- Colors ---
-const SLATE_900: [number, number, number] = [15, 23, 42];
+// --- Corporate Colors (T&Transit purple palette) ---
+const PURPLE_900: [number, number, number] = [59, 21, 132];   // Deep purple for headers
+const PURPLE_700: [number, number, number] = [109, 40, 217];  // Primary purple
+const PURPLE_500: [number, number, number] = [139, 92, 246];  // Medium purple
+const PURPLE_100: [number, number, number] = [237, 233, 254]; // Light purple bg
+const PURPLE_50: [number, number, number] = [245, 243, 255];  // Very light purple
+
 const SLATE_700: [number, number, number] = [51, 65, 85];
 const SLATE_500: [number, number, number] = [100, 116, 139];
 const SLATE_200: [number, number, number] = [226, 232, 240];
@@ -15,7 +21,6 @@ const WHITE: [number, number, number] = [255, 255, 255];
 const RED: [number, number, number] = [220, 38, 38];
 const AMBER: [number, number, number] = [217, 119, 6];
 const GREEN: [number, number, number] = [22, 163, 74];
-const TEAL: [number, number, number] = [13, 148, 136];
 
 function getTrafficLight(dueDateStr: string | null | undefined): { label: string; color: [number, number, number] } {
   if (!dueDateStr) return { label: 'Al día', color: GREEN };
