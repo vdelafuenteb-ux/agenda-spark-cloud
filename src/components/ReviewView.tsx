@@ -171,7 +171,7 @@ export function ReviewView({ topics, onToggleSubtask }: ReviewViewProps) {
   };
 
   const typeBadge: Record<string, { label: string; className: string }> = {
-    subtask: { label: 'Hito', className: 'bg-primary/10 text-primary border-primary/20' },
+    subtask: { label: 'Subtarea', className: 'bg-primary/10 text-primary border-primary/20' },
     topic: { label: 'Tema', className: 'bg-secondary text-secondary-foreground border-border' },
     reminder: { label: 'Recordatorio', className: 'bg-accent text-accent-foreground border-border' },
     checklist: { label: 'Checklist', className: 'bg-muted text-muted-foreground border-border' },
