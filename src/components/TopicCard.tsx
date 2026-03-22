@@ -356,6 +356,18 @@ export function TopicCard({
                   </PopoverContent>
                 </Popover>
 
+                {!isCompleted && (
+                  <label className="inline-flex items-center gap-1.5 cursor-pointer h-8 px-2 rounded-md border border-input text-xs hover:bg-accent transition-colors">
+                    <Switch
+                      checked={(topic as any).is_ongoing || false}
+                      onCheckedChange={(checked) => onUpdate(topic.id, { is_ongoing: checked, ...(checked ? { due_date: null } : {}) })}
+                      className="scale-75"
+                    />
+                    <InfinityIcon className="h-3 w-3" />
+                    <span className="hidden sm:inline">Continuo</span>
+                  </label>
+                )}
+
                 <Button
                   variant="ghost"
                   size="sm"
