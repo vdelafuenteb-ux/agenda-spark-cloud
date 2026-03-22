@@ -47,12 +47,16 @@ export function DashboardView({ topics }: DashboardViewProps) {
       : 0;
 
     const activeAndTracking = [...byStatus.activo, ...byStatus.seguimiento];
-    const overdue = activeAndTracking.filter(t => isStoredDateOverdue(t.due_date));
-    const dueSoon = activeAndTracking.filter(t => {
+    const nonOngoing = activeAndTracking.filter(t => !(t as any).is_ongoing);
+    const overdue = nonOngoing.filter(t => isStoredDateOverdue(t.due_date));
+    const dueSoon = nonOngoing.filter(t => {
       if (!t.due_date || isStoredDateOverdue(t.due_date)) return false;
       const due = new Date(t.due_date + 'T23:59:59');
       return isBefore(due, threeDaysFromNow);
     });
+
+    const ongoing = activeAndTracking.filter(t => (t as any).is_ongoing);
+    const missingDates = nonOngoing.filter(t => !t.due_date);
 
     // Status chart data
     const statusData = [
