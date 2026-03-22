@@ -307,7 +307,7 @@ export function generateReportPdf(opts: PdfOptions) {
     doc.line(margin, y, margin + contentW, y);
     y += 6;
 
-    const groups = groupByDepartment(sectionTopics, departments);
+    const groups = groupByDepartment(sectionTopics, departments, ownerName);
 
     const heads: Record<string, string[]> = {
       active: ['Tema', 'Responsable', 'Prioridad', 'Estado', 'Fecha Cierre', 'Progreso', 'Ultimo Comentario'],
