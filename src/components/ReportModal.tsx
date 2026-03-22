@@ -72,7 +72,7 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
   const [authorRole, setAuthorRole] = useState('');
 
   // Filtros de estado
-  const [includeStatuses, setIncludeStatuses] = useState<string[]>(['activo', 'seguimiento', 'completado']);
+  const [includeStatuses, setIncludeStatuses] = useState<string[]>(['activo', 'seguimiento', 'completado', 'pausado']);
   
   // Filtro de responsable
   const [filterAssignee, setFilterAssignee] = useState<string>('todos');
