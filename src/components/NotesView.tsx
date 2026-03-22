@@ -198,6 +198,10 @@ export function NotesView() {
           sections={sections}
           notes={notes}
           onSelect={handleSelectNotebook}
+          onSelectSection={(nbId, secId) => {
+            setSelectedNotebookId(nbId);
+            handleSelectSection(secId);
+          }}
           onCreateNotebook={(data) => createNotebook.mutate(data, { onSuccess: () => toast.success('Libreta creada') })}
           onDeleteNotebook={(id) => deleteNotebook.mutate(id, { onSuccess: () => toast.success('Libreta eliminada') })}
           onUpdateNotebook={(id, data) => updateNotebook.mutate({ id, ...data })}

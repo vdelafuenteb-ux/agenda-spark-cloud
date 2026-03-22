@@ -15,6 +15,7 @@ interface NotebookGridProps {
   sections: NoteSection[];
   notes: Note[];
   onSelect: (notebookId: string) => void;
+  onSelectSection?: (notebookId: string, sectionId: string) => void;
   onCreateNotebook: (data: { name: string; color: string }) => void;
   onDeleteNotebook: (id: string) => void;
   onUpdateNotebook: (id: string, data: { name?: string; color?: string }) => void;
@@ -22,7 +23,7 @@ interface NotebookGridProps {
   onMoveNote?: (noteId: string, notebookId: string, sectionId: string | null) => void;
 }
 
-export function NotebookGrid({ notebooks, sections, notes, onSelect, onCreateNotebook, onDeleteNotebook, onUpdateNotebook, onShowAllNotes, onMoveNote }: NotebookGridProps) {
+export function NotebookGrid({ notebooks, sections, notes, onSelect, onSelectSection, onCreateNotebook, onDeleteNotebook, onUpdateNotebook, onShowAllNotes, onMoveNote }: NotebookGridProps) {
   const [createOpen, setCreateOpen] = useState(false);
   const [newName, setNewName] = useState('');
   const [newColor, setNewColor] = useState(COLORS[0]);
@@ -224,10 +225,11 @@ export function NotebookGrid({ notebooks, sections, notes, onSelect, onCreateNot
                     return (
                       <div
                         key={sec.id}
+                        onClick={() => onSelectSection?.(nb.id, sec.id)}
                         onDragOver={(e) => handleDragOver(e, `sec-${sec.id}`)}
                         onDragLeave={handleDragLeave}
                         onDrop={(e) => handleDropOnSection(e, nb.id, sec.id)}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-md text-xs transition-all ${
+                        className={`flex items-center gap-2 px-3 py-2 rounded-md text-xs cursor-pointer transition-all ${
                           secDragOver ? 'bg-primary/10 border border-primary/30' : 'hover:bg-muted/50'
                         }`}
                       >
