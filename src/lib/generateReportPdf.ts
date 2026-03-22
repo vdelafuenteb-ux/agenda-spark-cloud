@@ -36,6 +36,37 @@ function getTrafficLight(dueDateStr: string | null | undefined): { label: string
 }
 
 
+interface DeptGroup {
+  deptName: string;
+  topics: TopicWithSubtasks[];
+}
+
+function groupByDepartment(
+  topics: TopicWithSubtasks[],
+  departments?: { id: string; name: string }[]
+): DeptGroup[] {
+  const deptMap = new Map<string, string>();
+  (departments || []).forEach(d => deptMap.set(d.id, d.name));
+
+  const groups = new Map<string, TopicWithSubtasks[]>();
+  topics.forEach(t => {
+    const deptName = t.department_id ? (deptMap.get(t.department_id) || 'Sin Departamento') : 'Sin Departamento';
+    if (!groups.has(deptName)) groups.set(deptName, []);
+    groups.get(deptName)!.push(t);
+  });
+
+  // Sort each group by assignee
+  groups.forEach(list => list.sort((a, b) => (a.assignee || 'Yo').localeCompare(b.assignee || 'Yo')));
+
+  // Sort groups alphabetically, "Sin Departamento" last
+  const sorted = Array.from(groups.entries()).sort(([a], [b]) => {
+    if (a === 'Sin Departamento') return 1;
+    if (b === 'Sin Departamento') return -1;
+    return a.localeCompare(b);
+  });
+
+  return sorted.map(([deptName, topics]) => ({ deptName, topics }));
+}
 
 export interface PdfOptions {
   topics: TopicWithSubtasks[];
@@ -47,6 +78,7 @@ export interface PdfOptions {
   includeCompleted?: boolean;
   includeBitacora?: boolean;
   includeResponsables?: boolean;
+  departments?: { id: string; name: string }[];
 }
 
 function drawKpiBox(doc: jsPDF, x: number, y: number, w: number, h: number, value: string, label: string, color: [number, number, number]) {
@@ -79,7 +111,7 @@ function checkPageBreak(doc: jsPDF, y: number, needed: number, margin: number): 
 }
 
 export function generateReportPdf(opts: PdfOptions) {
-  const { topics, periodStart, periodEnd, title, authorName, authorRole, includeCompleted = true, includeResponsables = true } = opts;
+  const { topics, periodStart, periodEnd, title, authorName, authorRole, includeCompleted = true, includeResponsables = true, departments } = opts;
   
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const pageW = doc.internal.pageSize.getWidth();
@@ -189,6 +221,21 @@ export function generateReportPdf(opts: PdfOptions) {
   y += narrativeLines.length * 3.5 + 6;
 
   // ==========================================
+  // Helper: draw department subtitle
+  // ==========================================
+  function drawDeptSubtitle(deptName: string, hasMultipleDepts: boolean) {
+    if (!hasMultipleDepts) return;
+    y = checkPageBreak(doc, y, 12, 20);
+    doc.setFillColor(...PURPLE_100);
+    doc.roundedRect(margin, y - 3, contentW, 7, 1, 1, 'F');
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...PURPLE_700);
+    doc.text(deptName, margin + 3, y + 1);
+    y += 6;
+  }
+
+  // ==========================================
   // LOGROS DEL PERÍODO (Completados)
   // ==========================================
   if (includeCompleted && completedTopics.length > 0) {
@@ -197,36 +244,33 @@ export function generateReportPdf(opts: PdfOptions) {
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...PURPLE_900);
     doc.text('Logros del Período', margin, y);
-    y += 2;
+    y += 4;
 
-    autoTable(doc, {
-      startY: y,
-      margin: { left: margin, right: margin },
-      head: [['Tema Completado', 'Responsable', 'Fecha Cierre', 'Último Comentario']],
-      body: completedTopics.map(t => {
-        const closeDateStr = formatStoredDate(t.updated_at, 'dd MMM yyyy', { locale: es });
-        const lastEntry = t.progress_entries.length > 0
-          ? t.progress_entries[t.progress_entries.length - 1].content
-          : '—';
-        const truncated = lastEntry.length > 80 ? lastEntry.substring(0, 77) + '...' : lastEntry;
-        return [
-          t.title,
-          t.assignee || 'Yo',
-          closeDateStr,
-          truncated,
-        ];
-      }),
-      styles: { fontSize: 7.5, cellPadding: 2.5, overflow: 'linebreak' },
-      headStyles: { fillColor: GREEN as any, textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
-      alternateRowStyles: { fillColor: SLATE_50 as any },
-      columnStyles: {
-        0: { cellWidth: 45 },
-        1: { cellWidth: 28 },
-        2: { cellWidth: 25 },
-        3: { cellWidth: 'auto' },
-      },
+    const completedGroups = groupByDepartment(completedTopics, departments);
+    const hasMultipleDepts = completedGroups.length > 1;
+
+    completedGroups.forEach(group => {
+      drawDeptSubtitle(group.deptName, hasMultipleDepts);
+      autoTable(doc, {
+        startY: y,
+        margin: { left: margin, right: margin },
+        head: [['Tema Completado', 'Responsable', 'Fecha Cierre', 'Último Comentario']],
+        body: group.topics.map(t => {
+          const closeDateStr = formatStoredDate(t.updated_at, 'dd MMM yyyy', { locale: es });
+          const lastEntry = t.progress_entries.length > 0
+            ? t.progress_entries[t.progress_entries.length - 1].content
+            : '—';
+          const truncated = lastEntry.length > 80 ? lastEntry.substring(0, 77) + '...' : lastEntry;
+          return [t.title, t.assignee || 'Yo', closeDateStr, truncated];
+        }),
+        styles: { fontSize: 7.5, cellPadding: 2.5, overflow: 'linebreak' },
+        headStyles: { fillColor: GREEN as any, textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
+        alternateRowStyles: { fillColor: SLATE_50 as any },
+        columnStyles: { 0: { cellWidth: 45 }, 1: { cellWidth: 28 }, 2: { cellWidth: 25 }, 3: { cellWidth: 'auto' } },
+      });
+      y = (doc as any).lastAutoTable.finalY + 4;
     });
-    y = (doc as any).lastAutoTable.finalY + 8;
+    y += 4;
   }
 
   // ==========================================
@@ -238,45 +282,46 @@ export function generateReportPdf(opts: PdfOptions) {
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...PURPLE_900);
     doc.text('Temas Activos', margin, y);
-    y += 2;
+    y += 4;
 
-    autoTable(doc, {
-      startY: y,
-      margin: { left: margin, right: margin },
-      head: [['Tema', 'Responsable', 'Prioridad', 'Estado', 'Fecha Cierre', 'Progreso']],
-      body: activeTopics.map(t => {
-        const tl = getTrafficLight(t.due_date);
-        const done = t.subtasks.filter(s => s.completed).length;
-        const total = t.subtasks.length;
-        const dueStr = t.due_date ? formatStoredDate(t.due_date, 'dd MMM yyyy', { locale: es }) : '—';
-        return [
-          t.title,
-          t.assignee || 'Yo',
-          t.priority.charAt(0).toUpperCase() + t.priority.slice(1),
-          tl.label,
-          dueStr,
-          total > 0 ? `${done}/${total}` : '—',
-        ];
-      }),
-      styles: { fontSize: 7.5, cellPadding: 2.5 },
-      headStyles: { fillColor: PURPLE_900 as any, textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
-      alternateRowStyles: { fillColor: SLATE_50 as any },
-      columnStyles: {
-        0: { cellWidth: 'auto' },
-        3: { cellWidth: 22 },
-        5: { cellWidth: 18 },
-      },
-      didParseCell: (data) => {
-        if (data.section === 'body' && data.column.index === 3) {
-          const val = data.cell.raw as string;
-          if (val === 'Atrasado') data.cell.styles.textColor = RED as any;
-          else if (val === 'Próximo') data.cell.styles.textColor = AMBER as any;
-          else data.cell.styles.textColor = GREEN as any;
-          data.cell.styles.fontStyle = 'bold';
-        }
-      },
+    const activeGroups = groupByDepartment(activeTopics, departments);
+    const hasMultipleDepts = activeGroups.length > 1;
+
+    activeGroups.forEach(group => {
+      drawDeptSubtitle(group.deptName, hasMultipleDepts);
+      autoTable(doc, {
+        startY: y,
+        margin: { left: margin, right: margin },
+        head: [['Tema', 'Responsable', 'Prioridad', 'Estado', 'Fecha Cierre', 'Progreso']],
+        body: group.topics.map(t => {
+          const tl = getTrafficLight(t.due_date);
+          const done = t.subtasks.filter(s => s.completed).length;
+          const total = t.subtasks.length;
+          const dueStr = t.due_date ? formatStoredDate(t.due_date, 'dd MMM yyyy', { locale: es }) : '—';
+          return [
+            t.title, t.assignee || 'Yo',
+            t.priority.charAt(0).toUpperCase() + t.priority.slice(1),
+            tl.label, dueStr,
+            total > 0 ? `${done}/${total}` : '—',
+          ];
+        }),
+        styles: { fontSize: 7.5, cellPadding: 2.5 },
+        headStyles: { fillColor: PURPLE_900 as any, textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
+        alternateRowStyles: { fillColor: SLATE_50 as any },
+        columnStyles: { 0: { cellWidth: 'auto' }, 3: { cellWidth: 22 }, 5: { cellWidth: 18 } },
+        didParseCell: (data) => {
+          if (data.section === 'body' && data.column.index === 3) {
+            const val = data.cell.raw as string;
+            if (val === 'Atrasado') data.cell.styles.textColor = RED as any;
+            else if (val === 'Próximo') data.cell.styles.textColor = AMBER as any;
+            else data.cell.styles.textColor = GREEN as any;
+            data.cell.styles.fontStyle = 'bold';
+          }
+        },
+      });
+      y = (doc as any).lastAutoTable.finalY + 4;
     });
-    y = (doc as any).lastAutoTable.finalY + 8;
+    y += 4;
   }
 
   // ==========================================
@@ -288,35 +333,33 @@ export function generateReportPdf(opts: PdfOptions) {
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...PURPLE_900);
     doc.text('Temas en Pausa', margin, y);
-    y += 2;
+    y += 4;
 
-    autoTable(doc, {
-      startY: y,
-      margin: { left: margin, right: margin },
-      head: [['Tema', 'Responsable', 'Motivo de Pausa', 'Fecha Pausa']],
-      body: pausedTopics.map(t => {
-        const pauseReason = (t as any).pause_reason || '—';
-        const pausedAt = (t as any).paused_at
-          ? formatStoredDate((t as any).paused_at.split('T')[0], 'dd MMM yyyy', { locale: es })
-          : '—';
-        const truncatedReason = pauseReason.length > 80 ? pauseReason.substring(0, 77) + '...' : pauseReason;
-        return [
-          t.title,
-          t.assignee || 'Yo',
-          truncatedReason,
-          pausedAt,
-        ];
-      }),
-      styles: { fontSize: 7.5, cellPadding: 2.5, overflow: 'linebreak' },
-      headStyles: { fillColor: SLATE_500 as any, textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
-      alternateRowStyles: { fillColor: SLATE_50 as any },
-      columnStyles: {
-        0: { cellWidth: 40 },
-        2: { cellWidth: 55 },
-        3: { cellWidth: 25 },
-      },
+    const pausedGroups = groupByDepartment(pausedTopics, departments);
+    const hasMultipleDepts = pausedGroups.length > 1;
+
+    pausedGroups.forEach(group => {
+      drawDeptSubtitle(group.deptName, hasMultipleDepts);
+      autoTable(doc, {
+        startY: y,
+        margin: { left: margin, right: margin },
+        head: [['Tema', 'Responsable', 'Motivo de Pausa', 'Fecha Pausa']],
+        body: group.topics.map(t => {
+          const pauseReason = (t as any).pause_reason || '—';
+          const pausedAt = (t as any).paused_at
+            ? formatStoredDate((t as any).paused_at.split('T')[0], 'dd MMM yyyy', { locale: es })
+            : '—';
+          const truncatedReason = pauseReason.length > 80 ? pauseReason.substring(0, 77) + '...' : pauseReason;
+          return [t.title, t.assignee || 'Yo', truncatedReason, pausedAt];
+        }),
+        styles: { fontSize: 7.5, cellPadding: 2.5, overflow: 'linebreak' },
+        headStyles: { fillColor: SLATE_500 as any, textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
+        alternateRowStyles: { fillColor: SLATE_50 as any },
+        columnStyles: { 0: { cellWidth: 40 }, 2: { cellWidth: 55 }, 3: { cellWidth: 25 } },
+      });
+      y = (doc as any).lastAutoTable.finalY + 4;
     });
-    y = (doc as any).lastAutoTable.finalY + 8;
+    y += 4;
   }
 
   // ==========================================
