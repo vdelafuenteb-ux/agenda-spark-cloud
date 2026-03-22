@@ -128,6 +128,17 @@ export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false,
             {hasEntries && <span className="text-primary font-medium">{entries.length}</span>}
           </button>
 
+          {/* Last activity indicator */}
+          {lastActivityDate && !subtask.completed && (
+            <span className={cn(
+              'text-[10px] whitespace-nowrap shrink-0',
+              isStale ? 'text-destructive font-medium' : 'text-muted-foreground'
+            )}>
+              últ: {formatStoredDate(lastEntry!.created_at.split('T')[0], 'dd MMM', { locale: es })}
+              {daysSinceActivity !== null && ` (${daysSinceActivity}d)`}
+            </span>
+          )}
+
           {/* Date */}
           <span
             className={cn(
