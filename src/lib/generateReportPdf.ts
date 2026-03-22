@@ -338,10 +338,9 @@ export function generateReportPdf(opts: PdfOptions) {
     y += 4;
 
     const pausedGroups = groupByDepartment(pausedTopics, departments);
-    const hasMultipleDepts = pausedGroups.length > 1;
 
     pausedGroups.forEach(group => {
-      drawDeptSubtitle(group.deptName, hasMultipleDepts);
+      drawDeptSubtitle(group.deptName);
       autoTable(doc, {
         startY: y,
         margin: { left: margin, right: margin },
@@ -351,8 +350,7 @@ export function generateReportPdf(opts: PdfOptions) {
           const pausedAt = t.paused_at
             ? format(new Date(t.paused_at), 'dd MMM yyyy', { locale: es })
             : '—';
-          const truncatedReason = pauseReason.length > 80 ? pauseReason.substring(0, 77) + '...' : pauseReason;
-          return [t.title, t.assignee || 'Yo', truncatedReason, pausedAt];
+          return [t.title, t.assignee || 'Yo', pauseReason, pausedAt];
         }),
         styles: { fontSize: 7.5, cellPadding: 2.5, overflow: 'linebreak' },
         headStyles: { fillColor: SLATE_500 as any, textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
