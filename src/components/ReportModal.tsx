@@ -67,8 +67,8 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
 
   // Config
   const [reportTitle, setReportTitle] = useState('Informe Ejecutivo');
-  const [authorName, setAuthorName] = useState('');
-  const [authorRole, setAuthorRole] = useState('');
+  const [authorName, setAuthorName] = useState('Matías Sapunar');
+  const [authorRole, setAuthorRole] = useState('Gerente de Administración y Finanzas');
   const ownerLabel = authorName || 'Yo';
 
   // Section toggles
