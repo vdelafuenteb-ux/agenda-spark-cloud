@@ -328,8 +328,9 @@ export function generateReportPdf(opts: PdfOptions) {
         y = checkPageBreak(doc, y, 5, 20);
         const check = s.completed ? '☑' : '☐';
         const isNew = isWithinPeriod(s.created_at, periodStart, periodEnd);
-        doc.setFont('helvetica', s.completed ? 'normal' : 'normal');
-        doc.setTextColor(s.completed ? ...SLATE_500 : ...SLATE_900);
+        const stColor = s.completed ? SLATE_500 : SLATE_900;
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(stColor[0], stColor[1], stColor[2]);
         doc.setFontSize(7.5);
         doc.text(`  ${check}  ${s.title}${isNew ? '  ★ NUEVO' : ''}`, margin + 5, y);
         y += 4;
