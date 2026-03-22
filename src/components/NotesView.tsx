@@ -201,6 +201,7 @@ export function NotesView() {
           onDeleteNotebook={(id) => deleteNotebook.mutate(id, { onSuccess: () => toast.success('Libreta eliminada') })}
           onUpdateNotebook={(id, data) => updateNotebook.mutate({ id, ...data })}
           onShowAllNotes={handleShowAllNotes}
+          onMoveNote={handleMoveNote}
         />
       </ScrollArea>
     );
