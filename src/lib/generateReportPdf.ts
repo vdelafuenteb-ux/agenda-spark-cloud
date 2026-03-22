@@ -201,28 +201,42 @@ export function generateReportPdf(opts: PdfOptions) {
     autoTable(doc, {
       startY: y,
       margin: { left: margin, right: margin },
-      head: [['Tema Completado', 'Responsable', 'Prioridad']],
-      body: completedTopics.map(t => [
-        t.title,
-        t.assignee || 'Yo',
-        t.priority.charAt(0).toUpperCase() + t.priority.slice(1),
-      ]),
-      styles: { fontSize: 7.5, cellPadding: 2.5 },
+      head: [['Tema Completado', 'Responsable', 'Fecha Cierre', 'Último Comentario']],
+      body: completedTopics.map(t => {
+        const closeDateStr = formatStoredDate(t.updated_at, 'dd MMM yyyy', { locale: es });
+        const lastEntry = t.progress_entries.length > 0
+          ? t.progress_entries[t.progress_entries.length - 1].content
+          : '—';
+        const truncated = lastEntry.length > 80 ? lastEntry.substring(0, 77) + '...' : lastEntry;
+        return [
+          t.title,
+          t.assignee || 'Yo',
+          closeDateStr,
+          truncated,
+        ];
+      }),
+      styles: { fontSize: 7.5, cellPadding: 2.5, overflow: 'linebreak' },
       headStyles: { fillColor: GREEN as any, textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
       alternateRowStyles: { fillColor: SLATE_50 as any },
+      columnStyles: {
+        0: { cellWidth: 45 },
+        1: { cellWidth: 28 },
+        2: { cellWidth: 25 },
+        3: { cellWidth: 'auto' },
+      },
     });
     y = (doc as any).lastAutoTable.finalY + 8;
   }
 
   // ==========================================
-  // SEMÁFORO GENERAL (Activos)
+  // TEMAS ACTIVOS (activo + seguimiento)
   // ==========================================
   if (activeTopics.length > 0) {
     y = checkPageBreak(doc, y, 20, 20);
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...SLATE_900);
-    doc.text('Semáforo General', margin, y);
+    doc.text('Temas Activos', margin, y);
     y += 2;
 
     autoTable(doc, {
@@ -265,125 +279,42 @@ export function generateReportPdf(opts: PdfOptions) {
   }
 
   // ==========================================
-  // DETALLE POR TEMA
+  // TEMAS EN PAUSA
   // ==========================================
-  doc.setFontSize(11);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...SLATE_900);
-  y = checkPageBreak(doc, y, 15, 20);
-  doc.text('Detalle por Tema', margin, y);
-  y += 7;
-
-  topics.forEach(t => {
-    y = checkPageBreak(doc, y, 30, 20);
-
-    const tl = getTrafficLight(t.due_date);
-    const done = t.subtasks.filter(s => s.completed).length;
-    const total = t.subtasks.length;
-    const responsable = t.assignee || 'Yo';
-    const statusLabel = STATUS_LABELS[t.status] || t.status;
-
-    // Topic header with color bar
-    doc.setFillColor(...tl.color);
-    doc.rect(margin, y - 4, 2.5, 6, 'F');
-    
-    doc.setFontSize(9.5);
+  if (pausedTopics.length > 0) {
+    y = checkPageBreak(doc, y, 20, 20);
+    doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...SLATE_900);
-    doc.text(t.title, margin + 5, y);
-    y += 5;
+    doc.text('Temas en Pausa', margin, y);
+    y += 2;
 
-    doc.setFontSize(7.5);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(...SLATE_500);
-
-    const meta = [
-      `Estado: ${statusLabel}`,
-      `Responsable: ${responsable}`,
-      `Prioridad: ${t.priority.charAt(0).toUpperCase() + t.priority.slice(1)}`,
-      t.due_date ? `Cierre: ${formatStoredDate(t.due_date, 'dd MMM yyyy', { locale: es })}` : null,
-      total > 0 ? `Progreso: ${done}/${total} (${Math.round((done / total) * 100)}%)` : null,
-    ].filter(Boolean).join('  •  ');
-    doc.text(meta, margin + 5, y);
-    y += 5;
-
-    // Progress bar
-    if (total > 0) {
-      const barW = 50;
-      const barH = 2.5;
-      const progress = total > 0 ? done / total : 0;
-      doc.setFillColor(...SLATE_200);
-      doc.roundedRect(margin + 5, y, barW, barH, 1, 1, 'F');
-      if (progress > 0) {
-        doc.setFillColor(...tl.color);
-        doc.roundedRect(margin + 5, y, barW * progress, barH, 1, 1, 'F');
-      }
-      y += 5;
-    }
-
-    // Subtasks
-    if (t.subtasks.length > 0) {
-      doc.setTextColor(...SLATE_900);
-      t.subtasks.forEach(s => {
-        y = checkPageBreak(doc, y, 5, 20);
-        const check = s.completed ? '☑' : '☐';
-        const isNew = isWithinPeriod(s.created_at, periodStart, periodEnd);
-        const stColor = s.completed ? SLATE_500 : SLATE_900;
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(stColor[0], stColor[1], stColor[2]);
-        doc.setFontSize(7.5);
-        doc.text(`  ${check}  ${s.title}${isNew ? '  ★ NUEVO' : ''}`, margin + 5, y);
-        y += 4;
-      });
-      y += 2;
-    }
-
-    // Bitácora
-    if (includeBitacora) {
-      const recentEntries = t.progress_entries.filter(e => isWithinPeriod(e.created_at, periodStart, periodEnd));
-      const olderEntries = t.progress_entries.filter(e => !isWithinPeriod(e.created_at, periodStart, periodEnd));
-
-      if (recentEntries.length > 0) {
-        y = checkPageBreak(doc, y, 10, 20);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(...TEAL);
-        doc.setFontSize(7.5);
-        doc.text('Novedades (este período):', margin + 5, y);
-        y += 4;
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(...SLATE_700);
-        recentEntries.forEach(e => {
-          y = checkPageBreak(doc, y, 5, 20);
-          const lines = doc.splitTextToSize(`★ ${e.content}`, contentW - 10);
-          doc.text(lines, margin + 7, y);
-          y += lines.length * 3.5;
-        });
-        y += 2;
-      }
-
-      if (olderEntries.length > 0) {
-        y = checkPageBreak(doc, y, 10, 20);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(...SLATE_500);
-        doc.setFontSize(7.5);
-        doc.text('Bitácora anterior:', margin + 5, y);
-        y += 4;
-        doc.setFont('helvetica', 'normal');
-        olderEntries.forEach(e => {
-          y = checkPageBreak(doc, y, 5, 20);
-          const lines = doc.splitTextToSize(`• ${e.content}`, contentW - 10);
-          doc.text(lines, margin + 7, y);
-          y += lines.length * 3.5;
-        });
-        y += 2;
-      }
-    }
-
-    // Separator
-    doc.setDrawColor(...SLATE_200);
-    doc.line(margin, y, pageW - margin, y);
-    y += 7;
-  });
+    autoTable(doc, {
+      startY: y,
+      margin: { left: margin, right: margin },
+      head: [['Tema', 'Responsable', 'Prioridad', 'Último Comentario']],
+      body: pausedTopics.map(t => {
+        const lastEntry = t.progress_entries.length > 0
+          ? t.progress_entries[t.progress_entries.length - 1].content
+          : '—';
+        const truncated = lastEntry.length > 80 ? lastEntry.substring(0, 77) + '...' : lastEntry;
+        return [
+          t.title,
+          t.assignee || 'Yo',
+          t.priority.charAt(0).toUpperCase() + t.priority.slice(1),
+          truncated,
+        ];
+      }),
+      styles: { fontSize: 7.5, cellPadding: 2.5, overflow: 'linebreak' },
+      headStyles: { fillColor: SLATE_500 as any, textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
+      alternateRowStyles: { fillColor: SLATE_50 as any },
+      columnStyles: {
+        0: { cellWidth: 45 },
+        3: { cellWidth: 'auto' },
+      },
+    });
+    y = (doc as any).lastAutoTable.finalY + 8;
+  }
 
   // ==========================================
   // RESUMEN POR RESPONSABLE
