@@ -9,10 +9,21 @@ export interface Notebook {
   created_at: string;
 }
 
+export interface NoteSection {
+  id: string;
+  user_id: string;
+  notebook_id: string;
+  name: string;
+  color: string;
+  sort_order: number;
+  created_at: string;
+}
+
 export interface Note {
   id: string;
   user_id: string;
   notebook_id: string | null;
+  section_id: string | null;
   title: string;
   content: string;
   created_at: string;
@@ -40,6 +51,18 @@ export function useNotes() {
     },
   });
 
+  const sectionsQuery = useQuery({
+    queryKey: ['note_sections'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('note_sections')
+        .select('*')
+        .order('sort_order');
+      if (error) throw error;
+      return data as NoteSection[];
+    },
+  });
+
   const notesQuery = useQuery({
     queryKey: ['notes'],
     queryFn: async () => {
@@ -62,9 +85,11 @@ export function useNotes() {
   });
 
   const notebooks = notebooksQuery.data ?? [];
+  const sections = sectionsQuery.data ?? [];
   const notes = notesQuery.data ?? [];
   const noteTags = noteTagsQuery.data ?? [];
 
+  // Notebook CRUD
   const createNotebook = useMutation({
     mutationFn: async (data: { name: string; color: string }) => {
       const { data: user } = await supabase.auth.getUser();
@@ -97,11 +122,48 @@ export function useNotes() {
       qc.invalidateQueries({ queryKey: ['notebooks'] });
       qc.invalidateQueries({ queryKey: ['notes'] });
       qc.invalidateQueries({ queryKey: ['note_tags'] });
+      qc.invalidateQueries({ queryKey: ['note_sections'] });
     },
   });
 
+  // Section CRUD
+  const createSection = useMutation({
+    mutationFn: async (data: { notebook_id: string; name: string; color?: string }) => {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) throw new Error('No autenticado');
+      const { data: sec, error } = await supabase
+        .from('note_sections')
+        .insert({ user_id: user.user.id, notebook_id: data.notebook_id, name: data.name, color: data.color ?? '#6b7280' })
+        .select()
+        .single();
+      if (error) throw error;
+      return sec as NoteSection;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['note_sections'] }),
+  });
+
+  const updateSection = useMutation({
+    mutationFn: async ({ id, ...data }: { id: string; name?: string; color?: string; sort_order?: number }) => {
+      const { error } = await supabase.from('note_sections').update(data).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['note_sections'] }),
+  });
+
+  const deleteSection = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('note_sections').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['note_sections'] });
+      qc.invalidateQueries({ queryKey: ['notes'] });
+    },
+  });
+
+  // Note CRUD
   const createNote = useMutation({
-    mutationFn: async (data: { title?: string; notebook_id?: string | null }) => {
+    mutationFn: async (data: { title?: string; notebook_id?: string | null; section_id?: string | null }) => {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) throw new Error('No autenticado');
       const { data: note, error } = await supabase
@@ -110,6 +172,7 @@ export function useNotes() {
           user_id: user.user.id,
           title: data.title ?? '',
           notebook_id: data.notebook_id ?? null,
+          section_id: data.section_id ?? null,
           content: '',
         })
         .select()
@@ -121,11 +184,10 @@ export function useNotes() {
   });
 
   const updateNote = useMutation({
-    mutationFn: async ({ id, ...data }: { id: string; title?: string; content?: string; notebook_id?: string | null }) => {
+    mutationFn: async ({ id, ...data }: { id: string; title?: string; content?: string; notebook_id?: string | null; section_id?: string | null }) => {
       const { error } = await supabase.from('notes').update(data).eq('id', id);
       if (error) throw error;
     },
-    // Optimistic update for instant save feedback
     onMutate: async ({ id, ...data }) => {
       await qc.cancelQueries({ queryKey: ['notes'] });
       const previous = qc.getQueryData<Note[]>(['notes']);
@@ -160,6 +222,7 @@ export function useNotes() {
     },
   });
 
+  // Note tags
   const addNoteTag = useMutation({
     mutationFn: async ({ note_id, tag_id }: { note_id: string; tag_id: string }) => {
       const { error } = await supabase.from('note_tags').insert({ note_id, tag_id });
@@ -193,12 +256,16 @@ export function useNotes() {
 
   return {
     notebooks,
+    sections,
     notes,
     noteTags,
-    isLoading: notebooksQuery.isLoading || notesQuery.isLoading,
+    isLoading: notebooksQuery.isLoading || notesQuery.isLoading || sectionsQuery.isLoading,
     createNotebook,
     updateNotebook,
     deleteNotebook,
+    createSection,
+    updateSection,
+    deleteSection,
     createNote,
     updateNote,
     deleteNote,
