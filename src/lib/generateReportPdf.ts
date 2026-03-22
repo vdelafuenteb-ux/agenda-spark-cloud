@@ -112,12 +112,15 @@ function checkPageBreak(doc: jsPDF, y: number, needed: number, margin: number): 
 function buildIntegratedRows(
   topics: TopicWithSubtasks[],
   columnsMode: 'active' | 'completed' | 'paused',
-  ownerName: string = 'Yo'
+  ownerName: string = 'Yo',
+  groupIndex: number = 1
 ): { body: string[][]; subtaskRowIndices: Set<number> } {
   const body: string[][] = [];
   const subtaskRowIndices = new Set<number>();
 
-  for (const t of topics) {
+  for (let ti = 0; ti < topics.length; ti++) {
+    const t = topics[ti];
+    const topicNum = `${groupIndex}.${ti + 1}`;
     const lastEntry = t.progress_entries.length > 0
       ? t.progress_entries[t.progress_entries.length - 1].content
       : '';
@@ -128,7 +131,7 @@ function buildIntegratedRows(
       const total = t.subtasks.length;
       const dueStr = t.due_date ? formatStoredDate(t.due_date, 'dd MMM yyyy', { locale: es }) : '';
       body.push([
-        t.title,
+        `${topicNum}  ${t.title}`,
         t.assignee || ownerName,
         t.priority.charAt(0).toUpperCase() + t.priority.slice(1),
         tl.label,
@@ -138,29 +141,31 @@ function buildIntegratedRows(
       ]);
     } else if (columnsMode === 'completed') {
       const closeDateStr = t.updated_at ? format(new Date(t.updated_at), 'dd MMM yyyy', { locale: es }) : '';
-      body.push([t.title, t.assignee || ownerName, closeDateStr, lastEntry]);
+      body.push([`${topicNum}  ${t.title}`, t.assignee || ownerName, closeDateStr, '✓', lastEntry]);
     } else {
       const pauseReason = t.pause_reason || '';
       const pausedAt = t.paused_at ? format(new Date(t.paused_at), 'dd MMM yyyy', { locale: es }) : '';
-      body.push([t.title, t.assignee || ownerName, pauseReason, pausedAt]);
+      body.push([`${topicNum}  ${t.title}`, t.assignee || ownerName, pauseReason, pausedAt]);
     }
 
     // Add subtask rows indented
-    for (const s of t.subtasks) {
+    for (let si = 0; si < t.subtasks.length; si++) {
+      const s = t.subtasks[si];
+      const subNum = `${topicNum}.${si + 1}`;
       const idx = body.length;
       subtaskRowIndices.add(idx);
-      const status = s.completed ? 'Hecho' : 'Pendiente';
+      const status = s.completed ? '✓' : 'Pendiente';
       const dueStr = s.due_date ? formatStoredDate(s.due_date, 'dd MMM yyyy', { locale: es }) : '';
       const lastSubEntry = s.subtask_entries && s.subtask_entries.length > 0
         ? s.subtask_entries[s.subtask_entries.length - 1].content
         : '';
 
       if (columnsMode === 'active') {
-        body.push([`  - ${s.title}`, s.responsible || '', '', status, dueStr, '', lastSubEntry]);
+        body.push([`  ${subNum}  ${s.title}`, s.responsible || '', '', status, dueStr, '', lastSubEntry]);
       } else if (columnsMode === 'completed') {
-        body.push([`  - ${s.title}`, s.responsible || '', dueStr, lastSubEntry]);
+        body.push([`  ${subNum}  ${s.title}`, s.responsible || '', dueStr, '✓', lastSubEntry]);
       } else {
-        body.push([`  - ${s.title}`, s.responsible || '', '', dueStr]);
+        body.push([`  ${subNum}  ${s.title}`, s.responsible || '', '', dueStr]);
       }
     }
   }
