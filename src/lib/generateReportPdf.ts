@@ -1,12 +1,18 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { format, isBefore, addDays, parseISO, isAfter } from 'date-fns';
+import { format, isBefore, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { parseStoredDate, formatStoredDate } from '@/lib/date';
 import type { TopicWithSubtasks } from '@/hooks/useTopics';
+import logoIcon from '@/assets/logo_tt_icon.png';
 
-// --- Colors ---
-const SLATE_900: [number, number, number] = [15, 23, 42];
+// --- Corporate Colors (T&Transit purple palette) ---
+const PURPLE_900: [number, number, number] = [59, 21, 132];   // Deep purple for headers
+const PURPLE_700: [number, number, number] = [109, 40, 217];  // Primary purple
+const PURPLE_500: [number, number, number] = [139, 92, 246];  // Medium purple
+const PURPLE_100: [number, number, number] = [237, 233, 254]; // Light purple bg
+const PURPLE_50: [number, number, number] = [245, 243, 255];  // Very light purple
+
 const SLATE_700: [number, number, number] = [51, 65, 85];
 const SLATE_500: [number, number, number] = [100, 116, 139];
 const SLATE_200: [number, number, number] = [226, 232, 240];
@@ -15,7 +21,6 @@ const WHITE: [number, number, number] = [255, 255, 255];
 const RED: [number, number, number] = [220, 38, 38];
 const AMBER: [number, number, number] = [217, 119, 6];
 const GREEN: [number, number, number] = [22, 163, 74];
-const TEAL: [number, number, number] = [13, 148, 136];
 
 function getTrafficLight(dueDateStr: string | null | undefined): { label: string; color: [number, number, number] } {
   if (!dueDateStr) return { label: 'Al día', color: GREEN };
@@ -30,19 +35,7 @@ function getTrafficLight(dueDateStr: string | null | undefined): { label: string
   return { label: 'Al día', color: GREEN };
 }
 
-function isWithinPeriod(dateStr: string, start: Date, end: Date): boolean {
-  try {
-    const d = parseISO(dateStr);
-    return !isBefore(d, start) && !isAfter(d, end);
-  } catch { return false; }
-}
 
-const STATUS_LABELS: Record<string, string> = {
-  activo: 'Activo',
-  seguimiento: 'Seguimiento',
-  completado: 'Completado',
-  pausado: 'Pausado',
-};
 
 export interface PdfOptions {
   topics: TopicWithSubtasks[];
@@ -86,7 +79,7 @@ function checkPageBreak(doc: jsPDF, y: number, needed: number, margin: number): 
 }
 
 export function generateReportPdf(opts: PdfOptions) {
-  const { topics, periodStart, periodEnd, title, authorName, authorRole, includeCompleted = true, includeBitacora = true, includeResponsables = true } = opts;
+  const { topics, periodStart, periodEnd, title, authorName, authorRole, includeCompleted = true, includeResponsables = true } = opts;
   
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const pageW = doc.internal.pageSize.getWidth();
@@ -104,15 +97,23 @@ export function generateReportPdf(opts: PdfOptions) {
   const pausedTopics = topics.filter(t => t.status === 'pausado');
 
   // ==========================================
-  // HEADER - Dark bar
+  // HEADER - Corporate purple bar with logo
   // ==========================================
   const headerH = authorName ? 44 : 38;
-  doc.setFillColor(...SLATE_900);
+  doc.setFillColor(...PURPLE_900);
   doc.rect(0, 0, pageW, headerH, 'F');
   
   // Accent line
-  doc.setFillColor(...TEAL);
-  doc.rect(0, headerH, pageW, 1, 'F');
+  doc.setFillColor(...PURPLE_500);
+  doc.rect(0, headerH, pageW, 1.5, 'F');
+
+  // Logo in header (right side)
+  try {
+    const logoSize = 14;
+    doc.addImage(logoIcon, 'PNG', pageW - margin - logoSize, (headerH - logoSize) / 2, logoSize, logoSize);
+  } catch (e) {
+    // Logo loading failed, continue without it
+  }
 
   y = 16;
   doc.setTextColor(...WHITE);
@@ -140,7 +141,7 @@ export function generateReportPdf(opts: PdfOptions) {
   }
 
   y = headerH + 8;
-  doc.setTextColor(...SLATE_900);
+  doc.setTextColor(...PURPLE_900);
 
   // ==========================================
   // KPIs
@@ -161,11 +162,11 @@ export function generateReportPdf(opts: PdfOptions) {
   const kpiW = (contentW - 12) / 5;
   const kpiH = 22;
   const kpis = [
-    { value: String(topics.length), label: 'Temas Totales', color: SLATE_700 },
+    { value: String(topics.length), label: 'Temas Totales', color: PURPLE_700 },
     { value: String(onTrack), label: 'Al Día', color: GREEN },
     { value: String(warning), label: 'Próximos', color: AMBER },
     { value: String(delayed), label: 'Atrasados', color: RED },
-    { value: `${pct}%`, label: 'Avance Subtareas', color: TEAL },
+    { value: `${pct}%`, label: 'Avance Subtareas', color: PURPLE_500 },
   ];
 
   kpis.forEach((kpi, i) => {
@@ -194,7 +195,7 @@ export function generateReportPdf(opts: PdfOptions) {
     y = checkPageBreak(doc, y, 20, 20);
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
-    doc.setTextColor(...SLATE_900);
+    doc.setTextColor(...PURPLE_900);
     doc.text('Logros del Período', margin, y);
     y += 2;
 
@@ -235,7 +236,7 @@ export function generateReportPdf(opts: PdfOptions) {
     y = checkPageBreak(doc, y, 20, 20);
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
-    doc.setTextColor(...SLATE_900);
+    doc.setTextColor(...PURPLE_900);
     doc.text('Temas Activos', margin, y);
     y += 2;
 
@@ -258,7 +259,7 @@ export function generateReportPdf(opts: PdfOptions) {
         ];
       }),
       styles: { fontSize: 7.5, cellPadding: 2.5 },
-      headStyles: { fillColor: SLATE_900 as any, textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
+      headStyles: { fillColor: PURPLE_900 as any, textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
       alternateRowStyles: { fillColor: SLATE_50 as any },
       columnStyles: {
         0: { cellWidth: 'auto' },
@@ -285,7 +286,7 @@ export function generateReportPdf(opts: PdfOptions) {
     y = checkPageBreak(doc, y, 20, 20);
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
-    doc.setTextColor(...SLATE_900);
+    doc.setTextColor(...PURPLE_900);
     doc.text('Temas en Pausa', margin, y);
     y += 2;
 
@@ -331,7 +332,7 @@ export function generateReportPdf(opts: PdfOptions) {
       y = checkPageBreak(doc, y, 20, 20);
       doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
-      doc.setTextColor(...SLATE_900);
+      doc.setTextColor(...PURPLE_900);
       doc.text('Resumen por Responsable', margin, y);
       y += 2;
 
@@ -346,7 +347,7 @@ export function generateReportPdf(opts: PdfOptions) {
           return [name, String(tList.length), String(active), String(completed), String(overdue)];
         }),
         styles: { fontSize: 7.5, cellPadding: 2.5 },
-        headStyles: { fillColor: SLATE_700 as any, textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
+        headStyles: { fillColor: PURPLE_700 as any, textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
         alternateRowStyles: { fillColor: SLATE_50 as any },
         didParseCell: (data) => {
           if (data.section === 'body' && data.column.index === 4) {
@@ -370,8 +371,8 @@ export function generateReportPdf(opts: PdfOptions) {
     doc.setPage(i);
     const pageH = doc.internal.pageSize.getHeight();
     
-    // Bottom accent line
-    doc.setFillColor(...SLATE_200);
+    // Bottom accent line (purple)
+    doc.setFillColor(...PURPLE_500);
     doc.rect(0, pageH - 12, pageW, 0.5, 'F');
     
     doc.setFontSize(6.5);
@@ -397,10 +398,11 @@ export function downloadPdfFromContent(content: string, title: string, periodSta
   let y = 20;
 
   // Header
-  doc.setFillColor(...SLATE_900);
+  doc.setFillColor(...PURPLE_900);
   doc.rect(0, 0, pageW, 32, 'F');
-  doc.setFillColor(...TEAL);
-  doc.rect(0, 32, pageW, 1, 'F');
+  doc.setFillColor(...PURPLE_500);
+  doc.rect(0, 32, pageW, 1.5, 'F');
+  try { doc.addImage(logoIcon, 'PNG', pageW - margin - 10, 6, 10, 10); } catch {}
   
   doc.setTextColor(...WHITE);
   doc.setFontSize(14);
@@ -408,7 +410,7 @@ export function downloadPdfFromContent(content: string, title: string, periodSta
   doc.text(title, margin, y);
   y = 40;
 
-  doc.setTextColor(...SLATE_900);
+  doc.setTextColor(...PURPLE_900);
   doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
 
