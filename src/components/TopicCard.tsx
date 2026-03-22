@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { isStoredDateToday, isStoredDateUpcoming, isStoredDateOverdue } from '@/lib/date';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, ChevronDown, Plus, Trash2, CalendarIcon, CheckCircle2, RotateCcw, Pause, Play, User, Pin, Check, X, Infinity as InfinityIcon, AlertCircle, Building2, MessageSquare } from 'lucide-react';
