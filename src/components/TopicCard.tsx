@@ -71,6 +71,7 @@ export function TopicCard({
   allTags,
   topicTags,
   assignees,
+  departments,
   onCreateAssignee,
   highlightToday = false,
   highlightUpcoming = false,
