@@ -369,15 +369,15 @@ export function generateReportPdf(opts: PdfOptions) {
     const groups = groupByDepartment(sectionTopics, departments, ownerName);
 
     const heads: Record<string, string[]> = {
-      active: ['Tema', 'Responsable', 'Prioridad', 'Estado', 'Fecha Cierre', 'Progreso', 'Ultimo Comentario'],
+      active: ['Tema', 'Responsable', 'Prioridad', 'Estado', 'Vencimiento', 'Avance', 'Ultimo Comentario'],
       completed: ['Tema Completado', 'Responsable', 'Fecha Cierre', 'Ultimo Comentario'],
       paused: ['Tema', 'Responsable', 'Motivo de Pausa', 'Fecha Pausa'],
     };
 
     const colStyles: Record<string, any> = {
-      active: { 0: { cellWidth: 32 }, 1: { cellWidth: 22 }, 2: { cellWidth: 14 }, 3: { cellWidth: 16 }, 4: { cellWidth: 22 }, 5: { cellWidth: 13 }, 6: { cellWidth: 'auto' } },
-      completed: { 0: { cellWidth: 40 }, 1: { cellWidth: 25 }, 2: { cellWidth: 25 }, 3: { cellWidth: 'auto' } },
-      paused: { 0: { cellWidth: 40 }, 1: { cellWidth: 25 }, 2: { cellWidth: 'auto' }, 3: { cellWidth: 25 } },
+      active: { 0: { cellWidth: 30 }, 1: { cellWidth: 24 }, 2: { cellWidth: 16 }, 3: { cellWidth: 16 }, 4: { cellWidth: 22 }, 5: { cellWidth: 14 }, 6: { cellWidth: 'auto' } },
+      completed: { 0: { cellWidth: 38 }, 1: { cellWidth: 26 }, 2: { cellWidth: 26 }, 3: { cellWidth: 'auto' } },
+      paused: { 0: { cellWidth: 38 }, 1: { cellWidth: 26 }, 2: { cellWidth: 'auto' }, 3: { cellWidth: 26 } },
     };
 
     groups.forEach((group, gi) => {
