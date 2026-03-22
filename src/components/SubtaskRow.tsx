@@ -285,7 +285,7 @@ export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false,
                 value={contactDraft}
                 onChange={(e) => setContactDraft(e.target.value)}
                 onBlur={() => {
-                  if (contactDraft !== ((subtask as any).contact || '')) {
+                  if (contactDraft !== (subtask.contact || '')) {
                     onUpdateSubtask(subtask.id, { contact: contactDraft });
                   }
                 }}
