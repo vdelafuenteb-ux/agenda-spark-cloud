@@ -399,7 +399,7 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="todos">Todos</SelectItem>
-                      <SelectItem value="yo">Yo (sin asignar)</SelectItem>
+                      <SelectItem value="yo">{ownerLabel} (sin asignar)</SelectItem>
                       {uniqueAssignees.map(a => (
                         <SelectItem key={a} value={a}>{a}</SelectItem>
                       ))}
