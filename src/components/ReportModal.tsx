@@ -318,6 +318,7 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
         includeCompleted,
         includeBitacora,
         includeResponsables,
+        departments,
       });
       queryClient.invalidateQueries({ queryKey: ['reports'] });
       toast.success('Informe emitido y PDF descargado');
