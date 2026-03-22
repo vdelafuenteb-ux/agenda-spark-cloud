@@ -21,7 +21,7 @@ interface ProgressLogProps {
   hideTitle?: boolean;
 }
 
-export function ProgressLog({ entries, onAdd, onUpdate, onDelete }: ProgressLogProps) {
+export function ProgressLog({ entries, onAdd, onUpdate, onDelete, hideTitle = false }: ProgressLogProps) {
   const [text, setText] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
