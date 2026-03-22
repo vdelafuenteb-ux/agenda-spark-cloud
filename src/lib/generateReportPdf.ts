@@ -223,8 +223,7 @@ export function generateReportPdf(opts: PdfOptions) {
   // ==========================================
   // Helper: draw department subtitle
   // ==========================================
-  function drawDeptSubtitle(deptName: string, hasMultipleDepts: boolean) {
-    if (!hasMultipleDepts) return;
+  function drawDeptSubtitle(deptName: string) {
     y = checkPageBreak(doc, y, 12, 20);
     doc.setFillColor(...PURPLE_100);
     doc.roundedRect(margin, y - 3, contentW, 7, 1, 1, 'F');
