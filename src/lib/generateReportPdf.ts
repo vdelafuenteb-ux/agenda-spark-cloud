@@ -256,7 +256,7 @@ export function generateReportPdf(opts: PdfOptions) {
         margin: { left: margin, right: margin },
         head: [['Tema Completado', 'Responsable', 'Fecha Cierre', 'Último Comentario']],
         body: group.topics.map(t => {
-          const closeDateStr = formatStoredDate(t.updated_at, 'dd MMM yyyy', { locale: es });
+          const closeDateStr = t.updated_at ? format(new Date(t.updated_at), 'dd MMM yyyy', { locale: es }) : '—';
           const lastEntry = t.progress_entries.length > 0
             ? t.progress_entries[t.progress_entries.length - 1].content
             : '—';
