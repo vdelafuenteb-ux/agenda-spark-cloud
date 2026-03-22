@@ -15,6 +15,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useTopics } from '@/hooks/useTopics';
 import { useTags } from '@/hooks/useTags';
 import { useAssignees } from '@/hooks/useAssignees';
+import { useDepartments } from '@/hooks/useDepartments';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Plus, FileText } from 'lucide-react';
@@ -35,6 +36,7 @@ const Index = () => {
   const { topics, isLoading, createTopic, updateTopic, deleteTopic, addSubtask, toggleSubtask, deleteSubtask, addProgressEntry, updateProgressEntry, deleteProgressEntry, updateSubtask, addSubtaskEntry, updateSubtaskEntry, deleteSubtaskEntry } = useTopics();
   const { tags, getTagsForTopic, createTag, updateTag, deleteTag, addTopicTag, removeTopicTag } = useTags();
   const { assignees, createAssignee, updateAssignee, deleteAssignee } = useAssignees();
+  const { departments, createDepartment, updateDepartment, deleteDepartment } = useDepartments();
   const [filter, setFilter] = useState<Filter>('todos');
   const [statusTab, setStatusTab] = useState<StatusTab>('activo');
   const [reportOpen, setReportOpen] = useState(false);
@@ -123,8 +125,9 @@ const Index = () => {
         start_date: data.start_date,
         due_date: data.due_date,
         assignee: data.assignee || null,
+        department_id: (data as any).department_id || null,
         user_id: user!.id,
-      });
+      } as any);
 
       const warnings: string[] = [];
       const finalTagIds = [...data.tagIds];
@@ -228,6 +231,7 @@ const Index = () => {
             <SettingsView
               tags={tags}
               assignees={assignees}
+              departments={departments}
               topics={topics}
               onDeleteTag={(id) => deleteTag.mutate(id)}
               onCreateTag={(data) => createTag.mutateAsync(data)}
@@ -235,6 +239,9 @@ const Index = () => {
               onDeleteAssignee={(id) => deleteAssignee.mutate(id)}
               onCreateAssignee={(name) => createAssignee.mutateAsync(name)}
               onUpdateAssignee={(id, data) => updateAssignee.mutate({ id, ...data })}
+              onCreateDepartment={(name) => createDepartment.mutateAsync(name)}
+              onUpdateDepartment={(id, name) => updateDepartment.mutate({ id, name })}
+              onDeleteDepartment={(id) => deleteDepartment.mutate(id)}
             />
           ) : filter === 'dashboard' ? (
             <DashboardView topics={topics} assignees={assignees} onUpdateTopic={(id, data) => updateTopic.mutate({ id, ...data })} />
@@ -305,6 +312,7 @@ const Index = () => {
                           allTags={tags}
                           topicTags={getTagsForTopic(topic.id)}
                           assignees={assignees}
+                          departments={departments}
                           onCreateAssignee={(name) => createAssignee.mutateAsync(name)}
                           forceExpand={forceExpand}
                           onUpdate={(id, data) => updateTopic.mutate({ id, ...data })}
@@ -338,6 +346,7 @@ const Index = () => {
           onOpenChange={setCreateOpen}
           allTags={tags}
           assignees={assignees}
+          departments={departments}
           onCreateAssignee={(name) => createAssignee.mutateAsync(name)}
           onSubmit={handleCreateTopic}
           isPending={createTopic.isPending}

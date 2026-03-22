@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { isStoredDateToday, isStoredDateUpcoming, isStoredDateOverdue } from '@/lib/date';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ChevronDown, Plus, Trash2, CalendarIcon, CheckCircle2, RotateCcw, Pause, Play, User, Pin, Check, X, Infinity as InfinityIcon, AlertCircle } from 'lucide-react';
+import { ChevronRight, ChevronDown, Plus, Trash2, CalendarIcon, CheckCircle2, RotateCcw, Pause, Play, User, Pin, Check, X, Infinity as InfinityIcon, AlertCircle, Building2 } from 'lucide-react';
 import { NotificationSection } from '@/components/NotificationSection';
 import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
@@ -19,6 +19,7 @@ import { formatStoredDate, parseStoredDate, toStoredDate } from '@/lib/date';
 import type { TopicWithSubtasks } from '@/hooks/useTopics';
 import type { Tag } from '@/hooks/useTags';
 import type { Assignee } from '@/hooks/useAssignees';
+import type { Department } from '@/hooks/useDepartments';
 import type { Database } from '@/integrations/supabase/types';
 
 type Priority = Database['public']['Enums']['topic_priority'];
@@ -29,6 +30,7 @@ interface TopicCardProps {
   allTags: Tag[];
   topicTags: Tag[];
   assignees: Assignee[];
+  departments: Department[];
   onCreateAssignee: (name: string) => Promise<Assignee>;
   highlightToday?: boolean;
   highlightUpcoming?: boolean;
@@ -69,6 +71,7 @@ export function TopicCard({
   allTags,
   topicTags,
   assignees,
+  departments,
   onCreateAssignee,
   highlightToday = false,
   highlightUpcoming = false,
@@ -255,6 +258,15 @@ export function TopicCard({
                 {topic.assignee}
               </Badge>
             )}
+            {(() => {
+              const dept = departments.find(d => d.id === (topic as any).department_id);
+              return dept ? (
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0 gap-0.5">
+                  <Building2 className="h-2.5 w-2.5" />
+                  {dept.name}
+                </Badge>
+              ) : null;
+            })()}
             {topicTags.length > 0 && (
               <div className="flex items-center gap-1 ml-1">
                 {topicTags.slice(0, 3).map((tag) => (
@@ -443,6 +455,25 @@ export function TopicCard({
                       <Plus className="h-3 w-3" />
                     </Button>
                   </div>
+                </div>
+              )}
+
+              {/* Department selector */}
+              {departments.length > 0 && (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Departamento</label>
+                  <Select
+                    value={(topic as any).department_id || ''}
+                    onValueChange={(value) => onUpdate(topic.id, { department_id: value || null } as any)}
+                  >
+                    <SelectTrigger className="w-48 h-8 text-xs"><SelectValue placeholder="Sin departamento" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Sin departamento</SelectItem>
+                      {departments.map((d) => (
+                        <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
 

@@ -14,6 +14,7 @@ import { toStoredDate } from '@/lib/date';
 import { cn } from '@/lib/utils';
 import type { Tag as TagType } from '@/hooks/useTags';
 import type { Assignee } from '@/hooks/useAssignees';
+import type { Department } from '@/hooks/useDepartments';
 import type { Database } from '@/integrations/supabase/types';
 
 type Priority = Database['public']['Enums']['topic_priority'];
@@ -26,6 +27,7 @@ interface CreateTopicModalProps {
   onOpenChange: (open: boolean) => void;
   allTags: TagType[];
   assignees: Assignee[];
+  departments: Department[];
   onCreateAssignee: (name: string) => Promise<Assignee>;
   onSubmit: (data: {
     title: string;
@@ -38,12 +40,14 @@ interface CreateTopicModalProps {
     newTags: { name: string; color: string }[];
     notes: string;
     assignee?: string;
+    department_id?: string;
   }) => Promise<void> | void;
   isPending: boolean;
 }
 
-export function CreateTopicModal({ open, onOpenChange, allTags, assignees, onCreateAssignee, onSubmit, isPending }: CreateTopicModalProps) {
+export function CreateTopicModal({ open, onOpenChange, allTags, assignees, departments, onCreateAssignee, onSubmit, isPending }: CreateTopicModalProps) {
   const [title, setTitle] = useState('');
+  const [departmentId, setDepartmentId] = useState('');
   const [priority, setPriority] = useState<Priority>('media');
   const [status, setStatus] = useState<Status>('activo');
   const [assignee, setAssignee] = useState('');
@@ -63,6 +67,7 @@ export function CreateTopicModal({ open, onOpenChange, allTags, assignees, onCre
     setPriority('media');
     setStatus('activo');
     setAssignee('');
+    setDepartmentId('');
     setNewAssigneeName('');
     setDueDate(undefined);
     setStartDate(new Date());
@@ -101,6 +106,7 @@ export function CreateTopicModal({ open, onOpenChange, allTags, assignees, onCre
       newTags: pendingNewTags,
       notes,
       assignee: status === 'seguimiento' ? assignee.trim() : undefined,
+      department_id: departmentId || undefined,
     });
     reset();
   };
@@ -238,7 +244,23 @@ export function CreateTopicModal({ open, onOpenChange, allTags, assignees, onCre
                   <Calendar mode="single" selected={dueDate} onSelect={setDueDate} initialFocus />
                 </PopoverContent>
               </Popover>
+          </div>
+
+          {/* Department selector */}
+          {departments.length > 0 && (
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Departamento</label>
+              <Select value={departmentId} onValueChange={setDepartmentId}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Sin departamento" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Sin departamento</SelectItem>
+                  {departments.map((d) => (
+                    <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
+          )}
           </div>
 
           <div className="space-y-1.5">
