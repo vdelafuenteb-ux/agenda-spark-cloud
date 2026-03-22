@@ -127,13 +127,14 @@ function buildIntegratedRows(
       ? t.progress_entries[t.progress_entries.length - 1].content
       : '';
 
+    const fSubs = subtaskFilter && subtaskFilter[t.id]
+      ? t.subtasks.filter(s => subtaskFilter[t.id].includes(s.id))
+      : t.subtasks;
+    const done = fSubs.filter(s => s.completed).length;
+    const total = fSubs.length;
+
     if (columnsMode === 'active') {
       const tl = getTrafficLight(t.due_date);
-      const fSubs = subtaskFilter && subtaskFilter[t.id]
-        ? t.subtasks.filter(s => subtaskFilter[t.id].includes(s.id))
-        : t.subtasks;
-      const done = fSubs.filter(s => s.completed).length;
-      const total = fSubs.length;
       const dueStr = t.due_date ? formatStoredDate(t.due_date, 'dd MMM yyyy', { locale: es }) : '';
       body.push([
         `${topicNum}  ${t.title}`,
@@ -146,11 +147,26 @@ function buildIntegratedRows(
       ]);
     } else if (columnsMode === 'completed') {
       const closeDateStr = t.updated_at ? format(new Date(t.updated_at), 'dd MMM yyyy', { locale: es }) : '';
-      body.push([`${topicNum}  ${t.title}`, t.assignee || ownerName, closeDateStr, '✓', lastEntry]);
+      body.push([
+        `${topicNum}  ${t.title}`,
+        t.assignee || ownerName,
+        t.priority.charAt(0).toUpperCase() + t.priority.slice(1),
+        'Completado',
+        closeDateStr,
+        total > 0 ? `${done}/${total}` : '',
+        lastEntry,
+      ]);
     } else {
-      const pauseReason = t.pause_reason || '';
       const pausedAt = t.paused_at ? format(new Date(t.paused_at), 'dd MMM yyyy', { locale: es }) : '';
-      body.push([`${topicNum}  ${t.title}`, t.assignee || ownerName, pauseReason, pausedAt]);
+      body.push([
+        `${topicNum}  ${t.title}`,
+        t.assignee || ownerName,
+        t.priority.charAt(0).toUpperCase() + t.priority.slice(1),
+        'Pausado',
+        pausedAt,
+        total > 0 ? `${done}/${total}` : '',
+        t.pause_reason || '',
+      ]);
     }
 
     // Filter subtasks if subtaskFilter is provided
@@ -164,19 +180,13 @@ function buildIntegratedRows(
       const subNum = `${topicNum}.${si + 1}`;
       const idx = body.length;
       subtaskRowIndices.add(idx);
-      const status = s.completed ? '✓' : 'Pendiente';
+      const status = s.completed ? 'Completado' : 'Pendiente';
       const dueStr = s.due_date ? formatStoredDate(s.due_date, 'dd MMM yyyy', { locale: es }) : '';
       const lastSubEntry = s.subtask_entries && s.subtask_entries.length > 0
         ? s.subtask_entries[s.subtask_entries.length - 1].content
         : '';
 
-      if (columnsMode === 'active') {
-        body.push([`  ${subNum}  ${s.title}`, s.responsible || '', '', status, dueStr, '', lastSubEntry]);
-      } else if (columnsMode === 'completed') {
-        body.push([`  ${subNum}  ${s.title}`, s.responsible || '', dueStr, '✓', lastSubEntry]);
-      } else {
-        body.push([`  ${subNum}  ${s.title}`, s.responsible || '', '', dueStr]);
-      }
+      body.push([`  ${subNum}  ${s.title}`, s.responsible || '', '', status, dueStr, '', lastSubEntry]);
     }
   }
 
@@ -392,16 +402,16 @@ export function generateReportPdf(opts: PdfOptions) {
 
     const groups = groupByDepartment(sectionTopics, departments, ownerName);
 
-    const heads: Record<string, string[]> = {
-      active: ['Tema', 'Responsable', 'Prioridad', 'Estado', 'Vencimiento', 'Avance', 'Ultimo Comentario'],
-      completed: ['Tema Completado', 'Responsable', 'Fecha Cierre', '✓', 'Ultimo Comentario'],
-      paused: ['Tema', 'Responsable', 'Motivo de Pausa', 'Fecha Pausa'],
-    };
+    const standardHead = ['Tema', 'Responsable', 'Prioridad', 'Estado', 'Fecha', 'Avance', 'Ultimo Comentario'];
 
-    const colStyles: Record<string, any> = {
-      active: { 0: { cellWidth: 30 }, 1: { cellWidth: 24 }, 2: { cellWidth: 16 }, 3: { cellWidth: 16 }, 4: { cellWidth: 22 }, 5: { cellWidth: 14 }, 6: { cellWidth: 'auto' } },
-      completed: { 0: { cellWidth: 36 }, 1: { cellWidth: 24 }, 2: { cellWidth: 24 }, 3: { cellWidth: 10, halign: 'center' }, 4: { cellWidth: 'auto' } },
-      paused: { 0: { cellWidth: 38 }, 1: { cellWidth: 26 }, 2: { cellWidth: 'auto' }, 3: { cellWidth: 26 } },
+    const standardColStyles: any = {
+      0: { cellWidth: 30 },
+      1: { cellWidth: 24 },
+      2: { cellWidth: 16 },
+      3: { cellWidth: 16 },
+      4: { cellWidth: 22 },
+      5: { cellWidth: 14 },
+      6: { cellWidth: 'auto' },
     };
 
     groups.forEach((group, gi) => {
@@ -412,11 +422,11 @@ export function generateReportPdf(opts: PdfOptions) {
       autoTable(doc, {
         startY: y,
         margin: { left: margin, right: margin },
-        head: [heads[mode]],
+        head: [standardHead],
         body,
         styles: { fontSize: 7, cellPadding: 2, overflow: 'linebreak', lineColor: SLATE_200 as any, lineWidth: 0.2 },
         headStyles: { fillColor: headerColor as any, textColor: WHITE as any, fontStyle: 'bold', fontSize: 7 },
-        columnStyles: colStyles[mode],
+        columnStyles: standardColStyles,
         didParseCell: (data) => {
           if (data.section !== 'body') return;
           const isSubtask = subtaskRowIndices.has(data.row.index);
@@ -427,20 +437,15 @@ export function generateReportPdf(opts: PdfOptions) {
             data.cell.styles.fontStyle = 'italic';
             data.cell.styles.textColor = SLATE_500 as any;
 
-            // Status column coloring for subtasks
-            if (mode === 'active' && data.column.index === 3) {
+            // Status column coloring for subtasks (col 3)
+            if (data.column.index === 3) {
               const val = data.cell.raw as string;
-              if (val === '✓') {
+              if (val === 'Completado') {
                 data.cell.styles.textColor = GREEN as any;
                 data.cell.styles.fontStyle = 'bold';
               } else if (val === 'Pendiente') {
                 data.cell.styles.textColor = AMBER as any;
               }
-            }
-            // Checkmark column for completed
-            if (mode === 'completed' && data.column.index === 3) {
-              data.cell.styles.textColor = GREEN as any;
-              data.cell.styles.fontStyle = 'bold';
             }
           } else {
             // Topic row: alternate white
@@ -454,17 +459,14 @@ export function generateReportPdf(opts: PdfOptions) {
               data.cell.styles.textColor = SLATE_800 as any;
             }
 
-            // Traffic light for active topics
-            if (mode === 'active' && data.column.index === 3) {
+            // Status column coloring for topics (col 3)
+            if (data.column.index === 3) {
               const val = data.cell.raw as string;
               if (val === 'Atrasado') data.cell.styles.textColor = RED as any;
               else if (val === 'Proximo') data.cell.styles.textColor = AMBER as any;
+              else if (val === 'Completado') { data.cell.styles.textColor = GREEN as any; }
+              else if (val === 'Pausado') { data.cell.styles.textColor = AMBER as any; }
               else data.cell.styles.textColor = GREEN as any;
-              data.cell.styles.fontStyle = 'bold';
-            }
-            // Checkmark column for completed topics
-            if (mode === 'completed' && data.column.index === 3) {
-              data.cell.styles.textColor = GREEN as any;
               data.cell.styles.fontStyle = 'bold';
             }
           }
