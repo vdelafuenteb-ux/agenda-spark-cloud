@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { isStoredDateToday, isStoredDateUpcoming, isStoredDateOverdue } from '@/lib/date';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ChevronDown, Plus, Trash2, CalendarIcon, CheckCircle2, RotateCcw, Pause, Play, User, Pin, Check, X } from 'lucide-react';
+import { ChevronRight, ChevronDown, Plus, Trash2, CalendarIcon, CheckCircle2, RotateCcw, Pause, Play, User, Pin, Check, X, Infinity as InfinityIcon, AlertCircle } from 'lucide-react';
 import { NotificationSection } from '@/components/NotificationSection';
 import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
@@ -11,6 +11,7 @@ import { SubtaskRow } from '@/components/SubtaskRow';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { ProgressLog } from '@/components/ProgressLog';
 import { TagSelector } from '@/components/TagSelector';
 import { cn } from '@/lib/utils';
@@ -230,6 +231,16 @@ export function TopicCard({
                 📅 {subtaskUpcomingCount} subtarea{subtaskUpcomingCount === 1 ? '' : 's'} próxima{subtaskUpcomingCount === 1 ? '' : 's'}
               </Badge>
             )}
+            {(topic as any).is_ongoing && (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0 gap-0.5 border-primary/50 text-primary">
+                <InfinityIcon className="h-2.5 w-2.5" /> Continuo
+              </Badge>
+            )}
+            {!isCompleted && !(topic as any).is_ongoing && !topic.due_date && (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0 gap-0.5 border-destructive/50 text-destructive">
+                <AlertCircle className="h-2.5 w-2.5" /> Sin fecha
+              </Badge>
+            )}
             {topic.status !== 'activo' && (
               <Badge variant="outline" className={cn(
                 "text-[10px] px-1.5 py-0",
@@ -344,6 +355,18 @@ export function TopicCard({
                     />
                   </PopoverContent>
                 </Popover>
+
+                {!isCompleted && (
+                  <label className="inline-flex items-center gap-1.5 cursor-pointer h-8 px-2 rounded-md border border-input text-xs hover:bg-accent transition-colors">
+                    <Switch
+                      checked={(topic as any).is_ongoing || false}
+                      onCheckedChange={(checked) => onUpdate(topic.id, { is_ongoing: checked, ...(checked ? { due_date: null } : {}) })}
+                      className="scale-75"
+                    />
+                    <InfinityIcon className="h-3 w-3" />
+                    <span className="hidden sm:inline">Continuo</span>
+                  </label>
+                )}
 
                 <Button
                   variant="ghost"

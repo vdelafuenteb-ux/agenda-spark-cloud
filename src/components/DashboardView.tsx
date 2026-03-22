@@ -5,7 +5,7 @@ import { BarChart, Bar, XAxis, YAxis, PieChart, Pie, Cell, AreaChart, Area, Cart
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { CheckCircle2, Clock, TrendingUp, ListChecks, Users, Target, CalendarClock, AlertTriangle } from 'lucide-react';
+import { CheckCircle2, Clock, TrendingUp, ListChecks, Users, Target, CalendarClock, AlertTriangle, Infinity as InfinityIcon } from 'lucide-react';
 import type { TopicWithSubtasks } from '@/hooks/useTopics';
 import { isStoredDateOverdue } from '@/lib/date';
 import { startOfWeek, subWeeks, isAfter, isBefore, addDays, format } from 'date-fns';
@@ -47,12 +47,16 @@ export function DashboardView({ topics }: DashboardViewProps) {
       : 0;
 
     const activeAndTracking = [...byStatus.activo, ...byStatus.seguimiento];
-    const overdue = activeAndTracking.filter(t => isStoredDateOverdue(t.due_date));
-    const dueSoon = activeAndTracking.filter(t => {
+    const nonOngoing = activeAndTracking.filter(t => !(t as any).is_ongoing);
+    const overdue = nonOngoing.filter(t => isStoredDateOverdue(t.due_date));
+    const dueSoon = nonOngoing.filter(t => {
       if (!t.due_date || isStoredDateOverdue(t.due_date)) return false;
       const due = new Date(t.due_date + 'T23:59:59');
       return isBefore(due, threeDaysFromNow);
     });
+
+    const ongoing = activeAndTracking.filter(t => (t as any).is_ongoing);
+    const missingDates = nonOngoing.filter(t => !t.due_date);
 
     // Status chart data
     const statusData = [
@@ -114,6 +118,8 @@ export function DashboardView({ topics }: DashboardViewProps) {
       subtaskProgress,
       overdue,
       dueSoon,
+      ongoing,
+      missingDates,
       statusData,
       priorityData,
       weeklyTrend,
@@ -246,7 +252,68 @@ export function DashboardView({ topics }: DashboardViewProps) {
           </Card>
         </div>
 
-        {/* Charts Row */}
+        {/* Missing dates alert + Ongoing topics */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          {/* Missing dates */}
+          <Card className="border-orange-500/30">
+            <CardHeader className="pb-1 p-3">
+              <CardTitle className="text-xs font-medium flex items-center gap-1.5 text-orange-600">
+                <AlertTriangle className="h-3.5 w-3.5" />
+                Sin Fecha Asignada ({metrics.missingDates.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-3 pt-0">
+              {metrics.missingDates.length === 0 ? (
+                <p className="text-[11px] text-muted-foreground py-1">Todos los temas tienen fecha ✓</p>
+              ) : (
+                <div className="space-y-1.5">
+                  {metrics.missingDates.slice(0, 6).map((t) => (
+                    <div key={t.id} className="flex items-center justify-between text-xs">
+                      <span className="text-foreground truncate flex-1">{t.title}</span>
+                      <Badge variant="outline" className="text-[9px] ml-2 shrink-0 border-orange-500/50 text-orange-600">
+                        Agregar fecha
+                      </Badge>
+                    </div>
+                  ))}
+                  {metrics.missingDates.length > 6 && (
+                    <p className="text-[10px] text-muted-foreground">+{metrics.missingDates.length - 6} más</p>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Ongoing topics */}
+          <Card className="border-primary/30">
+            <CardHeader className="pb-1 p-3">
+              <CardTitle className="text-xs font-medium flex items-center gap-1.5 text-primary">
+                <InfinityIcon className="h-3.5 w-3.5" />
+                Temas Continuos ({metrics.ongoing.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-3 pt-0">
+              {metrics.ongoing.length === 0 ? (
+                <p className="text-[11px] text-muted-foreground py-1">Sin temas continuos</p>
+              ) : (
+                <div className="space-y-1.5">
+                  {metrics.ongoing.slice(0, 6).map((t) => (
+                    <div key={t.id} className="flex items-center justify-between text-xs">
+                      <span className="text-foreground truncate flex-1">{t.title}</span>
+                      <Badge variant="outline" className="text-[9px] ml-2 shrink-0">
+                        {t.subtasks.filter(s => s.completed).length}/{t.subtasks.length} subtareas
+                      </Badge>
+                    </div>
+                  ))}
+                  {metrics.ongoing.length > 6 && (
+                    <p className="text-[10px] text-muted-foreground">+{metrics.ongoing.length - 6} más</p>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
           {/* Status Bar Chart */}
           <Card>

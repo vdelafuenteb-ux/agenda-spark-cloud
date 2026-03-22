@@ -1,0 +1,1 @@
+ALTER TABLE public.topics ADD COLUMN is_ongoing boolean NOT NULL DEFAULT false;
