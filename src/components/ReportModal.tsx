@@ -196,7 +196,7 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
         const done = t.subtasks.filter(s => s.completed).length;
         const total = t.subtasks.length;
         const dueStr = t.due_date ? formatStoredDate(t.due_date, 'dd MMM', { locale: es }) : '—';
-        const responsable = t.assignee || 'Yo';
+        const responsable = t.assignee || ownerLabel;
         md += `| ${t.title} | ${responsable} | ${t.priority.charAt(0).toUpperCase() + t.priority.slice(1)} | ${tl.icon} ${tl.label} | ${dueStr} | ${total > 0 ? `${done}/${total}` : '—'} |\n`;
       });
       md += `\n`;
