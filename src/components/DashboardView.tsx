@@ -1,11 +1,15 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, PieChart, Pie, Cell, AreaChart, Area, CartesianGrid } from 'recharts';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { CheckCircle2, Clock, TrendingUp, ListChecks, Users, Target, CalendarClock, AlertTriangle, Infinity as InfinityIcon, CalendarIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { CheckCircle2, Clock, TrendingUp, ListChecks, Users, Target, CalendarClock, AlertTriangle, Infinity as InfinityIcon, CalendarIcon, Bell, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import type { Assignee } from '@/hooks/useAssignees';
 
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
