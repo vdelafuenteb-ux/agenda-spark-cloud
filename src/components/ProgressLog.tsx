@@ -18,6 +18,7 @@ interface ProgressLogProps {
   onAdd: (content: string) => void;
   onUpdate?: (id: string, content: string) => void;
   onDelete?: (id: string) => void;
+  hideTitle?: boolean;
 }
 
 export function ProgressLog({ entries, onAdd, onUpdate, onDelete }: ProgressLogProps) {
