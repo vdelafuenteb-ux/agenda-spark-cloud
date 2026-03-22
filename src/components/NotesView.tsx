@@ -117,6 +117,13 @@ export function NotesView() {
     }
   };
 
+  const handleMoveNote = (noteId: string, notebookId: string, sectionId: string | null) => {
+    updateNote.mutate(
+      { id: noteId, notebook_id: notebookId, section_id: sectionId },
+      { onSuccess: () => toast.success('Nota movida') }
+    );
+  };
+
   const handleSelectNote = (noteId: string) => {
     setSelectedNoteId(noteId);
     setView('editor');
@@ -194,6 +201,7 @@ export function NotesView() {
           onDeleteNotebook={(id) => deleteNotebook.mutate(id, { onSuccess: () => toast.success('Libreta eliminada') })}
           onUpdateNotebook={(id, data) => updateNotebook.mutate({ id, ...data })}
           onShowAllNotes={handleShowAllNotes}
+          onMoveNote={handleMoveNote}
         />
       </ScrollArea>
     );
