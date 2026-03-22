@@ -279,8 +279,8 @@ export function ProgressLog({ entries, onAdd, onUpdate, onDelete, hideTitle = fa
           value={text}
           onChange={e => setText(e.target.value)}
           
-          className="min-h-[44px] text-sm resize-none"
-          rows={2}
+          className="min-h-[70px] text-sm resize-y"
+          rows={3}
         />
       </div>
     </div>
