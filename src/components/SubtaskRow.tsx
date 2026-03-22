@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { formatStoredDate, parseStoredDate, toStoredDate, isStoredDateOverdue } from '@/lib/date';
-import { CalendarIcon, Trash2, FileText, Pencil, Check, X, User } from 'lucide-react';
+import { CalendarIcon, Trash2, Eye, Pencil, Check, X, User } from 'lucide-react';
 import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -114,14 +114,11 @@ export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false,
               setSheetTitleDraft(subtask.title);
               setDetailOpen(true);
             }}
-            className={cn(
-              'flex items-center gap-0.5 text-[10px] transition-colors shrink-0 rounded p-0.5 hover:bg-accent',
-              hasEntries ? 'text-primary' : 'text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100'
-            )}
+            className="flex items-center gap-0.5 text-[10px] transition-colors shrink-0 rounded p-0.5 hover:bg-accent text-muted-foreground hover:text-foreground"
             title="Ver detalle completo"
           >
-            <FileText className="h-3 w-3" />
-            {hasEntries && <span>{entries.length}</span>}
+            <Eye className="h-3.5 w-3.5" />
+            {hasEntries && <span className="text-primary font-medium">{entries.length}</span>}
           </button>
 
           {/* Date */}
