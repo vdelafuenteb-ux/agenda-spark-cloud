@@ -183,6 +183,7 @@ function drawChapterHeading(doc: jsPDF, label: string, y: number, margin: number
 
 export function generateReportPdf(opts: PdfOptions) {
   const { topics, periodStart, periodEnd, title, authorName, authorRole, includeCompleted = true, includeResponsables = true, departments } = opts;
+  const ownerName = authorName || 'Yo';
 
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const pageW = doc.internal.pageSize.getWidth();
