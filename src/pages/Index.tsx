@@ -250,25 +250,7 @@ const Index = () => {
             <main className="flex-1 overflow-auto p-3 md:p-4">
               <ReviewView
                 topics={topics}
-                allTags={tags}
-                assignees={assignees}
-                onCreateAssignee={(name) => createAssignee.mutateAsync(name)}
-                getTagsForTopic={getTagsForTopic}
-                onUpdate={(id, data) => updateTopic.mutate({ id, ...data })}
-                onDelete={(id) => deleteTopic.mutate(id, { onSuccess: () => toast.success('Tema eliminado') })}
-                onAddSubtask={(topicId, title) => addSubtask.mutate({ topic_id: topicId, title })}
                 onToggleSubtask={(id, completed) => toggleSubtask.mutate({ id, completed })}
-                onDeleteSubtask={(id) => deleteSubtask.mutate(id)}
-                onUpdateSubtask={(id, data) => updateSubtask.mutate({ id, ...data })}
-                onAddProgressEntry={(topicId, content) => addProgressEntry.mutate({ topic_id: topicId, content })}
-                onUpdateProgressEntry={(id, content) => updateProgressEntry.mutate({ id, content })}
-                onDeleteProgressEntry={(id) => deleteProgressEntry.mutate(id)}
-                onAddSubtaskEntry={(subtaskId, content) => addSubtaskEntry.mutate({ subtask_id: subtaskId, content })}
-                onUpdateSubtaskEntry={(id, content) => updateSubtaskEntry.mutate({ id, content })}
-                onDeleteSubtaskEntry={(id) => deleteSubtaskEntry.mutate(id)}
-                onAddTag={(topicId, tagId) => addTopicTag.mutate({ topic_id: topicId, tag_id: tagId })}
-                onRemoveTag={(topicId, tagId) => removeTopicTag.mutate({ topic_id: topicId, tag_id: tagId })}
-                onCreateTag={(name, color) => createTag.mutateAsync({ name, color })}
               />
             </main>
           ) : (
