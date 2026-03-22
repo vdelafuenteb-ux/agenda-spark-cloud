@@ -4,7 +4,6 @@ import { es } from 'date-fns/locale';
 import { Send, Pencil, Trash2, Check, X, Bold, Italic, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface GenericEntry {
