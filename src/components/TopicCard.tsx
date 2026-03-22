@@ -135,7 +135,7 @@ export function TopicCard({
     <div className={cn(
       'bg-card rounded-lg shadow-sm hover:shadow-md transition-shadow border-l-4',
       isCompleted && 'opacity-75',
-      isSeguimiento ? 'border-l-[hsl(var(--seguimiento))] bg-[hsl(var(--seguimiento-bg))]'
+      isSeguimiento ? 'border-l-[hsl(var(--seguimiento))]'
         : topic.priority === 'alta' ? 'border-l-destructive'
         : topic.pinned ? 'border-l-primary'
         : 'border-l-transparent'
