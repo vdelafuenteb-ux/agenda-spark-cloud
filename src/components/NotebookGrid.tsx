@@ -15,6 +15,7 @@ interface NotebookGridProps {
   sections: NoteSection[];
   notes: Note[];
   onSelect: (notebookId: string) => void;
+  onSelectSection?: (notebookId: string, sectionId: string) => void;
   onCreateNotebook: (data: { name: string; color: string }) => void;
   onDeleteNotebook: (id: string) => void;
   onUpdateNotebook: (id: string, data: { name?: string; color?: string }) => void;
