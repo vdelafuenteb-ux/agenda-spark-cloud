@@ -43,7 +43,8 @@ interface DeptGroup {
 
 function groupByDepartment(
   topics: TopicWithSubtasks[],
-  departments?: { id: string; name: string }[]
+  departments?: { id: string; name: string }[],
+  defaultOwner: string = 'Yo'
 ): DeptGroup[] {
   const deptMap = new Map<string, string>();
   (departments || []).forEach(d => deptMap.set(d.id, d.name));
