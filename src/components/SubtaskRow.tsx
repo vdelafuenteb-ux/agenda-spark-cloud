@@ -267,8 +267,13 @@ export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false,
               </label>
               <Input
                 placeholder="Ej: Juan Pérez"
-                value={(subtask as any).contact || ''}
-                onChange={(e) => onUpdateSubtask(subtask.id, { contact: e.target.value })}
+                value={contactDraft}
+                onChange={(e) => setContactDraft(e.target.value)}
+                onBlur={() => {
+                  if (contactDraft !== ((subtask as any).contact || '')) {
+                    onUpdateSubtask(subtask.id, { contact: contactDraft });
+                  }
+                }}
                 className="h-8 text-sm"
               />
             </div>
