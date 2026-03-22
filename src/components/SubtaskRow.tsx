@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { formatStoredDate, parseStoredDate, toStoredDate, isStoredDateOverdue } from '@/lib/date';
-import { differenceInDays, format } from 'date-fns';
+import { differenceInDays } from 'date-fns';
 import { CalendarIcon, Trash2, Eye, Pencil, Check, X, User } from 'lucide-react';
 import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
