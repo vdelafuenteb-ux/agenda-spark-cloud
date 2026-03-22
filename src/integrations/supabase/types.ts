@@ -65,6 +65,27 @@ export type Database = {
         }
         Relationships: []
       }
+      departments: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       email_schedules: {
         Row: {
           created_at: string
@@ -567,6 +588,7 @@ export type Database = {
         Row: {
           assignee: string | null
           created_at: string
+          department_id: string | null
           due_date: string | null
           id: string
           is_ongoing: boolean
@@ -583,6 +605,7 @@ export type Database = {
         Insert: {
           assignee?: string | null
           created_at?: string
+          department_id?: string | null
           due_date?: string | null
           id?: string
           is_ongoing?: boolean
@@ -599,6 +622,7 @@ export type Database = {
         Update: {
           assignee?: string | null
           created_at?: string
+          department_id?: string | null
           due_date?: string | null
           id?: string
           is_ongoing?: boolean
@@ -612,7 +636,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "topics_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
