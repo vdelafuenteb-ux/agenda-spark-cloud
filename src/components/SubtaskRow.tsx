@@ -171,9 +171,9 @@ export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false,
             <SheetTitle className="text-base font-semibold text-left">Detalle de Subtarea</SheetTitle>
           </SheetHeader>
 
-          <div className="space-y-5">
+          <div className="space-y-3">
             {/* Title */}
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Título</label>
               {editingTitleInSheet ? (
                 <div className="flex items-center gap-1.5">
@@ -193,18 +193,10 @@ export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false,
                     className="flex-1 text-sm font-medium bg-transparent border-b border-primary outline-none"
                     autoFocus
                   />
-                  <button
-                    type="button"
-                    onClick={() => { saveTitle(sheetTitleDraft); setEditingTitleInSheet(false); }}
-                    className="p-1 text-emerald-500 hover:text-emerald-600"
-                  >
+                  <button type="button" onClick={() => { saveTitle(sheetTitleDraft); setEditingTitleInSheet(false); }} className="p-1 text-emerald-500 hover:text-emerald-600">
                     <Check className="h-3.5 w-3.5" />
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => { setSheetTitleDraft(subtask.title); setEditingTitleInSheet(false); }}
-                    className="p-1 text-muted-foreground hover:text-foreground"
-                  >
+                  <button type="button" onClick={() => { setSheetTitleDraft(subtask.title); setEditingTitleInSheet(false); }} className="p-1 text-muted-foreground hover:text-foreground">
                     <X className="h-3.5 w-3.5" />
                   </button>
                 </div>
@@ -213,103 +205,93 @@ export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false,
                   <span className={cn('text-sm font-medium', subtask.completed && 'line-through text-muted-foreground')}>
                     {subtask.title}
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => { setSheetTitleDraft(subtask.title); setEditingTitleInSheet(true); }}
-                    className="p-1 text-muted-foreground hover:text-foreground"
-                  >
+                  <button type="button" onClick={() => { setSheetTitleDraft(subtask.title); setEditingTitleInSheet(true); }} className="p-1 text-muted-foreground hover:text-foreground">
                     <Pencil className="h-3 w-3" />
                   </button>
                 </div>
               )}
             </div>
 
-            {/* Status */}
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Estado</label>
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  checked={subtask.completed}
-                  onCheckedChange={(checked) => onToggleSubtask(subtask.id, !!checked)}
-                />
-                <span className="text-sm">
-                  {subtask.completed ? 'Completada' : isOverdue ? 'Atrasada' : 'Pendiente'}
-                </span>
-                {isOverdue && <Badge variant="destructive" className="text-[9px] px-1 py-0">Atrasada</Badge>}
-                {subtask.completed && subtask.completed_at && (
-                  <span className="text-[10px] text-muted-foreground">
-                    {formatStoredDate(subtask.completed_at.split('T')[0], 'dd MMM yy', { locale: es })}
+            {/* Status + Date row */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Estado</label>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={subtask.completed}
+                    onCheckedChange={(checked) => onToggleSubtask(subtask.id, !!checked)}
+                  />
+                  <span className="text-xs">
+                    {subtask.completed ? 'Completada' : isOverdue ? 'Atrasada' : 'Pendiente'}
                   </span>
-                )}
+                  {isOverdue && <Badge variant="destructive" className="text-[9px] px-1 py-0">Atrasada</Badge>}
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Vencimiento</label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-7 text-[11px] gap-1 w-full justify-start px-2">
+                      <CalendarIcon className="h-3 w-3" />
+                      {subtask.due_date
+                        ? formatStoredDate(subtask.due_date, 'dd MMM yyyy', { locale: es })
+                        : 'Sin fecha'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={parseStoredDate(subtask.due_date)}
+                      onSelect={(date) => onUpdateSubtask(subtask.id, { due_date: toStoredDate(date) })}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
             </div>
 
-            {/* Date */}
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Fecha de vencimiento</label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5 w-full justify-start">
-                    <CalendarIcon className="h-3.5 w-3.5" />
-                    {subtask.due_date
-                      ? formatStoredDate(subtask.due_date, 'dd MMMM yyyy', { locale: es })
-                      : 'Sin fecha — clic para asignar'}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={parseStoredDate(subtask.due_date)}
-                    onSelect={(date) => onUpdateSubtask(subtask.id, { due_date: toStoredDate(date) })}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+            {/* Contact + Responsible row */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                  <User className="h-3 w-3" /> Contacto
+                </label>
+                <Input
+                  placeholder="Ej: Juan Pérez"
+                  value={contactDraft}
+                  onChange={(e) => setContactDraft(e.target.value)}
+                  onBlur={() => {
+                    if (contactDraft !== (subtask.contact || '')) {
+                      onUpdateSubtask(subtask.id, { contact: contactDraft });
+                    }
+                  }}
+                  className="h-7 text-xs"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                  <User className="h-3 w-3" /> Responsable
+                </label>
+                <Input
+                  placeholder="Ej: María López"
+                  value={responsibleDraft}
+                  onChange={(e) => setResponsibleDraft(e.target.value)}
+                  onBlur={() => {
+                    if (responsibleDraft !== (subtask.responsible || '')) {
+                      onUpdateSubtask(subtask.id, { responsible: responsibleDraft });
+                    }
+                  }}
+                  className="h-7 text-xs"
+                />
+              </div>
             </div>
 
-            {/* Created date */}
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Creada</label>
-              <span className="text-xs text-muted-foreground">
-                {formatStoredDate(subtask.created_at.split('T')[0], 'dd MMMM yyyy', { locale: es })}
-              </span>
-            </div>
-
-            {/* Contact person */}
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                <User className="h-3 w-3" /> Persona de contacto
-              </label>
-              <Input
-                placeholder="Ej: Juan Pérez"
-                value={contactDraft}
-                onChange={(e) => setContactDraft(e.target.value)}
-                onBlur={() => {
-                  if (contactDraft !== (subtask.contact || '')) {
-                    onUpdateSubtask(subtask.id, { contact: contactDraft });
-                  }
-                }}
-                className="h-8 text-sm"
-              />
-            </div>
-
-            {/* Responsible */}
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                <User className="h-3 w-3" /> Responsable de cerrar
-              </label>
-              <Input
-                placeholder="Ej: María López"
-                value={responsibleDraft}
-                onChange={(e) => setResponsibleDraft(e.target.value)}
-                onBlur={() => {
-                  if (responsibleDraft !== (subtask.responsible || '')) {
-                    onUpdateSubtask(subtask.id, { responsible: responsibleDraft });
-                  }
-                }}
-                className="h-8 text-sm"
-              />
-            </div>
+            {/* Created date inline */}
+            <p className="text-[10px] text-muted-foreground">
+              Creada: {formatStoredDate(subtask.created_at.split('T')[0], 'dd MMMM yyyy', { locale: es })}
+            </p>
 
             {/* Bitácora */}
             <div className="space-y-1.5">
