@@ -156,11 +156,11 @@ function buildIntegratedRows(
         : '';
 
       if (columnsMode === 'active') {
-        body.push([`    ${s.title}`, s.responsible || '', '', status, dueStr, '', lastSubEntry]);
+        body.push([`  - ${s.title}`, s.responsible || '', '', status, dueStr, '', lastSubEntry]);
       } else if (columnsMode === 'completed') {
-        body.push([`    ${s.title}`, s.responsible || '', dueStr, lastSubEntry]);
+        body.push([`  - ${s.title}`, s.responsible || '', dueStr, lastSubEntry]);
       } else {
-        body.push([`    ${s.title}`, s.responsible || '', '', dueStr]);
+        body.push([`  - ${s.title}`, s.responsible || '', '', dueStr]);
       }
     }
   }
