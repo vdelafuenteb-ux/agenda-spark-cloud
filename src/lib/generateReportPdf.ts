@@ -110,6 +110,64 @@ function checkPageBreak(doc: jsPDF, y: number, needed: number, margin: number): 
   return y;
 }
 
+function drawSubtaskDetails(doc: jsPDF, topics: TopicWithSubtasks[], yStart: number, margin: number, contentW: number): number {
+  let y = yStart;
+  const pageH = doc.internal.pageSize.getHeight();
+
+  for (const topic of topics) {
+    if (topic.subtasks.length === 0) continue;
+
+    // Topic subtitle
+    y = checkPageBreak(doc, y, 16, margin);
+    doc.setFontSize(7.5);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...PURPLE_700);
+    doc.text(`▸ ${topic.title}`, margin + 2, y);
+    y += 3;
+
+    // Build subtask rows with their last bitácora entry
+    const subtaskRows = topic.subtasks.map(s => {
+      const status = s.completed ? '✓' : '○';
+      const dueStr = s.due_date ? formatStoredDate(s.due_date, 'dd MMM yyyy', { locale: es }) : '—';
+      const lastEntry = s.subtask_entries && s.subtask_entries.length > 0
+        ? s.subtask_entries[s.subtask_entries.length - 1].content
+        : '—';
+      return [status, s.title, s.responsible || '—', dueStr, lastEntry];
+    });
+
+    autoTable(doc, {
+      startY: y,
+      margin: { left: margin + 3, right: margin },
+      head: [['', 'Subtarea', 'Responsable', 'Fecha', 'Último Comentario']],
+      body: subtaskRows,
+      styles: { fontSize: 6.5, cellPadding: 1.8, overflow: 'linebreak' },
+      headStyles: { fillColor: PURPLE_100 as any, textColor: PURPLE_900 as any, fontStyle: 'bold', fontSize: 6.5 },
+      alternateRowStyles: { fillColor: PURPLE_50 as any },
+      columnStyles: {
+        0: { cellWidth: 6, halign: 'center' },
+        1: { cellWidth: 35 },
+        2: { cellWidth: 22 },
+        3: { cellWidth: 22 },
+        4: { cellWidth: 'auto' },
+      },
+      didParseCell: (data) => {
+        if (data.section === 'body' && data.column.index === 0) {
+          const val = data.cell.raw as string;
+          if (val === '✓') {
+            data.cell.styles.textColor = GREEN as any;
+            data.cell.styles.fontStyle = 'bold';
+          } else {
+            data.cell.styles.textColor = SLATE_500 as any;
+          }
+        }
+      },
+    });
+    y = (doc as any).lastAutoTable.finalY + 3;
+  }
+
+  return y;
+}
+
 export function generateReportPdf(opts: PdfOptions) {
   const { topics, periodStart, periodEnd, title, authorName, authorRole, includeCompleted = true, includeResponsables = true, departments } = opts;
   
@@ -266,7 +324,12 @@ export function generateReportPdf(opts: PdfOptions) {
         alternateRowStyles: { fillColor: SLATE_50 as any },
         columnStyles: { 0: { cellWidth: 40 }, 1: { cellWidth: 28 }, 2: { cellWidth: 25 }, 3: { cellWidth: 'auto' } },
       });
-      y = (doc as any).lastAutoTable.finalY + 4;
+      y = (doc as any).lastAutoTable.finalY + 2;
+      // Subtask details for completed topics
+      const topicsWithSubs = group.topics.filter(t => t.subtasks.length > 0);
+      if (topicsWithSubs.length > 0) {
+        y = drawSubtaskDetails(doc, topicsWithSubs, y, margin, contentW);
+      }
     });
     y += 4;
   }
@@ -321,7 +384,12 @@ export function generateReportPdf(opts: PdfOptions) {
           }
         },
       });
-      y = (doc as any).lastAutoTable.finalY + 4;
+      y = (doc as any).lastAutoTable.finalY + 2;
+      // Subtask details for active topics
+      const topicsWithSubs = group.topics.filter(t => t.subtasks.length > 0);
+      if (topicsWithSubs.length > 0) {
+        y = drawSubtaskDetails(doc, topicsWithSubs, y, margin, contentW);
+      }
     });
     y += 4;
   }
@@ -357,7 +425,11 @@ export function generateReportPdf(opts: PdfOptions) {
         alternateRowStyles: { fillColor: SLATE_50 as any },
         columnStyles: { 0: { cellWidth: 40 }, 2: { cellWidth: 55 }, 3: { cellWidth: 25 } },
       });
-      y = (doc as any).lastAutoTable.finalY + 4;
+      y = (doc as any).lastAutoTable.finalY + 2;
+      const topicsWithSubs = group.topics.filter(t => t.subtasks.length > 0);
+      if (topicsWithSubs.length > 0) {
+        y = drawSubtaskDetails(doc, topicsWithSubs, y, margin, contentW);
+      }
     });
     y += 4;
   }
