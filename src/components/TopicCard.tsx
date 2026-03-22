@@ -425,8 +425,33 @@ export function TopicCard({
 
               {/* Status actions */}
               <div className="flex items-center gap-2">
-                {(topic.status === 'activo' || topic.status === 'seguimiento') && (
+              {(topic.status === 'activo' || topic.status === 'seguimiento') && (
                   <>
+                    {topic.status === 'activo' && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1 h-9 text-xs gap-2"
+                        onClick={() => {
+                          if (!topic.assignee) {
+                            // If no assignee, just switch status - user can assign after
+                          }
+                          onUpdate(topic.id, { status: 'seguimiento' });
+                        }}
+                      >
+                        <User className="h-3.5 w-3.5" /> Seguimiento
+                      </Button>
+                    )}
+                    {topic.status === 'seguimiento' && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1 h-9 text-xs gap-2"
+                        onClick={() => onUpdate(topic.id, { status: 'activo', assignee: null })}
+                      >
+                        <Play className="h-3.5 w-3.5" /> Activo
+                      </Button>
+                    )}
                     <Button
                       size="sm"
                       variant="outline"
