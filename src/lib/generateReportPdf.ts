@@ -174,7 +174,7 @@ export function generateReportPdf(opts: PdfOptions) {
   const kpiW = (contentW - 12) / 5;
   const kpiH = 22;
   const kpis = [
-    { value: String(topics.length), label: 'Temas Totales', color: SLATE_700 },
+    { value: String(topics.length), label: 'Temas Totales', color: PURPLE_700 },
     { value: String(onTrack), label: 'Al Día', color: GREEN },
     { value: String(warning), label: 'Próximos', color: AMBER },
     { value: String(delayed), label: 'Atrasados', color: RED },
