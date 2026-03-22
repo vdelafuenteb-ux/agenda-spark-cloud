@@ -56,14 +56,26 @@ Deno.serve(async (req) => {
 
     console.log(`Daily summary: today=${today}, upcoming limit=${limitDate}`);
 
-    // Get all users with topics
+    const RECIPIENT_EMAIL = "matias@transitglobalgroup.com";
+
+    // Find the user by email
     const { data: users, error: usersErr } = await supabase.auth.admin.listUsers();
     if (usersErr) throw usersErr;
 
+    const targetUser = users.users.find(u => u.email === RECIPIENT_EMAIL);
+    if (!targetUser) {
+      console.log(`User ${RECIPIENT_EMAIL} not found, skipping`);
+      return new Response(
+        JSON.stringify({ success: true, message: "Target user not found" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     let emailsSent = 0;
 
-    for (const user of users.users) {
-      if (!user.email) continue;
+    // Process only the target user
+    const user = targetUser;
+    {
 
       // Fetch active/seguimiento topics with subtasks
       const { data: topics, error: topicsErr } = await supabase
