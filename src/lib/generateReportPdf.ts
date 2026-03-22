@@ -345,7 +345,7 @@ export function generateReportPdf(opts: PdfOptions) {
           6: { cellWidth: 22 },
         },
         didParseCell: (data) => {
-          if (data.section === 'body' && data.column.index === 4) {
+          if (data.section === 'body' && data.column.index === 6) {
             const val = parseInt(data.cell.raw as string);
             if (val > 0) {
               data.cell.styles.textColor = RED as any;
