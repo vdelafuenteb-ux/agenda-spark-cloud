@@ -110,6 +110,30 @@ export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardVie
     const ongoing = activeAndTracking.filter(t => (t as any).is_ongoing);
     const missingDates = nonOngoing.filter(t => !t.due_date);
 
+    // Closure compliance analysis
+    const closedWithDates = byStatus.completado.filter(t => t.due_date && (t as any).closed_at);
+    let onTime = 0;
+    let late = 0;
+    let totalDelayDays = 0;
+    let totalEarlyDays = 0;
+    
+    for (const t of closedWithDates) {
+      const closedDate = new Date((t as any).closed_at);
+      const dueDate = new Date(t.due_date! + 'T23:59:59');
+      const diffDays = Math.round((closedDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+      if (diffDays <= 0) {
+        onTime++;
+        totalEarlyDays += Math.abs(diffDays);
+      } else {
+        late++;
+        totalDelayDays += diffDays;
+      }
+    }
+    
+    const closureCompliance = closedWithDates.length > 0 ? Math.round((onTime / closedWithDates.length) * 100) : null;
+    const avgDelayDays = late > 0 ? Math.round(totalDelayDays / late) : 0;
+    const avgEarlyDays = onTime > 0 ? Math.round(totalEarlyDays / onTime) : 0;
+
     // Status chart data
     const statusData = [
       { name: 'Activos', value: byStatus.activo.length, fill: STATUS_COLORS.activo },
@@ -133,8 +157,8 @@ export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardVie
       const label = format(weekStart, 'd MMM', { locale: es });
 
       const completedInWeek = byStatus.completado.filter(t => {
-        const updated = new Date(t.updated_at);
-        return isAfter(updated, weekStart) && isBefore(updated, weekEnd);
+        const closed = (t as any).closed_at ? new Date((t as any).closed_at) : new Date(t.updated_at);
+        return isAfter(closed, weekStart) && isBefore(closed, weekEnd);
       }).length;
 
       const createdInWeek = topics.filter(t => {
@@ -185,6 +209,12 @@ export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardVie
       priorityData,
       weeklyTrend,
       assigneeRanking,
+      closureCompliance,
+      onTime,
+      late,
+      closedWithDates: closedWithDates.length,
+      avgDelayDays,
+      avgEarlyDays,
     };
   }, [topics]);
 
