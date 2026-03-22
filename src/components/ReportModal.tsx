@@ -68,6 +68,7 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
 
   // Personalización
   const [reportTitle, setReportTitle] = useState('Informe Ejecutivo');
+  const ownerLabel = authorName || 'Yo';
   const [authorName, setAuthorName] = useState('');
   const [authorRole, setAuthorRole] = useState('');
 
