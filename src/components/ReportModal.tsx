@@ -171,35 +171,29 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
     });
   }, [topicsByStatus]);
 
-  // Markdown report
-  const report = useMemo(() => {
+  // Generate markdown only when saving to DB
+  const generateMarkdown = useCallback(() => {
     const activeTopics = selectedTopics.filter(t => t.status === 'activo' || t.status === 'seguimiento');
     const completedTopics = selectedTopics.filter(t => t.status === 'completado');
     const pausedTopics = selectedTopics.filter(t => t.status === 'pausado');
-
     const totalSubs = selectedTopics.reduce((a, t) => a + t.subtasks.length, 0);
     const doneSubs = selectedTopics.reduce((a, t) => a + t.subtasks.filter(s => s.completed).length, 0);
     const pct = totalSubs > 0 ? Math.round((doneSubs / totalSubs) * 100) : 0;
-
     const delayed = activeTopics.filter(t => getTrafficLight(t.due_date).icon === '🔴').length;
     const warning = activeTopics.filter(t => getTrafficLight(t.due_date).icon === '🟡').length;
     const onTrack = activeTopics.length - delayed - warning;
-
     const periodStr = `${format(start, 'dd MMM yyyy', { locale: es })} — ${format(end, 'dd MMM yyyy', { locale: es })}`;
 
     let md = `# 📊 ${reportTitle}\n\n`;
     md += `**Período:** ${periodStr}\n`;
     if (authorName) md += `**Elaborado por:** ${authorName}${authorRole ? ` — ${authorRole}` : ''}\n`;
     md += `**Emitido:** ${format(new Date(), "dd MMM yyyy 'a las' HH:mm", { locale: es })}\n\n---\n\n`;
-
-    md += `## Resumen Ejecutivo\n\n`;
-    md += `Durante el período evaluado se gestionaron **${selectedTopics.length} temas** en total. `;
+    md += `## Resumen Ejecutivo\n\nDurante el período evaluado se gestionaron **${selectedTopics.length} temas** en total. `;
     if (completedTopics.length > 0) md += `Se completaron **${completedTopics.length} temas** exitosamente. `;
     md += `De los ${activeTopics.length} temas activos, **${onTrack}** están al día`;
     if (warning > 0) md += `, **${warning}** próximos a vencer`;
     if (delayed > 0) md += ` y **${delayed}** presentan atrasos`;
     md += `. El avance global en subtareas es de **${pct}%** (${doneSubs}/${totalSubs}).\n\n`;
-
     md += `### Indicadores Clave\n\n| Indicador | Valor |\n|---|---|\n`;
     md += `| Temas totales | ${selectedTopics.length} |\n| 🟢 Al día | ${onTrack} |\n| 🟡 Próximos | ${warning} |\n| 🔴 Atrasados | ${delayed} |\n`;
     if (completedTopics.length > 0) md += `| ✅ Completados | ${completedTopics.length} |\n`;
@@ -208,12 +202,9 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
 
     if (includeCompleted && completedTopics.length > 0) {
       md += `## ✅ Logros del Período\n\n`;
-      completedTopics.forEach(t => {
-        md += `- **${t.title}** — Responsable: ${t.assignee || ownerLabel}\n`;
-      });
+      completedTopics.forEach(t => { md += `- **${t.title}** — Responsable: ${t.assignee || ownerLabel}\n`; });
       md += `\n`;
     }
-
     if (activeTopics.length > 0) {
       md += `## Semáforo General\n\n| Tema | Responsable | Prioridad | Estado | Fecha cierre | Progreso |\n|---|---|---|---|---|---|\n`;
       activeTopics.forEach(t => {
@@ -225,7 +216,6 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
       });
       md += `\n`;
     }
-
     md += `## Detalle por Tema\n\n`;
     selectedTopics.forEach(t => {
       const tl = getTrafficLight(t.due_date);
@@ -259,7 +249,6 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
       }
       md += `---\n\n`;
     });
-
     if (includeResponsables) {
       const assigneeMap = new Map<string, TopicWithSubtasks[]>();
       selectedTopics.forEach(t => {
@@ -278,15 +267,9 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
         md += `\n`;
       }
     }
-
     md += `*Generado automáticamente el ${format(new Date(), "dd MMM yyyy 'a las' HH:mm", { locale: es })}*\n`;
     return md;
-  }, [selectedTopics, start, end, reportTitle, authorName, authorRole, includeCompleted, includeBitacora, includeResponsables]);
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(report);
-    toast.success('Informe copiado al portapapeles');
-  };
+  }, [selectedTopics, start, end, reportTitle, authorName, authorRole, includeCompleted, includeBitacora, includeResponsables, ownerLabel]);
 
   const handleDownloadPdf = () => {
     downloadReportPdf({
