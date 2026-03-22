@@ -50,7 +50,7 @@ export function useNotificationEmails(topicId?: string) {
           topic_id: params.topic_id,
           assignee_name: params.assignee_name,
           assignee_email: params.assignee_email,
-        } as any)
+        })
         .select()
         .single();
       if (error) throw error;
