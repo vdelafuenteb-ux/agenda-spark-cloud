@@ -212,7 +212,6 @@ export function TopicCard({
                 if (diffDays <= 0) return <Badge variant="outline" className="text-[9px] border-emerald-500/50 text-emerald-600 px-1.5 py-0">A tiempo</Badge>;
                 return <Badge variant="destructive" className="text-[9px] px-1.5 py-0">{diffDays}d atraso</Badge>;
               })()}
-              )}
               {topic.due_date && !isCompleted && (
                 <span className="text-[11px] text-muted-foreground font-mono">
                   {formatStoredDate(topic.due_date, 'dd MMM', { locale: es })}
