@@ -301,6 +301,66 @@ export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardVie
           ))}
         </div>
 
+        {/* Closure Compliance KPI */}
+        {metrics.closedWithDates > 0 && (
+          <Card className="border-primary/20">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Target className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium text-foreground">Cumplimiento de Cierre</span>
+                <Badge variant="outline" className="ml-auto text-[10px]">
+                  {metrics.closedWithDates} temas analizados
+                </Badge>
+              </div>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Compliance percentage */}
+                <div className="space-y-1.5">
+                  <div className="flex items-baseline gap-1">
+                    <span className={`text-3xl font-bold ${metrics.closureCompliance !== null && metrics.closureCompliance >= 70 ? 'text-emerald-600' : metrics.closureCompliance !== null && metrics.closureCompliance >= 40 ? 'text-yellow-600' : 'text-destructive'}`}>
+                      {metrics.closureCompliance ?? 0}%
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">Tasa de cumplimiento</p>
+                  <Progress value={metrics.closureCompliance ?? 0} className="h-2" />
+                </div>
+                {/* On time */}
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1.5">
+                    <div className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                    <span className="text-xs text-muted-foreground">A tiempo / Anticipado</span>
+                  </div>
+                  <span className="text-2xl font-bold text-foreground">{metrics.onTime}</span>
+                  {metrics.avgEarlyDays > 0 && (
+                    <p className="text-[10px] text-emerald-600">Promedio {metrics.avgEarlyDays}d antes</p>
+                  )}
+                </div>
+                {/* Late */}
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1.5">
+                    <div className="h-2.5 w-2.5 rounded-full bg-destructive" />
+                    <span className="text-xs text-muted-foreground">Con atraso</span>
+                  </div>
+                  <span className="text-2xl font-bold text-foreground">{metrics.late}</span>
+                  {metrics.avgDelayDays > 0 && (
+                    <p className="text-[10px] text-destructive">Promedio {metrics.avgDelayDays}d de atraso</p>
+                  )}
+                </div>
+                {/* Visual bar */}
+                <div className="flex flex-col justify-center space-y-1.5">
+                  <div className="flex h-4 rounded-full overflow-hidden bg-secondary">
+                    <div className="bg-emerald-500 transition-all" style={{ width: `${metrics.closureCompliance ?? 0}%` }} />
+                    <div className="bg-destructive transition-all" style={{ width: `${100 - (metrics.closureCompliance ?? 0)}%` }} />
+                  </div>
+                  <div className="flex justify-between text-[10px] text-muted-foreground">
+                    <span>{metrics.onTime} a tiempo</span>
+                    <span>{metrics.late} atrasados</span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Overdue + Due Soon - always visible side by side */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
           {/* Overdue */}
