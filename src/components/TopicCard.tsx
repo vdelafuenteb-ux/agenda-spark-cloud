@@ -94,7 +94,7 @@ export function TopicCard({
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState(topic.title);
   const [showPauseDialog, setShowPauseDialog] = useState(false);
-  const [pauseReasonDraft, setPauseReasonDraft] = useState('');
+  const [pauseReasonDraft, setPauseReasonDraft] = useState(topic.pause_reason || '');
 
   useEffect(() => {
     if (forceExpand !== null) {
@@ -536,18 +536,31 @@ export function TopicCard({
                 )}
                 {topic.status === 'pausado' && (
                   <>
-                    {/* Show pause reason and date */}
-                    {(topic.pause_reason || topic.paused_at) && (
-                      <div className="w-full bg-muted/50 rounded-md p-3 mb-2 border border-border">
-                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Motivo de pausa</p>
-                        <p className="text-sm text-foreground">{topic.pause_reason || 'Sin motivo registrado'}</p>
-                        {topic.paused_at && (
-                          <p className="text-[10px] text-muted-foreground mt-1">
-                            Pausado el {formatStoredDate(topic.paused_at.split('T')[0], 'dd MMM yyyy', { locale: es })}
-                          </p>
-                        )}
-                      </div>
-                    )}
+                    {/* Editable pause reason */}
+                    <div className="w-full bg-muted/50 rounded-md p-3 mb-2 border border-border space-y-1.5">
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Motivo de pausa</p>
+                      <Textarea
+                        placeholder="Escribe el motivo de la pausa..."
+                        value={pauseReasonDraft || topic.pause_reason || ''}
+                        onChange={(e) => setPauseReasonDraft(e.target.value)}
+                        onBlur={() => {
+                          const newReason = (pauseReasonDraft ?? '').trim();
+                          const oldReason = topic.pause_reason || '';
+                          if (newReason !== oldReason) {
+                            onUpdate(topic.id, {
+                              pause_reason: newReason,
+                              ...(!topic.paused_at ? { paused_at: new Date().toISOString() } : {}),
+                            });
+                          }
+                        }}
+                        className="min-h-[60px] text-sm"
+                      />
+                      {topic.paused_at && (
+                        <p className="text-[10px] text-muted-foreground">
+                          Pausado el {formatStoredDate(topic.paused_at.split('T')[0], 'dd MMM yyyy', { locale: es })}
+                        </p>
+                      )}
+                    </div>
                     <Button
                       size="sm"
                       variant="outline"
