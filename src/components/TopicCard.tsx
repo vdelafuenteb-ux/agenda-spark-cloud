@@ -135,7 +135,7 @@ export function TopicCard({
     <div className={cn(
       'bg-card rounded-lg shadow-sm hover:shadow-md transition-shadow border-l-4',
       isCompleted && 'opacity-75',
-      isSeguimiento ? 'border-l-[hsl(var(--seguimiento))] bg-[hsl(var(--seguimiento-bg))]'
+      isSeguimiento ? 'border-l-[hsl(var(--seguimiento))]'
         : topic.priority === 'alta' ? 'border-l-destructive'
         : topic.pinned ? 'border-l-primary'
         : 'border-l-transparent'
@@ -304,14 +304,10 @@ export function TopicCard({
                   </TooltipProvider>
                 )}
 
-                {/* Status badge — only when not 'activo' */}
-                {topic.status !== 'activo' && (
-                  <Badge variant="outline" className={cn(
-                    "text-[9px] px-1.5 py-0 ml-1",
-                    isSeguimiento && "bg-[hsl(var(--seguimiento))] text-[hsl(var(--seguimiento-foreground))] border-transparent",
-                    topic.status === 'pausado' && "bg-muted text-muted-foreground border-transparent"
-                  )}>
-                    {statusLabels[topic.status]}
+                {/* Priority badge — only alta */}
+                {topic.priority === 'alta' && (
+                  <Badge variant="outline" className="text-[9px] px-1.5 py-0 ml-1 bg-destructive/15 text-destructive border-destructive/30">
+                    Alta
                   </Badge>
                 )}
 
