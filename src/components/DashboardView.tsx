@@ -38,7 +38,47 @@ const STATUS_COLORS = {
   completado: 'hsl(142 71% 45%)',
 };
 
-export function DashboardView({ topics, onUpdateTopic }: DashboardViewProps) {
+export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardViewProps) {
+  const [sendingId, setSendingId] = useState<string | null>(null);
+
+  const handleSendReminder = async (topic: TopicWithSubtasks) => {
+    if (!topic.assignee) {
+      toast.error('Este tema no tiene responsable asignado');
+      return;
+    }
+    const assignee = assignees.find(a => a.name === topic.assignee);
+    if (!assignee?.email) {
+      toast.error(`${topic.assignee} no tiene correo configurado`);
+      return;
+    }
+
+    setSendingId(topic.id);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('No autenticado');
+
+      const pendingSubtasks = topic.subtasks.filter(s => !s.completed);
+
+      const { error } = await supabase.functions.invoke('send-notification-email', {
+        body: {
+          to_email: assignee.email,
+          to_name: assignee.name,
+          topic_title: topic.title,
+          subtasks: topic.subtasks.map(s => ({ title: s.title, completed: s.completed, due_date: s.due_date })),
+          start_date: topic.start_date,
+          due_date: topic.due_date,
+          progress_entries: topic.progress_entries || [],
+        },
+      });
+
+      if (error) throw error;
+      toast.success(`Recordatorio enviado a ${assignee.name}`);
+    } catch (err: any) {
+      toast.error(`Error al enviar: ${err.message}`);
+    } finally {
+      setSendingId(null);
+    }
+  };
   const metrics = useMemo(() => {
     const now = new Date();
     const threeDaysFromNow = addDays(now, 3);
