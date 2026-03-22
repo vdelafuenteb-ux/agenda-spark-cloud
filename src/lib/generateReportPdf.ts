@@ -79,7 +79,7 @@ function checkPageBreak(doc: jsPDF, y: number, needed: number, margin: number): 
 }
 
 export function generateReportPdf(opts: PdfOptions) {
-  const { topics, periodStart, periodEnd, title, authorName, authorRole, includeCompleted = true, includeBitacora = true, includeResponsables = true } = opts;
+  const { topics, periodStart, periodEnd, title, authorName, authorRole, includeCompleted = true, includeResponsables = true } = opts;
   
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const pageW = doc.internal.pageSize.getWidth();
