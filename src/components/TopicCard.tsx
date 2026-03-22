@@ -258,6 +258,15 @@ export function TopicCard({
                 {topic.assignee}
               </Badge>
             )}
+            {(() => {
+              const dept = departments.find(d => d.id === (topic as any).department_id);
+              return dept ? (
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0 gap-0.5">
+                  <Building2 className="h-2.5 w-2.5" />
+                  {dept.name}
+                </Badge>
+              ) : null;
+            })()}
             {topicTags.length > 0 && (
               <div className="flex items-center gap-1 ml-1">
                 {topicTags.slice(0, 3).map((tag) => (
