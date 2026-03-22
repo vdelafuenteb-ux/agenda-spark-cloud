@@ -24,6 +24,7 @@ interface ReviewItem {
   dueDate?: string | null;
   completed: boolean;
   onToggle: () => void;
+  topicStatus?: string;
 }
 
 const priorityConfig: Record<string, { label: string; className: string }> = {
@@ -74,14 +75,12 @@ export function ReviewView({ topics, onToggleSubtask }: ReviewViewProps) {
   const upcomingChecklist = checklistItems.filter(i => !i.completed && isStoredDateUpcoming(i.due_date, 3));
   const overdueChecklist = checklistItems.filter(i => !i.completed && isStoredDateOverdue(i.due_date));
 
-  // Build flat review items per tab
   const buildItems = (
     matchFn: (date: string | null) => boolean,
     includeCompleted: boolean
   ): ReviewItem[] => {
     const items: ReviewItem[] = [];
     activeTopics.forEach(topic => {
-      // Check subtasks first
       const matchingSubs = topic.subtasks.filter(s =>
         (includeCompleted || !s.completed) && matchFn(s.due_date)
       );
@@ -96,9 +95,9 @@ export function ReviewView({ topics, onToggleSubtask }: ReviewViewProps) {
           dueDate: sub.due_date,
           completed: sub.completed,
           onToggle: () => onToggleSubtask(sub.id, !sub.completed),
+          topicStatus: topic.status,
         });
       });
-      // If no subtasks match but topic itself matches
       if (matchingSubs.length === 0 && matchFn(topic.due_date)) {
         items.push({
           type: 'topic',
@@ -109,6 +108,7 @@ export function ReviewView({ topics, onToggleSubtask }: ReviewViewProps) {
           dueDate: topic.due_date,
           completed: false,
           onToggle: () => {},
+          topicStatus: topic.status,
         });
       }
     });
@@ -119,7 +119,6 @@ export function ReviewView({ topics, onToggleSubtask }: ReviewViewProps) {
   const overdueItems = buildItems(d => isStoredDateOverdue(d), false);
   const upcomingItems = buildItems(d => isStoredDateUpcoming(d, 3), false);
 
-  // Reminder items
   const todayReminderItems: ReviewItem[] = todayReminders.map(r => ({
     type: 'reminder' as const,
     id: r.id,
@@ -127,6 +126,7 @@ export function ReviewView({ topics, onToggleSubtask }: ReviewViewProps) {
     dueDate: todayDateStr,
     completed: isCompleted(r.id, todayDateStr),
     onToggle: () => toggleCompletion.mutate({ reminder_id: r.id, completed_date: todayDateStr }),
+    topicStatus: 'activo',
   }));
 
   const upcomingReminderItems: ReviewItem[] = upcomingReminders.map(({ reminder: r, date }) => {
@@ -138,10 +138,10 @@ export function ReviewView({ topics, onToggleSubtask }: ReviewViewProps) {
       dueDate: dateStr,
       completed: isCompleted(r.id, dateStr),
       onToggle: () => toggleCompletion.mutate({ reminder_id: r.id, completed_date: dateStr }),
+      topicStatus: 'activo',
     };
   });
 
-  // Checklist items
   const toChecklistItem = (item: typeof checklistItems[0]): ReviewItem => ({
     type: 'checklist',
     id: item.id,
@@ -149,6 +149,7 @@ export function ReviewView({ topics, onToggleSubtask }: ReviewViewProps) {
     dueDate: item.due_date,
     completed: false,
     onToggle: () => toggleItem.mutate({ id: item.id, completed: true }),
+    topicStatus: 'activo',
   });
 
   const allItems: Record<ReviewTab, ReviewItem[]> = {
@@ -164,6 +165,10 @@ export function ReviewView({ topics, onToggleSubtask }: ReviewViewProps) {
     proximos: allItems.proximos.length,
   };
 
+  // Split into own items vs seguimiento
+  const ownItems = currentItems.filter(i => i.topicStatus !== 'seguimiento');
+  const seguimientoItems = currentItems.filter(i => i.topicStatus === 'seguimiento');
+
   const emptyMessages: Record<ReviewTab, string> = {
     hoy: 'No hay pendientes para hoy. 🎉',
     atrasados: '¡Todo al día! No hay nada atrasado. ✅',
@@ -175,6 +180,73 @@ export function ReviewView({ topics, onToggleSubtask }: ReviewViewProps) {
     topic: { label: 'Tema', className: 'bg-secondary text-secondary-foreground border-border' },
     reminder: { label: 'Recordatorio', className: 'bg-accent text-accent-foreground border-border' },
     checklist: { label: 'Checklist', className: 'bg-muted text-muted-foreground border-border' },
+  };
+
+  const renderItem = (item: ReviewItem) => {
+    const tb = typeBadge[item.type];
+    const pc = item.priority ? priorityConfig[item.priority] : null;
+    const isSeguimiento = item.topicStatus === 'seguimiento';
+    return (
+      <div
+        key={`${item.type}-${item.id}`}
+        className={`flex items-center gap-3 rounded-lg border px-3 py-2 transition-colors ${
+          item.completed
+            ? 'bg-muted/50 border-border'
+            : isSeguimiento
+              ? 'bg-cyan-500/5 border-cyan-500/20'
+              : tab === 'atrasados'
+                ? 'bg-destructive/5 border-border'
+                : tab === 'proximos'
+                  ? 'bg-yellow-500/5 border-border'
+                  : 'bg-background border-border'
+        }`}
+      >
+        <button
+          onClick={item.onToggle}
+          className="shrink-0 hover:scale-110 transition-transform"
+          disabled={item.type === 'topic'}
+        >
+          {item.completed ? (
+            <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+          ) : (
+            <Circle className="h-4 w-4 text-muted-foreground" />
+          )}
+        </button>
+
+        <div className="flex-1 min-w-0">
+          <span className={`text-sm font-medium ${item.completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+            {item.title}
+          </span>
+          {item.parentTopicTitle && (
+            <span className="flex items-center gap-1 text-[11px] text-muted-foreground mt-0.5">
+              <ArrowRight className="h-2.5 w-2.5" />
+              {item.parentTopicTitle}
+            </span>
+          )}
+        </div>
+
+        <span className="hidden sm:flex items-center gap-1 text-[11px] text-muted-foreground shrink-0">
+          <User className="h-3 w-3" />
+          {item.assignee || 'Yo'}
+        </span>
+
+        {pc && (
+          <Badge variant="outline" className={`hidden sm:inline-flex text-[9px] h-4 shrink-0 ${pc.className}`}>
+            {pc.label}
+          </Badge>
+        )}
+
+        <Badge variant="outline" className={`text-[9px] h-4 shrink-0 ${tb.className}`}>
+          {tb.label}
+        </Badge>
+
+        {item.dueDate && (
+          <span className="text-[10px] text-muted-foreground shrink-0 tabular-nums">
+            {formatStoredDate(item.dueDate, "d MMM")}
+          </span>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -228,64 +300,34 @@ export function ReviewView({ topics, onToggleSubtask }: ReviewViewProps) {
       {currentItems.length === 0 ? (
         <p className="text-sm text-muted-foreground text-center py-8">{emptyMessages[tab]}</p>
       ) : (
-        <div className="space-y-1">
-          {currentItems.map((item) => {
-            const tb = typeBadge[item.type];
-            const pc = item.priority ? priorityConfig[item.priority] : null;
-            return (
-              <div
-                key={`${item.type}-${item.id}`}
-                className={`flex items-center gap-3 rounded-lg border border-border px-3 py-2 transition-colors ${
-                  item.completed ? 'bg-muted/50' : tab === 'atrasados' ? 'bg-destructive/5' : tab === 'proximos' ? 'bg-yellow-500/5' : 'bg-background'
-                }`}
-              >
-                <button
-                  onClick={item.onToggle}
-                  className="shrink-0 hover:scale-110 transition-transform"
-                  disabled={item.type === 'topic'}
-                >
-                  {item.completed ? (
-                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                  ) : (
-                    <Circle className="h-4 w-4 text-muted-foreground" />
-                  )}
-                </button>
-
-                <div className="flex-1 min-w-0">
-                  <span className={`text-sm font-medium ${item.completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
-                    {item.title}
-                  </span>
-                  {item.parentTopicTitle && (
-                    <span className="flex items-center gap-1 text-[11px] text-muted-foreground mt-0.5">
-                      <ArrowRight className="h-2.5 w-2.5" />
-                      {item.parentTopicTitle}
-                    </span>
-                  )}
-                </div>
-
-                <span className="hidden sm:flex items-center gap-1 text-[11px] text-muted-foreground shrink-0">
-                  <User className="h-3 w-3" />
-                  {item.assignee || 'Yo'}
+        <div className="space-y-4">
+          {/* Mis temas */}
+          {ownItems.length > 0 && (
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 px-1 pb-1">
+                <div className="h-px flex-1 bg-border" />
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Mis temas ({ownItems.length})
                 </span>
-
-                {pc && (
-                  <Badge variant="outline" className={`hidden sm:inline-flex text-[9px] h-4 shrink-0 ${pc.className}`}>
-                    {pc.label}
-                  </Badge>
-                )}
-
-                <Badge variant="outline" className={`text-[9px] h-4 shrink-0 ${tb.className}`}>
-                  {tb.label}
-                </Badge>
-
-                {item.dueDate && (
-                  <span className="text-[10px] text-muted-foreground shrink-0 tabular-nums">
-                    {formatStoredDate(item.dueDate, "d MMM")}
-                  </span>
-                )}
+                <div className="h-px flex-1 bg-border" />
               </div>
-            );
-          })}
+              {ownItems.map(renderItem)}
+            </div>
+          )}
+
+          {/* Seguimiento */}
+          {seguimientoItems.length > 0 && (
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 px-1 pb-1">
+                <div className="h-px flex-1 bg-cyan-500/30" />
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-cyan-600">
+                  Seguimiento ({seguimientoItems.length})
+                </span>
+                <div className="h-px flex-1 bg-cyan-500/30" />
+              </div>
+              {seguimientoItems.map(renderItem)}
+            </div>
+          )}
         </div>
       )}
     </div>
