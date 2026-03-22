@@ -451,7 +451,7 @@ export function generateReportPdf(opts: PdfOptions) {
   // SECTIONS
   // ==========================================
   if (includeCompleted && completedTopics.length > 0) {
-    renderSection('Logros del Periodo', completedTopics, 'completed', GREEN);
+    renderSection('Logros del Periodo', completedTopics, 'completed', SLATE_700);
   }
 
   if (activeTopics.length > 0) {
