@@ -180,7 +180,7 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
     if (includeCompleted && completedTopics.length > 0) {
       md += `## ✅ Logros del Período\n\n`;
       completedTopics.forEach(t => {
-        const responsable = t.assignee || 'Yo';
+        const responsable = t.assignee || ownerLabel;
         md += `- **${t.title}** — Responsable: ${responsable}\n`;
       });
       md += `\n`;
