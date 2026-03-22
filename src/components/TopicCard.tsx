@@ -39,7 +39,7 @@ interface TopicCardProps {
   highlightUpcoming?: boolean;
   highlightOverdue?: boolean;
   forceExpand?: boolean | null;
-  onUpdate: (id: string, data: any) => void;
+  onUpdate: (id: string, data: Record<string, unknown>) => void;
   onDelete: (id: string) => void;
   onAddSubtask: (topicId: string, title: string) => void;
   onToggleSubtask: (id: string, completed: boolean) => void;
