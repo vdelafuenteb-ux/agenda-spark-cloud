@@ -52,6 +52,7 @@ function ToolbarButton({ icon: Icon, label, onClick, active }: { icon: any; labe
 export function NoteEditor({
   note,
   notebooks,
+  sections,
   allTags,
   noteTagIds,
   onUpdate,

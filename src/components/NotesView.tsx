@@ -174,6 +174,7 @@ export function NotesView() {
             key={selectedNote.id}
             note={selectedNote}
             notebooks={notebooks}
+            sections={sections}
             allTags={tags}
             noteTagIds={getTagsForNote(selectedNote.id)}
             onUpdate={(id, data) => updateNote.mutate({ id, ...data })}
