@@ -533,8 +533,8 @@ export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardVie
                   </TableHeader>
                   <TableBody>
                     {metrics.assigneeRanking.map((a) => (
-                      <TableRow key={a.name}>
-                        <TableCell className="text-sm font-medium">{a.name}</TableCell>
+                      <TableRow key={a.name} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedAssignee(a.name)}>
+                        <TableCell className="text-sm font-medium text-primary underline underline-offset-2">{a.name}</TableCell>
                         <TableCell className="text-sm text-center">{a.total}</TableCell>
                         <TableCell className="text-sm text-center">{a.subtasksDone}/{a.subtasksTotal}</TableCell>
                         <TableCell className="text-sm text-center">
