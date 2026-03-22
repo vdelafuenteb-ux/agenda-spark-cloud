@@ -139,13 +139,16 @@ export function TopicCard({
 
   return (
     <div className={cn(
-      'bg-card rounded-lg shadow-sm hover:shadow-md transition-shadow',
+      'bg-card rounded-lg shadow-sm hover:shadow-md transition-shadow border-l-4',
       isCompleted && 'opacity-75',
-      isSeguimiento && 'border-l-4 border-l-[hsl(var(--seguimiento))] bg-[hsl(var(--seguimiento-bg))]',
-      topic.pinned && !isSeguimiento && 'border-l-4 border-l-primary'
+      isSeguimiento ? 'border-l-[hsl(var(--seguimiento))] bg-[hsl(var(--seguimiento-bg))]'
+        : topic.priority === 'alta' ? 'border-l-destructive'
+        : topic.pinned ? 'border-l-primary'
+        : 'border-l-transparent'
     )}>
-      <button onClick={() => setExpanded(!expanded)} className="w-full flex items-center gap-3 p-4 text-left">
-        <div className="flex items-center gap-1">
+      <button onClick={() => setExpanded(!expanded)} className="w-full flex items-center gap-3 p-3 text-left">
+        {/* Pin + Chevron */}
+        <div className="flex items-center gap-1 shrink-0">
           <button
             onClick={(e) => { e.stopPropagation(); onUpdate(topic.id, { pinned: !topic.pinned }); }}
             className={cn(
@@ -161,7 +164,9 @@ export function TopicCard({
           </motion.div>
         </div>
 
-        <div className="flex-1 min-w-0">
+        {/* Main content — two lines */}
+        <div className="flex-1 min-w-0 space-y-0.5">
+          {/* Line 1: Title + progress + date */}
           <div className="flex items-center gap-2">
             {editingTitle ? (
               <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
@@ -183,135 +188,148 @@ export function TopicCard({
                   className="font-medium text-sm text-card-foreground bg-transparent border-b border-primary outline-none min-w-[120px]"
                   autoFocus
                 />
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (titleDraft.trim() && titleDraft.trim() !== topic.title) {
-                      onUpdate(topic.id, { title: titleDraft.trim() });
-                    }
-                    setEditingTitle(false);
-                  }}
-                  className="p-0.5 text-emerald-500 hover:text-emerald-600"
-                >
+                <button type="button" onClick={(e) => { e.stopPropagation(); if (titleDraft.trim() && titleDraft.trim() !== topic.title) onUpdate(topic.id, { title: titleDraft.trim() }); setEditingTitle(false); }} className="p-0.5 text-emerald-500 hover:text-emerald-600">
                   <Check className="h-3.5 w-3.5" />
                 </button>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setTitleDraft(topic.title);
-                    setEditingTitle(false);
-                  }}
-                  className="p-0.5 text-muted-foreground hover:text-foreground"
-                >
+                <button type="button" onClick={(e) => { e.stopPropagation(); setTitleDraft(topic.title); setEditingTitle(false); }} className="p-0.5 text-muted-foreground hover:text-foreground">
                   <X className="h-3.5 w-3.5" />
                 </button>
               </div>
             ) : (
               <span
                 className={cn('font-medium text-sm text-card-foreground truncate cursor-pointer hover:underline', isCompleted && 'line-through')}
-                onDoubleClick={(e) => {
-                  e.stopPropagation();
-                  setTitleDraft(topic.title);
-                  setEditingTitle(true);
-                }}
+                onDoubleClick={(e) => { e.stopPropagation(); setTitleDraft(topic.title); setEditingTitle(true); }}
                 title="Doble clic para editar"
               >
                 {topic.title}
               </span>
             )}
-            <Badge className={cn('text-[10px] px-1.5 py-0', priorityConfig[topic.priority].className)}>
-              {priorityConfig[topic.priority].label}
-            </Badge>
-            {showSubtaskTodayBadge && (
-              <Badge className="text-[10px] px-1.5 py-0 bg-accent text-accent-foreground border-transparent">
-                📌 {subtaskTodayCount} subtarea{subtaskTodayCount === 1 ? '' : 's'} hoy
-              </Badge>
-            )}
-            {showSubtaskOverdueBadge && (
-              <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
-                🔴 {subtaskOverdueCount} subtarea{subtaskOverdueCount === 1 ? '' : 's'} atrasada{subtaskOverdueCount === 1 ? '' : 's'}
-              </Badge>
-            )}
-            {showSubtaskUpcomingBadge && (
-              <Badge className="text-[10px] px-1.5 py-0 bg-yellow-500/20 text-yellow-700 border-transparent">
-                📅 {subtaskUpcomingCount} subtarea{subtaskUpcomingCount === 1 ? '' : 's'} próxima{subtaskUpcomingCount === 1 ? '' : 's'}
-              </Badge>
-            )}
-            {(topic as any).is_ongoing && (
-              <Badge variant="outline" className="text-[10px] px-1.5 py-0 gap-0.5 border-primary/50 text-primary">
-                <InfinityIcon className="h-2.5 w-2.5" /> Continuo
-              </Badge>
-            )}
-            {!isCompleted && !(topic as any).is_ongoing && !topic.due_date && (
-              <Badge variant="outline" className="text-[10px] px-1.5 py-0 gap-0.5 border-destructive/50 text-destructive">
-                <AlertCircle className="h-2.5 w-2.5" /> Sin fecha
-              </Badge>
-            )}
-            {topic.status !== 'activo' && (
-              <Badge variant="outline" className={cn(
-                "text-[10px] px-1.5 py-0",
-                isSeguimiento && "bg-[hsl(var(--seguimiento))] text-[hsl(var(--seguimiento-foreground))] border-transparent"
-              )}>
-                {statusLabels[topic.status]}
-              </Badge>
-            )}
-            {topic.assignee && (
-              <Badge variant="outline" className="text-[10px] px-1.5 py-0 gap-0.5">
-                <User className="h-2.5 w-2.5" />
-                {topic.assignee}
-              </Badge>
-            )}
-            {(() => {
-              const dept = departments.find(d => d.id === (topic as any).department_id);
-              return dept ? (
-                <Badge variant="outline" className="text-[10px] px-1.5 py-0 gap-0.5">
-                  <Building2 className="h-2.5 w-2.5" />
-                  {dept.name}
-                </Badge>
-              ) : null;
-            })()}
-            {topicTags.length > 0 && (
-              <div className="flex items-center gap-1 ml-1">
-                {topicTags.slice(0, 3).map((tag) => (
-                  <span
-                    key={tag.id}
-                    className="inline-block rounded-full px-1.5 py-0 text-[9px] text-white font-medium"
-                    style={{ backgroundColor: tag.color }}
-                  >
-                    {tag.name}
+
+            {/* Right-aligned compact info */}
+            <div className="ml-auto flex items-center gap-2 shrink-0">
+              {totalCount > 0 && (
+                <span className="text-[11px] text-muted-foreground font-mono">{completedCount}/{totalCount}</span>
+              )}
+              {isCompleted && topic.updated_at && (
+                <span className="text-[10px] text-muted-foreground font-mono">
+                  Cerrado {formatStoredDate(topic.updated_at.split('T')[0], 'dd MMM yy', { locale: es })}
+                </span>
+              )}
+              {topic.due_date && !isCompleted && (
+                <span className="text-[11px] text-muted-foreground font-mono">
+                  {formatStoredDate(topic.due_date, 'dd MMM', { locale: es })}
+                </span>
+              )}
+              {!isCompleted && !topic.is_ongoing && !topic.due_date && (
+                <span className="text-[10px] text-destructive font-medium">Sin fecha</span>
+              )}
+            </div>
+          </div>
+
+          {/* Line 2: Metadata — subtle, dot-separated */}
+          {(() => {
+            const metaParts: React.ReactNode[] = [];
+
+            // Alerts
+            if (showSubtaskOverdueBadge) {
+              metaParts.push(
+                <span key="overdue" className="text-destructive font-medium">
+                  {subtaskOverdueCount} atrasada{subtaskOverdueCount === 1 ? '' : 's'}
+                </span>
+              );
+            }
+            if (showSubtaskTodayBadge) {
+              metaParts.push(
+                <span key="today" className="text-accent-foreground font-medium">
+                  {subtaskTodayCount} hoy
+                </span>
+              );
+            }
+            if (showSubtaskUpcomingBadge) {
+              metaParts.push(
+                <span key="upcoming" className="text-yellow-600 dark:text-yellow-400">
+                  {subtaskUpcomingCount} próxima{subtaskUpcomingCount === 1 ? '' : 's'}
+                </span>
+              );
+            }
+
+            // Assignee
+            if (topic.assignee) {
+              metaParts.push(<span key="assignee">{topic.assignee}</span>);
+            }
+
+            // Department
+            const dept = departments.find(d => d.id === topic.department_id);
+            if (dept) {
+              metaParts.push(<span key="dept">{dept.name}</span>);
+            }
+
+            // Ongoing
+            if (topic.is_ongoing && !isCompleted) {
+              metaParts.push(
+                <span key="ongoing" className="inline-flex items-center gap-0.5">
+                  <InfinityIcon className="h-2.5 w-2.5" /> Continuo
+                </span>
+              );
+            }
+
+            const hasMetaOrTags = metaParts.length > 0 || topicTags.length > 0 || (topic.status !== 'activo');
+
+            if (!hasMetaOrTags && totalCount === 0) return null;
+
+            return (
+              <div className="flex items-center gap-1 flex-wrap">
+                {metaParts.map((part, i) => (
+                  <span key={i} className="text-[11px] text-muted-foreground flex items-center gap-1">
+                    {i > 0 && <span className="text-muted-foreground/40">·</span>}
+                    {part}
                   </span>
                 ))}
-                {topicTags.length > 3 && (
-                  <span className="text-[9px] text-muted-foreground">+{topicTags.length - 3}</span>
+
+                {/* Tag dots */}
+                {topicTags.length > 0 && (
+                  <TooltipProvider delayDuration={300}>
+                    <div className="flex items-center gap-0.5 ml-1">
+                      {topicTags.slice(0, 5).map((tag) => (
+                        <Tooltip key={tag.id}>
+                          <TooltipTrigger asChild>
+                            <span
+                              className="w-2 h-2 rounded-full inline-block shrink-0"
+                              style={{ backgroundColor: tag.color }}
+                            />
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="text-xs">
+                            {tag.name}
+                          </TooltipContent>
+                        </Tooltip>
+                      ))}
+                      {topicTags.length > 5 && (
+                        <span className="text-[9px] text-muted-foreground">+{topicTags.length - 5}</span>
+                      )}
+                    </div>
+                  </TooltipProvider>
+                )}
+
+                {/* Status badge — only when not 'activo' */}
+                {topic.status !== 'activo' && (
+                  <Badge variant="outline" className={cn(
+                    "text-[9px] px-1.5 py-0 ml-1",
+                    isSeguimiento && "bg-[hsl(var(--seguimiento))] text-[hsl(var(--seguimiento-foreground))] border-transparent",
+                    topic.status === 'pausado' && "bg-muted text-muted-foreground border-transparent"
+                  )}>
+                    {statusLabels[topic.status]}
+                  </Badge>
+                )}
+
+                {/* Progress bar inline */}
+                {totalCount > 0 && (
+                  <div className="ml-auto h-[2px] w-16 bg-muted rounded-full overflow-hidden shrink-0">
+                    <div className="h-full bg-foreground/40 transition-all duration-300" style={{ width: `${progress}%` }} />
+                  </div>
                 )}
               </div>
-            )}
-          </div>
-          {totalCount > 0 && (
-            <div className="mt-1.5 h-[2px] w-full bg-muted rounded-full overflow-hidden">
-              <div className="h-full bg-foreground/40 transition-all duration-300" style={{ width: `${progress}%` }} />
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center gap-3 shrink-0">
-          {totalCount > 0 && (
-            <span className="text-xs text-muted-foreground font-mono">
-              {completedCount}/{totalCount}
-            </span>
-          )}
-          {isCompleted && topic.updated_at && (
-            <span className="text-[10px] text-muted-foreground font-mono" title="Fecha de cierre">
-              Cerrado {formatStoredDate(topic.updated_at.split('T')[0], 'dd MMM yy', { locale: es })}
-            </span>
-          )}
-          {topic.due_date && !isCompleted && (
-            <span className="text-xs text-muted-foreground font-mono">
-              {formatStoredDate(topic.due_date, 'dd MMM', { locale: es })}
-            </span>
-          )}
+            );
+          })()}
         </div>
       </button>
 
