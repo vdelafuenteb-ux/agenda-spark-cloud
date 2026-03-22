@@ -36,6 +36,37 @@ function getTrafficLight(dueDateStr: string | null | undefined): { label: string
 }
 
 
+interface DeptGroup {
+  deptName: string;
+  topics: TopicWithSubtasks[];
+}
+
+function groupByDepartment(
+  topics: TopicWithSubtasks[],
+  departments?: { id: string; name: string }[]
+): DeptGroup[] {
+  const deptMap = new Map<string, string>();
+  (departments || []).forEach(d => deptMap.set(d.id, d.name));
+
+  const groups = new Map<string, TopicWithSubtasks[]>();
+  topics.forEach(t => {
+    const deptName = t.department_id ? (deptMap.get(t.department_id) || 'Sin Departamento') : 'Sin Departamento';
+    if (!groups.has(deptName)) groups.set(deptName, []);
+    groups.get(deptName)!.push(t);
+  });
+
+  // Sort each group by assignee
+  groups.forEach(list => list.sort((a, b) => (a.assignee || 'Yo').localeCompare(b.assignee || 'Yo')));
+
+  // Sort groups alphabetically, "Sin Departamento" last
+  const sorted = Array.from(groups.entries()).sort(([a], [b]) => {
+    if (a === 'Sin Departamento') return 1;
+    if (b === 'Sin Departamento') return -1;
+    return a.localeCompare(b);
+  });
+
+  return sorted.map(([deptName, topics]) => ({ deptName, topics }));
+}
 
 export interface PdfOptions {
   topics: TopicWithSubtasks[];
@@ -47,6 +78,7 @@ export interface PdfOptions {
   includeCompleted?: boolean;
   includeBitacora?: boolean;
   includeResponsables?: boolean;
+  departments?: { id: string; name: string }[];
 }
 
 function drawKpiBox(doc: jsPDF, x: number, y: number, w: number, h: number, value: string, label: string, color: [number, number, number]) {
