@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Send, Pencil, Trash2, Check, X, Bold, Italic, List } from 'lucide-react';
@@ -135,12 +135,8 @@ export function ProgressLog({ entries, onAdd, onUpdate, onDelete, hideTitle = fa
     setText('');
   };
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  }, [text]);
+
+
 
   const handleStartEdit = (entry: GenericEntry) => {
     setEditingId(entry.id);
@@ -221,7 +217,6 @@ export function ProgressLog({ entries, onAdd, onUpdate, onDelete, hideTitle = fa
                       value={editText}
                       onChange={(e) => setEditText(e.target.value)}
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSaveEdit(); }
                         if (e.key === 'Escape') handleCancelEdit();
                       }}
                       className="min-h-[60px] text-sm resize-none"
@@ -283,7 +278,7 @@ export function ProgressLog({ entries, onAdd, onUpdate, onDelete, hideTitle = fa
           placeholder="Registrar avance... (Shift+Enter para nueva línea)"
           value={text}
           onChange={e => setText(e.target.value)}
-          onKeyDown={handleKeyDown}
+          
           className="min-h-[44px] text-sm resize-none"
           rows={2}
         />
