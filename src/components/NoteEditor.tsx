@@ -13,7 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import type { Note, Notebook } from '@/hooks/useNotes';
+import type { Note, Notebook, NoteSection } from '@/hooks/useNotes';
 import type { Tag as TagType } from '@/hooks/useTags';
 
 interface NoteEditorProps {
