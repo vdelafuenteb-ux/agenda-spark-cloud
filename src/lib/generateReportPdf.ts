@@ -299,7 +299,9 @@ export function generateReportPdf(opts: PdfOptions) {
   if (includeResponsables) {
     const assigneeMap = new Map<string, TopicWithSubtasks[]>();
     topics.forEach(t => {
-      const key = t.assignee || ownerName;
+      let key = t.assignee || ownerName;
+      // Unify: if assignee matches ownerName (case-insensitive), group under ownerName
+      if (key.toLowerCase() === ownerName.toLowerCase()) key = ownerName;
       if (!assigneeMap.has(key)) assigneeMap.set(key, []);
       assigneeMap.get(key)!.push(t);
     });
