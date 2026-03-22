@@ -23,12 +23,13 @@ import { DailySummarySettings } from '@/components/DailySummarySettings';
 
 const TAG_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#8b5cf6', '#ec4899', '#6b7280'];
 
-type SettingsSection = 'etiquetas' | 'responsables' | 'correos_automaticos';
+type SettingsSection = 'etiquetas' | 'responsables' | 'correos_automaticos' | 'resumen_diario';
 
 const SECTIONS: { key: SettingsSection; label: string; icon: typeof Tag }[] = [
   { key: 'etiquetas', label: 'Etiquetas', icon: Tag },
   { key: 'responsables', label: 'Responsables', icon: Users },
   { key: 'correos_automaticos', label: 'Correos Automáticos', icon: Clock },
+  { key: 'resumen_diario', label: 'Resumen Diario', icon: CalendarCheck },
 ];
 
 interface SettingsViewProps {
