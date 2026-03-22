@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { formatStoredDate, parseStoredDate, toStoredDate, isStoredDateOverdue } from '@/lib/date';
-import { CalendarIcon, Trash2, FileText, Pencil, Check, X, User } from 'lucide-react';
+import { CalendarIcon, Trash2, Eye, Pencil, Check, X, User } from 'lucide-react';
 import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
