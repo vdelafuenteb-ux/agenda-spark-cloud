@@ -13,15 +13,16 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import type { Note, Notebook } from '@/hooks/useNotes';
+import type { Note, Notebook, NoteSection } from '@/hooks/useNotes';
 import type { Tag as TagType } from '@/hooks/useTags';
 
 interface NoteEditorProps {
   note: Note;
   notebooks: Notebook[];
+  sections: NoteSection[];
   allTags: TagType[];
   noteTagIds: string[];
-  onUpdate: (id: string, data: { title?: string; content?: string; notebook_id?: string | null }) => void;
+  onUpdate: (id: string, data: { title?: string; content?: string; notebook_id?: string | null; section_id?: string | null }) => void;
   onDelete: (id: string) => void;
   onAddTag: (noteId: string, tagId: string) => void;
   onRemoveTag: (noteId: string, tagId: string) => void;
@@ -51,6 +52,7 @@ function ToolbarButton({ icon: Icon, label, onClick, active }: { icon: any; labe
 export function NoteEditor({
   note,
   notebooks,
+  sections,
   allTags,
   noteTagIds,
   onUpdate,
@@ -475,7 +477,10 @@ export function NoteEditor({
         <div className="flex-1" />
         <Select
           value={note.notebook_id ?? '__none__'}
-          onValueChange={(v) => onUpdate(note.id, { notebook_id: v === '__none__' ? null : v })}
+          onValueChange={(v) => {
+            const newNotebookId = v === '__none__' ? null : v;
+            onUpdate(note.id, { notebook_id: newNotebookId, section_id: newNotebookId !== note.notebook_id ? null : note.section_id });
+          }}
         >
           <SelectTrigger className="h-7 w-32 text-xs">
             <SelectValue placeholder="Sin libreta" />
@@ -487,6 +492,26 @@ export function NoteEditor({
             ))}
           </SelectContent>
         </Select>
+        {note.notebook_id && (() => {
+          const nbSections = sections.filter((s) => s.notebook_id === note.notebook_id);
+          if (nbSections.length === 0) return null;
+          return (
+            <Select
+              value={note.section_id ?? '__none__'}
+              onValueChange={(v) => onUpdate(note.id, { section_id: v === '__none__' ? null : v })}
+            >
+              <SelectTrigger className="h-7 w-32 text-xs">
+                <SelectValue placeholder="Sin tema" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__" className="text-xs">Sin tema</SelectItem>
+                {nbSections.map((s) => (
+                  <SelectItem key={s.id} value={s.id} className="text-xs">{s.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          );
+        })()}
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="ghost" size="icon" className="h-7 w-7">
