@@ -559,6 +559,6 @@ export function downloadPdfFromContent(content: string, title: string, periodSta
     }
   });
 
-  const fileName = `informe_${periodStart.replace(/-/g, '')}_${periodEnd.replace(/-/g, '')}.pdf`;
-  doc.save(fileName);
+  const baseName = (title || 'Informe Ejecutivo').replace(/[\/\\:*?"<>|]/g, '_').trim();
+  doc.save(`${baseName}.pdf`);
 }
