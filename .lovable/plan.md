@@ -1,29 +1,65 @@
 
 
-## Plan: Bitácora de avances para subtareas
+## Plan: Reestructurar Notas con jerarquía Libreta → Tema → Nota y vista mosaico
 
-Actualmente cada subtarea tiene un campo `notes` (texto plano) que se muestra como un textarea simple. El usuario quiere reemplazarlo con una bitácora de avances ordenada cronológicamente, igual que la que ya tienen los temas.
+### Estructura actual
+- Libreta (notebook) → Notas directamente
+- Vista: lista plana en panel lateral
+
+### Nueva estructura
+- **Libreta** (notebook) → **Temas** (note_sections, sub-agendas) → **Notas**
+- Navegación por niveles: primero ves libretas en mosaico, entras a una y ves sus temas, entras a un tema y ves sus notas
 
 ### Cambios
 
-**1. Nueva tabla `subtask_entries` (migración)**
-- Columnas: `id`, `subtask_id` (FK a subtasks), `content`, `created_at`
-- RLS: solo usuarios autenticados, filtrado por ownership vía join a subtasks → topics → user_id
-- Habilitar realtime no es necesario
+#### 1. Base de datos
+- Crear tabla `note_sections` con columnas: `id`, `user_id`, `notebook_id` (FK), `name`, `color`, `created_at`, `sort_order`
+- Agregar columna `section_id` (nullable) a tabla `notes` para vincular notas a un tema/sección
+- RLS policies estándar por `user_id` en `note_sections`, y para notes via notebook ownership
 
-**2. Hook `useTopics.tsx` — cargar y gestionar entradas de subtareas**
-- Agregar query de `subtask_entries` en el `Promise.all` existente
-- Construir mapa `entriesBySubtask` y adjuntar a cada subtask como `subtask_entries[]`
-- Agregar mutaciones: `addSubtaskEntry`, `updateSubtaskEntry`, `deleteSubtaskEntry`
+#### 2. Hook `useNotes.tsx`
+- Agregar interfaz `NoteSection` y query para `note_sections`
+- CRUD mutations: `createSection`, `updateSection`, `deleteSection`
+- Actualizar `createNote` para aceptar `section_id`
+- Actualizar `updateNote` para permitir mover nota entre secciones
 
-**3. `SubtaskRow.tsx` — reemplazar textarea por ProgressLog**
-- Eliminar el textarea de notas y el estado/debounce asociado
-- Al hacer clic en el icono de comentarios, mostrar un mini `ProgressLog` (el mismo componente reutilizado) con las entradas de la subtarea
-- Pasar callbacks `onAddEntry`, `onUpdateEntry`, `onDeleteEntry` desde props
+#### 3. Vista principal `NotesView.tsx` - Rediseño completo
+- **3 niveles de navegación** con estado: `currentView = 'notebooks' | 'sections' | 'notes' | 'editor'`
+- **Nivel 1 - Libretas (mosaico)**: Cards grandes con color, nombre, cantidad de temas y notas. Botón crear libreta. Toggle vista mosaico/lista
+- **Nivel 2 - Temas dentro de libreta**: Al hacer clic en una libreta, muestra sus temas como cards. Breadcrumb "Notas > Transit". Botón crear tema
+- **Nivel 3 - Notas dentro de tema**: Lista de notas del tema seleccionado, ordenadas por fecha desc. Botón crear nota (se asigna automáticamente al tema actual)
+- **Nivel 4 - Editor**: El NoteEditor existente con botón volver
 
-**4. `TopicCard.tsx` — pasar las nuevas props**
-- Pasar los callbacks de subtask entries desde el hook hacia cada `SubtaskRow`
+#### 4. Componente `NotebookGrid.tsx` (nuevo)
+- Vista mosaico de libretas como cards grandes (ej: 3 columnas)
+- Cada card muestra: icono libro con color, nombre, conteo de temas, conteo de notas, fecha última actualización
+- Hover con efecto sutil, click navega al nivel de temas
 
-### Resultado visual
-- El icono de comentario abre una bitácora limpia con entradas con fecha, editable/borrable, con input para agregar — idéntica a la bitácora del tema pero compacta, indentada debajo de la subtarea.
+#### 5. Componente `SectionList.tsx` (nuevo)
+- Vista de temas dentro de una libreta (cards medianas o lista)
+- Breadcrumb de navegación arriba
+- Crear/renombrar/eliminar temas
+- Click navega al nivel de notas
+
+#### 6. Al crear nota
+- Si estás dentro de un tema, se asigna automáticamente a esa libreta y tema
+- Si estás en "Todas las notas", un selector permite elegir libreta → tema
+
+#### 7. Ordenamiento
+- Notas ordenadas por `updated_at` descendente (ya funciona así)
+- Temas ordenados por `sort_order` o nombre
+
+### Flujo de usuario
+```text
+[Mosaico Libretas] → click "Transit" → [Temas de Transit] → click "Facturas" → [Notas de Facturas] → click nota → [Editor]
+```
+
+### Archivos a modificar/crear
+- **Migración SQL**: crear `note_sections`, agregar `section_id` a `notes`
+- **`useNotes.tsx`**: agregar secciones al hook
+- **`NotesView.tsx`**: rediseño con navegación multinivel
+- **`NotebookGrid.tsx`** (nuevo): vista mosaico de libretas
+- **`SectionList.tsx`** (nuevo): lista de temas dentro de libreta
+- **`NotebookList.tsx`**: se reemplaza por NotebookGrid en la vista principal
+- **`NoteEditor.tsx`**: actualizar props para incluir secciones
 
