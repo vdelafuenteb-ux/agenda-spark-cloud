@@ -244,7 +244,23 @@ export function CreateTopicModal({ open, onOpenChange, allTags, assignees, depar
                   <Calendar mode="single" selected={dueDate} onSelect={setDueDate} initialFocus />
                 </PopoverContent>
               </Popover>
+          </div>
+
+          {/* Department selector */}
+          {departments.length > 0 && (
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Departamento</label>
+              <Select value={departmentId} onValueChange={setDepartmentId}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Sin departamento" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Sin departamento</SelectItem>
+                  {departments.map((d) => (
+                    <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
+          )}
           </div>
 
           <div className="space-y-1.5">
