@@ -74,7 +74,7 @@ export function useNotificationEmails(topicId?: string) {
         .update({
           responded,
           responded_at: responded ? new Date().toISOString() : null,
-        } as any)
+        })
         .eq('id', id);
       if (error) throw error;
     },
