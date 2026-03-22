@@ -142,7 +142,7 @@ function buildIntegratedRows(
     } else {
       const pauseReason = t.pause_reason || '';
       const pausedAt = t.paused_at ? format(new Date(t.paused_at), 'dd MMM yyyy', { locale: es }) : '';
-      body.push([t.title, t.assignee || 'Yo', pauseReason, pausedAt]);
+      body.push([t.title, t.assignee || ownerName, pauseReason, pausedAt]);
     }
 
     // Add subtask rows indented
