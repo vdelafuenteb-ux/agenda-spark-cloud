@@ -114,7 +114,8 @@ function buildIntegratedRows(
   topics: TopicWithSubtasks[],
   columnsMode: 'active' | 'completed' | 'paused',
   ownerName: string = 'Yo',
-  groupIndex: number = 1
+  groupIndex: number = 1,
+  subtaskFilter?: Record<string, string[]>
 ): { body: string[][]; subtaskRowIndices: Set<number> } {
   const body: string[][] = [];
   const subtaskRowIndices = new Set<number>();
