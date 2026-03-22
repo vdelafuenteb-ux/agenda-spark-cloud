@@ -138,7 +138,7 @@ function buildIntegratedRows(
       ]);
     } else if (columnsMode === 'completed') {
       const closeDateStr = t.updated_at ? format(new Date(t.updated_at), 'dd MMM yyyy', { locale: es }) : '';
-      body.push([t.title, t.assignee || 'Yo', closeDateStr, lastEntry]);
+      body.push([t.title, t.assignee || ownerName, closeDateStr, lastEntry]);
     } else {
       const pauseReason = t.pause_reason || '';
       const pausedAt = t.paused_at ? format(new Date(t.paused_at), 'dd MMM yyyy', { locale: es }) : '';
