@@ -445,126 +445,182 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
           </div>
         </div>
 
+        {/* ===== Quick filters ===== */}
+        {(uniqueDepts.length > 1 || uniqueAssignees.length > 1) && (
+          <div className="space-y-1.5">
+            {uniqueDepts.length > 1 && (
+              <div className="flex items-center gap-1 flex-wrap">
+                <span className="text-[9px] font-medium text-muted-foreground uppercase tracking-wider">Depto:</span>
+                <button
+                  onClick={() => setFilterDept('')}
+                  className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium border transition-all",
+                    !filterDept ? "bg-primary text-primary-foreground border-primary" : "bg-transparent text-muted-foreground border-border hover:border-primary/50"
+                  )}
+                >Todos</button>
+                {uniqueDepts.map(d => (
+                  <button
+                    key={d.id}
+                    onClick={() => setFilterDept(filterDept === d.id ? '' : d.id)}
+                    className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium border transition-all",
+                      filterDept === d.id ? "bg-primary text-primary-foreground border-primary" : "bg-transparent text-foreground border-border hover:border-primary/50"
+                    )}
+                  >{d.name}</button>
+                ))}
+              </div>
+            )}
+            {uniqueAssignees.length > 1 && (
+              <div className="flex items-center gap-1 flex-wrap">
+                <span className="text-[9px] font-medium text-muted-foreground uppercase tracking-wider">Resp:</span>
+                <button
+                  onClick={() => setFilterAssignee('')}
+                  className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium border transition-all",
+                    !filterAssignee ? "bg-primary text-primary-foreground border-primary" : "bg-transparent text-muted-foreground border-border hover:border-primary/50"
+                  )}
+                >Todos</button>
+                {uniqueAssignees.map(name => (
+                  <button
+                    key={name}
+                    onClick={() => setFilterAssignee(filterAssignee === name ? '' : name)}
+                    className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium border transition-all",
+                      filterAssignee === name ? "bg-primary text-primary-foreground border-primary" : "bg-transparent text-foreground border-border hover:border-primary/50"
+                    )}
+                  >{name}</button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* ===== ZONA 2: Selector de temas con subtareas ===== */}
         <div className="flex items-center justify-between">
           <span className="text-xs font-medium text-foreground">
             {totalSelected} de {totalTopics} temas seleccionados
+            {(filterDept || filterAssignee) && <span className="text-muted-foreground ml-1">(filtrado)</span>}
           </span>
           <div className="flex gap-1">
-            <Button variant="ghost" size="sm" className="h-5 text-[10px] px-1.5" onClick={() => setSelectedTopicIds(new Set(topics.map(t => t.id)))}>
+            <Button variant="ghost" size="sm" className="h-5 text-[10px] px-1.5" onClick={selectAllVisible}>
               Todos
             </Button>
-            <Button variant="ghost" size="sm" className="h-5 text-[10px] px-1.5" onClick={() => setSelectedTopicIds(new Set())}>
+            <Button variant="ghost" size="sm" className="h-5 text-[10px] px-1.5" onClick={selectNoneVisible}>
               Ninguno
             </Button>
           </div>
         </div>
 
-        <ScrollArea className="flex-1 min-h-0 max-h-[40vh] rounded-md border border-border bg-muted/10">
-          <div className="p-2 space-y-3">
-            {STATUS_ORDER.map(status => {
-              const statusTopics = topicsByStatus[status];
-              if (!statusTopics || statusTopics.length === 0) return null;
-              const selectedInStatus = statusTopics.filter(t => selectedTopicIds.has(t.id)).length;
+        <div className="flex-1 min-h-0 overflow-y-auto rounded-md border border-border bg-muted/10 p-2 space-y-3">
+          {STATUS_ORDER.map(status => {
+            const statusTopics = visibleTopicsByStatus[status];
+            if (!statusTopics || statusTopics.length === 0) return null;
+            const selectedInStatus = statusTopics.filter(t => selectedTopicIds.has(t.id)).length;
 
-              return (
-                <div key={status}>
-                  {/* Status header */}
-                  <div className="flex items-center gap-2 mb-1 px-1">
-                    <span className="text-[11px] font-semibold text-foreground uppercase tracking-wide">
-                      {STATUS_LABELS[status]} ({selectedInStatus}/{statusTopics.length})
-                    </span>
-                    <div className="flex-1 h-px bg-border" />
-                    <Button variant="ghost" size="sm" className="h-4 text-[9px] px-1" onClick={() => selectAllInStatus(status)}>
-                      ✓ Todos
-                    </Button>
-                    <Button variant="ghost" size="sm" className="h-4 text-[9px] px-1" onClick={() => selectNoneInStatus(status)}>
-                      ✗
-                    </Button>
-                  </div>
-
-                  {/* Topics in this status */}
-                  <div className="space-y-0.5">
-                    {statusTopics.map(t => {
-                      const isSelected = selectedTopicIds.has(t.id);
-                      const isExpanded = expandedTopicIds.has(t.id);
-                      const tl = getTrafficLight(t.due_date);
-                      const hasSubtasks = t.subtasks.length > 0;
-                      const excludedCount = t.subtasks.filter(s => excludedSubtaskIds.has(s.id)).length;
-                      const subtaskLabel = hasSubtasks
-                        ? `${t.subtasks.length - excludedCount}/${t.subtasks.length}`
-                        : '';
-
-                      return (
-                        <div key={t.id}>
-                          <div className={cn(
-                            "flex items-center gap-1.5 rounded px-1.5 py-1 transition-colors",
-                            isSelected ? "bg-muted/40" : "opacity-50"
-                          )}>
-                            {/* Expand button */}
-                            {hasSubtasks ? (
-                              <button
-                                onClick={() => toggleExpand(t.id)}
-                                className="p-0 h-4 w-4 flex items-center justify-center text-muted-foreground hover:text-foreground shrink-0"
-                              >
-                                {isExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-                              </button>
-                            ) : (
-                              <span className="w-4 shrink-0" />
-                            )}
-
-                            <Checkbox
-                              checked={isSelected}
-                              onCheckedChange={() => toggleTopic(t.id)}
-                              className="h-3.5 w-3.5"
-                            />
-                            <span className="text-xs shrink-0">{tl.icon}</span>
-                            <span className="text-xs truncate flex-1 text-foreground">{t.title}</span>
-                            {subtaskLabel && (
-                              <span className="text-[9px] text-muted-foreground shrink-0 tabular-nums">
-                                sub: {subtaskLabel}
-                              </span>
-                            )}
-                            <span className="text-[10px] text-muted-foreground shrink-0 max-w-[80px] truncate">
-                              {t.assignee || ownerLabel}
-                            </span>
-                          </div>
-
-                          {/* Subtasks */}
-                          {isExpanded && hasSubtasks && (
-                            <div className="ml-8 pl-2 border-l border-border/50 space-y-0.5 py-0.5">
-                              {t.subtasks.map(s => {
-                                const isSubExcluded = excludedSubtaskIds.has(s.id);
-                                return (
-                                  <label key={s.id} className={cn(
-                                    "flex items-center gap-1.5 cursor-pointer rounded px-1 py-0.5 hover:bg-muted/30",
-                                    isSubExcluded && "opacity-40"
-                                  )}>
-                                    <Checkbox
-                                      checked={!isSubExcluded}
-                                      onCheckedChange={() => toggleSubtask(s.id)}
-                                      className="h-3 w-3"
-                                    />
-                                    <span className={cn("text-[11px]", s.completed ? "line-through text-muted-foreground" : "text-foreground")}>
-                                      {s.title}
-                                    </span>
-                                    {s.responsible && (
-                                      <span className="text-[9px] text-muted-foreground ml-auto shrink-0">{s.responsible}</span>
-                                    )}
-                                  </label>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
+            return (
+              <div key={status}>
+                {/* Status header */}
+                <div className="flex items-center gap-2 mb-1 px-1">
+                  <span className="text-[11px] font-semibold text-foreground uppercase tracking-wide">
+                    {STATUS_LABELS[status]} ({selectedInStatus}/{statusTopics.length})
+                  </span>
+                  <div className="flex-1 h-px bg-border" />
+                  <Button variant="ghost" size="sm" className="h-4 text-[9px] px-1" onClick={() => {
+                    setSelectedTopicIds(prev => {
+                      const next = new Set(prev);
+                      statusTopics.forEach(t => next.add(t.id));
+                      return next;
+                    });
+                  }}>
+                    ✓ Todos
+                  </Button>
+                  <Button variant="ghost" size="sm" className="h-4 text-[9px] px-1" onClick={() => {
+                    const ids = new Set(statusTopics.map(t => t.id));
+                    setSelectedTopicIds(prev => {
+                      const next = new Set(prev);
+                      ids.forEach(id => next.delete(id));
+                      return next;
+                    });
+                  }}>
+                    ✗
+                  </Button>
                 </div>
-              );
-            })}
-          </div>
-        </ScrollArea>
+
+                {/* Topics in this status */}
+                <div className="space-y-0.5">
+                  {statusTopics.map(t => {
+                    const isSelected = selectedTopicIds.has(t.id);
+                    const isExpanded = expandedTopicIds.has(t.id);
+                    const hasSubtasks = t.subtasks.length > 0;
+                    const excludedCount = t.subtasks.filter(s => excludedSubtaskIds.has(s.id)).length;
+                    const subtaskLabel = hasSubtasks
+                      ? `${t.subtasks.length - excludedCount}/${t.subtasks.length}`
+                      : '';
+
+                    return (
+                      <div key={t.id}>
+                        <div className={cn(
+                          "flex items-center gap-1.5 rounded px-1.5 py-1 transition-colors",
+                          isSelected ? "bg-muted/40" : "opacity-50"
+                        )}>
+                          {/* Expand button */}
+                          {hasSubtasks ? (
+                            <button
+                              onClick={() => toggleExpand(t.id)}
+                              className="p-0 h-4 w-4 flex items-center justify-center text-muted-foreground hover:text-foreground shrink-0"
+                            >
+                              {isExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                            </button>
+                          ) : (
+                            <span className="w-4 shrink-0" />
+                          )}
+
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={() => toggleTopic(t.id)}
+                            className="h-3.5 w-3.5"
+                          />
+                          <span className="text-xs truncate flex-1 text-foreground">{t.title}</span>
+                          {subtaskLabel && (
+                            <span className="text-[9px] text-muted-foreground shrink-0 tabular-nums">
+                              sub: {subtaskLabel}
+                            </span>
+                          )}
+                          <span className="text-[10px] text-muted-foreground shrink-0 max-w-[80px] truncate">
+                            {t.assignee || ownerLabel}
+                          </span>
+                        </div>
+
+                        {/* Subtasks */}
+                        {isExpanded && hasSubtasks && (
+                          <div className="ml-8 pl-2 border-l border-border/50 space-y-0.5 py-0.5">
+                            {t.subtasks.map(s => {
+                              const isSubExcluded = excludedSubtaskIds.has(s.id);
+                              return (
+                                <label key={s.id} className={cn(
+                                  "flex items-center gap-1.5 cursor-pointer rounded px-1 py-0.5 hover:bg-muted/30",
+                                  isSubExcluded && "opacity-40"
+                                )}>
+                                  <Checkbox
+                                    checked={!isSubExcluded}
+                                    onCheckedChange={() => toggleSubtask(s.id)}
+                                    className="h-3 w-3"
+                                  />
+                                  <span className={cn("text-[11px]", s.completed ? "line-through text-muted-foreground" : "text-foreground")}>
+                                    {s.title}
+                                  </span>
+                                  {s.responsible && (
+                                    <span className="text-[9px] text-muted-foreground ml-auto shrink-0">{s.responsible}</span>
+                                  )}
+                                </label>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
 
         {/* ===== ZONA 3: Acciones ===== */}
         <div className="flex items-center gap-2 justify-end pt-1">
