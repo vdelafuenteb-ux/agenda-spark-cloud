@@ -359,17 +359,7 @@ export function generateReportPdf(opts: PdfOptions) {
       });
       y = (doc as any).lastAutoTable.finalY + 4;
     });
-      }),
-      styles: { fontSize: 7.5, cellPadding: 2.5, overflow: 'linebreak' },
-      headStyles: { fillColor: SLATE_500 as any, textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
-      alternateRowStyles: { fillColor: SLATE_50 as any },
-      columnStyles: {
-        0: { cellWidth: 40 },
-        2: { cellWidth: 55 },
-        3: { cellWidth: 25 },
-      },
-    });
-    y = (doc as any).lastAutoTable.finalY + 8;
+    y += 4;
   }
 
   // ==========================================
