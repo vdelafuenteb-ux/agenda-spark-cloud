@@ -112,11 +112,11 @@ export function generateReportPdf(opts: PdfOptions) {
   // HEADER - Dark bar
   // ==========================================
   const headerH = authorName ? 44 : 38;
-  doc.setFillColor(...SLATE_900);
+  doc.setFillColor(...PURPLE_900);
   doc.rect(0, 0, pageW, headerH, 'F');
   
   // Accent line
-  doc.setFillColor(...TEAL);
+  doc.setFillColor(...PURPLE_500);
   doc.rect(0, headerH, pageW, 1, 'F');
 
   y = 16;
@@ -145,7 +145,7 @@ export function generateReportPdf(opts: PdfOptions) {
   }
 
   y = headerH + 8;
-  doc.setTextColor(...SLATE_900);
+  doc.setTextColor(...PURPLE_900);
 
   // ==========================================
   // KPIs
@@ -170,7 +170,7 @@ export function generateReportPdf(opts: PdfOptions) {
     { value: String(onTrack), label: 'Al Día', color: GREEN },
     { value: String(warning), label: 'Próximos', color: AMBER },
     { value: String(delayed), label: 'Atrasados', color: RED },
-    { value: `${pct}%`, label: 'Avance Subtareas', color: TEAL },
+    { value: `${pct}%`, label: 'Avance Subtareas', color: PURPLE_500 },
   ];
 
   kpis.forEach((kpi, i) => {
@@ -199,7 +199,7 @@ export function generateReportPdf(opts: PdfOptions) {
     y = checkPageBreak(doc, y, 20, 20);
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
-    doc.setTextColor(...SLATE_900);
+    doc.setTextColor(...PURPLE_900);
     doc.text('Logros del Período', margin, y);
     y += 2;
 
@@ -240,7 +240,7 @@ export function generateReportPdf(opts: PdfOptions) {
     y = checkPageBreak(doc, y, 20, 20);
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
-    doc.setTextColor(...SLATE_900);
+    doc.setTextColor(...PURPLE_900);
     doc.text('Temas Activos', margin, y);
     y += 2;
 
@@ -263,7 +263,7 @@ export function generateReportPdf(opts: PdfOptions) {
         ];
       }),
       styles: { fontSize: 7.5, cellPadding: 2.5 },
-      headStyles: { fillColor: SLATE_900 as any, textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
+      headStyles: { fillColor: PURPLE_900 as any, textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
       alternateRowStyles: { fillColor: SLATE_50 as any },
       columnStyles: {
         0: { cellWidth: 'auto' },
@@ -290,7 +290,7 @@ export function generateReportPdf(opts: PdfOptions) {
     y = checkPageBreak(doc, y, 20, 20);
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
-    doc.setTextColor(...SLATE_900);
+    doc.setTextColor(...PURPLE_900);
     doc.text('Temas en Pausa', margin, y);
     y += 2;
 
@@ -336,7 +336,7 @@ export function generateReportPdf(opts: PdfOptions) {
       y = checkPageBreak(doc, y, 20, 20);
       doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
-      doc.setTextColor(...SLATE_900);
+      doc.setTextColor(...PURPLE_900);
       doc.text('Resumen por Responsable', margin, y);
       y += 2;
 
@@ -402,9 +402,9 @@ export function downloadPdfFromContent(content: string, title: string, periodSta
   let y = 20;
 
   // Header
-  doc.setFillColor(...SLATE_900);
+  doc.setFillColor(...PURPLE_900);
   doc.rect(0, 0, pageW, 32, 'F');
-  doc.setFillColor(...TEAL);
+  doc.setFillColor(...PURPLE_500);
   doc.rect(0, 32, pageW, 1, 'F');
   
   doc.setTextColor(...WHITE);
@@ -413,7 +413,7 @@ export function downloadPdfFromContent(content: string, title: string, periodSta
   doc.text(title, margin, y);
   y = 40;
 
-  doc.setTextColor(...SLATE_900);
+  doc.setTextColor(...PURPLE_900);
   doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
 
