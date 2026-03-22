@@ -33,7 +33,7 @@ const STATUS_COLORS = {
   completado: 'hsl(142 71% 45%)',
 };
 
-export function DashboardView({ topics }: DashboardViewProps) {
+export function DashboardView({ topics, onUpdateTopic }: DashboardViewProps) {
   const metrics = useMemo(() => {
     const now = new Date();
     const threeDaysFromNow = addDays(now, 3);
