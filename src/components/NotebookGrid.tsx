@@ -16,6 +16,7 @@ interface NotebookGridProps {
   notes: Note[];
   onSelect: (notebookId: string) => void;
   onSelectSection?: (notebookId: string, sectionId: string) => void;
+  onSelectNote?: (noteId: string) => void;
   onCreateNotebook: (data: { name: string; color: string }) => void;
   onDeleteNotebook: (id: string) => void;
   onUpdateNotebook: (id: string, data: { name?: string; color?: string }) => void;
@@ -23,7 +24,7 @@ interface NotebookGridProps {
   onMoveNote?: (noteId: string, notebookId: string, sectionId: string | null) => void;
 }
 
-export function NotebookGrid({ notebooks, sections, notes, onSelect, onSelectSection, onCreateNotebook, onDeleteNotebook, onUpdateNotebook, onShowAllNotes, onMoveNote }: NotebookGridProps) {
+export function NotebookGrid({ notebooks, sections, notes, onSelect, onSelectSection, onSelectNote, onCreateNotebook, onDeleteNotebook, onUpdateNotebook, onShowAllNotes, onMoveNote }: NotebookGridProps) {
   const [createOpen, setCreateOpen] = useState(false);
   const [newName, setNewName] = useState('');
   const [newColor, setNewColor] = useState(COLORS[0]);
@@ -276,7 +277,8 @@ export function NotebookGrid({ notebooks, sections, notes, onSelect, onSelectSec
                   key={note.id}
                   draggable
                   onDragStart={(e) => handleDragStart(e, note.id)}
-                  className="rounded-lg border border-dashed border-border bg-card p-3 cursor-grab active:cursor-grabbing hover:shadow-sm hover:border-primary/30 transition-all duration-150 select-none"
+                  className="rounded-lg border border-dashed border-border bg-card p-3 cursor-pointer hover:shadow-sm hover:border-primary/30 transition-all duration-150 select-none"
+                  onClick={() => onSelectNote?.(note.id)}
                 >
                   <div className="flex items-start gap-2">
                     <GripVertical className="h-3.5 w-3.5 text-muted-foreground/40 shrink-0 mt-0.5" />
