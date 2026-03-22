@@ -347,7 +347,7 @@ export function generateReportPdf(opts: PdfOptions) {
           return [name, String(tList.length), String(active), String(completed), String(overdue)];
         }),
         styles: { fontSize: 7.5, cellPadding: 2.5 },
-        headStyles: { fillColor: SLATE_700 as any, textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
+        headStyles: { fillColor: PURPLE_700 as any, textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
         alternateRowStyles: { fillColor: SLATE_50 as any },
         didParseCell: (data) => {
           if (data.section === 'body' && data.column.index === 4) {
