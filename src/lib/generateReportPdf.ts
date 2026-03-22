@@ -109,7 +109,7 @@ export function generateReportPdf(opts: PdfOptions) {
   const pausedTopics = topics.filter(t => t.status === 'pausado');
 
   // ==========================================
-  // HEADER - Dark bar
+  // HEADER - Corporate purple bar with logo
   // ==========================================
   const headerH = authorName ? 44 : 38;
   doc.setFillColor(...PURPLE_900);
@@ -117,7 +117,15 @@ export function generateReportPdf(opts: PdfOptions) {
   
   // Accent line
   doc.setFillColor(...PURPLE_500);
-  doc.rect(0, headerH, pageW, 1, 'F');
+  doc.rect(0, headerH, pageW, 1.5, 'F');
+
+  // Logo in header (right side)
+  try {
+    const logoSize = 14;
+    doc.addImage(logoIcon, 'PNG', pageW - margin - logoSize, (headerH - logoSize) / 2, logoSize, logoSize);
+  } catch (e) {
+    // Logo loading failed, continue without it
+  }
 
   y = 16;
   doc.setTextColor(...WHITE);
