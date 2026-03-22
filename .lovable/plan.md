@@ -1,34 +1,34 @@
 
 
-## Plan: Corregir ancho columna "Estado" en PDF + Auto-completar subtareas al cerrar tema
+## Plan: Agregar `closed_at` a topics + KPI de cumplimiento de cierre en Dashboard
 
-### Problema 1: "Completado" se corta en 2 líneas en el PDF
-La columna "Estado" tiene `cellWidth: 16` que es muy estrecho para la palabra "Completado".
+### 1. Migración: Agregar columna `closed_at` a `topics`
+- Nueva columna `closed_at` (timestamptz, nullable, default null)
+- Backfill: para temas ya completados, setear `closed_at = updated_at`
 
-**Cambio en `src/lib/generateReportPdf.ts`**:
-- Aumentar `columnStyles[3]` (Estado) de `cellWidth: 16` a `cellWidth: 20`
-- Reducir otra columna para compensar (ej: "Prioridad" col 2 de 16 a 14, "Responsable" col 1 de 24 a 22)
+### 2. Auto-setear `closed_at` al cerrar un tema (`src/pages/Index.tsx`)
+- En el handler `onUpdate`, cuando `status === 'completado'`, incluir `closed_at: new Date().toISOString()` en el update
+- Cuando se reabre un tema, limpiar `closed_at: null`
 
-### Problema 2: Al cerrar un tema, las subtareas quedan pendientes
-Cuando se presiona "Cerrar" en un tema, solo se actualiza el status del tema pero no se marcan las subtareas como completadas.
+### 3. Botones "Cerrar" en `TopicCard.tsx` (líneas ~531 y ~576)
+- Agregar `closed_at: new Date().toISOString()` a los onClick de los botones "Cerrar"
+- En el botón "Reabrir", agregar `closed_at: null`
 
-**Cambio en `src/pages/Index.tsx`** (línea ~322):
-- Modificar el handler `onUpdate` para que cuando `data.status === 'completado'`, automáticamente marque todas las subtareas pendientes del tema como completadas
-- Buscar el tema en `topics`, filtrar subtareas con `completed === false`, y llamar `toggleSubtask.mutate` para cada una
+### 4. Mostrar info de cierre en la tarjeta (`TopicCard.tsx`)
+- Cambiar la línea que muestra "Cerrado {fecha}" (línea ~203) para usar `closed_at` en vez de `updated_at`
+- Agregar un badge indicando si cerró "A tiempo", "Anticipado" o "Con atraso (X días)" comparando `closed_at` vs `due_date`
 
-```typescript
-onUpdate={(id, data) => {
-  updateTopic.mutate({ id, ...data });
-  if (data.status === 'completado') {
-    const topic = topics.find(t => t.id === id);
-    topic?.subtasks.filter(s => !s.completed).forEach(s => {
-      toggleSubtask.mutate({ id: s.id, completed: true });
-    });
-  }
-}}
-```
+### 5. KPI de cumplimiento en Dashboard (`DashboardView.tsx`)
+Nuevo KPI card + sección de análisis de cierre:
+- De los temas completados que tienen `due_date` y `closed_at`:
+  - **A tiempo o antes**: `closed_at <= due_date`
+  - **Con atraso**: `closed_at > due_date`
+- KPI card: "Cumplimiento de Cierre" con porcentaje de temas cerrados a tiempo
+- Detalle debajo de los KPI existentes: card con barrita de progreso y desglose (X a tiempo, Y con atraso, promedio de días de atraso)
 
 ### Archivos a modificar
-1. **`src/lib/generateReportPdf.ts`** — Ajustar anchos de columna (Estado más ancho)
-2. **`src/pages/Index.tsx`** — Agregar lógica de auto-completar subtareas al cerrar tema
+1. **Migración SQL** — agregar `closed_at` + backfill
+2. **`src/pages/Index.tsx`** — setear/limpiar `closed_at` en onUpdate
+3. **`src/components/TopicCard.tsx`** — botones Cerrar/Reabrir + display de badge de cumplimiento
+4. **`src/components/DashboardView.tsx`** — nuevo KPI de cumplimiento de cierre
 
