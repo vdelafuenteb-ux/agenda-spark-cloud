@@ -1,7 +1,7 @@
 import { Search, X, User, ChevronsDownUp, ChevronsUpDown, Mail, CalendarOff } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
 import type { Tag } from '@/hooks/useTags';
 
 interface FilterBarProps {
@@ -51,22 +51,6 @@ export function FilterBar({ searchQuery, onSearchChange, allTags, selectedTagIds
           </Button>
         )}
 
-        {/* Assignee filter */}
-        {assignees && assignees.length > 0 && onAssigneeChange && (
-          <Select value={selectedAssignee || '_all'} onValueChange={(v) => onAssigneeChange(v === '_all' ? '' : v)}>
-            <SelectTrigger className="w-44 h-9 text-xs gap-1">
-              <User className="h-3 w-3 shrink-0" />
-              <SelectValue placeholder="Responsable" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="_all">Todos los responsables</SelectItem>
-              {assignees.map((name) => (
-                <SelectItem key={name} value={name}>{name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-
         {/* No due date filter */}
         {onToggleNoDueDate && (
           <Button
@@ -108,6 +92,44 @@ export function FilterBar({ searchQuery, onSearchChange, allTags, selectedTagIds
                 }}
               >
                 {tag.name}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Assignee mosaic chips */}
+      {assignees && assignees.length > 0 && onAssigneeChange && (
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mr-1">
+            <User className="h-3 w-3 inline mr-0.5 -mt-0.5" />
+            Responsable:
+          </span>
+          <button
+            onClick={() => onAssigneeChange('')}
+            className={cn(
+              'inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium border transition-all',
+              !selectedAssignee
+                ? 'bg-primary text-primary-foreground border-primary'
+                : 'bg-transparent text-muted-foreground border-border hover:border-primary/50 hover:text-foreground'
+            )}
+          >
+            Todos
+          </button>
+          {assignees.map((name) => {
+            const isSelected = selectedAssignee === name;
+            return (
+              <button
+                key={name}
+                onClick={() => onAssigneeChange(isSelected ? '' : name)}
+                className={cn(
+                  'inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium border transition-all',
+                  isSelected
+                    ? 'bg-primary text-primary-foreground border-primary'
+                    : 'bg-transparent text-foreground border-border hover:border-primary/50'
+                )}
+              >
+                {name}
               </button>
             );
           })}

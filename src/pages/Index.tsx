@@ -281,9 +281,9 @@ const Index = () => {
                       allTags={tags}
                       selectedTagIds={selectedTagIds}
                       onToggleTag={toggleTagFilter}
-                      assignees={uniqueAssignees.length > 0 ? uniqueAssignees : undefined}
-                      selectedAssignee={selectedAssignee}
-                      onAssigneeChange={setSelectedAssignee}
+                      assignees={statusTab !== 'activo' && uniqueAssignees.length > 0 ? uniqueAssignees : undefined}
+                      selectedAssignee={statusTab !== 'activo' ? selectedAssignee : ''}
+                      onAssigneeChange={statusTab !== 'activo' ? setSelectedAssignee : undefined}
                       forceExpand={forceExpand}
                       onToggleExpand={() => setForceExpand(prev => !prev)}
                       onBulkEmail={bulkEmailAssignee ? () => setBulkEmailOpen(true) : undefined}
