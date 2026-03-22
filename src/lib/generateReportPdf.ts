@@ -36,12 +36,6 @@ function getTrafficLight(dueDateStr: string | null | undefined): { label: string
 }
 
 
-const STATUS_LABELS: Record<string, string> = {
-  activo: 'Activo',
-  seguimiento: 'Seguimiento',
-  completado: 'Completado',
-  pausado: 'Pausado',
-};
 
 export interface PdfOptions {
   topics: TopicWithSubtasks[];
