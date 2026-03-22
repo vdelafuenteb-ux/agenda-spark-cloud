@@ -18,6 +18,7 @@ interface NotebookGridProps {
   onSelectSection?: (notebookId: string, sectionId: string) => void;
   onSelectNote?: (noteId: string) => void;
   onCreateNotebook: (data: { name: string; color: string }) => void;
+  onCreateSection?: (data: { notebook_id: string; name: string }) => void;
   onDeleteNotebook: (id: string) => void;
   onUpdateNotebook: (id: string, data: { name?: string; color?: string }) => void;
   onShowAllNotes: () => void;
