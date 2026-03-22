@@ -129,7 +129,7 @@ function buildIntegratedRows(
       const dueStr = t.due_date ? formatStoredDate(t.due_date, 'dd MMM yyyy', { locale: es }) : '';
       body.push([
         t.title,
-        t.assignee || 'Yo',
+        t.assignee || ownerName,
         t.priority.charAt(0).toUpperCase() + t.priority.slice(1),
         tl.label,
         dueStr,
