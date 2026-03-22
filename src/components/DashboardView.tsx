@@ -428,6 +428,9 @@ export function DashboardView({ topics }: DashboardViewProps) {
                       <TableHead className="text-xs">Nombre</TableHead>
                       <TableHead className="text-xs text-center">Temas</TableHead>
                       <TableHead className="text-xs text-center">Subtareas</TableHead>
+                      <TableHead className="text-xs text-center">Cerrados</TableHead>
+                      <TableHead className="text-xs text-center">Atrasados</TableHead>
+                      <TableHead className="text-xs text-center">Por vencer</TableHead>
                       <TableHead className="text-xs">Avance</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -437,6 +440,23 @@ export function DashboardView({ topics }: DashboardViewProps) {
                         <TableCell className="text-sm font-medium">{a.name}</TableCell>
                         <TableCell className="text-sm text-center">{a.total}</TableCell>
                         <TableCell className="text-sm text-center">{a.subtasksDone}/{a.subtasksTotal}</TableCell>
+                        <TableCell className="text-sm text-center">
+                          <Badge variant="outline" className="text-[10px]">{a.closedCount}</Badge>
+                        </TableCell>
+                        <TableCell className="text-sm text-center">
+                          {a.overdueCount > 0 ? (
+                            <Badge variant="destructive" className="text-[10px]">{a.overdueCount}</Badge>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">0</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-sm text-center">
+                          {a.dueSoonCount > 0 ? (
+                            <Badge variant="outline" className="text-[10px] border-yellow-500/50 text-yellow-600">{a.dueSoonCount}</Badge>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">0</span>
+                          )}
+                        </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Progress value={a.progress} className="h-2 flex-1" />
@@ -459,6 +479,11 @@ export function DashboardView({ topics }: DashboardViewProps) {
                     <div className="flex items-center gap-2">
                       <Progress value={a.progress} className="h-2 flex-1" />
                       <span className="text-xs text-muted-foreground">{a.subtasksDone}/{a.subtasksTotal} ({a.progress}%)</span>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Badge variant="outline" className="text-[9px]">{a.closedCount} cerrados</Badge>
+                      {a.overdueCount > 0 && <Badge variant="destructive" className="text-[9px]">{a.overdueCount} atrasados</Badge>}
+                      {a.dueSoonCount > 0 && <Badge variant="outline" className="text-[9px] border-yellow-500/50 text-yellow-600">{a.dueSoonCount} por vencer</Badge>}
                     </div>
                   </div>
                 ))}
