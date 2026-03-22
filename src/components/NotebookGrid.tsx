@@ -221,7 +221,7 @@ export function NotebookGrid({ notebooks, sections, notes, onSelect, onSelectSec
               </div>
 
               {/* Expanded sections as drop targets */}
-              {isExpanded && nbSections.length > 0 && (
+              {isExpanded && (
                 <div className="ml-6 mt-1 space-y-0.5 border-l-2 border-border pl-3 py-1">
                   {nbSections.map(sec => {
                     const secDragOver = dragOverTarget === `sec-${sec.id}`;
@@ -243,6 +243,40 @@ export function NotebookGrid({ notebooks, sections, notes, onSelect, onSelectSec
                       </div>
                     );
                   })}
+                  {/* Inline add section */}
+                  {addingSectionTo === nb.id ? (
+                    <div className="flex items-center gap-1.5 px-3 py-1.5">
+                      <Input
+                        autoFocus
+                        placeholder="Nombre del tema"
+                        value={newSectionName}
+                        onChange={(e) => setNewSectionName(e.target.value)}
+                        className="h-7 text-xs flex-1"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && newSectionName.trim()) {
+                            onCreateSection?.({ notebook_id: nb.id, name: newSectionName.trim() });
+                            setNewSectionName('');
+                            setAddingSectionTo(null);
+                          }
+                          if (e.key === 'Escape') { setAddingSectionTo(null); setNewSectionName(''); }
+                        }}
+                      />
+                      <Button size="sm" className="h-7 text-xs px-2" onClick={() => {
+                        if (newSectionName.trim()) {
+                          onCreateSection?.({ notebook_id: nb.id, name: newSectionName.trim() });
+                          setNewSectionName('');
+                          setAddingSectionTo(null);
+                        }
+                      }}>OK</Button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setAddingSectionTo(nb.id); }}
+                      className="flex items-center gap-2 px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground rounded-md hover:bg-muted/50 w-full transition-colors"
+                    >
+                      <Plus className="h-3 w-3" /> Nuevo tema
+                    </button>
+                  )}
                 </div>
               )}
             </div>
