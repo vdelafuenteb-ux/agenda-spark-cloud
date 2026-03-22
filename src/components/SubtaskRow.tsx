@@ -303,7 +303,7 @@ export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false,
                 value={responsibleDraft}
                 onChange={(e) => setResponsibleDraft(e.target.value)}
                 onBlur={() => {
-                  if (responsibleDraft !== ((subtask as any).responsible || '')) {
+                  if (responsibleDraft !== (subtask.responsible || '')) {
                     onUpdateSubtask(subtask.id, { responsible: responsibleDraft });
                   }
                 }}

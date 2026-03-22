@@ -190,15 +190,13 @@ export function ReviewView({ topics, onToggleSubtask }: ReviewViewProps) {
       <div
         key={`${item.type}-${item.id}`}
         className={`flex items-center gap-3 rounded-lg border px-3 py-2 transition-colors ${
-          item.completed
+        item.completed
             ? 'bg-muted/50 border-border'
-            : isSeguimiento
-              ? 'bg-cyan-500/5 border-cyan-500/20'
-              : tab === 'atrasados'
-                ? 'bg-destructive/5 border-border'
-                : tab === 'proximos'
-                  ? 'bg-yellow-500/5 border-border'
-                  : 'bg-background border-border'
+            : tab === 'atrasados'
+              ? 'bg-destructive/5 border-border'
+              : tab === 'proximos'
+                ? 'bg-yellow-500/5 border-border'
+                : 'bg-background border-border'
         }`}
       >
         <button

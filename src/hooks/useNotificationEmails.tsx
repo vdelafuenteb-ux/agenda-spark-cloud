@@ -88,7 +88,7 @@ export function useNotificationEmails(topicId?: string) {
         .update({
           confirmed,
           confirmed_at: confirmed ? new Date().toISOString() : null,
-        } as any)
+        })
         .eq('id', id);
       if (error) throw error;
     },

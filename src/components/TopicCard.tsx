@@ -537,13 +537,13 @@ export function TopicCard({
                 {topic.status === 'pausado' && (
                   <>
                     {/* Show pause reason and date */}
-                    {((topic as any).pause_reason || (topic as any).paused_at) && (
+                    {(topic.pause_reason || topic.paused_at) && (
                       <div className="w-full bg-muted/50 rounded-md p-3 mb-2 border border-border">
                         <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Motivo de pausa</p>
-                        <p className="text-sm text-foreground">{(topic as any).pause_reason || 'Sin motivo registrado'}</p>
-                        {(topic as any).paused_at && (
+                        <p className="text-sm text-foreground">{topic.pause_reason || 'Sin motivo registrado'}</p>
+                        {topic.paused_at && (
                           <p className="text-[10px] text-muted-foreground mt-1">
-                            Pausado el {formatStoredDate((topic as any).paused_at.split('T')[0], 'dd MMM yyyy', { locale: es })}
+                            Pausado el {formatStoredDate(topic.paused_at.split('T')[0], 'dd MMM yyyy', { locale: es })}
                           </p>
                         )}
                       </div>

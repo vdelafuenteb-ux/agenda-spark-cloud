@@ -124,9 +124,9 @@ const Index = () => {
         start_date: data.start_date,
         due_date: data.due_date,
         assignee: data.assignee || null,
-        department_id: (data as any).department_id || null,
+        department_id: (data as Record<string, unknown>).department_id as string | null || null,
         user_id: user!.id,
-      } as any);
+      });
 
       const warnings: string[] = [];
       const finalTagIds = [...data.tagIds];
