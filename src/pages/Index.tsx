@@ -36,6 +36,7 @@ const Index = () => {
   const { topics, isLoading, createTopic, updateTopic, deleteTopic, addSubtask, toggleSubtask, deleteSubtask, addProgressEntry, updateProgressEntry, deleteProgressEntry, updateSubtask, addSubtaskEntry, updateSubtaskEntry, deleteSubtaskEntry } = useTopics();
   const { tags, getTagsForTopic, createTag, updateTag, deleteTag, addTopicTag, removeTopicTag } = useTags();
   const { assignees, createAssignee, updateAssignee, deleteAssignee } = useAssignees();
+  const { departments, createDepartment, updateDepartment, deleteDepartment } = useDepartments();
   const [filter, setFilter] = useState<Filter>('todos');
   const [statusTab, setStatusTab] = useState<StatusTab>('activo');
   const [reportOpen, setReportOpen] = useState(false);
