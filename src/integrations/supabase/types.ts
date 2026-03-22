@@ -110,6 +110,44 @@ export type Database = {
         }
         Relationships: []
       }
+      note_sections: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          name: string
+          notebook_id: string
+          sort_order: number
+          user_id: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          id?: string
+          name: string
+          notebook_id: string
+          sort_order?: number
+          user_id: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          name?: string
+          notebook_id?: string
+          sort_order?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "note_sections_notebook_id_fkey"
+            columns: ["notebook_id"]
+            isOneToOne: false
+            referencedRelation: "notebooks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       note_tags: {
         Row: {
           id: string
@@ -173,6 +211,7 @@ export type Database = {
           created_at: string
           id: string
           notebook_id: string | null
+          section_id: string | null
           title: string
           updated_at: string
           user_id: string
@@ -182,6 +221,7 @@ export type Database = {
           created_at?: string
           id?: string
           notebook_id?: string | null
+          section_id?: string | null
           title?: string
           updated_at?: string
           user_id: string
@@ -191,6 +231,7 @@ export type Database = {
           created_at?: string
           id?: string
           notebook_id?: string | null
+          section_id?: string | null
           title?: string
           updated_at?: string
           user_id?: string
@@ -201,6 +242,13 @@ export type Database = {
             columns: ["notebook_id"]
             isOneToOne: false
             referencedRelation: "notebooks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notes_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "note_sections"
             referencedColumns: ["id"]
           },
         ]
