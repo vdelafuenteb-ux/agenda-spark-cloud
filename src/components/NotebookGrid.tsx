@@ -18,18 +18,21 @@ interface NotebookGridProps {
   onSelectSection?: (notebookId: string, sectionId: string) => void;
   onSelectNote?: (noteId: string) => void;
   onCreateNotebook: (data: { name: string; color: string }) => void;
+  onCreateSection?: (data: { notebook_id: string; name: string }) => void;
   onDeleteNotebook: (id: string) => void;
   onUpdateNotebook: (id: string, data: { name?: string; color?: string }) => void;
   onShowAllNotes: () => void;
   onMoveNote?: (noteId: string, notebookId: string, sectionId: string | null) => void;
 }
 
-export function NotebookGrid({ notebooks, sections, notes, onSelect, onSelectSection, onSelectNote, onCreateNotebook, onDeleteNotebook, onUpdateNotebook, onShowAllNotes, onMoveNote }: NotebookGridProps) {
+export function NotebookGrid({ notebooks, sections, notes, onSelect, onSelectSection, onSelectNote, onCreateNotebook, onCreateSection, onDeleteNotebook, onUpdateNotebook, onShowAllNotes, onMoveNote }: NotebookGridProps) {
   const [createOpen, setCreateOpen] = useState(false);
   const [newName, setNewName] = useState('');
   const [newColor, setNewColor] = useState(COLORS[0]);
   const [expandedNotebooks, setExpandedNotebooks] = useState<Set<string>>(new Set());
   const [dragOverTarget, setDragOverTarget] = useState<string | null>(null);
+  const [newSectionName, setNewSectionName] = useState('');
+  const [addingSectionTo, setAddingSectionTo] = useState<string | null>(null);
   const [showAllUnassigned, setShowAllUnassigned] = useState(false);
 
   const handleCreate = () => {
@@ -158,16 +161,14 @@ export function NotebookGrid({ notebooks, sections, notes, onSelect, onSelectSec
               >
                 {/* Dropdown */}
                 <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                  {sCount > 0 && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7"
-                      onClick={(e) => toggleExpand(nb.id, e)}
-                    >
-                      {isExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
-                    </Button>
-                  )}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={(e) => toggleExpand(nb.id, e)}
+                  >
+                    {isExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+                  </Button>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => e.stopPropagation()}>
@@ -195,11 +196,9 @@ export function NotebookGrid({ notebooks, sections, notes, onSelect, onSelectSec
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      {sCount > 0 && (
-                        <button onClick={(e) => toggleExpand(nb.id, e)} className="shrink-0">
-                          {isExpanded ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
-                        </button>
-                      )}
+                      <button onClick={(e) => toggleExpand(nb.id, e)} className="shrink-0">
+                        {isExpanded ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
+                      </button>
                       <h3 className="font-semibold text-sm truncate">{nb.name}</h3>
                     </div>
                     <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
@@ -218,7 +217,7 @@ export function NotebookGrid({ notebooks, sections, notes, onSelect, onSelectSec
               </div>
 
               {/* Expanded sections as drop targets */}
-              {isExpanded && nbSections.length > 0 && (
+              {isExpanded && (
                 <div className="ml-6 mt-1 space-y-0.5 border-l-2 border-border pl-3 py-1">
                   {nbSections.map(sec => {
                     const secDragOver = dragOverTarget === `sec-${sec.id}`;
@@ -240,6 +239,40 @@ export function NotebookGrid({ notebooks, sections, notes, onSelect, onSelectSec
                       </div>
                     );
                   })}
+                  {/* Inline add section */}
+                  {addingSectionTo === nb.id ? (
+                    <div className="flex items-center gap-1.5 px-3 py-1.5">
+                      <Input
+                        autoFocus
+                        placeholder="Nombre del tema"
+                        value={newSectionName}
+                        onChange={(e) => setNewSectionName(e.target.value)}
+                        className="h-7 text-xs flex-1"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && newSectionName.trim()) {
+                            onCreateSection?.({ notebook_id: nb.id, name: newSectionName.trim() });
+                            setNewSectionName('');
+                            setAddingSectionTo(null);
+                          }
+                          if (e.key === 'Escape') { setAddingSectionTo(null); setNewSectionName(''); }
+                        }}
+                      />
+                      <Button size="sm" className="h-7 text-xs px-2" onClick={() => {
+                        if (newSectionName.trim()) {
+                          onCreateSection?.({ notebook_id: nb.id, name: newSectionName.trim() });
+                          setNewSectionName('');
+                          setAddingSectionTo(null);
+                        }
+                      }}>OK</Button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setAddingSectionTo(nb.id); }}
+                      className="flex items-center gap-2 px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground rounded-md hover:bg-muted/50 w-full transition-colors"
+                    >
+                      <Plus className="h-3 w-3" /> Nuevo tema
+                    </button>
+                  )}
                 </div>
               )}
             </div>

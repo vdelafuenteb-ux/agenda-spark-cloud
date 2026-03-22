@@ -204,6 +204,7 @@ export function NotesView() {
           }}
           onSelectNote={handleSelectNote}
           onCreateNotebook={(data) => createNotebook.mutate(data, { onSuccess: () => toast.success('Libreta creada') })}
+          onCreateSection={(data) => createSection.mutate(data, { onSuccess: () => toast.success('Tema creado') })}
           onDeleteNotebook={(id) => deleteNotebook.mutate(id, { onSuccess: () => toast.success('Libreta eliminada') })}
           onUpdateNotebook={(id, data) => updateNotebook.mutate({ id, ...data })}
           onShowAllNotes={handleShowAllNotes}
