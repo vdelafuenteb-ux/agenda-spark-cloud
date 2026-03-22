@@ -304,14 +304,10 @@ export function TopicCard({
                   </TooltipProvider>
                 )}
 
-                {/* Status badge — only when not 'activo' */}
-                {topic.status !== 'activo' && (
-                  <Badge variant="outline" className={cn(
-                    "text-[9px] px-1.5 py-0 ml-1",
-                    isSeguimiento && "bg-[hsl(var(--seguimiento))] text-[hsl(var(--seguimiento-foreground))] border-transparent",
-                    topic.status === 'pausado' && "bg-muted text-muted-foreground border-transparent"
-                  )}>
-                    {statusLabels[topic.status]}
+                {/* Priority badge — only alta */}
+                {topic.priority === 'alta' && (
+                  <Badge variant="outline" className="text-[9px] px-1.5 py-0 ml-1 bg-destructive/15 text-destructive border-destructive/30">
+                    Alta
                   </Badge>
                 )}
 
