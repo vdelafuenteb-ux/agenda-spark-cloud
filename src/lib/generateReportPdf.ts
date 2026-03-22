@@ -345,9 +345,9 @@ export function generateReportPdf(opts: PdfOptions) {
         margin: { left: margin, right: margin },
         head: [['Tema', 'Responsable', 'Motivo de Pausa', 'Fecha Pausa']],
         body: group.topics.map(t => {
-          const pauseReason = (t as any).pause_reason || '—';
-          const pausedAt = (t as any).paused_at
-            ? formatStoredDate((t as any).paused_at.split('T')[0], 'dd MMM yyyy', { locale: es })
+          const pauseReason = t.pause_reason || '—';
+          const pausedAt = t.paused_at
+            ? format(new Date(t.paused_at), 'dd MMM yyyy', { locale: es })
             : '—';
           const truncatedReason = pauseReason.length > 80 ? pauseReason.substring(0, 77) + '...' : pauseReason;
           return [t.title, t.assignee || 'Yo', truncatedReason, pausedAt];
