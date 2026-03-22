@@ -1,11 +1,15 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, PieChart, Pie, Cell, AreaChart, Area, CartesianGrid } from 'recharts';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { CheckCircle2, Clock, TrendingUp, ListChecks, Users, Target, CalendarClock, AlertTriangle, Infinity as InfinityIcon, CalendarIcon } from 'lucide-react';
+
+import { CheckCircle2, Clock, TrendingUp, ListChecks, Users, Target, CalendarClock, AlertTriangle, Infinity as InfinityIcon, CalendarIcon, Bell, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import type { Assignee } from '@/hooks/useAssignees';
 
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -17,6 +21,7 @@ import { es } from 'date-fns/locale';
 
 interface DashboardViewProps {
   topics: TopicWithSubtasks[];
+  assignees: Assignee[];
   onUpdateTopic?: (id: string, data: any) => void;
 }
 
@@ -33,7 +38,47 @@ const STATUS_COLORS = {
   completado: 'hsl(142 71% 45%)',
 };
 
-export function DashboardView({ topics, onUpdateTopic }: DashboardViewProps) {
+export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardViewProps) {
+  const [sendingId, setSendingId] = useState<string | null>(null);
+
+  const handleSendReminder = async (topic: TopicWithSubtasks) => {
+    if (!topic.assignee) {
+      toast.error('Este tema no tiene responsable asignado');
+      return;
+    }
+    const assignee = assignees.find(a => a.name === topic.assignee);
+    if (!assignee?.email) {
+      toast.error(`${topic.assignee} no tiene correo configurado`);
+      return;
+    }
+
+    setSendingId(topic.id);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('No autenticado');
+
+      
+
+      const { error } = await supabase.functions.invoke('send-notification-email', {
+        body: {
+          to_email: assignee.email,
+          to_name: assignee.name,
+          topic_title: topic.title,
+          subtasks: topic.subtasks.map(s => ({ title: s.title, completed: s.completed, due_date: s.due_date })),
+          start_date: topic.start_date,
+          due_date: topic.due_date,
+          progress_entries: topic.progress_entries || [],
+        },
+      });
+
+      if (error) throw error;
+      toast.success(`Recordatorio enviado a ${assignee.name}`);
+    } catch (err: any) {
+      toast.error(`Error al enviar: ${err.message}`);
+    } finally {
+      setSendingId(null);
+    }
+  };
   const metrics = useMemo(() => {
     const now = new Date();
     const threeDaysFromNow = addDays(now, 3);
@@ -227,11 +272,19 @@ export function DashboardView({ topics, onUpdateTopic }: DashboardViewProps) {
               ) : (
                 <div className="space-y-1.5">
                   {metrics.overdue.slice(0, 6).map((t) => (
-                    <div key={t.id} className="flex items-center justify-between text-xs">
+                    <div key={t.id} className="flex items-center justify-between text-xs gap-1">
                       <span className="text-foreground truncate flex-1">{t.title}</span>
-                      <Badge variant="destructive" className="text-[9px] ml-2 shrink-0">
+                      <Badge variant="destructive" className="text-[9px] shrink-0">
                         {t.due_date}
                       </Badge>
+                      <button
+                        onClick={() => handleSendReminder(t)}
+                        disabled={sendingId === t.id}
+                        className="shrink-0 p-1 rounded-full hover:bg-destructive/10 text-destructive transition-colors disabled:opacity-50"
+                        title={`Enviar recordatorio a ${t.assignee || 'responsable'}`}
+                      >
+                        {sendingId === t.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Bell className="h-3.5 w-3.5" />}
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -253,11 +306,19 @@ export function DashboardView({ topics, onUpdateTopic }: DashboardViewProps) {
               ) : (
                 <div className="space-y-1.5">
                   {metrics.dueSoon.slice(0, 6).map((t) => (
-                    <div key={t.id} className="flex items-center justify-between text-xs">
+                    <div key={t.id} className="flex items-center justify-between text-xs gap-1">
                       <span className="text-foreground truncate flex-1">{t.title}</span>
-                      <Badge variant="outline" className="text-[9px] ml-2 shrink-0 border-yellow-500/50 text-yellow-600">
+                      <Badge variant="outline" className="text-[9px] shrink-0 border-yellow-500/50 text-yellow-600">
                         {t.due_date}
                       </Badge>
+                      <button
+                        onClick={() => handleSendReminder(t)}
+                        disabled={sendingId === t.id}
+                        className="shrink-0 p-1 rounded-full hover:bg-yellow-500/10 text-yellow-600 transition-colors disabled:opacity-50"
+                        title={`Enviar recordatorio a ${t.assignee || 'responsable'}`}
+                      >
+                        {sendingId === t.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Bell className="h-3.5 w-3.5" />}
+                      </button>
                     </div>
                   ))}
                 </div>
