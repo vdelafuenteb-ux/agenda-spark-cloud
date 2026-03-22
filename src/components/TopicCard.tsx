@@ -470,8 +470,8 @@ export function TopicCard({
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Departamento</label>
                   <Select
-                    value={(topic as any).department_id || 'none'}
-                    onValueChange={(value) => onUpdate(topic.id, { department_id: value === 'none' ? null : value } as any)}
+                    value={topic.department_id || 'none'}
+                    onValueChange={(value) => onUpdate(topic.id, { department_id: value === 'none' ? null : value })}
                   >
                     <SelectTrigger className="w-48 h-8 text-xs"><SelectValue placeholder="Sin departamento" /></SelectTrigger>
                     <SelectContent>
