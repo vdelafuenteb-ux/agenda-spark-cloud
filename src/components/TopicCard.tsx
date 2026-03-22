@@ -411,7 +411,7 @@ export function TopicCard({
               />
 
               {/* Assignee field */}
-              {isCompleted ? (
+              {true && (
                 topic.assignee && (
                   <div className="space-y-1.5">
                     <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Responsable</label>
