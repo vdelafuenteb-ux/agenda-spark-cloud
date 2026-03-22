@@ -126,6 +126,10 @@ export function ProgressLog({ entries, onAdd, onUpdate, onDelete, hideTitle = fa
   const editTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'instant', block: 'nearest' });
+  }, []);
+
+  useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }, [entries.length]);
 
