@@ -356,8 +356,8 @@ export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardVie
               {metrics.missingDates.length === 0 ? (
                 <p className="text-[11px] text-muted-foreground py-1">Todos los temas tienen fecha ✓</p>
               ) : (
-                <div className="space-y-1.5">
-                  {metrics.missingDates.slice(0, 6).map((t) => (
+                <div className="space-y-1.5 max-h-64 overflow-y-auto">
+                  {metrics.missingDates.map((t) => (
                     <div key={t.id} className="flex items-center justify-between text-xs">
                       <span className="text-foreground truncate flex-1">{t.title}</span>
                       <Popover>
@@ -381,9 +381,6 @@ export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardVie
                       </Popover>
                     </div>
                   ))}
-                  {metrics.missingDates.length > 6 && (
-                    <p className="text-[10px] text-muted-foreground">+{metrics.missingDates.length - 6} más</p>
-                  )}
                 </div>
               )}
             </CardContent>
