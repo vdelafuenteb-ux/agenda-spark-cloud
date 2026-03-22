@@ -456,55 +456,7 @@ export function generateReportPdf(opts: PdfOptions) {
     renderSection('Temas en Pausa', pausedTopics, 'paused', SLATE_500);
   }
 
-  // ==========================================
-  // RESUMEN POR RESPONSABLE
-  // ==========================================
-  if (includeResponsables) {
-    const assigneeMap = new Map<string, TopicWithSubtasks[]>();
-    topics.forEach(t => {
-      const key = t.assignee || ownerName;
-      if (!assigneeMap.has(key)) assigneeMap.set(key, []);
-      assigneeMap.get(key)!.push(t);
-    });
 
-    if (assigneeMap.size > 0) {
-      y = checkPageBreak(doc, y, 20, 20);
-      doc.setFontSize(12);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(...SLATE_800);
-      doc.text('Resumen por Responsable', margin, y);
-      y += 2;
-      doc.setDrawColor(...SLATE_800);
-      doc.setLineWidth(0.5);
-      doc.line(margin, y, margin + contentW, y);
-      y += 6;
-
-      autoTable(doc, {
-        startY: y,
-        margin: { left: margin, right: margin },
-        head: [['Responsable', 'Temas', 'Activos', 'Completados', 'Atrasados']],
-        body: Array.from(assigneeMap.entries()).map(([name, tList]) => {
-          const active = tList.filter(t => t.status === 'activo' || t.status === 'seguimiento').length;
-          const completed = tList.filter(t => t.status === 'completado').length;
-          const overdue = tList.filter(t => getTrafficLight(t.due_date).label === 'Atrasado').length;
-          return [name, String(tList.length), String(active), String(completed), String(overdue)];
-        }),
-        styles: { fontSize: 7.5, cellPadding: 2.5, lineColor: SLATE_200 as any, lineWidth: 0.2 },
-        headStyles: { fillColor: SLATE_700 as any, textColor: WHITE as any, fontStyle: 'bold', fontSize: 7.5 },
-        alternateRowStyles: { fillColor: SLATE_50 as any },
-        didParseCell: (data) => {
-          if (data.section === 'body' && data.column.index === 4) {
-            const val = parseInt(data.cell.raw as string);
-            if (val > 0) {
-              data.cell.styles.textColor = RED as any;
-              data.cell.styles.fontStyle = 'bold';
-            }
-          }
-        },
-      });
-      y = (doc as any).lastAutoTable.finalY + 8;
-    }
-  }
 
   // ==========================================
   // FOOTER
