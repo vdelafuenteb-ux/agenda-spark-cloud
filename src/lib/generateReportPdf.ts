@@ -422,11 +422,11 @@ export function generateReportPdf(opts: PdfOptions) {
       autoTable(doc, {
         startY: y,
         margin: { left: margin, right: margin },
-        head: [heads[mode]],
+        head: [standardHead],
         body,
         styles: { fontSize: 7, cellPadding: 2, overflow: 'linebreak', lineColor: SLATE_200 as any, lineWidth: 0.2 },
         headStyles: { fillColor: headerColor as any, textColor: WHITE as any, fontStyle: 'bold', fontSize: 7 },
-        columnStyles: colStyles[mode],
+        columnStyles: standardColStyles,
         didParseCell: (data) => {
           if (data.section !== 'body') return;
           const isSubtask = subtaskRowIndices.has(data.row.index);
@@ -437,20 +437,15 @@ export function generateReportPdf(opts: PdfOptions) {
             data.cell.styles.fontStyle = 'italic';
             data.cell.styles.textColor = SLATE_500 as any;
 
-            // Status column coloring for subtasks
-            if (mode === 'active' && data.column.index === 3) {
+            // Status column coloring for subtasks (col 3)
+            if (data.column.index === 3) {
               const val = data.cell.raw as string;
-              if (val === '✓') {
+              if (val === 'Completado') {
                 data.cell.styles.textColor = GREEN as any;
                 data.cell.styles.fontStyle = 'bold';
               } else if (val === 'Pendiente') {
                 data.cell.styles.textColor = AMBER as any;
               }
-            }
-            // Checkmark column for completed
-            if (mode === 'completed' && data.column.index === 3) {
-              data.cell.styles.textColor = GREEN as any;
-              data.cell.styles.fontStyle = 'bold';
             }
           } else {
             // Topic row: alternate white
@@ -464,17 +459,14 @@ export function generateReportPdf(opts: PdfOptions) {
               data.cell.styles.textColor = SLATE_800 as any;
             }
 
-            // Traffic light for active topics
-            if (mode === 'active' && data.column.index === 3) {
+            // Status column coloring for topics (col 3)
+            if (data.column.index === 3) {
               const val = data.cell.raw as string;
               if (val === 'Atrasado') data.cell.styles.textColor = RED as any;
               else if (val === 'Proximo') data.cell.styles.textColor = AMBER as any;
+              else if (val === 'Completado') { data.cell.styles.textColor = GREEN as any; }
+              else if (val === 'Pausado') { data.cell.styles.textColor = AMBER as any; }
               else data.cell.styles.textColor = GREEN as any;
-              data.cell.styles.fontStyle = 'bold';
-            }
-            // Checkmark column for completed topics
-            if (mode === 'completed' && data.column.index === 3) {
-              data.cell.styles.textColor = GREEN as any;
               data.cell.styles.fontStyle = 'bold';
             }
           }
