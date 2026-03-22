@@ -408,9 +408,9 @@ export function generateReportPdf(opts: PdfOptions) {
 
     const standardColStyles: any = {
       0: { cellWidth: 30 },
-      1: { cellWidth: 24 },
-      2: { cellWidth: 16 },
-      3: { cellWidth: 16 },
+      1: { cellWidth: 22 },
+      2: { cellWidth: 14 },
+      3: { cellWidth: 20 },
       4: { cellWidth: 22 },
       5: { cellWidth: 14 },
       6: { cellWidth: 'auto' },
