@@ -383,8 +383,8 @@ export function generateReportPdf(opts: PdfOptions) {
     doc.setPage(i);
     const pageH = doc.internal.pageSize.getHeight();
     
-    // Bottom accent line
-    doc.setFillColor(...SLATE_200);
+    // Bottom accent line (purple)
+    doc.setFillColor(...PURPLE_500);
     doc.rect(0, pageH - 12, pageW, 0.5, 'F');
     
     doc.setFontSize(6.5);
