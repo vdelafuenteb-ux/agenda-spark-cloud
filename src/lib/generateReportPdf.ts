@@ -55,7 +55,7 @@ function groupByDepartment(
     groups.get(deptName)!.push(t);
   });
 
-  groups.forEach(list => list.sort((a, b) => (a.assignee || 'Yo').localeCompare(b.assignee || 'Yo')));
+  groups.forEach(list => list.sort((a, b) => (a.assignee || defaultOwner).localeCompare(b.assignee || defaultOwner)));
 
   const sorted = Array.from(groups.entries()).sort(([a], [b]) => {
     if (a === 'Sin Departamento') return 1;
