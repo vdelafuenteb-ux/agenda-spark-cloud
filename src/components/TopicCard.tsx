@@ -411,7 +411,19 @@ export function TopicCard({
               />
 
               {/* Assignee field */}
-              {!isCompleted && (
+              {isCompleted ? (
+                topic.assignee && (
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Responsable</label>
+                    <div className="flex flex-wrap gap-1.5">
+                      <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium border bg-primary text-primary-foreground border-primary">
+                        <User className="h-2.5 w-2.5 mr-1" />
+                        {topic.assignee}
+                      </span>
+                    </div>
+                  </div>
+                )
+              ) : (
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Responsable</label>
                   {assignees.length > 0 && (
