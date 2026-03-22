@@ -1,14 +1,22 @@
 
 
-## Plan: Eliminar previsualización markdown del modal de informe
+## Plan: Nombre del PDF igual al título del informe
 
-El usuario no usa la previsualización del markdown que se muestra en el modal. Solo necesita configurar, seleccionar temas/subtareas, y generar el PDF.
+### Cambio único
 
-### Cambio
+**`src/lib/generateReportPdf.ts`** (línea 517):
+- Cambiar el nombre del archivo de `informe_YYYYMMDD_YYYYMMDD.pdf` a usar `options.title` (el título que el usuario escribe en el modal)
+- Sanitizar caracteres inválidos para nombre de archivo (`/\:*?"<>|`)
+- Fallback a "Informe Ejecutivo" si no hay título
 
-**`src/components/ReportModal.tsx`**:
-- Eliminar la generación del `report` markdown (el `useMemo` grande que construye el string markdown) — solo mantener lo necesario para guardar en BD al "Emitir"
-- Eliminar el botón "Copiar" que copia el markdown
-- Mantener: config rápida, selector de temas, switches, botones PDF y Emitir Informe
-- El markdown para guardar en BD se puede generar solo al momento de emitir (inline en `handleEmit`), no necesita estar en un `useMemo` reactivo
+```typescript
+// Antes:
+const fileName = `informe_${format(...)}_${format(...)}.pdf`;
+
+// Después:
+const baseName = (options.title || 'Informe Ejecutivo').replace(/[\/\\:*?"<>|]/g, '_').trim();
+const fileName = `${baseName}.pdf`;
+```
+
+Mismo cambio aplica a `downloadPdfFromContent` (línea 562) usando el parámetro `title`.
 
