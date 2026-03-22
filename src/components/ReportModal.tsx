@@ -19,6 +19,7 @@ import { downloadReportPdf } from '@/lib/generateReportPdf';
 import { useQueryClient } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 import type { TopicWithSubtasks } from '@/hooks/useTopics';
+import { useDepartments } from '@/hooks/useDepartments';
 
 interface ReportModalProps {
   open: boolean;
