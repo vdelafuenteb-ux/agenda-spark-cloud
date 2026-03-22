@@ -81,6 +81,20 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
   const [excludedSubtaskIds, setExcludedSubtaskIds] = useState<Set<string>>(new Set());
   const [expandedTopicIds, setExpandedTopicIds] = useState<Set<string>>(new Set());
 
+  // Quick filters for viewing
+  const [filterDept, setFilterDept] = useState<string>('');
+  const [filterAssignee, setFilterAssignee] = useState<string>('');
+
+  const uniqueDepts = useMemo(() => {
+    const deptIds = new Set(topics.map(t => t.department_id).filter(Boolean) as string[]);
+    return departments.filter(d => deptIds.has(d.id));
+  }, [topics, departments]);
+
+  const uniqueAssignees = useMemo(() => {
+    const names = new Set(topics.map(t => t.assignee).filter(Boolean) as string[]);
+    return Array.from(names).sort();
+  }, [topics]);
+
   // Group topics by status
   const topicsByStatus = useMemo(() => {
     const grouped: Record<string, TopicWithSubtasks[]> = {};
@@ -91,12 +105,50 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
     return grouped;
   }, [topics]);
 
+  // Visible topics after quick filters (filters only affect view, not final selection)
+  const visibleTopicsByStatus = useMemo(() => {
+    const filtered: Record<string, TopicWithSubtasks[]> = {};
+    STATUS_ORDER.forEach(s => {
+      filtered[s] = (topicsByStatus[s] || []).filter(t => {
+        if (filterDept && t.department_id !== filterDept) return false;
+        if (filterAssignee && t.assignee !== filterAssignee) return false;
+        return true;
+      });
+    });
+    return filtered;
+  }, [topicsByStatus, filterDept, filterAssignee]);
+
+  // Select/deselect all visible topics
+  const selectAllVisible = useCallback(() => {
+    setSelectedTopicIds(prev => {
+      const next = new Set(prev);
+      STATUS_ORDER.forEach(s => {
+        (visibleTopicsByStatus[s] || []).forEach(t => next.add(t.id));
+      });
+      return next;
+    });
+  }, [visibleTopicsByStatus]);
+
+  const selectNoneVisible = useCallback(() => {
+    const visibleIds = new Set<string>();
+    STATUS_ORDER.forEach(s => {
+      (visibleTopicsByStatus[s] || []).forEach(t => visibleIds.add(t.id));
+    });
+    setSelectedTopicIds(prev => {
+      const next = new Set(prev);
+      visibleIds.forEach(id => next.delete(id));
+      return next;
+    });
+  }, [visibleTopicsByStatus]);
+
   // Initialize all selected when modal opens
   useEffect(() => {
     if (open) {
       setSelectedTopicIds(new Set(topics.map(t => t.id)));
       setExcludedSubtaskIds(new Set());
       setExpandedTopicIds(new Set());
+      setFilterDept('');
+      setFilterAssignee('');
     }
   }, [open]);
 
