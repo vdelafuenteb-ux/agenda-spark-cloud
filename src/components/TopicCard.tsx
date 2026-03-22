@@ -128,11 +128,13 @@ export function TopicCard({
   return (
     <div className={cn(
       'bg-card rounded-lg shadow-sm hover:shadow-md transition-shadow border-l-4',
-      isCompleted && 'opacity-75',
-      isSeguimiento ? 'border-l-[hsl(var(--seguimiento))]'
-        : topic.priority === 'alta' ? 'border-l-destructive'
-        : topic.pinned ? 'border-l-primary'
-        : 'border-l-transparent'
+      isCompleted
+        ? 'border-l-emerald-500'
+        : topic.status === 'pausado'
+          ? 'border-l-yellow-500'
+          : isSeguimiento
+            ? 'border-l-[hsl(var(--seguimiento))]'
+            : 'border-l-foreground'
     )}>
       <button onClick={() => setExpanded(!expanded)} className="w-full flex items-center gap-3 p-3 text-left">
         {/* Pin + Chevron */}
