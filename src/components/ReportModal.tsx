@@ -18,7 +18,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 import type { TopicWithSubtasks } from '@/hooks/useTopics';
 import { useDepartments } from '@/hooks/useDepartments';
-import { ScrollArea } from '@/components/ui/scroll-area';
+
 
 interface ReportModalProps {
   open: boolean;
