@@ -1,59 +1,33 @@
 
 
-## Plan: Rediseñar el sistema de Informes Ejecutivos
+## Plan: Simplificar el PDF del informe — solo tablas, separadas por estado
 
-### Contexto
-El informe actual solo incluye temas activos con un formato básico. El usuario necesita un informe profesional y completo para entregar a su jefe, que cubra TODO lo que pasó en un período: temas cerrados, activos, atrasados, responsables, bitácoras, y un resumen ejecutivo. Debe ser personalizable antes de exportar.
+### Problema
+El PDF actual tiene demasiado texto con la sección "Detalle por Tema" (subtareas, bitácoras, barras de progreso por cada tema). Se vuelve infinito. Las tablas necesitan ajustes.
 
-### Cambios principales
+### Cambios en `src/lib/generateReportPdf.ts`
 
-#### 1. `ReportModal.tsx` - Rediseñar el modal con opciones de personalización
+#### 1. Tabla "Logros del Período" (Completados)
+- Agregar columna **Fecha Cierre** (usar `updated_at` del tema como fecha de cierre)
+- Agregar columna **Último Comentario** (último entry de `progress_entries`)
+- Eliminar columna Prioridad (no aporta valor aquí)
+- Ajustar anchos de columna para que el texto quepa bien
 
-**Incluir TODOS los estados** (no solo activos):
-- Selector para incluir: Activos, Seguimiento, Completados, Pausados
-- Filtro por responsable (incluyendo "Yo" para sin asignar)
-- Campo editable para título del informe
-- Campo editable para nombre del autor / cargo (ej: "Gerente General Interino")
-- Toggle para incluir/excluir secciones: Resumen Ejecutivo, Temas Cerrados, Bitácoras, Responsables
+#### 2. Eliminar sección "Detalle por Tema"
+- Borrar completamente el bloque que renderiza cada tema con subtareas, barras de progreso, bitácoras individuales (~líneas 267-395)
+- Esto es lo que hace el PDF infinito
 
-**Mejorar el contenido del informe generado (Markdown):**
-- Resumen Ejecutivo narrativo (no solo KPIs en tabla)
-- Secciones separadas: Logros del Período (cerrados), Temas Activos, Atrasados/Alertas, Responsables
-- Cada tema con su responsable visible
-- Bitácora resumida por tema
+#### 3. Separar "Semáforo General" en dos tablas por estado
+- **Temas Activos** (status `activo` + `seguimiento`) — tabla con semáforo como está ahora
+- **Temas en Pausa** (status `pausado`) — tabla separada con header diferente (color gris/slate)
 
-#### 2. `generateReportPdf.ts` - Rediseñar el PDF profesional
+#### 4. Mantener las secciones que sí aportan
+- Header con título/autor ✓
+- KPIs ejecutivos ✓
+- Narrativa breve ✓
+- Resumen por Responsable ✓
+- Footer ✓
 
-**Nuevo diseño visual inspirado en el estilo del usuario** (colores oscuros, limpio, ejecutivo):
-- Header con franja azul oscuro (#1E293B), título grande, subtítulo con cargo/autor, período y fecha de emisión
-- Resumen Ejecutivo con KPIs en cards/cajas visuales (no solo tabla)
-- Sección "Logros del Período" - temas completados con fecha de cierre
-- Tabla Semáforo con columna de Responsable
-- Detalle por tema: barra de color lateral, responsable, subtareas, bitácora reciente
-- Sección de Responsables: tabla resumen de qué responsable tiene qué temas y su estado
-- Footer con paginación y marca de generación automática
-- Diseño más compacto pero legible, fuentes limpias
-
-#### 3. Nuevas opciones de `PdfOptions`
-
-```typescript
-interface PdfOptions {
-  topics: TopicWithSubtasks[];
-  periodStart: Date;
-  periodEnd: Date;
-  title?: string;
-  authorName?: string;
-  authorRole?: string;
-  includeCompleted?: boolean;
-  includeBitacora?: boolean;
-  includeResponsables?: boolean;
-}
-```
-
-### Archivos a modificar
-- **`src/components/ReportModal.tsx`**: Agregar controles de personalización, incluir todos los estados, mejorar Markdown
-- **`src/lib/generateReportPdf.ts`**: Rediseñar PDF completo con nuevo layout profesional, secciones de completados, responsables, resumen ejecutivo narrativo
-
-### Resultado esperado
-Un informe que al abrirlo el jefe vea: resumen ejecutivo claro, qué se logró, qué está pendiente, quién es responsable de qué, alertas de atraso, y el estado actual de cada tema. Profesional, limpio, fácil de leer.
+### Archivo a modificar
+- `src/lib/generateReportPdf.ts`
 
