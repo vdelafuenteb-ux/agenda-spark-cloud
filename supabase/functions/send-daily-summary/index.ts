@@ -86,10 +86,12 @@ Deno.serve(async (req) => {
 
       if (topicsErr) {
         console.error(`Error fetching topics for ${user.id}:`, topicsErr);
-        continue;
+        return new Response(JSON.stringify({ error: "Error fetching topics" }), { status: 500, headers: corsHeaders });
       }
 
-      if (!topics || topics.length === 0) continue;
+      if (!topics || topics.length === 0) {
+        return new Response(JSON.stringify({ message: "No active topics found" }), { status: 200, headers: corsHeaders });
+      }
 
       // Fetch checklist items
       const { data: checklistItems } = await supabase
@@ -139,7 +141,7 @@ Deno.serve(async (req) => {
 
       if (totalItems === 0) {
         console.log(`No items for user ${user.id}, skipping`);
-        continue;
+        return new Response(JSON.stringify({ message: "No pending items" }), { status: 200, headers: corsHeaders });
       }
 
       // Build HTML email
