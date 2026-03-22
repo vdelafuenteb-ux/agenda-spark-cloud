@@ -315,30 +315,34 @@ export function generateReportPdf(opts: PdfOptions) {
       y += 3;
 
       // Compact centered table
-      const tableW = 130; // fixed width for compactness
+      const tableW = 160;
       const tableMarginL = margin + (contentW - tableW) / 2;
 
       autoTable(doc, {
         startY: y,
         margin: { left: tableMarginL, right: pageW - tableMarginL - tableW },
-        head: [['Responsable', 'Temas', 'Activos', 'Completados', 'Atrasados']],
+        head: [['Responsable', 'Temas', 'Activos', 'Seguim.', 'Pausados', 'Completados', 'Atrasados']],
         body: Array.from(assigneeMap.entries())
           .sort(([, a], [, b]) => b.length - a.length)
           .map(([name, tList]) => {
-            const active = tList.filter(t => t.status === 'activo' || t.status === 'seguimiento').length;
+            const active = tList.filter(t => t.status === 'activo').length;
+            const seguimiento = tList.filter(t => t.status === 'seguimiento').length;
+            const paused = tList.filter(t => t.status === 'pausado').length;
             const completed = tList.filter(t => t.status === 'completado').length;
             const overdue = tList.filter(t => getTrafficLight(t.due_date).label === 'Atrasado').length;
-            return [name, String(tList.length), String(active), String(completed), String(overdue)];
+            return [name, String(tList.length), String(active), String(seguimiento), String(paused), String(completed), String(overdue)];
           }),
         styles: { fontSize: 7, cellPadding: 1.8, lineColor: SLATE_200 as any, lineWidth: 0.15, halign: 'center' },
         headStyles: { fillColor: SLATE_700 as any, textColor: WHITE as any, fontStyle: 'bold', fontSize: 7 },
         alternateRowStyles: { fillColor: SLATE_50 as any },
         columnStyles: {
-          0: { cellWidth: 42, halign: 'left' },
-          1: { cellWidth: 18 },
+          0: { cellWidth: 38, halign: 'left' },
+          1: { cellWidth: 16 },
           2: { cellWidth: 18 },
-          3: { cellWidth: 26 },
-          4: { cellWidth: 22 },
+          3: { cellWidth: 18 },
+          4: { cellWidth: 18 },
+          5: { cellWidth: 26 },
+          6: { cellWidth: 22 },
         },
         didParseCell: (data) => {
           if (data.section === 'body' && data.column.index === 4) {
