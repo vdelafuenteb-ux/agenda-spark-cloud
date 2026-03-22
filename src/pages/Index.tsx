@@ -68,7 +68,12 @@ const Index = () => {
       if (filterNoDueDate && topic.due_date) return false;
       return true;
     });
-    return filtered.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
+    const priorityOrder: Record<string, number> = { alta: 0, media: 1, baja: 2 };
+    return filtered.sort((a, b) => {
+      const pinDiff = (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0);
+      if (pinDiff !== 0) return pinDiff;
+      return (priorityOrder[a.priority] ?? 2) - (priorityOrder[b.priority] ?? 2);
+    });
   }, [topics, statusTab, searchQuery, selectedTagIds, selectedAssignee, filterNoDueDate, getTagsForTopic]);
 
   const statusCounts = useMemo(() => {
