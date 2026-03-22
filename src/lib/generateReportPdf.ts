@@ -278,7 +278,8 @@ export function generateReportPdf(opts: PdfOptions) {
   const pct = totalSubs > 0 ? Math.round((doneSubs / totalSubs) * 100) : 0;
   const delayed = activeTopics.filter(t => getTrafficLight(t.due_date).label === 'Atrasado').length;
   const warning = activeTopics.filter(t => getTrafficLight(t.due_date).label === 'Proximo').length;
-  const onTrack = activeTopics.length - delayed - warning;
+  const onTrack = activeTopics.filter(t => t.due_date && getTrafficLight(t.due_date).label === 'Al dia').length;
+  const noDate = activeTopics.filter(t => !t.due_date).length;
 
   doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
@@ -286,13 +287,14 @@ export function generateReportPdf(opts: PdfOptions) {
   doc.text('Resumen Ejecutivo', margin, y);
   y += 3;
 
-  const kpiW = (contentW - 12) / 5;
+  const kpiW = (contentW - 15) / 6;
   const kpiH = 22;
   const kpis = [
     { value: String(topics.length), label: 'Temas Totales', color: PURPLE_700 },
     { value: String(onTrack), label: 'Al Dia', color: GREEN },
     { value: String(warning), label: 'Proximos', color: AMBER },
     { value: String(delayed), label: 'Atrasados', color: RED },
+    { value: String(noDate), label: 'Sin Fecha', color: SLATE_500 },
     { value: `${pct}%`, label: 'Avance Subtareas', color: PURPLE_500 },
   ];
 
