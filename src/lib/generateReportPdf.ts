@@ -35,12 +35,6 @@ function getTrafficLight(dueDateStr: string | null | undefined): { label: string
   return { label: 'Al día', color: GREEN };
 }
 
-function isWithinPeriod(dateStr: string, start: Date, end: Date): boolean {
-  try {
-    const d = parseISO(dateStr);
-    return !isBefore(d, start) && !isAfter(d, end);
-  } catch { return false; }
-}
 
 const STATUS_LABELS: Record<string, string> = {
   activo: 'Activo',
