@@ -281,7 +281,7 @@ export function ProgressLog({ entries, onAdd, onUpdate, onDelete, hideTitle = fa
           placeholder="Registrar avance... (Shift+Enter para nueva línea)"
           value={text}
           onChange={e => setText(e.target.value)}
-          onKeyDown={handleKeyDown}
+          
           className="min-h-[44px] text-sm resize-none"
           rows={2}
         />
