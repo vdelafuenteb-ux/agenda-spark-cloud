@@ -444,6 +444,11 @@ export function generateReportPdf(opts: PdfOptions) {
               else data.cell.styles.textColor = GREEN as any;
               data.cell.styles.fontStyle = 'bold';
             }
+            // Checkmark column for completed topics
+            if (mode === 'completed' && data.column.index === 3) {
+              data.cell.styles.textColor = GREEN as any;
+              data.cell.styles.fontStyle = 'bold';
+            }
           }
         },
       });
