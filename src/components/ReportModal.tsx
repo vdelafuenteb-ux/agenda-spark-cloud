@@ -58,6 +58,7 @@ function isWithinPeriod(dateStr: string, start: Date, end: Date): boolean {
 
 export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
   const queryClient = useQueryClient();
+  const { departments } = useDepartments();
   const [period, setPeriod] = useState<Period>('month');
   const [customStart, setCustomStart] = useState<Date>(subDays(new Date(), 30));
   const [customEnd, setCustomEnd] = useState<Date>(new Date());
