@@ -202,45 +202,46 @@ export function generateReportPdf(opts: PdfOptions) {
   const pausedTopics = topics.filter(t => t.status === 'pausado');
 
   // ==========================================
-  // HEADER
+  // HEADER - Clean, no background
   // ==========================================
-  const headerH = authorName ? 44 : 38;
-  doc.setFillColor(...PURPLE_900);
-  doc.rect(0, 0, pageW, headerH, 'F');
-  doc.setFillColor(...PURPLE_500);
-  doc.rect(0, headerH, pageW, 1.5, 'F');
+  y = 14;
 
+  // Logo on the left
   try {
-    const logoSize = 14;
-    doc.addImage(logoIcon, 'PNG', pageW - margin - logoSize, (headerH - logoSize) / 2, logoSize, logoSize);
-  } catch (e) {}
+    const logoSize = 16;
+    doc.addImage(logoIcon, 'PNG', margin, y - 6, logoSize, logoSize);
+  } catch (_e) {}
 
-  y = 16;
-  doc.setTextColor(...WHITE);
-  doc.setFontSize(20);
+  // Title centered
+  doc.setTextColor(...SLATE_800);
+  doc.setFontSize(18);
   doc.setFont('helvetica', 'bold');
-  doc.text(reportTitle, margin, y);
-  y += 7;
+  doc.text(`${reportTitle} T&Transit`, pageW / 2, y, { align: 'center' });
+  y += 6;
 
+  // Period centered
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
-  doc.text(`Periodo: ${periodStr}`, margin, y);
+  doc.setTextColor(...SLATE_500);
+  doc.text(`Periodo: ${periodStr}`, pageW / 2, y, { align: 'center' });
 
   if (authorName) {
-    y += 5;
+    y += 4.5;
     const authorText = authorRole ? `${authorName} — ${authorRole}` : authorName;
-    doc.text(authorText, margin, y);
-    y += 5;
-    doc.setFontSize(7.5);
-    doc.setTextColor(180, 190, 210);
-    doc.text(`Emitido: ${emittedStr}`, margin, y);
-  } else {
-    doc.setFontSize(7.5);
-    doc.setTextColor(180, 190, 210);
-    doc.text(`Emitido: ${emittedStr}`, pageW - margin, y, { align: 'right' });
+    doc.text(authorText, pageW / 2, y, { align: 'center' });
   }
 
-  y = headerH + 8;
+  y += 4.5;
+  doc.setFontSize(7);
+  doc.setTextColor(...SLATE_300);
+  doc.text(`Emitido: ${emittedStr}`, pageW / 2, y, { align: 'center' });
+
+  // Thin separator line
+  y += 3;
+  doc.setDrawColor(...SLATE_200);
+  doc.setLineWidth(0.4);
+  doc.line(margin, y, pageW - margin, y);
+  y += 6;
 
   // ==========================================
   // KPIs
