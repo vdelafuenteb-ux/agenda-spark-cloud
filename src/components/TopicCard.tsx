@@ -104,6 +104,8 @@ export function TopicCard({
   const [newAssigneeName, setNewAssigneeName] = useState('');
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState(topic.title);
+  const [showPauseDialog, setShowPauseDialog] = useState(false);
+  const [pauseReasonDraft, setPauseReasonDraft] = useState('');
 
   useEffect(() => {
     if (forceExpand !== null) {
