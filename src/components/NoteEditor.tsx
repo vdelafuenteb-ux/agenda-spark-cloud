@@ -19,9 +19,10 @@ import type { Tag as TagType } from '@/hooks/useTags';
 interface NoteEditorProps {
   note: Note;
   notebooks: Notebook[];
+  sections: NoteSection[];
   allTags: TagType[];
   noteTagIds: string[];
-  onUpdate: (id: string, data: { title?: string; content?: string; notebook_id?: string | null }) => void;
+  onUpdate: (id: string, data: { title?: string; content?: string; notebook_id?: string | null; section_id?: string | null }) => void;
   onDelete: (id: string) => void;
   onAddTag: (noteId: string, tagId: string) => void;
   onRemoveTag: (noteId: string, tagId: string) => void;
