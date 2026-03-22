@@ -26,7 +26,7 @@ import type { Department } from '@/hooks/useDepartments';
 import type { Database } from '@/integrations/supabase/types';
 
 type Priority = Database['public']['Enums']['topic_priority'];
-type Status = Database['public']['Enums']['topic_status'];
+
 
 interface TopicCardProps {
   topic: TopicWithSubtasks;

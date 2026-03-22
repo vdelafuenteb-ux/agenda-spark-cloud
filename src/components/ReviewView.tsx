@@ -185,7 +185,7 @@ export function ReviewView({ topics, onToggleSubtask }: ReviewViewProps) {
   const renderItem = (item: ReviewItem) => {
     const tb = typeBadge[item.type];
     const pc = item.priority ? priorityConfig[item.priority] : null;
-    const isSeguimiento = item.topicStatus === 'seguimiento';
+    
     return (
       <div
         key={`${item.type}-${item.id}`}
