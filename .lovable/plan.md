@@ -1,33 +1,29 @@
 
 
-## Plan: Simplificar el PDF del informe — solo tablas, separadas por estado
+## Plan: Mostrar última actividad de bitácora en subtareas
 
-### Problema
-El PDF actual tiene demasiado texto con la sección "Detalle por Tema" (subtareas, bitácoras, barras de progreso por cada tema). Se vuelve infinito. Las tablas necesitan ajustes.
+### Qué se hará
+En cada fila de subtarea, mostrar de forma sutil la fecha de la última entrada de bitácora y hace cuántos días fue. Si pasaron más de 5 días, se muestra en rojo como alerta visual.
 
-### Cambios en `src/lib/generateReportPdf.ts`
+### Cambios en `src/components/SubtaskRow.tsx`
 
-#### 1. Tabla "Logros del Período" (Completados)
-- Agregar columna **Fecha Cierre** (usar `updated_at` del tema como fecha de cierre)
-- Agregar columna **Último Comentario** (último entry de `progress_entries`)
-- Eliminar columna Prioridad (no aporta valor aquí)
-- Ajustar anchos de columna para que el texto quepa bien
+**Calcular última actividad:**
+- Tomar el `created_at` de la última entrada en `subtask_entries`
+- Calcular días transcurridos con `differenceInDays(new Date(), lastDate)`
+- Formatear como `"20 mar (hace 2d)"` o `"17 mar (hace 5d)"` en rojo si >5 días
 
-#### 2. Eliminar sección "Detalle por Tema"
-- Borrar completamente el bloque que renderiza cada tema con subtareas, barras de progreso, bitácoras individuales (~líneas 267-395)
-- Esto es lo que hace el PDF infinito
+**Ubicación en la fila:**
+- Colocar justo antes del ícono de fecha de vencimiento, como texto pequeño (`text-[10px]`) en `text-muted-foreground`
+- Si >5 días: `text-destructive` para que resalte sin sobrecargar
+- Solo se muestra si hay al menos una entrada de bitácora
 
-#### 3. Separar "Semáforo General" en dos tablas por estado
-- **Temas Activos** (status `activo` + `seguimiento`) — tabla con semáforo como está ahora
-- **Temas en Pausa** (status `pausado`) — tabla separada con header diferente (color gris/slate)
-
-#### 4. Mantener las secciones que sí aportan
-- Header con título/autor ✓
-- KPIs ejecutivos ✓
-- Narrativa breve ✓
-- Resumen por Responsable ✓
-- Footer ✓
+**Ejemplo visual:**
+```text
+☐ Despegar [Atrasada]          últ: 17 mar (5d) 👁1  📅 17 mar  🗑
+☐ Aeromexico                                     👁   📅 Sin fecha
+☐ Atlas                        últ: 21 mar (1d)  👁   📅 Sin fecha
+```
 
 ### Archivo a modificar
-- `src/lib/generateReportPdf.ts`
+- `src/components/SubtaskRow.tsx` — agregar cálculo de última entrada y renderizado sutil
 
