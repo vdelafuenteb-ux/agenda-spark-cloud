@@ -277,7 +277,8 @@ export function NotebookGrid({ notebooks, sections, notes, onSelect, onSelectSec
                   key={note.id}
                   draggable
                   onDragStart={(e) => handleDragStart(e, note.id)}
-                  className="rounded-lg border border-dashed border-border bg-card p-3 cursor-grab active:cursor-grabbing hover:shadow-sm hover:border-primary/30 transition-all duration-150 select-none"
+                  className="rounded-lg border border-dashed border-border bg-card p-3 cursor-pointer hover:shadow-sm hover:border-primary/30 transition-all duration-150 select-none"
+                  onClick={() => onSelectNote?.(note.id)}
                 >
                   <div className="flex items-start gap-2">
                     <GripVertical className="h-3.5 w-3.5 text-muted-foreground/40 shrink-0 mt-0.5" />
