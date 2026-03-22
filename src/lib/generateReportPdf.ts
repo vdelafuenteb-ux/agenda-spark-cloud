@@ -285,7 +285,66 @@ export function generateReportPdf(opts: PdfOptions) {
 
   const narrativeLines = doc.splitTextToSize(narrative, contentW);
   doc.text(narrativeLines, margin, y);
-  y += narrativeLines.length * 3.5 + 6;
+  y += narrativeLines.length * 3.5 + 4;
+
+  // ==========================================
+  // RESUMEN POR RESPONSABLE (right after executive summary)
+  // ==========================================
+  if (includeResponsables) {
+    const assigneeMap = new Map<string, TopicWithSubtasks[]>();
+    topics.forEach(t => {
+      const key = t.assignee || ownerName;
+      if (!assigneeMap.has(key)) assigneeMap.set(key, []);
+      assigneeMap.get(key)!.push(t);
+    });
+
+    if (assigneeMap.size > 0) {
+      y = checkPageBreak(doc, y, 16, margin);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...SLATE_800);
+      doc.text('Resumen por Responsable', margin, y);
+      y += 3;
+
+      // Compact centered table
+      const tableW = 130; // fixed width for compactness
+      const tableMarginL = margin + (contentW - tableW) / 2;
+
+      autoTable(doc, {
+        startY: y,
+        margin: { left: tableMarginL, right: pageW - tableMarginL - tableW },
+        head: [['Responsable', 'Temas', 'Activos', 'Completados', 'Atrasados']],
+        body: Array.from(assigneeMap.entries())
+          .sort(([, a], [, b]) => b.length - a.length)
+          .map(([name, tList]) => {
+            const active = tList.filter(t => t.status === 'activo' || t.status === 'seguimiento').length;
+            const completed = tList.filter(t => t.status === 'completado').length;
+            const overdue = tList.filter(t => getTrafficLight(t.due_date).label === 'Atrasado').length;
+            return [name, String(tList.length), String(active), String(completed), String(overdue)];
+          }),
+        styles: { fontSize: 7, cellPadding: 1.8, lineColor: SLATE_200 as any, lineWidth: 0.15, halign: 'center' },
+        headStyles: { fillColor: SLATE_700 as any, textColor: WHITE as any, fontStyle: 'bold', fontSize: 7 },
+        alternateRowStyles: { fillColor: SLATE_50 as any },
+        columnStyles: {
+          0: { cellWidth: 42, halign: 'left' },
+          1: { cellWidth: 18 },
+          2: { cellWidth: 18 },
+          3: { cellWidth: 26 },
+          4: { cellWidth: 22 },
+        },
+        didParseCell: (data) => {
+          if (data.section === 'body' && data.column.index === 4) {
+            const val = parseInt(data.cell.raw as string);
+            if (val > 0) {
+              data.cell.styles.textColor = RED as any;
+              data.cell.styles.fontStyle = 'bold';
+            }
+          }
+        },
+      });
+      y = (doc as any).lastAutoTable.finalY + 6;
+    }
+  }
 
   // ==========================================
   // SECTION HELPER: render grouped table
