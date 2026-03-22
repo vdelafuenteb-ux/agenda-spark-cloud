@@ -297,7 +297,7 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
       const { error } = await supabase.from('reports').insert({
         user_id: user.id,
         title: titleForSave,
-        content: report,
+        content: generateMarkdown(),
         period_start: format(start, 'yyyy-MM-dd'),
         period_end: format(end, 'yyyy-MM-dd'),
       });
