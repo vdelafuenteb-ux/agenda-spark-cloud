@@ -324,7 +324,12 @@ export function generateReportPdf(opts: PdfOptions) {
         alternateRowStyles: { fillColor: SLATE_50 as any },
         columnStyles: { 0: { cellWidth: 40 }, 1: { cellWidth: 28 }, 2: { cellWidth: 25 }, 3: { cellWidth: 'auto' } },
       });
-      y = (doc as any).lastAutoTable.finalY + 4;
+      y = (doc as any).lastAutoTable.finalY + 2;
+      // Subtask details for completed topics
+      const topicsWithSubs = group.topics.filter(t => t.subtasks.length > 0);
+      if (topicsWithSubs.length > 0) {
+        y = drawSubtaskDetails(doc, topicsWithSubs, y, margin, contentW);
+      }
     });
     y += 4;
   }
