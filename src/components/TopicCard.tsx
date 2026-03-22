@@ -11,6 +11,8 @@ import { SubtaskRow } from '@/components/SubtaskRow';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { ProgressLog } from '@/components/ProgressLog';
 import { TagSelector } from '@/components/TagSelector';
@@ -102,6 +104,8 @@ export function TopicCard({
   const [newAssigneeName, setNewAssigneeName] = useState('');
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState(topic.title);
+  const [showPauseDialog, setShowPauseDialog] = useState(false);
+  const [pauseReasonDraft, setPauseReasonDraft] = useState('');
 
   useEffect(() => {
     if (forceExpand !== null) {
@@ -510,7 +514,10 @@ export function TopicCard({
                       size="sm"
                       variant="outline"
                       className="flex-1 h-9 text-xs gap-2"
-                      onClick={() => onUpdate(topic.id, { status: 'pausado' })}
+                      onClick={() => {
+                        setPauseReasonDraft('');
+                        setShowPauseDialog(true);
+                      }}
                     >
                       <Pause className="h-3.5 w-3.5" /> Pausar
                     </Button>
@@ -526,11 +533,23 @@ export function TopicCard({
                 )}
                 {topic.status === 'pausado' && (
                   <>
+                    {/* Show pause reason and date */}
+                    {((topic as any).pause_reason || (topic as any).paused_at) && (
+                      <div className="w-full bg-muted/50 rounded-md p-3 mb-2 border border-border">
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Motivo de pausa</p>
+                        <p className="text-sm text-foreground">{(topic as any).pause_reason || 'Sin motivo registrado'}</p>
+                        {(topic as any).paused_at && (
+                          <p className="text-[10px] text-muted-foreground mt-1">
+                            Pausado el {formatStoredDate((topic as any).paused_at.split('T')[0], 'dd MMM yyyy', { locale: es })}
+                          </p>
+                        )}
+                      </div>
+                    )}
                     <Button
                       size="sm"
                       variant="outline"
                       className="flex-1 h-9 text-xs gap-2"
-                      onClick={() => onUpdate(topic.id, { status: 'activo' })}
+                      onClick={() => onUpdate(topic.id, { status: 'activo', pause_reason: '', paused_at: null })}
                     >
                       <Play className="h-3.5 w-3.5" /> Reactivar
                     </Button>
@@ -538,7 +557,7 @@ export function TopicCard({
                       size="sm"
                       variant="default"
                       className="flex-1 h-9 text-xs gap-2"
-                      onClick={() => onUpdate(topic.id, { status: 'completado' })}
+                      onClick={() => onUpdate(topic.id, { status: 'completado', pause_reason: '', paused_at: null })}
                     >
                       <CheckCircle2 className="h-3.5 w-3.5" /> Cerrar
                     </Button>
@@ -623,6 +642,37 @@ export function TopicCard({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Pause reason dialog */}
+      <Dialog open={showPauseDialog} onOpenChange={setShowPauseDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>¿Por qué pausas este tema?</DialogTitle>
+          </DialogHeader>
+          <Textarea
+            placeholder="Motivo de la pausa (obligatorio)..."
+            value={pauseReasonDraft}
+            onChange={(e) => setPauseReasonDraft(e.target.value)}
+            className="min-h-[80px]"
+          />
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setShowPauseDialog(false)}>Cancelar</Button>
+            <Button
+              disabled={!pauseReasonDraft.trim()}
+              onClick={() => {
+                onUpdate(topic.id, {
+                  status: 'pausado',
+                  pause_reason: pauseReasonDraft.trim(),
+                  paused_at: new Date().toISOString(),
+                });
+                setShowPauseDialog(false);
+              }}
+            >
+              <Pause className="h-3.5 w-3.5 mr-1" /> Pausar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

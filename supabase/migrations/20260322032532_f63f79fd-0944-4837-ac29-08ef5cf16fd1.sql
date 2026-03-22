@@ -1,0 +1,2 @@
+ALTER TABLE public.topics ADD COLUMN pause_reason TEXT DEFAULT '' NOT NULL;
+ALTER TABLE public.topics ADD COLUMN paused_at TIMESTAMP WITH TIME ZONE;

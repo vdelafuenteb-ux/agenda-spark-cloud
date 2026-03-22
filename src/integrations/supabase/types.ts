@@ -592,6 +592,8 @@ export type Database = {
           due_date: string | null
           id: string
           is_ongoing: boolean
+          pause_reason: string
+          paused_at: string | null
           pinned: boolean
           priority: Database["public"]["Enums"]["topic_priority"]
           progress_notes: string | null
@@ -609,6 +611,8 @@ export type Database = {
           due_date?: string | null
           id?: string
           is_ongoing?: boolean
+          pause_reason?: string
+          paused_at?: string | null
           pinned?: boolean
           priority?: Database["public"]["Enums"]["topic_priority"]
           progress_notes?: string | null
@@ -626,6 +630,8 @@ export type Database = {
           due_date?: string | null
           id?: string
           is_ongoing?: boolean
+          pause_reason?: string
+          paused_at?: string | null
           pinned?: boolean
           priority?: Database["public"]["Enums"]["topic_priority"]
           progress_notes?: string | null
