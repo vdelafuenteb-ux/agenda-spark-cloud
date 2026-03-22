@@ -31,6 +31,8 @@ export function NotebookGrid({ notebooks, sections, notes, onSelect, onSelectSec
   const [newColor, setNewColor] = useState(COLORS[0]);
   const [expandedNotebooks, setExpandedNotebooks] = useState<Set<string>>(new Set());
   const [dragOverTarget, setDragOverTarget] = useState<string | null>(null);
+  const [newSectionName, setNewSectionName] = useState('');
+  const [addingSectionTo, setAddingSectionTo] = useState<string | null>(null);
   const [showAllUnassigned, setShowAllUnassigned] = useState(false);
 
   const handleCreate = () => {
