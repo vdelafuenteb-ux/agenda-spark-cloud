@@ -403,7 +403,7 @@ export function generateReportPdf(opts: PdfOptions) {
   if (includeResponsables) {
     const assigneeMap = new Map<string, TopicWithSubtasks[]>();
     topics.forEach(t => {
-      const key = t.assignee || 'Yo';
+      const key = t.assignee || ownerName;
       if (!assigneeMap.has(key)) assigneeMap.set(key, []);
       assigneeMap.get(key)!.push(t);
     });
