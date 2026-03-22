@@ -127,13 +127,14 @@ function buildIntegratedRows(
       ? t.progress_entries[t.progress_entries.length - 1].content
       : '';
 
+    const fSubs = subtaskFilter && subtaskFilter[t.id]
+      ? t.subtasks.filter(s => subtaskFilter[t.id].includes(s.id))
+      : t.subtasks;
+    const done = fSubs.filter(s => s.completed).length;
+    const total = fSubs.length;
+
     if (columnsMode === 'active') {
       const tl = getTrafficLight(t.due_date);
-      const fSubs = subtaskFilter && subtaskFilter[t.id]
-        ? t.subtasks.filter(s => subtaskFilter[t.id].includes(s.id))
-        : t.subtasks;
-      const done = fSubs.filter(s => s.completed).length;
-      const total = fSubs.length;
       const dueStr = t.due_date ? formatStoredDate(t.due_date, 'dd MMM yyyy', { locale: es }) : '';
       body.push([
         `${topicNum}  ${t.title}`,
@@ -146,11 +147,26 @@ function buildIntegratedRows(
       ]);
     } else if (columnsMode === 'completed') {
       const closeDateStr = t.updated_at ? format(new Date(t.updated_at), 'dd MMM yyyy', { locale: es }) : '';
-      body.push([`${topicNum}  ${t.title}`, t.assignee || ownerName, closeDateStr, '✓', lastEntry]);
+      body.push([
+        `${topicNum}  ${t.title}`,
+        t.assignee || ownerName,
+        t.priority.charAt(0).toUpperCase() + t.priority.slice(1),
+        'Completado',
+        closeDateStr,
+        total > 0 ? `${done}/${total}` : '',
+        lastEntry,
+      ]);
     } else {
-      const pauseReason = t.pause_reason || '';
       const pausedAt = t.paused_at ? format(new Date(t.paused_at), 'dd MMM yyyy', { locale: es }) : '';
-      body.push([`${topicNum}  ${t.title}`, t.assignee || ownerName, pauseReason, pausedAt]);
+      body.push([
+        `${topicNum}  ${t.title}`,
+        t.assignee || ownerName,
+        t.priority.charAt(0).toUpperCase() + t.priority.slice(1),
+        'Pausado',
+        pausedAt,
+        total > 0 ? `${done}/${total}` : '',
+        t.pause_reason || '',
+      ]);
     }
 
     // Filter subtasks if subtaskFilter is provided
@@ -164,19 +180,13 @@ function buildIntegratedRows(
       const subNum = `${topicNum}.${si + 1}`;
       const idx = body.length;
       subtaskRowIndices.add(idx);
-      const status = s.completed ? '✓' : 'Pendiente';
+      const status = s.completed ? 'Completado' : 'Pendiente';
       const dueStr = s.due_date ? formatStoredDate(s.due_date, 'dd MMM yyyy', { locale: es }) : '';
       const lastSubEntry = s.subtask_entries && s.subtask_entries.length > 0
         ? s.subtask_entries[s.subtask_entries.length - 1].content
         : '';
 
-      if (columnsMode === 'active') {
-        body.push([`  ${subNum}  ${s.title}`, s.responsible || '', '', status, dueStr, '', lastSubEntry]);
-      } else if (columnsMode === 'completed') {
-        body.push([`  ${subNum}  ${s.title}`, s.responsible || '', dueStr, '✓', lastSubEntry]);
-      } else {
-        body.push([`  ${subNum}  ${s.title}`, s.responsible || '', '', dueStr]);
-      }
+      body.push([`  ${subNum}  ${s.title}`, s.responsible || '', '', status, dueStr, '', lastSubEntry]);
     }
   }
 
