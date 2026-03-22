@@ -56,12 +56,6 @@ interface TopicCardProps {
   onCreateTag: (name: string, color: string) => Promise<any>;
 }
 
-const statusLabels: Record<Status, string> = {
-  activo: 'Activo',
-  completado: 'Cerrado',
-  pausado: 'Pausado',
-  seguimiento: 'Seguimiento',
-};
 
 export function TopicCard({
   topic,
