@@ -26,7 +26,7 @@ import type { Department } from '@/hooks/useDepartments';
 import type { Database } from '@/integrations/supabase/types';
 
 type Priority = Database['public']['Enums']['topic_priority'];
-type Status = Database['public']['Enums']['topic_status'];
+
 
 interface TopicCardProps {
   topic: TopicWithSubtasks;
@@ -39,11 +39,11 @@ interface TopicCardProps {
   highlightUpcoming?: boolean;
   highlightOverdue?: boolean;
   forceExpand?: boolean | null;
-  onUpdate: (id: string, data: any) => void;
+  onUpdate: (id: string, data: Record<string, unknown>) => void;
   onDelete: (id: string) => void;
   onAddSubtask: (topicId: string, title: string) => void;
   onToggleSubtask: (id: string, completed: boolean) => void;
-  onUpdateSubtask: (id: string, data: any) => void;
+  onUpdateSubtask: (id: string, data: Record<string, unknown>) => void;
   onDeleteSubtask: (id: string) => void;
   onAddSubtaskEntry: (subtaskId: string, content: string) => void;
   onUpdateSubtaskEntry?: (id: string, content: string) => void;
@@ -56,12 +56,6 @@ interface TopicCardProps {
   onCreateTag: (name: string, color: string) => Promise<any>;
 }
 
-const statusLabels: Record<Status, string> = {
-  activo: 'Activo',
-  completado: 'Cerrado',
-  pausado: 'Pausado',
-  seguimiento: 'Seguimiento',
-};
 
 export function TopicCard({
   topic,
@@ -384,7 +378,7 @@ export function TopicCard({
                 {!isCompleted && (
                   <label className="inline-flex items-center gap-1.5 cursor-pointer h-8 px-2 rounded-md border border-input text-xs hover:bg-accent transition-colors">
                     <Switch
-                      checked={(topic as any).is_ongoing || false}
+                      checked={topic.is_ongoing || false}
                       onCheckedChange={(checked) => onUpdate(topic.id, { is_ongoing: checked, ...(checked ? { due_date: null } : {}) })}
                       className="scale-75"
                     />
@@ -476,8 +470,8 @@ export function TopicCard({
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Departamento</label>
                   <Select
-                    value={(topic as any).department_id || 'none'}
-                    onValueChange={(value) => onUpdate(topic.id, { department_id: value === 'none' ? null : value } as any)}
+                    value={topic.department_id || 'none'}
+                    onValueChange={(value) => onUpdate(topic.id, { department_id: value === 'none' ? null : value })}
                   >
                     <SelectTrigger className="w-48 h-8 text-xs"><SelectValue placeholder="Sin departamento" /></SelectTrigger>
                     <SelectContent>
@@ -543,13 +537,13 @@ export function TopicCard({
                 {topic.status === 'pausado' && (
                   <>
                     {/* Show pause reason and date */}
-                    {((topic as any).pause_reason || (topic as any).paused_at) && (
+                    {(topic.pause_reason || topic.paused_at) && (
                       <div className="w-full bg-muted/50 rounded-md p-3 mb-2 border border-border">
                         <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Motivo de pausa</p>
-                        <p className="text-sm text-foreground">{(topic as any).pause_reason || 'Sin motivo registrado'}</p>
-                        {(topic as any).paused_at && (
+                        <p className="text-sm text-foreground">{topic.pause_reason || 'Sin motivo registrado'}</p>
+                        {topic.paused_at && (
                           <p className="text-[10px] text-muted-foreground mt-1">
-                            Pausado el {formatStoredDate((topic as any).paused_at.split('T')[0], 'dd MMM yyyy', { locale: es })}
+                            Pausado el {formatStoredDate(topic.paused_at.split('T')[0], 'dd MMM yyyy', { locale: es })}
                           </p>
                         )}
                       </div>

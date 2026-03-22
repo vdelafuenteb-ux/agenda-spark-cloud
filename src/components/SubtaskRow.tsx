@@ -22,7 +22,7 @@ interface SubtaskRowProps {
   subtaskIsToday: boolean;
   subtaskIsUpcoming?: boolean;
   onToggleSubtask: (id: string, completed: boolean) => void;
-  onUpdateSubtask: (id: string, data: any) => void;
+  onUpdateSubtask: (id: string, data: Record<string, unknown>) => void;
   onDeleteSubtask: (id: string) => void;
   onAddSubtaskEntry: (subtaskId: string, content: string) => void;
   onUpdateSubtaskEntry?: (id: string, content: string) => void;
@@ -35,8 +35,8 @@ export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false,
   const [titleDraft, setTitleDraft] = useState(subtask.title);
   const [editingTitleInSheet, setEditingTitleInSheet] = useState(false);
   const [sheetTitleDraft, setSheetTitleDraft] = useState(subtask.title);
-  const [contactDraft, setContactDraft] = useState((subtask as any).contact || '');
-  const [responsibleDraft, setResponsibleDraft] = useState((subtask as any).responsible || '');
+  const [contactDraft, setContactDraft] = useState(subtask.contact || '');
+  const [responsibleDraft, setResponsibleDraft] = useState(subtask.responsible || '');
 
   const entries = subtask.subtask_entries || [];
   const hasEntries = entries.length > 0;
@@ -285,7 +285,7 @@ export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false,
                 value={contactDraft}
                 onChange={(e) => setContactDraft(e.target.value)}
                 onBlur={() => {
-                  if (contactDraft !== ((subtask as any).contact || '')) {
+                  if (contactDraft !== (subtask.contact || '')) {
                     onUpdateSubtask(subtask.id, { contact: contactDraft });
                   }
                 }}
@@ -303,7 +303,7 @@ export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false,
                 value={responsibleDraft}
                 onChange={(e) => setResponsibleDraft(e.target.value)}
                 onBlur={() => {
-                  if (responsibleDraft !== ((subtask as any).responsible || '')) {
+                  if (responsibleDraft !== (subtask.responsible || '')) {
                     onUpdateSubtask(subtask.id, { responsible: responsibleDraft });
                   }
                 }}

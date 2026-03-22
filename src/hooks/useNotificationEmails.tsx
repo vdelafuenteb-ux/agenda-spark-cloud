@@ -50,7 +50,7 @@ export function useNotificationEmails(topicId?: string) {
           topic_id: params.topic_id,
           assignee_name: params.assignee_name,
           assignee_email: params.assignee_email,
-        } as any)
+        })
         .select()
         .single();
       if (error) throw error;
@@ -74,7 +74,7 @@ export function useNotificationEmails(topicId?: string) {
         .update({
           responded,
           responded_at: responded ? new Date().toISOString() : null,
-        } as any)
+        })
         .eq('id', id);
       if (error) throw error;
     },
@@ -88,7 +88,7 @@ export function useNotificationEmails(topicId?: string) {
         .update({
           confirmed,
           confirmed_at: confirmed ? new Date().toISOString() : null,
-        } as any)
+        })
         .eq('id', id);
       if (error) throw error;
     },
