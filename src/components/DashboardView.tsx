@@ -57,7 +57,7 @@ export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardVie
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('No autenticado');
 
-      const pendingSubtasks = topic.subtasks.filter(s => !s.completed);
+      
 
       const { error } = await supabase.functions.invoke('send-notification-email', {
         body: {
