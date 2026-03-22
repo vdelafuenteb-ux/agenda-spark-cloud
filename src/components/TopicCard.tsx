@@ -642,6 +642,37 @@ export function TopicCard({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Pause reason dialog */}
+      <Dialog open={showPauseDialog} onOpenChange={setShowPauseDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>¿Por qué pausas este tema?</DialogTitle>
+          </DialogHeader>
+          <Textarea
+            placeholder="Motivo de la pausa (obligatorio)..."
+            value={pauseReasonDraft}
+            onChange={(e) => setPauseReasonDraft(e.target.value)}
+            className="min-h-[80px]"
+          />
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setShowPauseDialog(false)}>Cancelar</Button>
+            <Button
+              disabled={!pauseReasonDraft.trim()}
+              onClick={() => {
+                onUpdate(topic.id, {
+                  status: 'pausado',
+                  pause_reason: pauseReasonDraft.trim(),
+                  paused_at: new Date().toISOString(),
+                });
+                setShowPauseDialog(false);
+              }}
+            >
+              <Pause className="h-3.5 w-3.5 mr-1" /> Pausar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
