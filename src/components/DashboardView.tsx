@@ -41,6 +41,7 @@ const STATUS_COLORS = {
 
 export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardViewProps) {
   const [sendingId, setSendingId] = useState<string | null>(null);
+  const [selectedAssignee, setSelectedAssignee] = useState<string | null>(null);
 
   const handleSendReminder = async (topic: TopicWithSubtasks) => {
     if (!topic.assignee) {
