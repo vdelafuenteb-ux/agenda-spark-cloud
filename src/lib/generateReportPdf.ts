@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { format, isBefore, addDays, parseISO, isAfter } from 'date-fns';
+import { format, isBefore, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { parseStoredDate, formatStoredDate } from '@/lib/date';
 import type { TopicWithSubtasks } from '@/hooks/useTopics';
