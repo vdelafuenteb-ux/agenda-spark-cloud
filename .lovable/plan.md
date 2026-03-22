@@ -1,34 +1,47 @@
 
 
-## Plan: Agregar `closed_at` a topics + KPI de cumplimiento de cierre en Dashboard
+## Plan: Garantizar cierre automático de subtareas con trigger de base de datos
 
-### 1. Migración: Agregar columna `closed_at` a `topics`
-- Nueva columna `closed_at` (timestamptz, nullable, default null)
-- Backfill: para temas ya completados, setear `closed_at = updated_at`
+### Diagnóstico
+La base de datos ya tiene todas las subtareas de temas cerrados marcadas como completadas. Lo que ves puede ser caché del navegador. Sin embargo, la lógica actual depende solo del frontend (Index.tsx línea 324-328), lo que significa que si alguien cierra un tema desde otro lugar o si el frontend falla, las subtareas podrían quedar abiertas.
 
-### 2. Auto-setear `closed_at` al cerrar un tema (`src/pages/Index.tsx`)
-- En el handler `onUpdate`, cuando `status === 'completado'`, incluir `closed_at: new Date().toISOString()` en el update
-- Cuando se reabre un tema, limpiar `closed_at: null`
+### Solución: Trigger en base de datos (a prueba de fallos)
 
-### 3. Botones "Cerrar" en `TopicCard.tsx` (líneas ~531 y ~576)
-- Agregar `closed_at: new Date().toISOString()` a los onClick de los botones "Cerrar"
-- En el botón "Reabrir", agregar `closed_at: null`
+**1. Migración SQL** — Crear un trigger `on UPDATE` en `topics` que cuando `status` cambie a `'completado'`, automáticamente marque todas las subtareas pendientes como completadas:
 
-### 4. Mostrar info de cierre en la tarjeta (`TopicCard.tsx`)
-- Cambiar la línea que muestra "Cerrado {fecha}" (línea ~203) para usar `closed_at` en vez de `updated_at`
-- Agregar un badge indicando si cerró "A tiempo", "Anticipado" o "Con atraso (X días)" comparando `closed_at` vs `due_date`
+```sql
+CREATE OR REPLACE FUNCTION public.auto_complete_subtasks_on_topic_close()
+RETURNS trigger AS $$
+BEGIN
+  IF NEW.status = 'completado' AND (OLD.status IS DISTINCT FROM 'completado') THEN
+    UPDATE public.subtasks 
+    SET completed = true, completed_at = now() 
+    WHERE topic_id = NEW.id AND completed = false;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
-### 5. KPI de cumplimiento en Dashboard (`DashboardView.tsx`)
-Nuevo KPI card + sección de análisis de cierre:
-- De los temas completados que tienen `due_date` y `closed_at`:
-  - **A tiempo o antes**: `closed_at <= due_date`
-  - **Con atraso**: `closed_at > due_date`
-- KPI card: "Cumplimiento de Cierre" con porcentaje de temas cerrados a tiempo
-- Detalle debajo de los KPI existentes: card con barrita de progreso y desglose (X a tiempo, Y con atraso, promedio de días de atraso)
+CREATE TRIGGER trg_auto_complete_subtasks
+AFTER UPDATE ON public.topics
+FOR EACH ROW
+EXECUTE FUNCTION public.auto_complete_subtasks_on_topic_close();
+```
+
+**2. Re-ejecutar fix de datos existentes** — Por seguridad, incluir en la misma migración:
+```sql
+UPDATE public.subtasks SET completed = true, completed_at = now()
+WHERE topic_id IN (SELECT id FROM public.topics WHERE status = 'completado')
+AND completed = false;
+```
+
+**3. Mantener lógica frontend** — El código en `Index.tsx` (líneas 324-328) se mantiene para actualización optimista inmediata en la UI, pero el trigger garantiza consistencia a nivel de base de datos.
 
 ### Archivos a modificar
-1. **Migración SQL** — agregar `closed_at` + backfill
-2. **`src/pages/Index.tsx`** — setear/limpiar `closed_at` en onUpdate
-3. **`src/components/TopicCard.tsx`** — botones Cerrar/Reabrir + display de badge de cumplimiento
-4. **`src/components/DashboardView.tsx`** — nuevo KPI de cumplimiento de cierre
+1. **Migración SQL** — Trigger + fix de datos
+
+### Detalle técnico
+- El trigger usa `AFTER UPDATE` para no interferir con la transacción principal
+- La condición `OLD.status IS DISTINCT FROM 'completado'` evita re-ejecutar si ya estaba cerrado
+- No se modifican archivos de código, solo base de datos
 
