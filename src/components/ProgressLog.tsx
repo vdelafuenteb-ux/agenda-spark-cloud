@@ -56,7 +56,7 @@ export function ProgressLog({ entries, onAdd, onUpdate, onDelete, hideTitle = fa
 
   return (
     <div className="space-y-2">
-      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Bitácora de avances</p>
+      {!hideTitle && <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Bitácora de avances</p>}
 
       {entries.length > 0 ? (
         <ScrollArea className="max-h-[200px]">
