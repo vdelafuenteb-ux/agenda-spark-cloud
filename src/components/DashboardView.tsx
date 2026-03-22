@@ -118,6 +118,8 @@ export function DashboardView({ topics }: DashboardViewProps) {
       subtaskProgress,
       overdue,
       dueSoon,
+      ongoing,
+      missingDates,
       statusData,
       priorityData,
       weeklyTrend,
