@@ -261,8 +261,10 @@ export function generateReportPdf(opts: PdfOptions) {
   // ==========================================
   // KPIs
   // ==========================================
-  const totalSubs = topics.reduce((a, t) => a + t.subtasks.length, 0);
-  const doneSubs = topics.reduce((a, t) => a + t.subtasks.filter(s => s.completed).length, 0);
+  const getFilteredSubs = (t: TopicWithSubtasks) =>
+    subtaskFilter && subtaskFilter[t.id] ? t.subtasks.filter(s => subtaskFilter[t.id].includes(s.id)) : t.subtasks;
+  const totalSubs = topics.reduce((a, t) => a + getFilteredSubs(t).length, 0);
+  const doneSubs = topics.reduce((a, t) => a + getFilteredSubs(t).filter(s => s.completed).length, 0);
   const pct = totalSubs > 0 ? Math.round((doneSubs / totalSubs) * 100) : 0;
   const delayed = activeTopics.filter(t => getTrafficLight(t.due_date).label === 'Atrasado').length;
   const warning = activeTopics.filter(t => getTrafficLight(t.due_date).label === 'Proximo').length;
