@@ -516,9 +516,6 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
 
         {/* ===== ZONA 3: Acciones ===== */}
         <div className="flex items-center gap-2 justify-end pt-1">
-          <Button variant="outline" size="sm" className="h-7 text-xs" onClick={handleCopy}>
-            <Copy className="h-3 w-3 mr-1" /> Copiar
-          </Button>
           <Button variant="outline" size="sm" className="h-7 text-xs" onClick={handleDownloadPdf}>
             <FileDown className="h-3 w-3 mr-1" /> PDF
           </Button>
