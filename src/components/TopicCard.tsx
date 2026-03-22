@@ -581,7 +581,7 @@ export function TopicCard({
                       size="sm"
                       variant="default"
                       className="flex-1 h-9 text-xs gap-2"
-                      onClick={() => onUpdate(topic.id, { status: 'completado', pause_reason: '', paused_at: null })}
+                      onClick={() => onUpdate(topic.id, { status: 'completado', pause_reason: '', paused_at: null, closed_at: new Date().toISOString() })}
                     >
                       <CheckCircle2 className="h-3.5 w-3.5" /> Cerrar
                     </Button>
