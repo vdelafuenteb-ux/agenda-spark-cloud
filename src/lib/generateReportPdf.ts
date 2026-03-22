@@ -376,13 +376,13 @@ export function generateReportPdf(opts: PdfOptions) {
 
     const heads: Record<string, string[]> = {
       active: ['Tema', 'Responsable', 'Prioridad', 'Estado', 'Vencimiento', 'Avance', 'Ultimo Comentario'],
-      completed: ['Tema Completado', 'Responsable', 'Fecha Cierre', 'Ultimo Comentario'],
+      completed: ['Tema Completado', 'Responsable', 'Fecha Cierre', '✓', 'Ultimo Comentario'],
       paused: ['Tema', 'Responsable', 'Motivo de Pausa', 'Fecha Pausa'],
     };
 
     const colStyles: Record<string, any> = {
       active: { 0: { cellWidth: 30 }, 1: { cellWidth: 24 }, 2: { cellWidth: 16 }, 3: { cellWidth: 16 }, 4: { cellWidth: 22 }, 5: { cellWidth: 14 }, 6: { cellWidth: 'auto' } },
-      completed: { 0: { cellWidth: 38 }, 1: { cellWidth: 26 }, 2: { cellWidth: 26 }, 3: { cellWidth: 'auto' } },
+      completed: { 0: { cellWidth: 36 }, 1: { cellWidth: 24 }, 2: { cellWidth: 24 }, 3: { cellWidth: 10, halign: 'center' }, 4: { cellWidth: 'auto' } },
       paused: { 0: { cellWidth: 38 }, 1: { cellWidth: 26 }, 2: { cellWidth: 'auto' }, 3: { cellWidth: 26 } },
     };
 
