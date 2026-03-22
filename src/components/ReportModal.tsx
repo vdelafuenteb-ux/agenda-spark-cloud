@@ -251,7 +251,7 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
     if (includeResponsables) {
       const assigneeMap = new Map<string, TopicWithSubtasks[]>();
       selectedTopics.forEach(t => {
-        const key = t.assignee || 'Yo';
+        const key = t.assignee || ownerLabel;
         if (!assigneeMap.has(key)) assigneeMap.set(key, []);
         assigneeMap.get(key)!.push(t);
       });
