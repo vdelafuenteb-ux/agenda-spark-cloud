@@ -126,6 +126,10 @@ export function ProgressLog({ entries, onAdd, onUpdate, onDelete, hideTitle = fa
   const editTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'instant', block: 'nearest' });
+  }, []);
+
+  useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }, [entries.length]);
 
@@ -195,7 +199,7 @@ export function ProgressLog({ entries, onAdd, onUpdate, onDelete, hideTitle = fa
       {!hideTitle && <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Bitácora de avances</p>}
 
       {entries.length > 0 ? (
-        <ScrollArea className="max-h-[200px]">
+        <ScrollArea className="max-h-[180px]">
           <div className="space-y-2 pr-2">
             {entries.map(entry => (
               <div key={entry.id} className="group rounded-md bg-muted/50 px-3 py-2">
