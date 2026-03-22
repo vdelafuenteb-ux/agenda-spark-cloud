@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { formatStoredDate, parseStoredDate, toStoredDate, isStoredDateOverdue } from '@/lib/date';
-import { CalendarIcon, Trash2, FileText, Pencil, Check, X } from 'lucide-react';
+import { CalendarIcon, Trash2, FileText, Pencil, Check, X, User } from 'lucide-react';
 import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -33,6 +34,8 @@ export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false,
   const [titleDraft, setTitleDraft] = useState(subtask.title);
   const [editingTitleInSheet, setEditingTitleInSheet] = useState(false);
   const [sheetTitleDraft, setSheetTitleDraft] = useState(subtask.title);
+  const [contactDraft, setContactDraft] = useState((subtask as any).contact || '');
+  const [responsibleDraft, setResponsibleDraft] = useState((subtask as any).responsible || '');
 
   const entries = subtask.subtask_entries || [];
   const hasEntries = entries.length > 0;
@@ -257,6 +260,42 @@ export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false,
               </span>
             </div>
 
+            {/* Contact person */}
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                <User className="h-3 w-3" /> Persona de contacto
+              </label>
+              <Input
+                placeholder="Ej: Juan Pérez"
+                value={contactDraft}
+                onChange={(e) => setContactDraft(e.target.value)}
+                onBlur={() => {
+                  if (contactDraft !== ((subtask as any).contact || '')) {
+                    onUpdateSubtask(subtask.id, { contact: contactDraft });
+                  }
+                }}
+                className="h-8 text-sm"
+              />
+            </div>
+
+            {/* Responsible */}
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                <User className="h-3 w-3" /> Responsable de cerrar
+              </label>
+              <Input
+                placeholder="Ej: María López"
+                value={responsibleDraft}
+                onChange={(e) => setResponsibleDraft(e.target.value)}
+                onBlur={() => {
+                  if (responsibleDraft !== ((subtask as any).responsible || '')) {
+                    onUpdateSubtask(subtask.id, { responsible: responsibleDraft });
+                  }
+                }}
+                className="h-8 text-sm"
+              />
+            </div>
+
             {/* Bitácora */}
             <div className="space-y-1.5">
               <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
@@ -267,6 +306,7 @@ export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false,
                 onAdd={(content) => onAddSubtaskEntry(subtask.id, content)}
                 onUpdate={onUpdateSubtaskEntry ? (id, content) => onUpdateSubtaskEntry(id, content) : undefined}
                 onDelete={onDeleteSubtaskEntry}
+                hideTitle
               />
             </div>
 

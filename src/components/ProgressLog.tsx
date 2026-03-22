@@ -18,9 +18,10 @@ interface ProgressLogProps {
   onAdd: (content: string) => void;
   onUpdate?: (id: string, content: string) => void;
   onDelete?: (id: string) => void;
+  hideTitle?: boolean;
 }
 
-export function ProgressLog({ entries, onAdd, onUpdate, onDelete }: ProgressLogProps) {
+export function ProgressLog({ entries, onAdd, onUpdate, onDelete, hideTitle = false }: ProgressLogProps) {
   const [text, setText] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
@@ -55,7 +56,7 @@ export function ProgressLog({ entries, onAdd, onUpdate, onDelete }: ProgressLogP
 
   return (
     <div className="space-y-2">
-      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Bitácora de avances</p>
+      {!hideTitle && <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Bitácora de avances</p>}
 
       {entries.length > 0 ? (
         <ScrollArea className="max-h-[200px]">

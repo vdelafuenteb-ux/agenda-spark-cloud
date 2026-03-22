@@ -412,10 +412,12 @@ export type Database = {
         Row: {
           completed: boolean
           completed_at: string | null
+          contact: string
           created_at: string
           due_date: string | null
           id: string
           notes: string
+          responsible: string
           sort_order: number
           title: string
           topic_id: string
@@ -423,10 +425,12 @@ export type Database = {
         Insert: {
           completed?: boolean
           completed_at?: string | null
+          contact?: string
           created_at?: string
           due_date?: string | null
           id?: string
           notes?: string
+          responsible?: string
           sort_order?: number
           title: string
           topic_id: string
@@ -434,10 +438,12 @@ export type Database = {
         Update: {
           completed?: boolean
           completed_at?: string | null
+          contact?: string
           created_at?: string
           due_date?: string | null
           id?: string
           notes?: string
+          responsible?: string
           sort_order?: number
           title?: string
           topic_id?: string
