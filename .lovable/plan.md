@@ -1,65 +1,55 @@
 
 
-## Plan: Reestructurar Notas con jerarquía Libreta → Tema → Nota y vista mosaico
+## Plan: Simplificar vista de Revisión a lista plana de items accionables
 
-### Estructura actual
-- Libreta (notebook) → Notas directamente
-- Vista: lista plana en panel lateral
+### Problema actual
+La vista de Revisión muestra `TopicCard` completas con todo el detalle (subtareas, bitácora, tags, estado, etc.), repitiendo la misma información que ya está en la lista de temas. Esto hace la vista pesada e innecesaria como herramienta de revisión rápida.
 
-### Nueva estructura
-- **Libreta** (notebook) → **Temas** (note_sections, sub-agendas) → **Notas**
-- Navegación por niveles: primero ves libretas en mosaico, entras a una y ves sus temas, entras a un tema y ves sus notas
+### Solución
+Reemplazar las TopicCards por una **lista plana de items individuales** (hitos/subtareas) con filas compactas y accionables. Si lo atrasado es un hito específico, solo se muestra ese hito con referencia al tema padre.
 
-### Cambios
+### Nuevo diseño de cada fila
 
-#### 1. Base de datos
-- Crear tabla `note_sections` con columnas: `id`, `user_id`, `notebook_id` (FK), `name`, `color`, `created_at`, `sort_order`
-- Agregar columna `section_id` (nullable) a tabla `notes` para vincular notas a un tema/sección
-- RLS policies estándar por `user_id` en `note_sections`, y para notes via notebook ownership
-
-#### 2. Hook `useNotes.tsx`
-- Agregar interfaz `NoteSection` y query para `note_sections`
-- CRUD mutations: `createSection`, `updateSection`, `deleteSection`
-- Actualizar `createNote` para aceptar `section_id`
-- Actualizar `updateNote` para permitir mover nota entre secciones
-
-#### 3. Vista principal `NotesView.tsx` - Rediseño completo
-- **3 niveles de navegación** con estado: `currentView = 'notebooks' | 'sections' | 'notes' | 'editor'`
-- **Nivel 1 - Libretas (mosaico)**: Cards grandes con color, nombre, cantidad de temas y notas. Botón crear libreta. Toggle vista mosaico/lista
-- **Nivel 2 - Temas dentro de libreta**: Al hacer clic en una libreta, muestra sus temas como cards. Breadcrumb "Notas > Transit". Botón crear tema
-- **Nivel 3 - Notas dentro de tema**: Lista de notas del tema seleccionado, ordenadas por fecha desc. Botón crear nota (se asigna automáticamente al tema actual)
-- **Nivel 4 - Editor**: El NoteEditor existente con botón volver
-
-#### 4. Componente `NotebookGrid.tsx` (nuevo)
-- Vista mosaico de libretas como cards grandes (ej: 3 columnas)
-- Cada card muestra: icono libro con color, nombre, conteo de temas, conteo de notas, fecha última actualización
-- Hover con efecto sutil, click navega al nivel de temas
-
-#### 5. Componente `SectionList.tsx` (nuevo)
-- Vista de temas dentro de una libreta (cards medianas o lista)
-- Breadcrumb de navegación arriba
-- Crear/renombrar/eliminar temas
-- Click navega al nivel de notas
-
-#### 6. Al crear nota
-- Si estás dentro de un tema, se asigna automáticamente a esa libreta y tema
-- Si estás en "Todas las notas", un selector permite elegir libreta → tema
-
-#### 7. Ordenamiento
-- Notas ordenadas por `updated_at` descendente (ya funciona así)
-- Temas ordenados por `sort_order` o nombre
-
-### Flujo de usuario
 ```text
-[Mosaico Libretas] → click "Transit" → [Temas de Transit] → click "Facturas" → [Notas de Facturas] → click nota → [Editor]
+[✓] Nombre del hito/subtarea    → Tema padre    👤 Responsable    Alta    20 mar
 ```
 
-### Archivos a modificar/crear
-- **Migración SQL**: crear `note_sections`, agregar `section_id` a `notes`
-- **`useNotes.tsx`**: agregar secciones al hook
-- **`NotesView.tsx`**: rediseño con navegación multinivel
-- **`NotebookGrid.tsx`** (nuevo): vista mosaico de libretas
-- **`SectionList.tsx`** (nuevo): lista de temas dentro de libreta
-- **`NotebookList.tsx`**: se reemplaza por NotebookGrid en la vista principal
-- **`NoteEditor.tsx`**: actualizar props para incluir secciones
+Cada fila compacta (~40px) muestra:
+- **Botón check** para marcar completado directamente
+- **Título** del item (subtarea o tema si no tiene subtareas con fecha)
+- **Tema padre** como texto secundario pequeño (solo para subtareas)
+- **Responsable** del tema
+- **Prioridad** como badge pequeño
+- **Fecha** de vencimiento
+
+### Cambios en `ReviewView.tsx`
+
+1. **Eliminar importación de TopicCard** y todas sus props/handlers innecesarios
+2. **Crear tipo `ReviewItem`** que unifique subtareas, recordatorios y checklist en una sola lista:
+   ```typescript
+   type ReviewItem = {
+     type: 'subtask' | 'topic' | 'reminder' | 'checklist';
+     id: string;
+     title: string;
+     parentTopicTitle?: string;
+     assignee?: string;
+     priority?: string;
+     dueDate?: string;
+     completed?: boolean;
+     onToggle: () => void;
+   };
+   ```
+3. **Generar lista plana** por pestaña: en "Atrasados", solo las subtareas atrasadas (no el tema entero); en "Mi día", solo las subtareas/temas que vencen hoy
+4. **Renderizar filas compactas** en lugar de TopicCards - una fila por item individual
+5. **Mantener filtros** de responsable y estado (simplificados, sin botón expandir/contraer que ya no aplica)
+6. **Simplificar props** del componente eliminando todos los handlers de CRUD pesado (onAddSubtask, onAddProgressEntry, etc.) - solo se necesita `onToggleSubtask`
+
+### Archivos a modificar
+- **`src/components/ReviewView.tsx`**: Rediseño completo del renderizado, reemplazando TopicCards por filas planas
+
+### Lo que se mantiene igual
+- Tabs (Mi día, Atrasados, Próximos) con badges de conteo
+- Filtros de responsable y estado
+- Secciones de recordatorios y checklist (ya son filas compactas)
+- Lógica de fechas existente
 
