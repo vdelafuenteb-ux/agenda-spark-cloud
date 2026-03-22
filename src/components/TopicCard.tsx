@@ -200,11 +200,18 @@ export function TopicCard({
               {totalCount > 0 && (
                 <span className="text-[11px] text-muted-foreground font-mono">{completedCount}/{totalCount}</span>
               )}
-              {isCompleted && topic.updated_at && (
+              {isCompleted && (topic as any).closed_at && (
                 <span className="text-[10px] text-muted-foreground font-mono">
-                  Cerrado {formatStoredDate(topic.updated_at.split('T')[0], 'dd MMM yy', { locale: es })}
+                  Cerrado {formatStoredDate((topic as any).closed_at.split('T')[0], 'dd MMM yy', { locale: es })}
                 </span>
               )}
+              {isCompleted && topic.due_date && (topic as any).closed_at && (() => {
+                const closedDate = new Date((topic as any).closed_at);
+                const dueDate = new Date(topic.due_date + 'T23:59:59');
+                const diffDays = Math.round((closedDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+                if (diffDays <= 0) return <Badge variant="outline" className="text-[9px] border-emerald-500/50 text-emerald-600 px-1.5 py-0">A tiempo</Badge>;
+                return <Badge variant="destructive" className="text-[9px] px-1.5 py-0">{diffDays}d atraso</Badge>;
+              })()}
               {topic.due_date && !isCompleted && (
                 <span className="text-[11px] text-muted-foreground font-mono">
                   {formatStoredDate(topic.due_date, 'dd MMM', { locale: es })}
@@ -528,7 +535,7 @@ export function TopicCard({
                       size="sm"
                       variant="default"
                       className="flex-1 h-9 text-xs gap-2"
-                      onClick={() => onUpdate(topic.id, { status: 'completado' })}
+                      onClick={() => onUpdate(topic.id, { status: 'completado', closed_at: new Date().toISOString() })}
                     >
                       <CheckCircle2 className="h-3.5 w-3.5" /> Cerrar
                     </Button>
@@ -573,7 +580,7 @@ export function TopicCard({
                       size="sm"
                       variant="default"
                       className="flex-1 h-9 text-xs gap-2"
-                      onClick={() => onUpdate(topic.id, { status: 'completado', pause_reason: '', paused_at: null })}
+                      onClick={() => onUpdate(topic.id, { status: 'completado', pause_reason: '', paused_at: null, closed_at: new Date().toISOString() })}
                     >
                       <CheckCircle2 className="h-3.5 w-3.5" /> Cerrar
                     </Button>
@@ -584,7 +591,7 @@ export function TopicCard({
                     size="sm"
                     variant="outline"
                     className="w-full h-9 text-xs gap-2"
-                    onClick={() => onUpdate(topic.id, { status: 'activo' })}
+                    onClick={() => onUpdate(topic.id, { status: 'activo', closed_at: null })}
                   >
                     <RotateCcw className="h-3.5 w-3.5" /> Reabrir
                   </Button>

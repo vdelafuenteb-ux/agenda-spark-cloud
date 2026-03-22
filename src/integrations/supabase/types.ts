@@ -587,6 +587,7 @@ export type Database = {
       topics: {
         Row: {
           assignee: string | null
+          closed_at: string | null
           created_at: string
           department_id: string | null
           due_date: string | null
@@ -606,6 +607,7 @@ export type Database = {
         }
         Insert: {
           assignee?: string | null
+          closed_at?: string | null
           created_at?: string
           department_id?: string | null
           due_date?: string | null
@@ -625,6 +627,7 @@ export type Database = {
         }
         Update: {
           assignee?: string | null
+          closed_at?: string | null
           created_at?: string
           department_id?: string | null
           due_date?: string | null
