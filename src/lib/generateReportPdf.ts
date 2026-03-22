@@ -249,7 +249,7 @@ export function generateReportPdf(opts: PdfOptions) {
     const hasMultipleDepts = completedGroups.length > 1;
 
     completedGroups.forEach(group => {
-      drawDeptSubtitle(group.deptName, hasMultipleDepts);
+      drawDeptSubtitle(group.deptName);
       autoTable(doc, {
         startY: y,
         margin: { left: margin, right: margin },
@@ -259,13 +259,12 @@ export function generateReportPdf(opts: PdfOptions) {
           const lastEntry = t.progress_entries.length > 0
             ? t.progress_entries[t.progress_entries.length - 1].content
             : '—';
-          const truncated = lastEntry.length > 80 ? lastEntry.substring(0, 77) + '...' : lastEntry;
-          return [t.title, t.assignee || 'Yo', closeDateStr, truncated];
+          return [t.title, t.assignee || 'Yo', closeDateStr, lastEntry];
         }),
         styles: { fontSize: 7.5, cellPadding: 2.5, overflow: 'linebreak' },
         headStyles: { fillColor: GREEN as any, textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
         alternateRowStyles: { fillColor: SLATE_50 as any },
-        columnStyles: { 0: { cellWidth: 45 }, 1: { cellWidth: 28 }, 2: { cellWidth: 25 }, 3: { cellWidth: 'auto' } },
+        columnStyles: { 0: { cellWidth: 40 }, 1: { cellWidth: 28 }, 2: { cellWidth: 25 }, 3: { cellWidth: 'auto' } },
       });
       y = (doc as any).lastAutoTable.finalY + 4;
     });
