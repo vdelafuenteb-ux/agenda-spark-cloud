@@ -150,9 +150,14 @@ function buildIntegratedRows(
       body.push([`${topicNum}  ${t.title}`, t.assignee || ownerName, pauseReason, pausedAt]);
     }
 
+    // Filter subtasks if subtaskFilter is provided
+    const filteredSubtasks = subtaskFilter && subtaskFilter[t.id]
+      ? t.subtasks.filter(s => subtaskFilter[t.id].includes(s.id))
+      : t.subtasks;
+
     // Add subtask rows indented
-    for (let si = 0; si < t.subtasks.length; si++) {
-      const s = t.subtasks[si];
+    for (let si = 0; si < filteredSubtasks.length; si++) {
+      const s = filteredSubtasks[si];
       const subNum = `${topicNum}.${si + 1}`;
       const idx = body.length;
       subtaskRowIndices.add(idx);
