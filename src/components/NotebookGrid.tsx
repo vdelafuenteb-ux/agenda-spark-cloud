@@ -225,10 +225,11 @@ export function NotebookGrid({ notebooks, sections, notes, onSelect, onSelectSec
                     return (
                       <div
                         key={sec.id}
+                        onClick={() => onSelectSection?.(nb.id, sec.id)}
                         onDragOver={(e) => handleDragOver(e, `sec-${sec.id}`)}
                         onDragLeave={handleDragLeave}
                         onDrop={(e) => handleDropOnSection(e, nb.id, sec.id)}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-md text-xs transition-all ${
+                        className={`flex items-center gap-2 px-3 py-2 rounded-md text-xs cursor-pointer transition-all ${
                           secDragOver ? 'bg-primary/10 border border-primary/30' : 'hover:bg-muted/50'
                         }`}
                       >
