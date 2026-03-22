@@ -412,12 +412,17 @@ export function generateReportPdf(opts: PdfOptions) {
             // Status column coloring for subtasks
             if (mode === 'active' && data.column.index === 3) {
               const val = data.cell.raw as string;
-              if (val === 'Hecho') {
+              if (val === '✓') {
                 data.cell.styles.textColor = GREEN as any;
                 data.cell.styles.fontStyle = 'bold';
               } else if (val === 'Pendiente') {
                 data.cell.styles.textColor = AMBER as any;
               }
+            }
+            // Checkmark column for completed
+            if (mode === 'completed' && data.column.index === 3) {
+              data.cell.styles.textColor = GREEN as any;
+              data.cell.styles.fontStyle = 'bold';
             }
           } else {
             // Topic row: alternate white
