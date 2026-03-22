@@ -22,7 +22,7 @@ interface SubtaskRowProps {
   subtaskIsToday: boolean;
   subtaskIsUpcoming?: boolean;
   onToggleSubtask: (id: string, completed: boolean) => void;
-  onUpdateSubtask: (id: string, data: any) => void;
+  onUpdateSubtask: (id: string, data: Record<string, unknown>) => void;
   onDeleteSubtask: (id: string) => void;
   onAddSubtaskEntry: (subtaskId: string, content: string) => void;
   onUpdateSubtaskEntry?: (id: string, content: string) => void;
