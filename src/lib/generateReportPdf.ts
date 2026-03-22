@@ -78,6 +78,7 @@ export interface PdfOptions {
   includeBitacora?: boolean;
   includeResponsables?: boolean;
   departments?: { id: string; name: string }[];
+  subtaskFilter?: Record<string, string[]>;
 }
 
 function drawKpiBox(doc: jsPDF, x: number, y: number, w: number, h: number, value: string, label: string, color: [number, number, number]) {
@@ -113,7 +114,8 @@ function buildIntegratedRows(
   topics: TopicWithSubtasks[],
   columnsMode: 'active' | 'completed' | 'paused',
   ownerName: string = 'Yo',
-  groupIndex: number = 1
+  groupIndex: number = 1,
+  subtaskFilter?: Record<string, string[]>
 ): { body: string[][]; subtaskRowIndices: Set<number> } {
   const body: string[][] = [];
   const subtaskRowIndices = new Set<number>();
@@ -127,8 +129,11 @@ function buildIntegratedRows(
 
     if (columnsMode === 'active') {
       const tl = getTrafficLight(t.due_date);
-      const done = t.subtasks.filter(s => s.completed).length;
-      const total = t.subtasks.length;
+      const fSubs = subtaskFilter && subtaskFilter[t.id]
+        ? t.subtasks.filter(s => subtaskFilter[t.id].includes(s.id))
+        : t.subtasks;
+      const done = fSubs.filter(s => s.completed).length;
+      const total = fSubs.length;
       const dueStr = t.due_date ? formatStoredDate(t.due_date, 'dd MMM yyyy', { locale: es }) : '';
       body.push([
         `${topicNum}  ${t.title}`,
@@ -148,9 +153,14 @@ function buildIntegratedRows(
       body.push([`${topicNum}  ${t.title}`, t.assignee || ownerName, pauseReason, pausedAt]);
     }
 
+    // Filter subtasks if subtaskFilter is provided
+    const filteredSubtasks = subtaskFilter && subtaskFilter[t.id]
+      ? t.subtasks.filter(s => subtaskFilter[t.id].includes(s.id))
+      : t.subtasks;
+
     // Add subtask rows indented
-    for (let si = 0; si < t.subtasks.length; si++) {
-      const s = t.subtasks[si];
+    for (let si = 0; si < filteredSubtasks.length; si++) {
+      const s = filteredSubtasks[si];
       const subNum = `${topicNum}.${si + 1}`;
       const idx = body.length;
       subtaskRowIndices.add(idx);
@@ -189,7 +199,7 @@ function drawChapterHeading(doc: jsPDF, label: string, y: number, margin: number
 }
 
 export function generateReportPdf(opts: PdfOptions) {
-  const { topics, periodStart, periodEnd, title, authorName, authorRole, includeCompleted = true, includeResponsables = true, departments } = opts;
+  const { topics, periodStart, periodEnd, title, authorName, authorRole, includeCompleted = true, includeResponsables = true, departments, subtaskFilter } = opts;
   const ownerName = authorName || 'Yo';
 
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
@@ -251,8 +261,10 @@ export function generateReportPdf(opts: PdfOptions) {
   // ==========================================
   // KPIs
   // ==========================================
-  const totalSubs = topics.reduce((a, t) => a + t.subtasks.length, 0);
-  const doneSubs = topics.reduce((a, t) => a + t.subtasks.filter(s => s.completed).length, 0);
+  const getFilteredSubs = (t: TopicWithSubtasks) =>
+    subtaskFilter && subtaskFilter[t.id] ? t.subtasks.filter(s => subtaskFilter[t.id].includes(s.id)) : t.subtasks;
+  const totalSubs = topics.reduce((a, t) => a + getFilteredSubs(t).length, 0);
+  const doneSubs = topics.reduce((a, t) => a + getFilteredSubs(t).filter(s => s.completed).length, 0);
   const pct = totalSubs > 0 ? Math.round((doneSubs / totalSubs) * 100) : 0;
   const delayed = activeTopics.filter(t => getTrafficLight(t.due_date).label === 'Atrasado').length;
   const warning = activeTopics.filter(t => getTrafficLight(t.due_date).label === 'Proximo').length;
@@ -395,7 +407,7 @@ export function generateReportPdf(opts: PdfOptions) {
     groups.forEach((group, gi) => {
       y = drawChapterHeading(doc, `${gi + 1}. ${group.deptName}`, y, margin, contentW);
 
-      const { body, subtaskRowIndices } = buildIntegratedRows(group.topics, mode, ownerName, gi + 1);
+      const { body, subtaskRowIndices } = buildIntegratedRows(group.topics, mode, ownerName, gi + 1, subtaskFilter);
 
       autoTable(doc, {
         startY: y,
