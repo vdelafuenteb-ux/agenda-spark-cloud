@@ -18,6 +18,7 @@ import type { TopicWithSubtasks } from '@/hooks/useTopics';
 import { isStoredDateOverdue } from '@/lib/date';
 import { startOfWeek, subWeeks, isAfter, isBefore, addDays, format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { AssigneeProfileView } from './AssigneeProfileView';
 
 interface DashboardViewProps {
   topics: TopicWithSubtasks[];
