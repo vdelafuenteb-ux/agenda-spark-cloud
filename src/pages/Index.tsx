@@ -312,6 +312,7 @@ const Index = () => {
                           allTags={tags}
                           topicTags={getTagsForTopic(topic.id)}
                           assignees={assignees}
+                          departments={departments}
                           onCreateAssignee={(name) => createAssignee.mutateAsync(name)}
                           forceExpand={forceExpand}
                           onUpdate={(id, data) => updateTopic.mutate({ id, ...data })}
