@@ -213,8 +213,8 @@ export function generateReportPdf(opts: PdfOptions) {
 
   // Logo on the left
   try {
-    const logoSize = 16;
-    doc.addImage(logoIcon, 'PNG', margin, y - 6, logoSize, logoSize);
+    const logoSize = 10;
+    doc.addImage(logoIcon, 'PNG', margin, y - 4, logoSize, logoSize);
   } catch (_e) {}
 
   // Title centered
