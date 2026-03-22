@@ -23,7 +23,7 @@ interface NotebookGridProps {
   onMoveNote?: (noteId: string, notebookId: string, sectionId: string | null) => void;
 }
 
-export function NotebookGrid({ notebooks, sections, notes, onSelect, onCreateNotebook, onDeleteNotebook, onUpdateNotebook, onShowAllNotes, onMoveNote }: NotebookGridProps) {
+export function NotebookGrid({ notebooks, sections, notes, onSelect, onSelectSection, onCreateNotebook, onDeleteNotebook, onUpdateNotebook, onShowAllNotes, onMoveNote }: NotebookGridProps) {
   const [createOpen, setCreateOpen] = useState(false);
   const [newName, setNewName] = useState('');
   const [newColor, setNewColor] = useState(COLORS[0]);
