@@ -94,13 +94,22 @@ export function DashboardView({ topics }: DashboardViewProps) {
     }
 
     // Assignee ranking
-    const assigneeMap = new Map<string, { total: number; subtasksTotal: number; subtasksDone: number }>();
+    const assigneeMap = new Map<string, { total: number; subtasksTotal: number; subtasksDone: number; overdueCount: number; dueSoonCount: number; closedCount: number }>();
     for (const t of topics) {
       if (!t.assignee) continue;
-      const entry = assigneeMap.get(t.assignee) || { total: 0, subtasksTotal: 0, subtasksDone: 0 };
+      const entry = assigneeMap.get(t.assignee) || { total: 0, subtasksTotal: 0, subtasksDone: 0, overdueCount: 0, dueSoonCount: 0, closedCount: 0 };
       entry.total++;
       entry.subtasksTotal += t.subtasks.length;
       entry.subtasksDone += t.subtasks.filter(s => s.completed).length;
+      if (t.status === 'completado') {
+        entry.closedCount++;
+      } else if (t.status === 'activo' || t.status === 'seguimiento') {
+        if (isStoredDateOverdue(t.due_date)) entry.overdueCount++;
+        else if (t.due_date && !isStoredDateOverdue(t.due_date)) {
+          const due = new Date(t.due_date + 'T23:59:59');
+          if (isBefore(due, threeDaysFromNow)) entry.dueSoonCount++;
+        }
+      }
       assigneeMap.set(t.assignee, entry);
     }
     const assigneeRanking = [...assigneeMap.entries()]
@@ -419,6 +428,9 @@ export function DashboardView({ topics }: DashboardViewProps) {
                       <TableHead className="text-xs">Nombre</TableHead>
                       <TableHead className="text-xs text-center">Temas</TableHead>
                       <TableHead className="text-xs text-center">Subtareas</TableHead>
+                      <TableHead className="text-xs text-center">Cerrados</TableHead>
+                      <TableHead className="text-xs text-center">Atrasados</TableHead>
+                      <TableHead className="text-xs text-center">Por vencer</TableHead>
                       <TableHead className="text-xs">Avance</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -428,6 +440,23 @@ export function DashboardView({ topics }: DashboardViewProps) {
                         <TableCell className="text-sm font-medium">{a.name}</TableCell>
                         <TableCell className="text-sm text-center">{a.total}</TableCell>
                         <TableCell className="text-sm text-center">{a.subtasksDone}/{a.subtasksTotal}</TableCell>
+                        <TableCell className="text-sm text-center">
+                          <Badge variant="outline" className="text-[10px]">{a.closedCount}</Badge>
+                        </TableCell>
+                        <TableCell className="text-sm text-center">
+                          {a.overdueCount > 0 ? (
+                            <Badge variant="destructive" className="text-[10px]">{a.overdueCount}</Badge>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">0</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-sm text-center">
+                          {a.dueSoonCount > 0 ? (
+                            <Badge variant="outline" className="text-[10px] border-yellow-500/50 text-yellow-600">{a.dueSoonCount}</Badge>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">0</span>
+                          )}
+                        </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Progress value={a.progress} className="h-2 flex-1" />
@@ -450,6 +479,11 @@ export function DashboardView({ topics }: DashboardViewProps) {
                     <div className="flex items-center gap-2">
                       <Progress value={a.progress} className="h-2 flex-1" />
                       <span className="text-xs text-muted-foreground">{a.subtasksDone}/{a.subtasksTotal} ({a.progress}%)</span>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Badge variant="outline" className="text-[9px]">{a.closedCount} cerrados</Badge>
+                      {a.overdueCount > 0 && <Badge variant="destructive" className="text-[9px]">{a.overdueCount} atrasados</Badge>}
+                      {a.dueSoonCount > 0 && <Badge variant="outline" className="text-[9px] border-yellow-500/50 text-yellow-600">{a.dueSoonCount} por vencer</Badge>}
                     </div>
                   </div>
                 ))}
