@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Trash2, Plus, Pencil, Check, X, Mail, Tag, Users, Clock } from 'lucide-react';
+import { Trash2, Plus, Pencil, Check, X, Mail, Tag, Users, Clock, CalendarCheck } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,15 +19,17 @@ import type { Tag as TagType } from '@/hooks/useTags';
 import type { Assignee } from '@/hooks/useAssignees';
 import { EmailScheduleSettings } from '@/components/EmailScheduleSettings';
 import { cn } from '@/lib/utils';
+import { DailySummarySettings } from '@/components/DailySummarySettings';
 
 const TAG_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#8b5cf6', '#ec4899', '#6b7280'];
 
-type SettingsSection = 'etiquetas' | 'responsables' | 'correos_automaticos';
+type SettingsSection = 'etiquetas' | 'responsables' | 'correos_automaticos' | 'resumen_diario';
 
 const SECTIONS: { key: SettingsSection; label: string; icon: typeof Tag }[] = [
   { key: 'etiquetas', label: 'Etiquetas', icon: Tag },
   { key: 'responsables', label: 'Responsables', icon: Users },
   { key: 'correos_automaticos', label: 'Correos Automáticos', icon: Clock },
+  { key: 'resumen_diario', label: 'Resumen Diario', icon: CalendarCheck },
 ];
 
 interface SettingsViewProps {
@@ -351,6 +353,10 @@ export function SettingsView({ tags, assignees, topics, onDeleteTag, onCreateTag
 
           {section === 'correos_automaticos' && (
             <EmailScheduleSettings assignees={assignees} topics={topics} />
+          )}
+
+          {section === 'resumen_diario' && (
+            <DailySummarySettings />
           )}
         </div>
       </div>
