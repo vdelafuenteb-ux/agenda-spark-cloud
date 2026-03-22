@@ -568,9 +568,9 @@ export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardVie
               {/* Mobile cards */}
               <div className="sm:hidden space-y-2">
                 {metrics.assigneeRanking.map((a) => (
-                  <div key={a.name} className="rounded-md border border-border p-3 space-y-1.5">
+                  <div key={a.name} className="rounded-md border border-border p-3 space-y-1.5 cursor-pointer hover:bg-muted/50" onClick={() => setSelectedAssignee(a.name)}>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">{a.name}</span>
+                      <span className="text-sm font-medium text-primary underline underline-offset-2">{a.name}</span>
                       <span className="text-xs text-muted-foreground">{a.total} temas</span>
                     </div>
                     <div className="flex items-center gap-2">
