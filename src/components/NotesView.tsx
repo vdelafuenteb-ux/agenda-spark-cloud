@@ -143,8 +143,10 @@ export function NotesView() {
     setSelectedNoteId(null);
     if (selectedSectionId || showUnsectioned) {
       setView('notes');
+    } else if (selectedNotebookId) {
+      setView('sections');
     } else {
-      setView('all-notes');
+      setView('notebooks');
     }
   };
 
