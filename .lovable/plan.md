@@ -1,39 +1,50 @@
 
 
-## Plan: Ajustes al PDF del Informe Ejecutivo
+## Plan: Rediseño del modal de informe — selección rápida de temas y subtareas
 
-### Problemas identificados y soluciones
+### Problema actual
+- La personalización y selección de temas están escondidas en collapsibles que hay que abrir manualmente.
+- No se puede controlar si las subtareas de un tema específico se muestran o no en el PDF.
+- La experiencia no es rápida ni ejecutiva.
 
-**1. Logo demasiado grande y con fondo gris**
-- Reducir `logoSize` de 16 a 10mm
-- Mantener proporciones cuadradas pero más discreto junto al título
+### Diseño propuesto
 
-**2. "Yo" sigue apareciendo en vez del nombre del autor**
-- El `ownerName` ya se define como `authorName || 'Yo'` y se pasa a `buildIntegratedRows` y `groupByDepartment`
-- Revisar que en `buildIntegratedRows` el `ownerName` se use correctamente como fallback para `t.assignee`
-- El problema real: en la tabla de responsables, los temas sin `assignee` se agrupan bajo `ownerName`, pero si el usuario no tiene `authorName` configurado cae en "Yo". Verificar que `ReportModal` pase correctamente `authorName`.
+Reestructurar el modal en **2 zonas claras** sin collapsibles innecesarios:
 
-**3. Tabla "Logros del Periodo" con encabezado verde → cambiar a SLATE_700 (igual que las demás)**
-- En `renderSection('Logros del Periodo', completedTopics, 'completed', GREEN)` cambiar `GREEN` por `SLATE_700`
+**Zona superior (configuración rápida):** Una fila compacta con título, autor, cargo, periodo — siempre visible, sin necesidad de abrir nada.
 
-**4. Agregar columna de ticket verde (✓) para completados**
-- En la sección "completed", agregar una columna "Estado" con "✓" en verde para temas completados
-- Actualizar `heads.completed` y `buildIntegratedRows` para incluir esta columna
+**Zona principal (selector de temas):** Lista de todos los temas agrupados por estado, cada uno con:
+- Un checkbox para incluir/excluir el tema del informe
+- Un botón expandir (▸) que muestra las subtareas con checkboxes individuales
+- Info rápida: responsable, semáforo, estado
+- Botones "Todos / Ninguno" por sección de estado
 
-**5. Enumerar tareas por departamento con numeración jerárquica (3.1, 3.2)**
-- En `buildIntegratedRows`, recibir el índice del grupo (`gi`) para numerar
-- Cada tema dentro del departamento se numera: si es departamento 1, temas son 1.1, 1.2, 1.3...
-- Subtareas se numeran: 1.1.1, 1.1.2, etc. (o 3.1, 3.2 si el tema es el 3)
-- Actualizar la primera columna para incluir esta numeración
+**Zona inferior:** Switches de secciones (Logros, Bitácora, Responsables) + botones de acción (PDF, Emitir).
+
+### Cambios en el PDF
+- Pasar al generador un mapa `topicSubtaskFilter: Record<string, string[]>` que indica qué subtareas incluir por tema.
+- En `buildIntegratedRows`, filtrar subtareas según este mapa.
+- En `PdfOptions`, agregar `subtaskFilter?: Record<string, string[]>`.
 
 ### Archivos a modificar
 
-- `src/lib/generateReportPdf.ts`:
-  - Logo: reducir tamaño (línea 211)
-  - Sección completados: cambiar `GREEN` → `SLATE_700` (línea 449)
-  - `buildIntegratedRows`: agregar parámetro `groupIndex`, numerar temas y subtareas, agregar columna "✓" para completed
-  - `heads.completed`: agregar columna "Estado" con ✓
-  - `colStyles.completed`: ajustar anchos
+**`src/components/ReportModal.tsx`** (reescritura mayor):
+- Eliminar collapsibles de personalización y selector de temas
+- Layout: config rápida arriba → selector de temas con subtareas expandibles → switches + acciones abajo
+- Nuevo estado: `excludedSubtaskIds: Set<string>` para trackear subtareas desactivadas
+- Agrupar temas por estado (Activos, Seguimiento, Completados, Pausados) con headers
+- Cada tema: checkbox + expand toggle → subtareas con checkboxes
+- Pasar `subtaskFilter` al PDF generator
 
-- `src/components/ReportModal.tsx`: verificar que `authorName` se pase correctamente al PDF
+**`src/lib/generateReportPdf.ts`**:
+- `PdfOptions`: agregar `subtaskFilter?: Record<string, string[]>`
+- En `buildIntegratedRows`: si `subtaskFilter` existe, solo incluir subtareas listadas
+- Actualizar conteos de avance para respetar el filtro
+
+### Flujo de usuario
+1. Abre el modal → ve todo de una vez: config + lista de temas con checkboxes
+2. Click en tema → lo activa/desactiva
+3. Click en ▸ junto al tema → expande subtareas con checkboxes individuales
+4. Ajusta switches de secciones
+5. Click "Emitir Informe" o "PDF"
 
