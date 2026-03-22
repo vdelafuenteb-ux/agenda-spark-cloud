@@ -208,7 +208,7 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
       const tl = getTrafficLight(t.due_date);
       const done = t.subtasks.filter(s => s.completed).length;
       const total = t.subtasks.length;
-      const responsable = t.assignee || 'Yo';
+      const responsable = t.assignee || ownerLabel;
       const statusLabel = STATUS_LABELS[t.status] || t.status;
 
       md += `### ${tl.icon} ${t.title}\n\n`;
