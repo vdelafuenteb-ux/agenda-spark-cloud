@@ -70,6 +70,7 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
   const [reportTitle, setReportTitle] = useState('Informe Ejecutivo');
   const [authorName, setAuthorName] = useState('');
   const [authorRole, setAuthorRole] = useState('');
+  const ownerLabel = authorName || 'Yo';
 
   // Filtros de estado
   const [includeStatuses, setIncludeStatuses] = useState<string[]>(['activo', 'seguimiento', 'completado', 'pausado']);
@@ -179,7 +180,7 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
     if (includeCompleted && completedTopics.length > 0) {
       md += `## ✅ Logros del Período\n\n`;
       completedTopics.forEach(t => {
-        const responsable = t.assignee || 'Yo';
+        const responsable = t.assignee || ownerLabel;
         md += `- **${t.title}** — Responsable: ${responsable}\n`;
       });
       md += `\n`;
@@ -195,7 +196,7 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
         const done = t.subtasks.filter(s => s.completed).length;
         const total = t.subtasks.length;
         const dueStr = t.due_date ? formatStoredDate(t.due_date, 'dd MMM', { locale: es }) : '—';
-        const responsable = t.assignee || 'Yo';
+        const responsable = t.assignee || ownerLabel;
         md += `| ${t.title} | ${responsable} | ${t.priority.charAt(0).toUpperCase() + t.priority.slice(1)} | ${tl.icon} ${tl.label} | ${dueStr} | ${total > 0 ? `${done}/${total}` : '—'} |\n`;
       });
       md += `\n`;
@@ -207,7 +208,7 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
       const tl = getTrafficLight(t.due_date);
       const done = t.subtasks.filter(s => s.completed).length;
       const total = t.subtasks.length;
-      const responsable = t.assignee || 'Yo';
+      const responsable = t.assignee || ownerLabel;
       const statusLabel = STATUS_LABELS[t.status] || t.status;
 
       md += `### ${tl.icon} ${t.title}\n\n`;
@@ -250,7 +251,7 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
     if (includeResponsables) {
       const assigneeMap = new Map<string, TopicWithSubtasks[]>();
       selectedTopics.forEach(t => {
-        const key = t.assignee || 'Yo';
+        const key = t.assignee || ownerLabel;
         if (!assigneeMap.has(key)) assigneeMap.set(key, []);
         assigneeMap.get(key)!.push(t);
       });
@@ -398,7 +399,7 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="todos">Todos</SelectItem>
-                      <SelectItem value="yo">Yo (sin asignar)</SelectItem>
+                      <SelectItem value="yo">{ownerLabel} (sin asignar)</SelectItem>
                       {uniqueAssignees.map(a => (
                         <SelectItem key={a} value={a}>{a}</SelectItem>
                       ))}
@@ -483,7 +484,7 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
               </div>
               {availableTopics.map(t => {
                 const tl = getTrafficLight(t.due_date);
-                const responsable = t.assignee || 'Yo';
+                const responsable = t.assignee || ownerLabel;
                 const statusLabel = STATUS_LABELS[t.status] || t.status;
                 return (
                   <label key={t.id} className="flex items-center gap-2 cursor-pointer hover:bg-muted/40 rounded px-1 py-0.5">

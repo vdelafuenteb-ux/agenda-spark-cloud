@@ -43,7 +43,8 @@ interface DeptGroup {
 
 function groupByDepartment(
   topics: TopicWithSubtasks[],
-  departments?: { id: string; name: string }[]
+  departments?: { id: string; name: string }[],
+  defaultOwner: string = 'Yo'
 ): DeptGroup[] {
   const deptMap = new Map<string, string>();
   (departments || []).forEach(d => deptMap.set(d.id, d.name));
@@ -55,7 +56,7 @@ function groupByDepartment(
     groups.get(deptName)!.push(t);
   });
 
-  groups.forEach(list => list.sort((a, b) => (a.assignee || 'Yo').localeCompare(b.assignee || 'Yo')));
+  groups.forEach(list => list.sort((a, b) => (a.assignee || defaultOwner).localeCompare(b.assignee || defaultOwner)));
 
   const sorted = Array.from(groups.entries()).sort(([a], [b]) => {
     if (a === 'Sin Departamento') return 1;
@@ -110,7 +111,8 @@ function checkPageBreak(doc: jsPDF, y: number, needed: number, margin: number): 
 /** Build rows for a department group: topic rows + indented subtask rows */
 function buildIntegratedRows(
   topics: TopicWithSubtasks[],
-  columnsMode: 'active' | 'completed' | 'paused'
+  columnsMode: 'active' | 'completed' | 'paused',
+  ownerName: string = 'Yo'
 ): { body: string[][]; subtaskRowIndices: Set<number> } {
   const body: string[][] = [];
   const subtaskRowIndices = new Set<number>();
@@ -127,7 +129,7 @@ function buildIntegratedRows(
       const dueStr = t.due_date ? formatStoredDate(t.due_date, 'dd MMM yyyy', { locale: es }) : '';
       body.push([
         t.title,
-        t.assignee || 'Yo',
+        t.assignee || ownerName,
         t.priority.charAt(0).toUpperCase() + t.priority.slice(1),
         tl.label,
         dueStr,
@@ -136,11 +138,11 @@ function buildIntegratedRows(
       ]);
     } else if (columnsMode === 'completed') {
       const closeDateStr = t.updated_at ? format(new Date(t.updated_at), 'dd MMM yyyy', { locale: es }) : '';
-      body.push([t.title, t.assignee || 'Yo', closeDateStr, lastEntry]);
+      body.push([t.title, t.assignee || ownerName, closeDateStr, lastEntry]);
     } else {
       const pauseReason = t.pause_reason || '';
       const pausedAt = t.paused_at ? format(new Date(t.paused_at), 'dd MMM yyyy', { locale: es }) : '';
-      body.push([t.title, t.assignee || 'Yo', pauseReason, pausedAt]);
+      body.push([t.title, t.assignee || ownerName, pauseReason, pausedAt]);
     }
 
     // Add subtask rows indented
@@ -183,6 +185,7 @@ function drawChapterHeading(doc: jsPDF, label: string, y: number, margin: number
 
 export function generateReportPdf(opts: PdfOptions) {
   const { topics, periodStart, periodEnd, title, authorName, authorRole, includeCompleted = true, includeResponsables = true, departments } = opts;
+  const ownerName = authorName || 'Yo';
 
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const pageW = doc.internal.pageSize.getWidth();
@@ -304,7 +307,7 @@ export function generateReportPdf(opts: PdfOptions) {
     doc.line(margin, y, margin + contentW, y);
     y += 6;
 
-    const groups = groupByDepartment(sectionTopics, departments);
+    const groups = groupByDepartment(sectionTopics, departments, ownerName);
 
     const heads: Record<string, string[]> = {
       active: ['Tema', 'Responsable', 'Prioridad', 'Estado', 'Fecha Cierre', 'Progreso', 'Ultimo Comentario'],
@@ -321,7 +324,7 @@ export function generateReportPdf(opts: PdfOptions) {
     groups.forEach((group, gi) => {
       y = drawChapterHeading(doc, `${gi + 1}. ${group.deptName}`, y, margin, contentW);
 
-      const { body, subtaskRowIndices } = buildIntegratedRows(group.topics, mode);
+      const { body, subtaskRowIndices } = buildIntegratedRows(group.topics, mode, ownerName);
 
       autoTable(doc, {
         startY: y,
@@ -400,7 +403,7 @@ export function generateReportPdf(opts: PdfOptions) {
   if (includeResponsables) {
     const assigneeMap = new Map<string, TopicWithSubtasks[]>();
     topics.forEach(t => {
-      const key = t.assignee || 'Yo';
+      const key = t.assignee || ownerName;
       if (!assigneeMap.has(key)) assigneeMap.set(key, []);
       assigneeMap.get(key)!.push(t);
     });
