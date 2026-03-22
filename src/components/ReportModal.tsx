@@ -205,23 +205,6 @@ export function ReportModal({ open, onOpenChange, topics }: ReportModalProps) {
     });
   }, []);
 
-  const selectAllInStatus = useCallback((status: string) => {
-    const ids = topicsByStatus[status]?.map(t => t.id) || [];
-    setSelectedTopicIds(prev => {
-      const next = new Set(prev);
-      ids.forEach(id => next.add(id));
-      return next;
-    });
-  }, [topicsByStatus]);
-
-  const selectNoneInStatus = useCallback((status: string) => {
-    const ids = new Set(topicsByStatus[status]?.map(t => t.id) || []);
-    setSelectedTopicIds(prev => {
-      const next = new Set(prev);
-      ids.forEach(id => next.delete(id));
-      return next;
-    });
-  }, [topicsByStatus]);
 
   // Generate markdown only when saving to DB
   const generateMarkdown = useCallback(() => {
