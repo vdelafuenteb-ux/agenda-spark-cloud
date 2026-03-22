@@ -514,7 +514,10 @@ export function TopicCard({
                       size="sm"
                       variant="outline"
                       className="flex-1 h-9 text-xs gap-2"
-                      onClick={() => onUpdate(topic.id, { status: 'pausado' })}
+                      onClick={() => {
+                        setPauseReasonDraft('');
+                        setShowPauseDialog(true);
+                      }}
                     >
                       <Pause className="h-3.5 w-3.5" /> Pausar
                     </Button>
