@@ -354,6 +354,10 @@ export function SettingsView({ tags, assignees, topics, onDeleteTag, onCreateTag
           {section === 'correos_automaticos' && (
             <EmailScheduleSettings assignees={assignees} topics={topics} />
           )}
+
+          {section === 'resumen_diario' && (
+            <DailySummarySettings />
+          )}
         </div>
       </div>
     </main>
