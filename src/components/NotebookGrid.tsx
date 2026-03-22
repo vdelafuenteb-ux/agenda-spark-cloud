@@ -199,9 +199,8 @@ export function NotebookGrid({ notebooks, sections, notes, onSelect, onSelectSec
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <button onClick={(e) => toggleExpand(nb.id, e)} className="shrink-0">
-                          {isExpanded ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
-                        </button>
-                      )}
+                        {isExpanded ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
+                      </button>
                       <h3 className="font-semibold text-sm truncate">{nb.name}</h3>
                     </div>
                     <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
