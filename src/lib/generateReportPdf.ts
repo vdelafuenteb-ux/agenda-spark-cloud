@@ -129,8 +129,11 @@ function buildIntegratedRows(
 
     if (columnsMode === 'active') {
       const tl = getTrafficLight(t.due_date);
-      const done = t.subtasks.filter(s => s.completed).length;
-      const total = t.subtasks.length;
+      const fSubs = subtaskFilter && subtaskFilter[t.id]
+        ? t.subtasks.filter(s => subtaskFilter[t.id].includes(s.id))
+        : t.subtasks;
+      const done = fSubs.filter(s => s.completed).length;
+      const total = fSubs.length;
       const dueStr = t.due_date ? formatStoredDate(t.due_date, 'dd MMM yyyy', { locale: es }) : '';
       body.push([
         `${topicNum}  ${t.title}`,
