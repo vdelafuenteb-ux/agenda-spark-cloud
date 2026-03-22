@@ -56,10 +56,10 @@ interface TopicCardProps {
   onCreateTag: (name: string, color: string) => Promise<any>;
 }
 
-const priorityBorderColor: Record<Priority, string> = {
-  alta: 'border-l-destructive',
-  media: 'border-l-transparent',
-  baja: 'border-l-transparent',
+const priorityConfig: Record<Priority, { label: string; className: string }> = {
+  alta: { label: 'Alta', className: 'bg-[hsl(var(--priority-alta))] text-white border-transparent' },
+  media: { label: 'Media', className: 'bg-[hsl(var(--priority-media))] text-white border-transparent' },
+  baja: { label: 'Baja', className: 'bg-[hsl(var(--priority-baja))] text-white border-transparent' },
 };
 
 const statusLabels: Record<Status, string> = {
