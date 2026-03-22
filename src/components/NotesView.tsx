@@ -117,6 +117,13 @@ export function NotesView() {
     }
   };
 
+  const handleMoveNote = (noteId: string, notebookId: string, sectionId: string | null) => {
+    updateNote.mutate(
+      { id: noteId, notebook_id: notebookId, section_id: sectionId },
+      { onSuccess: () => toast.success('Nota movida') }
+    );
+  };
+
   const handleSelectNote = (noteId: string) => {
     setSelectedNoteId(noteId);
     setView('editor');
