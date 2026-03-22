@@ -45,7 +45,7 @@ interface CreateTopicModalProps {
   isPending: boolean;
 }
 
-export function CreateTopicModal({ open, onOpenChange, allTags, assignees, onCreateAssignee, onSubmit, isPending }: CreateTopicModalProps) {
+export function CreateTopicModal({ open, onOpenChange, allTags, assignees, departments, onCreateAssignee, onSubmit, isPending }: CreateTopicModalProps) {
   const [title, setTitle] = useState('');
   const [priority, setPriority] = useState<Priority>('media');
   const [status, setStatus] = useState<Status>('activo');

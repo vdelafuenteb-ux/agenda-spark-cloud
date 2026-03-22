@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Trash2, Plus, Pencil, Check, X, Mail, Tag, Users, Clock, CalendarCheck } from 'lucide-react';
+import { Trash2, Plus, Pencil, Check, X, Mail, Tag, Users, Clock, CalendarCheck, Building2 } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,17 +17,19 @@ import {
 import { toast } from 'sonner';
 import type { Tag as TagType } from '@/hooks/useTags';
 import type { Assignee } from '@/hooks/useAssignees';
+import type { Department } from '@/hooks/useDepartments';
 import { EmailScheduleSettings } from '@/components/EmailScheduleSettings';
 import { cn } from '@/lib/utils';
 import { DailySummarySettings } from '@/components/DailySummarySettings';
 
 const TAG_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#8b5cf6', '#ec4899', '#6b7280'];
 
-type SettingsSection = 'etiquetas' | 'responsables' | 'correos_automaticos' | 'resumen_diario';
+type SettingsSection = 'etiquetas' | 'responsables' | 'departamentos' | 'correos_automaticos' | 'resumen_diario';
 
 const SECTIONS: { key: SettingsSection; label: string; icon: typeof Tag }[] = [
   { key: 'etiquetas', label: 'Etiquetas', icon: Tag },
   { key: 'responsables', label: 'Responsables', icon: Users },
+  { key: 'departamentos', label: 'Departamentos', icon: Building2 },
   { key: 'correos_automaticos', label: 'Correos Automáticos', icon: Clock },
   { key: 'resumen_diario', label: 'Resumen Diario', icon: CalendarCheck },
 ];
@@ -35,6 +37,7 @@ const SECTIONS: { key: SettingsSection; label: string; icon: typeof Tag }[] = [
 interface SettingsViewProps {
   tags: TagType[];
   assignees: Assignee[];
+  departments: Department[];
   topics: { id: string; title: string; assignee: string | null; status: string }[];
   onDeleteTag: (id: string) => void;
   onCreateTag: (data: { name: string; color: string }) => Promise<any>;
@@ -42,9 +45,12 @@ interface SettingsViewProps {
   onDeleteAssignee: (id: string) => void;
   onCreateAssignee: (name: string) => Promise<any>;
   onUpdateAssignee: (id: string, data: { name?: string; email?: string | null }) => void;
+  onCreateDepartment: (name: string) => Promise<any>;
+  onUpdateDepartment: (id: string, name: string) => void;
+  onDeleteDepartment: (id: string) => void;
 }
 
-export function SettingsView({ tags, assignees, topics, onDeleteTag, onCreateTag, onUpdateTag, onDeleteAssignee, onCreateAssignee, onUpdateAssignee }: SettingsViewProps) {
+export function SettingsView({ tags, assignees, departments, topics, onDeleteTag, onCreateTag, onUpdateTag, onDeleteAssignee, onCreateAssignee, onUpdateAssignee, onCreateDepartment, onUpdateDepartment, onDeleteDepartment }: SettingsViewProps) {
   const [section, setSection] = useState<SettingsSection>('etiquetas');
   const [newTagName, setNewTagName] = useState('');
   const [newTagColor, setNewTagColor] = useState(TAG_COLORS[0]);
@@ -55,6 +61,9 @@ export function SettingsView({ tags, assignees, topics, onDeleteTag, onCreateTag
   const [editingAssigneeId, setEditingAssigneeId] = useState<string | null>(null);
   const [editingAssigneeName, setEditingAssigneeName] = useState('');
   const [editingAssigneeEmail, setEditingAssigneeEmail] = useState('');
+  const [newDeptName, setNewDeptName] = useState('');
+  const [editingDeptId, setEditingDeptId] = useState<string | null>(null);
+  const [editingDeptName, setEditingDeptName] = useState('');
 
   const handleCreateTag = async () => {
     if (!newTagName.trim()) return;
@@ -82,6 +91,17 @@ export function SettingsView({ tags, assignees, topics, onDeleteTag, onCreateTag
     }
   };
 
+  const handleCreateDepartment = async () => {
+    if (!newDeptName.trim()) return;
+    try {
+      await onCreateDepartment(newDeptName.trim());
+      setNewDeptName('');
+      toast.success('Departamento creado');
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  };
+
   const handleSaveTag = (id: string) => {
     if (!editingTagName.trim()) return;
     onUpdateTag(id, editingTagName.trim());
@@ -96,9 +116,15 @@ export function SettingsView({ tags, assignees, topics, onDeleteTag, onCreateTag
     toast.success('Responsable actualizado');
   };
 
+  const handleSaveDepartment = (id: string) => {
+    if (!editingDeptName.trim()) return;
+    onUpdateDepartment(id, editingDeptName.trim());
+    setEditingDeptId(null);
+    toast.success('Departamento actualizado');
+  };
+
   return (
     <main className="flex-1 overflow-hidden flex flex-col md:flex-row">
-      {/* Navigation - horizontal tabs on mobile, sidebar on desktop */}
       <nav className="shrink-0 border-b md:border-b-0 md:border-r border-border bg-muted/30 overflow-x-auto md:overflow-y-auto md:w-48">
         <div className="flex md:flex-col p-2 md:p-3 gap-1">
           {SECTIONS.map((s) => {
@@ -122,7 +148,6 @@ export function SettingsView({ tags, assignees, topics, onDeleteTag, onCreateTag
         </div>
       </nav>
 
-      {/* Content area */}
       <div className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="max-w-2xl mx-auto">
           {section === 'etiquetas' && (
@@ -335,6 +360,97 @@ export function SettingsView({ tags, assignees, topics, onDeleteTag, onCreateTag
                                   <AlertDialogFooter>
                                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
                                     <AlertDialogAction onClick={() => { onDeleteAssignee(a.id); toast.success('Responsable eliminado'); }}>
+                                      Eliminar
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {section === 'departamentos' && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Departamentos</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Nuevo departamento..."
+                    value={newDeptName}
+                    onChange={(e) => setNewDeptName(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleCreateDepartment()}
+                    className="h-8 text-sm flex-1"
+                  />
+                  <Button size="sm" className="h-8 text-xs gap-1" onClick={handleCreateDepartment} disabled={!newDeptName.trim()}>
+                    <Plus className="h-3 w-3" />
+                  </Button>
+                </div>
+
+                {departments.length === 0 ? (
+                  <p className="text-xs text-muted-foreground py-2">No hay departamentos creados.</p>
+                ) : (
+                  <div className="space-y-1">
+                    {departments.map((dept) => (
+                      <div key={dept.id} className="flex items-center justify-between py-1.5 px-2 rounded hover:bg-muted/50">
+                        {editingDeptId === dept.id ? (
+                          <div className="flex items-center gap-2 flex-1 mr-2">
+                            <Input
+                              value={editingDeptName}
+                              onChange={(e) => setEditingDeptName(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleSaveDepartment(dept.id);
+                                if (e.key === 'Escape') setEditingDeptId(null);
+                              }}
+                              className="h-7 text-sm flex-1"
+                              autoFocus
+                            />
+                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-emerald-500" onClick={() => handleSaveDepartment(dept.id)}>
+                              <Check className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground" onClick={() => setEditingDeptId(null)}>
+                              <X className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="flex items-center gap-2">
+                              <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                              <span className="text-sm">{dept.name}</span>
+                            </div>
+                            <div className="flex items-center gap-0.5">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                                onClick={() => { setEditingDeptId(dept.id); setEditingDeptName(dept.name); }}
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Button>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive">
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>¿Eliminar departamento?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Se eliminará "{dept.name}". Los temas asignados a este departamento quedarán sin departamento.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => { onDeleteDepartment(dept.id); toast.success('Departamento eliminado'); }}>
                                       Eliminar
                                     </AlertDialogAction>
                                   </AlertDialogFooter>
