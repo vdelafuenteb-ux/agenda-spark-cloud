@@ -42,6 +42,12 @@ export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false,
   const hasEntries = entries.length > 0;
   const isOverdue = !subtask.completed && isStoredDateOverdue(subtask.due_date);
 
+  // Last activity from bitácora
+  const lastEntry = hasEntries ? entries[entries.length - 1] : null;
+  const lastActivityDate = lastEntry ? new Date(lastEntry.created_at) : null;
+  const daysSinceActivity = lastActivityDate ? differenceInDays(new Date(), lastActivityDate) : null;
+  const isStale = daysSinceActivity !== null && daysSinceActivity > 5;
+
   const saveTitle = (draft: string) => {
     if (draft.trim() && draft.trim() !== subtask.title) {
       onUpdateSubtask(subtask.id, { title: draft.trim() });
