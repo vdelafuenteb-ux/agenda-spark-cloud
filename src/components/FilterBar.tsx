@@ -1,7 +1,8 @@
-import { Search, X, User, ChevronsDownUp, ChevronsUpDown, Mail, CalendarOff, Infinity } from 'lucide-react';
+import { Search, X, User, ChevronsDownUp, ChevronsUpDown, Mail, CalendarOff, Infinity, ChevronDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem } from '@/components/ui/dropdown-menu';
 import type { Tag } from '@/hooks/useTags';
 
 interface FilterBarProps {
@@ -18,8 +19,10 @@ interface FilterBarProps {
   onBulkEmail?: () => void;
   filterNoDueDate?: boolean;
   onToggleNoDueDate?: () => void;
-  filterOngoing?: 'all' | 'ongoing' | 'not_ongoing';
-  onCycleOngoing?: () => void;
+  showOngoing?: boolean;
+  showNotOngoing?: boolean;
+  onToggleShowOngoing?: () => void;
+  onToggleShowNotOngoing?: () => void;
 }
 
 export function FilterBar({ searchQuery, onSearchChange, allTags, selectedTagIds, onToggleTag, assignees, selectedAssignee, onAssigneeChange, forceExpand, onToggleExpand, onBulkEmail, filterNoDueDate, onToggleNoDueDate, filterOngoing, onCycleOngoing }: FilterBarProps) {
