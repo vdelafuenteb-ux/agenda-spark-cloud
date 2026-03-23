@@ -90,6 +90,8 @@ export function CreateTopicModal({ open, onOpenChange, allTags, assignees, depar
     setNotes('');
     setIsOngoing(false);
     setExecutionOrder(null);
+    setHhType(null);
+    setHhValue(null);
   };
 
   const handleAddSubtask = () => {
