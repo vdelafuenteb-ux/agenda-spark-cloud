@@ -591,6 +591,7 @@ export type Database = {
           created_at: string
           department_id: string | null
           due_date: string | null
+          execution_order: number | null
           id: string
           is_ongoing: boolean
           pause_reason: string
@@ -611,6 +612,7 @@ export type Database = {
           created_at?: string
           department_id?: string | null
           due_date?: string | null
+          execution_order?: number | null
           id?: string
           is_ongoing?: boolean
           pause_reason?: string
@@ -631,6 +633,7 @@ export type Database = {
           created_at?: string
           department_id?: string | null
           due_date?: string | null
+          execution_order?: number | null
           id?: string
           is_ongoing?: boolean
           pause_reason?: string

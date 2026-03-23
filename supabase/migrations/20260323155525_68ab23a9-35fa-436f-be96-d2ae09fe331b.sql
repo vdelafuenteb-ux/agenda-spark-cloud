@@ -1,0 +1,1 @@
+ALTER TABLE public.topics ADD COLUMN execution_order integer DEFAULT null;

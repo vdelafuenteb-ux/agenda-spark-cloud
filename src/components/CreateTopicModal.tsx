@@ -44,6 +44,7 @@ interface CreateTopicModalProps {
     notes: string;
     assignee?: string;
     department_id?: string;
+    execution_order?: number | null;
   }) => Promise<void> | void;
   isPending: boolean;
 }
@@ -65,6 +66,7 @@ export function CreateTopicModal({ open, onOpenChange, allTags, assignees, depar
   const [pendingNewTags, setPendingNewTags] = useState<{ name: string; color: string }[]>([]);
   const [notes, setNotes] = useState('');
   const [isOngoing, setIsOngoing] = useState(false);
+  const [executionOrder, setExecutionOrder] = useState<number | null>(null);
 
   const reset = () => {
     setTitle('');
@@ -83,6 +85,7 @@ export function CreateTopicModal({ open, onOpenChange, allTags, assignees, depar
     setNewTagColor(TAG_COLORS[0]);
     setNotes('');
     setIsOngoing(false);
+    setExecutionOrder(null);
   };
 
   const handleAddSubtask = () => {
@@ -113,6 +116,7 @@ export function CreateTopicModal({ open, onOpenChange, allTags, assignees, depar
       notes,
       assignee: status === 'seguimiento' ? assignee.trim() : undefined,
       department_id: departmentId && departmentId !== 'none' ? departmentId : undefined,
+      execution_order: executionOrder,
     });
     reset();
   };
@@ -136,8 +140,19 @@ export function CreateTopicModal({ open, onOpenChange, allTags, assignees, depar
             <Input placeholder="Nombre del tema..." value={title} onChange={(event) => setTitle(event.target.value)} className="h-9 text-sm" autoFocus />
           </div>
 
-          {/* Row: Prioridad + Estado + Departamento */}
-          <div className="grid grid-cols-3 gap-3">
+          {/* Row: Prioridad + Estado + Departamento + Orden */}
+          <div className="grid grid-cols-4 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Orden</label>
+              <Input
+                type="number"
+                min={1}
+                placeholder="—"
+                value={executionOrder ?? ''}
+                onChange={(e) => setExecutionOrder(e.target.value ? parseInt(e.target.value) : null)}
+                className="h-8 text-xs"
+              />
+            </div>
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Prioridad</label>
               <Select value={priority} onValueChange={(value: Priority) => setPriority(value)}>

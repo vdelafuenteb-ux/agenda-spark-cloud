@@ -159,6 +159,11 @@ export function TopicCard({
         <div className="flex-1 min-w-0 space-y-0.5">
           {/* Line 1: Title + progress + date */}
           <div className="flex items-center gap-2">
+            {(topic as any).execution_order != null && (
+              <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold shrink-0" title={`Orden #${(topic as any).execution_order}`}>
+                {(topic as any).execution_order}
+              </span>
+            )}
             {editingTitle ? (
               <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                 <input
@@ -338,7 +343,23 @@ export function TopicCard({
           >
             <div className="px-4 pb-4 pt-0 space-y-4 border-t border-border">
               <div className="flex items-center gap-3 pt-3 flex-wrap">
-                <Select value={topic.priority} onValueChange={(value: Priority) => onUpdate(topic.id, { priority: value })}>
+              <div className="flex items-center gap-1.5">
+                <label className="text-[10px] text-muted-foreground font-medium uppercase">Orden</label>
+                <Input
+                  type="number"
+                  min={1}
+                  placeholder="—"
+                  value={(topic as any).execution_order ?? ''}
+                  onChange={(e) => {
+                    const val = e.target.value ? parseInt(e.target.value) : null;
+                    onUpdate(topic.id, { execution_order: val });
+                  }}
+                  className="w-14 h-8 text-xs text-center"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
+
+              <Select value={topic.priority} onValueChange={(value: Priority) => onUpdate(topic.id, { priority: value })}>
                   <SelectTrigger className="w-28 h-8 text-xs">
                     <SelectValue />
                   </SelectTrigger>
