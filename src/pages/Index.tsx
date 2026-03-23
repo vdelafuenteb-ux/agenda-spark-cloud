@@ -6,7 +6,7 @@ import { AppSidebar } from '@/components/AppSidebar';
 import { TopicCard } from '@/components/TopicCard';
 import { ReportModal } from '@/components/ReportModal';
 import { ReportsList } from '@/components/ReportsList';
-import { FilterBar } from '@/components/FilterBar';
+import { FilterBar, type SortOption } from '@/components/FilterBar';
 import { BulkEmailModal } from '@/components/BulkEmailModal';
 import { CreateTopicModal } from '@/components/CreateTopicModal';
 import { AuthPage } from '@/components/AuthPage';
@@ -54,6 +54,7 @@ const Index = () => {
   const [filterNoDueDate, setFilterNoDueDate] = useState(false);
   const [showOngoing, setShowOngoing] = useState(true);
   const [showNotOngoing, setShowNotOngoing] = useState(true);
+  const [sortBy, setSortBy] = useState<SortOption>('order');
 
   const toggleTagFilter = useCallback((tagId: string) => {
     setSelectedTagIds((prev) => (prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]));
@@ -82,13 +83,25 @@ const Index = () => {
     return filtered.sort((a, b) => {
       const pinDiff = (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0);
       if (pinDiff !== 0) return pinDiff;
-      // Sort by execution_order first (null = last), then by priority
-      const orderA = (a as any).execution_order ?? Infinity;
-      const orderB = (b as any).execution_order ?? Infinity;
-      if (orderA !== orderB) return orderA - orderB;
-      return (priorityOrder[a.priority] ?? 2) - (priorityOrder[b.priority] ?? 2);
+
+      if (sortBy === 'order') {
+        const orderA = (a as any).execution_order ?? Infinity;
+        const orderB = (b as any).execution_order ?? Infinity;
+        if (orderA !== orderB) return orderA - orderB;
+        return (priorityOrder[a.priority] ?? 2) - (priorityOrder[b.priority] ?? 2);
+      }
+      if (sortBy === 'priority') {
+        return (priorityOrder[a.priority] ?? 2) - (priorityOrder[b.priority] ?? 2);
+      }
+      if (sortBy === 'due_date') {
+        const da = a.due_date || '9999-12-31';
+        const db = b.due_date || '9999-12-31';
+        return da.localeCompare(db);
+      }
+      // created
+      return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
     });
-  }, [topics, statusTab, searchQuery, selectedTagIds, selectedAssignee, filterNoDueDate, showOngoing, showNotOngoing, getTagsForTopic]);
+  }, [topics, statusTab, searchQuery, selectedTagIds, selectedAssignee, filterNoDueDate, showOngoing, showNotOngoing, getTagsForTopic, sortBy]);
 
   const statusCounts = useMemo(() => {
     const counts = { activo: 0, seguimiento: 0, pausado: 0, completado: 0 };
@@ -287,7 +300,7 @@ const Index = () => {
                   <ReportsList onNewReport={() => setReportOpen(true)} />
                 ) : (
                   <>
-                    <Tabs value={statusTab} onValueChange={(value) => { setStatusTab(value as StatusTab); setForceExpand(null); setSearchQuery(''); setSelectedTagIds([]); setSelectedAssignee(''); setFilterNoDueDate(false); setShowOngoing(true); setShowNotOngoing(true); }}>
+                    <Tabs value={statusTab} onValueChange={(value) => { setStatusTab(value as StatusTab); setForceExpand(null); setSearchQuery(''); setSelectedTagIds([]); setSelectedAssignee(''); setFilterNoDueDate(false); setShowOngoing(true); setShowNotOngoing(true); setSortBy('order'); }}>
                       <TabsList className="w-full">
                         <TabsTrigger value="activo" className="flex-1 text-[11px] sm:text-xs px-1 sm:px-3">Activos <span className="hidden sm:inline">({statusCounts.activo})</span><span className="sm:hidden ml-0.5">{statusCounts.activo}</span></TabsTrigger>
                         <TabsTrigger value="seguimiento" className="flex-1 text-[11px] sm:text-xs px-1 sm:px-3"><span className="sm:hidden">Seguim.</span><span className="hidden sm:inline">Seguimiento</span> <span className="hidden sm:inline">({statusCounts.seguimiento})</span><span className="sm:hidden ml-0.5">{statusCounts.seguimiento}</span></TabsTrigger>
@@ -314,6 +327,8 @@ const Index = () => {
                       showNotOngoing={showNotOngoing}
                       onToggleShowOngoing={() => setShowOngoing(prev => !prev)}
                       onToggleShowNotOngoing={() => setShowNotOngoing(prev => !prev)}
+                      sortBy={sortBy}
+                      onSortChange={setSortBy}
                     />
 
                     {isLoading ? (

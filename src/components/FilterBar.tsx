@@ -1,9 +1,11 @@
-import { Search, X, User, ChevronsDownUp, ChevronsUpDown, Mail, CalendarOff, Infinity as InfinityIcon, ChevronDown } from 'lucide-react';
+import { Search, X, User, ChevronsDownUp, ChevronsUpDown, Mail, CalendarOff, Infinity as InfinityIcon, ChevronDown, ArrowUpDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import type { Tag } from '@/hooks/useTags';
+
+export type SortOption = 'order' | 'priority' | 'due_date' | 'created';
 
 interface FilterBarProps {
   searchQuery: string;
@@ -23,11 +25,14 @@ interface FilterBarProps {
   showNotOngoing?: boolean;
   onToggleShowOngoing?: () => void;
   onToggleShowNotOngoing?: () => void;
+  sortBy?: SortOption;
+  onSortChange?: (sort: SortOption) => void;
 }
 
-export function FilterBar({ searchQuery, onSearchChange, allTags, selectedTagIds, onToggleTag, assignees, selectedAssignee, onAssigneeChange, forceExpand, onToggleExpand, onBulkEmail, filterNoDueDate, onToggleNoDueDate, showOngoing = true, showNotOngoing = true, onToggleShowOngoing, onToggleShowNotOngoing }: FilterBarProps) {
+export function FilterBar({ searchQuery, onSearchChange, allTags, selectedTagIds, onToggleTag, assignees, selectedAssignee, onAssigneeChange, forceExpand, onToggleExpand, onBulkEmail, filterNoDueDate, onToggleNoDueDate, showOngoing = true, showNotOngoing = true, onToggleShowOngoing, onToggleShowNotOngoing, sortBy = 'order', onSortChange }: FilterBarProps) {
   const hasOngoingFilter = onToggleShowOngoing && onToggleShowNotOngoing;
   const isFiltered = !showOngoing || !showNotOngoing;
+  const sortLabels: Record<SortOption, string> = { order: 'Orden', priority: 'Prioridad', due_date: 'Fecha fin', created: 'Creación' };
   return (
     <div className="space-y-2">
       {/* Search input */}
@@ -92,6 +97,29 @@ export function FilterBar({ searchQuery, onSearchChange, allTags, selectedTagIds
               <DropdownMenuCheckboxItem checked={showNotOngoing} onCheckedChange={onToggleShowNotOngoing}>
                 No continuos
               </DropdownMenuCheckboxItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+
+        {/* Sort dropdown */}
+        {onSortChange && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm" variant="outline" className="h-9 text-xs gap-1 shrink-0">
+                <ArrowUpDown className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">{sortLabels[sortBy]}</span>
+                <ChevronDown className="h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuLabel className="text-[10px] uppercase text-muted-foreground">Ordenar por</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuRadioGroup value={sortBy} onValueChange={(v) => onSortChange(v as SortOption)}>
+                <DropdownMenuRadioItem value="order">Orden de ejecución</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="priority">Prioridad</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="due_date">Fecha de vencimiento</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="created">Fecha de creación</DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
             </DropdownMenuContent>
           </DropdownMenu>
         )}
