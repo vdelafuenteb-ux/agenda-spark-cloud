@@ -451,6 +451,41 @@ export type Database = {
         }
         Relationships: []
       }
+      subtask_contacts: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          name: string
+          sort_order: number
+          subtask_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          sort_order?: number
+          subtask_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          sort_order?: number
+          subtask_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subtask_contacts_subtask_id_fkey"
+            columns: ["subtask_id"]
+            isOneToOne: false
+            referencedRelation: "subtasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subtask_entries: {
         Row: {
           content: string

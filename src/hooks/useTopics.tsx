@@ -14,7 +14,16 @@ export interface SubtaskEntry {
   created_at: string;
 }
 
-type SubtaskWithEntries = Subtask & { subtask_entries: SubtaskEntry[] };
+export interface SubtaskContact {
+  id: string;
+  subtask_id: string;
+  name: string;
+  email: string;
+  sort_order: number;
+  created_at: string;
+}
+
+type SubtaskWithEntries = Subtask & { subtask_entries: SubtaskEntry[]; subtask_contacts: SubtaskContact[] };
 
 export interface ProgressEntry {
   id: string;
@@ -31,21 +40,24 @@ export function useTopics() {
   const topicsQuery = useQuery({
     queryKey: ['topics'],
     queryFn: async (): Promise<TopicWithSubtasks[]> => {
-      const [topicsRes, subtasksRes, entriesRes, subtaskEntriesRes] = await Promise.all([
+      const [topicsRes, subtasksRes, entriesRes, subtaskEntriesRes, contactsRes] = await Promise.all([
         supabase.from('topics').select('*').order('sort_order', { ascending: true }).order('created_at', { ascending: false }),
         supabase.from('subtasks').select('*').order('sort_order', { ascending: true }).order('created_at', { ascending: true }),
         supabase.from('progress_entries').select('*').order('created_at', { ascending: true }),
         supabase.from('subtask_entries').select('*').order('created_at', { ascending: true }),
+        supabase.from('subtask_contacts').select('*').order('sort_order', { ascending: true }).order('created_at', { ascending: true }),
       ]);
 
       if (topicsRes.error) throw topicsRes.error;
       if (subtasksRes.error) throw subtasksRes.error;
       if (entriesRes.error) throw entriesRes.error;
       if (subtaskEntriesRes.error) throw subtaskEntriesRes.error;
+      if (contactsRes.error) throw contactsRes.error;
 
       const subtasks = subtasksRes.data || [];
       const entries = entriesRes.data || [];
       const subtaskEntries = subtaskEntriesRes.data || [];
+      const contacts = (contactsRes.data || []) as unknown as SubtaskContact[];
 
       // Build lookup map for subtask entries
       const entriesBySubtask = new Map<string, SubtaskEntry[]>();
@@ -55,10 +67,18 @@ export function useTopics() {
         else entriesBySubtask.set(e.subtask_id, [e]);
       }
 
+      // Build lookup map for subtask contacts
+      const contactsBySubtask = new Map<string, SubtaskContact[]>();
+      for (const c of contacts) {
+        const arr = contactsBySubtask.get(c.subtask_id);
+        if (arr) arr.push(c);
+        else contactsBySubtask.set(c.subtask_id, [c]);
+      }
+
       // Build lookup maps for O(n) instead of O(n*m)
       const subtasksByTopic = new Map<string, SubtaskWithEntries[]>();
       for (const s of subtasks) {
-        const enriched: SubtaskWithEntries = { ...s, subtask_entries: entriesBySubtask.get(s.id) || [] };
+        const enriched: SubtaskWithEntries = { ...s, subtask_entries: entriesBySubtask.get(s.id) || [], subtask_contacts: contactsBySubtask.get(s.id) || [] };
         const arr = subtasksByTopic.get(s.topic_id);
         if (arr) arr.push(enriched);
         else subtasksByTopic.set(s.topic_id, [enriched]);
@@ -259,6 +279,34 @@ export function useTopics() {
     onSuccess: invalidateTopics,
   });
 
+  const addSubtaskContact = useMutation({
+    mutationFn: async ({ subtask_id, name, email }: { subtask_id: string; name: string; email: string }) => {
+      const { data, error } = await supabase.from('subtask_contacts').insert({ subtask_id, name, email } as any).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: invalidateTopics,
+  });
+
+  const updateSubtaskContact = useMutation({
+    mutationFn: async ({ id, name, email }: { id: string; name?: string; email?: string }) => {
+      const updateData: Record<string, any> = {};
+      if (name !== undefined) updateData.name = name;
+      if (email !== undefined) updateData.email = email;
+      const { error } = await supabase.from('subtask_contacts').update(updateData).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: invalidateTopics,
+  });
+
+  const deleteSubtaskContact = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('subtask_contacts').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: invalidateTopics,
+  });
+
   return {
     topics: topicsQuery.data || [],
     isLoading: topicsQuery.isLoading,
@@ -276,5 +324,8 @@ export function useTopics() {
     addSubtaskEntry,
     updateSubtaskEntry,
     deleteSubtaskEntry,
+    addSubtaskContact,
+    updateSubtaskContact,
+    deleteSubtaskContact,
   };
 }
