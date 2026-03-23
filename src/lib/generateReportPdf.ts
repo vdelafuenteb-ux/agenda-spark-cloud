@@ -90,15 +90,15 @@ function drawKpiBox(doc: jsPDF, x: number, y: number, w: number, h: number, valu
   doc.setFillColor(...color);
   doc.rect(x, y, w, 1, 'F');
 
-  doc.setFontSize(13);
+  doc.setFontSize(15);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...color);
-  doc.text(value, x + w / 2, y + 9, { align: 'center' });
+  doc.text(value, x + w / 2, y + 10, { align: 'center' });
 
-  doc.setFontSize(6);
+  doc.setFontSize(7);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(...SLATE_500);
-  doc.text(label, x + w / 2, y + 14, { align: 'center' });
+  doc.text(label, x + w / 2, y + 16, { align: 'center' });
 }
 
 function checkPageBreak(doc: jsPDF, y: number, needed: number, margin: number): number {
