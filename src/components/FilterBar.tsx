@@ -66,6 +66,21 @@ export function FilterBar({ searchQuery, onSearchChange, allTags, selectedTagIds
           </Button>
         )}
 
+        {/* Ongoing filter */}
+        {onCycleOngoing && (
+          <Button
+            size="sm"
+            variant={filterOngoing !== 'all' ? "default" : "outline"}
+            className="h-9 text-xs gap-1 shrink-0"
+            onClick={onCycleOngoing}
+          >
+            <Infinity className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">
+              {filterOngoing === 'ongoing' ? 'Solo continuos' : filterOngoing === 'not_ongoing' ? 'Sin continuos' : 'Continuos'}
+            </span>
+          </Button>
+        )}
+
         {/* Bulk email button */}
         {onBulkEmail && selectedAssignee && selectedAssignee !== '_all' && selectedAssignee !== '' && (
           <Button size="sm" variant="outline" className="h-9 text-xs gap-1 shrink-0" onClick={onBulkEmail}>
