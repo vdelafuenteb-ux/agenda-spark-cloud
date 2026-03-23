@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, FolderOpen, MoreHorizontal, Pencil, Trash2, StickyNote, ChevronRight } from 'lucide-react';
+import { Plus, FolderOpen, MoreHorizontal, Pencil, Trash2, StickyNote, ChevronRight, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
@@ -22,9 +22,10 @@ interface SectionListProps {
   onUpdateSection: (id: string, data: { name?: string; color?: string }) => void;
   onCreateNote: (data: { notebook_id: string; section_id?: string | null }) => void;
   onShowUnsectioned: () => void;
+  onSelectNote?: (noteId: string) => void;
 }
 
-export function SectionList({ notebook, sections, notes, onBack, onSelectSection, onCreateSection, onDeleteSection, onUpdateSection, onCreateNote, onShowUnsectioned }: SectionListProps) {
+export function SectionList({ notebook, sections, notes, onBack, onSelectSection, onCreateSection, onDeleteSection, onUpdateSection, onCreateNote, onShowUnsectioned, onSelectNote }: SectionListProps) {
   const [createOpen, setCreateOpen] = useState(false);
   const [newName, setNewName] = useState('');
   const [newColor, setNewColor] = useState(COLORS[0]);
@@ -146,18 +147,34 @@ export function SectionList({ notebook, sections, notes, onBack, onSelectSection
 
       {/* Unsectioned notes */}
       {unsectionedNotes.length > 0 && (
-        <div
-          onClick={onShowUnsectioned}
-          className="rounded-xl border border-dashed bg-muted/30 p-4 cursor-pointer hover:bg-muted/50 transition-colors"
-        >
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
-              <StickyNote className="h-4 w-4 text-muted-foreground" />
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <div className="h-7 w-7 rounded-lg bg-muted flex items-center justify-center shrink-0">
+              <StickyNote className="h-3.5 w-3.5 text-muted-foreground" />
             </div>
-            <div>
-              <h3 className="font-medium text-sm">Notas sin tema</h3>
-              <p className="text-xs text-muted-foreground">{unsectionedNotes.length} nota{unsectionedNotes.length !== 1 ? 's' : ''} sin clasificar</p>
-            </div>
+            <h3 className="font-medium text-sm">Notas sin tema</h3>
+            <span className="text-xs text-muted-foreground">({unsectionedNotes.length})</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {unsectionedNotes.map((note) => {
+              const preview = note.content.replace(/<[^>]*>/g, '').slice(0, 100);
+              return (
+                <div
+                  key={note.id}
+                  onClick={() => onSelectNote?.(note.id)}
+                  className="rounded-lg border bg-card p-3 cursor-pointer hover:shadow-md hover:border-primary/30 transition-all duration-200"
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                    <p className="text-sm font-medium truncate">{note.title || 'Sin título'}</p>
+                  </div>
+                  <p className="text-xs text-muted-foreground line-clamp-2 ml-5.5">{preview || 'Nota vacía'}</p>
+                  <p className="text-[10px] text-muted-foreground mt-2 ml-5.5">
+                    {format(new Date(note.updated_at), "d MMM yyyy, HH:mm", { locale: es })}
+                  </p>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
