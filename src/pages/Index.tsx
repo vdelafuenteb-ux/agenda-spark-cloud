@@ -73,6 +73,8 @@ const Index = () => {
       }
       if (selectedAssignee && topic.assignee !== selectedAssignee) return false;
       if (filterNoDueDate && topic.due_date) return false;
+      if (filterOngoing === 'ongoing' && !topic.is_ongoing) return false;
+      if (filterOngoing === 'not_ongoing' && topic.is_ongoing) return false;
       return true;
     });
     const priorityOrder: Record<string, number> = { alta: 0, media: 1, baja: 2 };
