@@ -427,13 +427,7 @@ export function generateReportPdf(opts: PdfOptions) {
   y += narrativeLines.length * 3.5 + 4;
 
   // ==========================================
-  // FORCE PAGE 2 — Detail starts here
-  // ==========================================
-  doc.addPage();
-  y = margin;
-
-  // ==========================================
-  // RESUMEN POR RESPONSABLE (Page 2)
+  // RESUMEN POR RESPONSABLE (continues on page 1)
   // ==========================================
   if (includeResponsables) {
     const assigneeMap = new Map<string, TopicWithSubtasks[]>();
@@ -588,11 +582,15 @@ export function generateReportPdf(opts: PdfOptions) {
   }
 
   // ==========================================
-  // DETAILED SECTIONS (Page 2+)
+  // DETAILED SECTIONS
   // ==========================================
   if (includeCompleted && completedTopics.length > 0) {
     renderSection('Logros del Periodo — Detalle', completedTopics, 'completed', SLATE_700);
   }
+
+  // Force new page before active/paused detail
+  doc.addPage();
+  y = margin;
 
   if (activeTopics.length > 0) {
     renderSection('Temas Activos — Detalle', activeTopics, 'active', SLATE_700);
