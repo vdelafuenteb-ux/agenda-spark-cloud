@@ -29,9 +29,10 @@ interface FilterBarProps {
   onSortChange?: (sort: SortOption) => void;
 }
 
-export function FilterBar({ searchQuery, onSearchChange, allTags, selectedTagIds, onToggleTag, assignees, selectedAssignee, onAssigneeChange, forceExpand, onToggleExpand, onBulkEmail, filterNoDueDate, onToggleNoDueDate, showOngoing = true, showNotOngoing = true, onToggleShowOngoing, onToggleShowNotOngoing }: FilterBarProps) {
+export function FilterBar({ searchQuery, onSearchChange, allTags, selectedTagIds, onToggleTag, assignees, selectedAssignee, onAssigneeChange, forceExpand, onToggleExpand, onBulkEmail, filterNoDueDate, onToggleNoDueDate, showOngoing = true, showNotOngoing = true, onToggleShowOngoing, onToggleShowNotOngoing, sortBy = 'order', onSortChange }: FilterBarProps) {
   const hasOngoingFilter = onToggleShowOngoing && onToggleShowNotOngoing;
   const isFiltered = !showOngoing || !showNotOngoing;
+  const sortLabels: Record<SortOption, string> = { order: 'Orden', priority: 'Prioridad', due_date: 'Fecha fin', created: 'Creación' };
   return (
     <div className="space-y-2">
       {/* Search input */}
