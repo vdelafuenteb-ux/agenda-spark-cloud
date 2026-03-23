@@ -89,6 +89,7 @@ export function TopicCard({
     return false;
   });
   const [subtasksExpanded, setSubtasksExpanded] = useState(false);
+  const [completedSubtasksExpanded, setCompletedSubtasksExpanded] = useState(false);
   const [newSubtask, setNewSubtask] = useState('');
   const [newAssigneeName, setNewAssigneeName] = useState('');
   const [editingTitle, setEditingTitle] = useState(false);
