@@ -54,6 +54,7 @@ const Index = () => {
   const [filterNoDueDate, setFilterNoDueDate] = useState(false);
   const [showOngoing, setShowOngoing] = useState(true);
   const [showNotOngoing, setShowNotOngoing] = useState(true);
+  const [sortBy, setSortBy] = useState<SortOption>('order');
 
   const toggleTagFilter = useCallback((tagId: string) => {
     setSelectedTagIds((prev) => (prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]));
