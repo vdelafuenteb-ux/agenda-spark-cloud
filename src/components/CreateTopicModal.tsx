@@ -66,6 +66,7 @@ export function CreateTopicModal({ open, onOpenChange, allTags, assignees, depar
   const [pendingNewTags, setPendingNewTags] = useState<{ name: string; color: string }[]>([]);
   const [notes, setNotes] = useState('');
   const [isOngoing, setIsOngoing] = useState(false);
+  const [executionOrder, setExecutionOrder] = useState<number | null>(null);
 
   const reset = () => {
     setTitle('');
