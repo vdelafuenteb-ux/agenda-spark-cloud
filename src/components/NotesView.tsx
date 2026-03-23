@@ -209,6 +209,15 @@ export function NotesView() {
           onUpdateNotebook={(id, data) => updateNotebook.mutate({ id, ...data })}
           onShowAllNotes={handleShowAllNotes}
           onMoveNote={handleMoveNote}
+          onQuickNote={async () => {
+            try {
+              const note = await createNote.mutateAsync({ notebook_id: null, section_id: null });
+              setSelectedNoteId(note.id);
+              setView('editor');
+            } catch (e: any) {
+              toast.error(e.message);
+            }
+          }}
         />
       </ScrollArea>
     );
