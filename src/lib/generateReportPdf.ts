@@ -302,9 +302,117 @@ export function generateReportPdf(opts: PdfOptions) {
     drawKpiBox(doc, margin + i * (kpiW + 3), y, kpiW, kpiH, kpi.value, kpi.label, kpi.color as [number, number, number]);
   });
 
-  y += kpiH + 6;
+  y += kpiH + 5;
 
-  // Narrative
+  // ==========================================
+  // CUMPLIMIENTO DE CIERRE (Page 1)
+  // ==========================================
+  const closedWithDue = completedTopics.filter(t => t.due_date && t.closed_at);
+  const closedOnTime = closedWithDue.filter(t => {
+    const closed = new Date(t.closed_at!);
+    const due = parseStoredDate(t.due_date!);
+    if (!due) return true;
+    closed.setHours(0, 0, 0, 0);
+    due.setHours(0, 0, 0, 0);
+    return closed <= due;
+  }).length;
+  const closedLate = closedWithDue.length - closedOnTime;
+  const compliancePct = closedWithDue.length > 0 ? Math.round((closedOnTime / closedWithDue.length) * 100) : 100;
+
+  if (closedWithDue.length > 0) {
+    // Compliance bar
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...SLATE_800);
+    doc.text('Cumplimiento de Cierre', margin, y);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...SLATE_500);
+    doc.text(`${closedOnTime} a tiempo  /  ${closedLate} con atraso`, margin + 42, y);
+
+    y += 3;
+    const barW = contentW * 0.5;
+    const barH = 4;
+    // Background bar
+    doc.setFillColor(...SLATE_200);
+    doc.roundedRect(margin, y, barW, barH, 1.5, 1.5, 'F');
+    // Fill bar
+    const fillW = barW * (compliancePct / 100);
+    if (fillW > 0) {
+      doc.setFillColor(...(compliancePct >= 80 ? GREEN : compliancePct >= 50 ? AMBER : RED));
+      doc.roundedRect(margin, y, fillW, barH, 1.5, 1.5, 'F');
+    }
+    // Percentage label
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...SLATE_800);
+    doc.text(`${compliancePct}%`, margin + barW + 3, y + 3.2);
+
+    y += barH + 5;
+  }
+
+  // ==========================================
+  // LOGROS DEL PERIODO - Compact (Page 1)
+  // ==========================================
+  if (includeCompleted && completedTopics.length > 0) {
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...SLATE_800);
+    doc.text('Logros del Periodo', margin, y);
+    y += 4;
+
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    for (const t of completedTopics) {
+      y = checkPageBreak(doc, y, 5, margin);
+      const closeDateStr = t.closed_at
+        ? format(new Date(t.closed_at), 'dd MMM yyyy', { locale: es })
+        : t.updated_at ? format(new Date(t.updated_at), 'dd MMM yyyy', { locale: es }) : '';
+      doc.setTextColor(...GREEN);
+      doc.text('✓', margin, y);
+      doc.setTextColor(...SLATE_700);
+      const line = `${t.title}  —  ${closeDateStr}`;
+      const truncated = line.length > 90 ? line.substring(0, 87) + '...' : line;
+      doc.text(truncated, margin + 4, y);
+      y += 3.5;
+    }
+    y += 2;
+  }
+
+  // ==========================================
+  // ALERTAS DE ATRASO - Compact (Page 1)
+  // ==========================================
+  const overdueTopics = activeTopics.filter(t => getTrafficLight(t.due_date).label === 'Atrasado');
+  if (overdueTopics.length > 0) {
+    y = checkPageBreak(doc, y, 10, margin);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...RED);
+    doc.text('Alertas de Atraso', margin, y);
+    y += 4;
+
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    for (const t of overdueTopics) {
+      y = checkPageBreak(doc, y, 5, margin);
+      const due = parseStoredDate(t.due_date!);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const daysLate = due ? Math.ceil((today.getTime() - due.getTime()) / (1000 * 60 * 60 * 24)) : 0;
+      doc.setTextColor(...RED);
+      doc.text('⚠', margin, y);
+      doc.setTextColor(...SLATE_700);
+      const line = `${t.title}  —  ${t.assignee || ownerName}  —  ${daysLate} dias de atraso`;
+      const truncated = line.length > 95 ? line.substring(0, 92) + '...' : line;
+      doc.text(truncated, margin + 4, y);
+      y += 3.5;
+    }
+    y += 2;
+  }
+
+  // ==========================================
+  // NARRATIVA (Page 1)
+  // ==========================================
+  y = checkPageBreak(doc, y, 12, margin);
   doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(...SLATE_700);
@@ -312,33 +420,37 @@ export function generateReportPdf(opts: PdfOptions) {
   if (completedTopics.length > 0) narrative += ` Se completaron ${completedTopics.length} exitosamente.`;
   if (delayed > 0) narrative += ` ${delayed} tema(s) presentan atrasos que requieren atencion.`;
   narrative += ` El avance global en subtareas es de ${pct}% (${doneSubs}/${totalSubs}).`;
+  if (closedWithDue.length > 0) narrative += ` Cumplimiento de cierre: ${compliancePct}% a tiempo.`;
 
   const narrativeLines = doc.splitTextToSize(narrative, contentW);
   doc.text(narrativeLines, margin, y);
   y += narrativeLines.length * 3.5 + 4;
 
   // ==========================================
-  // RESUMEN POR RESPONSABLE (right after executive summary)
+  // FORCE PAGE 2 — Detail starts here
+  // ==========================================
+  doc.addPage();
+  y = margin;
+
+  // ==========================================
+  // RESUMEN POR RESPONSABLE (Page 2)
   // ==========================================
   if (includeResponsables) {
     const assigneeMap = new Map<string, TopicWithSubtasks[]>();
     topics.forEach(t => {
       let key = t.assignee || ownerName;
-      // Unify: if assignee matches ownerName (case-insensitive), group under ownerName
       if (key.toLowerCase() === ownerName.toLowerCase()) key = ownerName;
       if (!assigneeMap.has(key)) assigneeMap.set(key, []);
       assigneeMap.get(key)!.push(t);
     });
 
     if (assigneeMap.size > 0) {
-      y = checkPageBreak(doc, y, 16, margin);
       doc.setFontSize(9);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...SLATE_800);
       doc.text('Resumen por Responsable', margin, y);
       y += 3;
 
-      // Compact centered table
       const tableW = 160;
       const tableMarginL = margin + (contentW - tableW) / 2;
 
@@ -439,7 +551,6 @@ export function generateReportPdf(opts: PdfOptions) {
             data.cell.styles.fontStyle = 'italic';
             data.cell.styles.textColor = SLATE_500 as any;
 
-            // Status column coloring for subtasks (col 3)
             if (data.column.index === 3) {
               const val = data.cell.raw as string;
               if (val === 'Completado') {
@@ -450,18 +561,15 @@ export function generateReportPdf(opts: PdfOptions) {
               }
             }
           } else {
-            // Topic row: alternate white
             data.cell.styles.fillColor = (data.row.index % 2 === 0 ? WHITE : SLATE_50) as any;
             data.cell.styles.fontStyle = 'normal';
             data.cell.styles.textColor = SLATE_700 as any;
 
-            // Bold topic name
             if (data.column.index === 0) {
               data.cell.styles.fontStyle = 'bold';
               data.cell.styles.textColor = SLATE_800 as any;
             }
 
-            // Status column coloring for topics (col 3)
             if (data.column.index === 3) {
               const val = data.cell.raw as string;
               if (val === 'Atrasado') data.cell.styles.textColor = RED as any;
@@ -480,18 +588,18 @@ export function generateReportPdf(opts: PdfOptions) {
   }
 
   // ==========================================
-  // SECTIONS
+  // DETAILED SECTIONS (Page 2+)
   // ==========================================
   if (includeCompleted && completedTopics.length > 0) {
-    renderSection('Logros del Periodo', completedTopics, 'completed', SLATE_700);
+    renderSection('Logros del Periodo — Detalle', completedTopics, 'completed', SLATE_700);
   }
 
   if (activeTopics.length > 0) {
-    renderSection('Temas Activos', activeTopics, 'active', SLATE_700);
+    renderSection('Temas Activos — Detalle', activeTopics, 'active', SLATE_700);
   }
 
   if (pausedTopics.length > 0) {
-    renderSection('Temas en Pausa', pausedTopics, 'paused', SLATE_500);
+    renderSection('Temas en Pausa — Detalle', pausedTopics, 'paused', SLATE_500);
   }
 
 
