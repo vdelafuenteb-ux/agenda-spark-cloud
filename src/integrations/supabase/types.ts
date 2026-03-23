@@ -21,6 +21,7 @@ export type Database = {
           id: string
           name: string
           user_id: string
+          weekly_capacity: number
         }
         Insert: {
           created_at?: string
@@ -28,6 +29,7 @@ export type Database = {
           id?: string
           name: string
           user_id: string
+          weekly_capacity?: number
         }
         Update: {
           created_at?: string
@@ -35,6 +37,7 @@ export type Database = {
           id?: string
           name?: string
           user_id?: string
+          weekly_capacity?: number
         }
         Relationships: []
       }
@@ -592,6 +595,8 @@ export type Database = {
           department_id: string | null
           due_date: string | null
           execution_order: number | null
+          hh_type: string | null
+          hh_value: number | null
           id: string
           is_ongoing: boolean
           pause_reason: string
@@ -613,6 +618,8 @@ export type Database = {
           department_id?: string | null
           due_date?: string | null
           execution_order?: number | null
+          hh_type?: string | null
+          hh_value?: number | null
           id?: string
           is_ongoing?: boolean
           pause_reason?: string
@@ -634,6 +641,8 @@ export type Database = {
           department_id?: string | null
           due_date?: string | null
           execution_order?: number | null
+          hh_type?: string | null
+          hh_value?: number | null
           id?: string
           is_ongoing?: boolean
           pause_reason?: string
