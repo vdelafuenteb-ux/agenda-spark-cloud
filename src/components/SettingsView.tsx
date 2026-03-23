@@ -44,7 +44,7 @@ interface SettingsViewProps {
   onUpdateTag: (id: string, name: string) => void;
   onDeleteAssignee: (id: string) => void;
   onCreateAssignee: (name: string) => Promise<any>;
-  onUpdateAssignee: (id: string, data: { name?: string; email?: string | null }) => void;
+  onUpdateAssignee: (id: string, data: { name?: string; email?: string | null; weekly_capacity?: number }) => void;
   onCreateDepartment: (name: string) => Promise<any>;
   onUpdateDepartment: (id: string, name: string) => void;
   onDeleteDepartment: (id: string) => void;
@@ -61,6 +61,7 @@ export function SettingsView({ tags, assignees, departments, topics, onDeleteTag
   const [editingAssigneeId, setEditingAssigneeId] = useState<string | null>(null);
   const [editingAssigneeName, setEditingAssigneeName] = useState('');
   const [editingAssigneeEmail, setEditingAssigneeEmail] = useState('');
+  const [editingAssigneeCapacity, setEditingAssigneeCapacity] = useState(45);
   const [newDeptName, setNewDeptName] = useState('');
   const [editingDeptId, setEditingDeptId] = useState<string | null>(null);
   const [editingDeptName, setEditingDeptName] = useState('');
@@ -111,7 +112,7 @@ export function SettingsView({ tags, assignees, departments, topics, onDeleteTag
 
   const handleSaveAssignee = (id: string) => {
     if (!editingAssigneeName.trim()) return;
-    onUpdateAssignee(id, { name: editingAssigneeName.trim(), email: editingAssigneeEmail.trim() || null });
+    onUpdateAssignee(id, { name: editingAssigneeName.trim(), email: editingAssigneeEmail.trim() || null, weekly_capacity: editingAssigneeCapacity });
     setEditingAssigneeId(null);
     toast.success('Responsable actualizado');
   };
@@ -311,6 +312,15 @@ export function SettingsView({ tags, assignees, departments, topics, onDeleteTag
                               placeholder="correo@ejemplo.com"
                               type="email"
                             />
+                            <Input
+                              type="number"
+                              min={1}
+                              value={editingAssigneeCapacity}
+                              onChange={(e) => setEditingAssigneeCapacity(parseInt(e.target.value) || 45)}
+                              className="h-7 text-sm w-16"
+                              placeholder="h/sem"
+                              title="Capacidad semanal (hrs)"
+                            />
                             <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-emerald-500" onClick={() => handleSaveAssignee(a.id)}>
                               <Check className="h-3.5 w-3.5" />
                             </Button>
@@ -330,6 +340,7 @@ export function SettingsView({ tags, assignees, departments, topics, onDeleteTag
                               ) : (
                                 <span className="text-xs text-muted-foreground/50 italic">Sin correo</span>
                               )}
+                              <span className="text-[10px] text-muted-foreground ml-1 shrink-0">{a.weekly_capacity || 45}h/sem</span>
                             </div>
                             <div className="flex items-center gap-0.5">
                               <Button
@@ -340,6 +351,7 @@ export function SettingsView({ tags, assignees, departments, topics, onDeleteTag
                                   setEditingAssigneeId(a.id);
                                   setEditingAssigneeName(a.name);
                                   setEditingAssigneeEmail(a.email || '');
+                                  setEditingAssigneeCapacity(a.weekly_capacity || 45);
                                 }}
                               >
                                 <Pencil className="h-3.5 w-3.5" />

@@ -25,6 +25,7 @@ import { ChecklistView } from '@/components/ChecklistView';
 import { CalendarView } from '@/components/CalendarView';
 import { SettingsView } from '@/components/SettingsView';
 import { EmailHistoryView } from '@/components/EmailHistoryView';
+import { TeamView } from '@/components/TeamView';
 import { toast } from 'sonner';
 
 import type { Filter, StatusTab } from '@/types/filters';
@@ -159,6 +160,8 @@ const Index = () => {
         assignee: data.assignee || null,
         department_id: (data as Record<string, unknown>).department_id as string | null || null,
         execution_order: (data as any).execution_order ?? null,
+        hh_type: (data as any).hh_type ?? null,
+        hh_value: (data as any).hh_value ?? null,
         user_id: user!.id,
       } as any);
 
@@ -243,10 +246,10 @@ const Index = () => {
             <div className="flex items-center gap-2">
               <SidebarTrigger />
               <h1 className="text-sm font-semibold text-foreground">
-                {filter === 'configuracion' ? 'Configuración' : filter === 'historial_correos' ? 'Historial de Correos' : filter === 'calendario' ? 'Calendario' : filter === 'notas' ? 'Notas' : filter === 'informes' ? 'Informes' : filter === 'revision' ? 'Revisión' : filter === 'dashboard' ? 'Dashboard' : filter === 'checklist' ? 'Checklist del Día' : 'Temas'}
+                {filter === 'configuracion' ? 'Configuración' : filter === 'historial_correos' ? 'Historial de Correos' : filter === 'calendario' ? 'Calendario' : filter === 'notas' ? 'Notas' : filter === 'informes' ? 'Informes' : filter === 'revision' ? 'Revisión' : filter === 'dashboard' ? 'Dashboard' : filter === 'checklist' ? 'Checklist del Día' : filter === 'equipo' ? 'Equipo' : 'Temas'}
               </h1>
             </div>
-            {filter !== 'notas' && filter !== 'informes' && filter !== 'revision' && filter !== 'dashboard' && filter !== 'checklist' && filter !== 'calendario' && filter !== 'configuracion' && filter !== 'historial_correos' && (
+            {filter !== 'notas' && filter !== 'informes' && filter !== 'revision' && filter !== 'dashboard' && filter !== 'checklist' && filter !== 'calendario' && filter !== 'configuracion' && filter !== 'historial_correos' && filter !== 'equipo' && (
               <div className="flex items-center gap-2">
                 <Button size="sm" variant="outline" className="h-8 text-xs gap-1" onClick={() => setReportOpen(true)}>
                   <FileText className="h-3 w-3" />
@@ -278,6 +281,8 @@ const Index = () => {
             />
           ) : filter === 'dashboard' ? (
             <DashboardView topics={topics} assignees={assignees} onUpdateTopic={(id, data) => updateTopic.mutate({ id, ...data })} />
+          ) : filter === 'equipo' ? (
+            <TeamView topics={topics} assignees={assignees} onUpdateTopic={(id, data) => updateTopic.mutate({ id, ...data })} />
           ) : filter === 'historial_correos' ? (
             <EmailHistoryView />
           ) : filter === 'checklist' ? (

@@ -276,6 +276,16 @@ export function TopicCard({
               );
             }
 
+            // HH badge
+            if ((topic as any).hh_value && (topic as any).hh_type) {
+              const hhLabel = (topic as any).hh_type === 'diaria' ? '/día' : (topic as any).hh_type === 'semanal' ? '/sem' : 'total';
+              metaParts.push(
+                <span key="hh" className="inline-flex items-center gap-0.5 text-primary font-medium">
+                  {(topic as any).hh_value}h {hhLabel}
+                </span>
+              );
+            }
+
             const hasMetaOrTags = metaParts.length > 0 || topicTags.length > 0 || (topic.status !== 'activo');
 
             if (!hasMetaOrTags && totalCount === 0) return null;
@@ -426,6 +436,40 @@ export function TopicCard({
                 >
                   <Trash2 className="h-3 w-3" />
                 </Button>
+              </div>
+
+              {/* Horas Hombre */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <label className="text-[10px] text-muted-foreground font-medium uppercase">HH</label>
+                <Select
+                  value={(topic as any).hh_type || 'none'}
+                  onValueChange={(v) => onUpdate(topic.id, { hh_type: v === 'none' ? null : v, ...(!v || v === 'none' ? { hh_value: null } : {}) })}
+                >
+                  <SelectTrigger className="w-24 h-8 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Sin HH</SelectItem>
+                    <SelectItem value="diaria">Diaria</SelectItem>
+                    <SelectItem value="semanal">Semanal</SelectItem>
+                    <SelectItem value="total">Total</SelectItem>
+                  </SelectContent>
+                </Select>
+                {(topic as any).hh_type && (
+                  <Input
+                    type="number"
+                    min={0}
+                    step={0.5}
+                    placeholder="Hrs"
+                    value={(topic as any).hh_value ?? ''}
+                    onChange={(e) => onUpdate(topic.id, { hh_value: e.target.value ? parseFloat(e.target.value) : null })}
+                    className="w-16 h-8 text-xs"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                )}
+                {(topic as any).hh_type && (topic as any).hh_value && (
+                  <span className="text-[10px] text-muted-foreground">
+                    {(topic as any).hh_type === 'diaria' ? `≈ ${((topic as any).hh_value * 5).toFixed(1)}h/sem` : (topic as any).hh_type === 'semanal' ? `${(topic as any).hh_value}h/sem` : `${(topic as any).hh_value}h total`}
+                  </span>
+                )}
               </div>
 
               <TagSelector

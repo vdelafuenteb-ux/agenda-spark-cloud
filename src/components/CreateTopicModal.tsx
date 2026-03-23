@@ -45,6 +45,8 @@ interface CreateTopicModalProps {
     assignee?: string;
     department_id?: string;
     execution_order?: number | null;
+    hh_type?: string | null;
+    hh_value?: number | null;
   }) => Promise<void> | void;
   isPending: boolean;
 }
@@ -67,6 +69,8 @@ export function CreateTopicModal({ open, onOpenChange, allTags, assignees, depar
   const [notes, setNotes] = useState('');
   const [isOngoing, setIsOngoing] = useState(false);
   const [executionOrder, setExecutionOrder] = useState<number | null>(null);
+  const [hhType, setHhType] = useState<string | null>(null);
+  const [hhValue, setHhValue] = useState<number | null>(null);
 
   const reset = () => {
     setTitle('');
@@ -86,6 +90,8 @@ export function CreateTopicModal({ open, onOpenChange, allTags, assignees, depar
     setNotes('');
     setIsOngoing(false);
     setExecutionOrder(null);
+    setHhType(null);
+    setHhValue(null);
   };
 
   const handleAddSubtask = () => {
@@ -117,6 +123,8 @@ export function CreateTopicModal({ open, onOpenChange, allTags, assignees, depar
       assignee: status === 'seguimiento' ? assignee.trim() : undefined,
       department_id: departmentId && departmentId !== 'none' ? departmentId : undefined,
       execution_order: executionOrder,
+      hh_type: hhType,
+      hh_value: hhValue,
     });
     reset();
   };
@@ -226,10 +234,44 @@ export function CreateTopicModal({ open, onOpenChange, allTags, assignees, depar
             </div>
           </div>
 
-          {/* Continuo toggle */}
-          <div className="flex items-center gap-2.5 px-3 py-2 rounded-md border border-border bg-muted/30">
-            <Switch id="is-ongoing" checked={isOngoing} onCheckedChange={(v) => { setIsOngoing(v); if (v) setDueDate(undefined); }} />
-            <Label htmlFor="is-ongoing" className="text-xs font-medium cursor-pointer">Continuo (sin fecha fin)</Label>
+          {/* Continuo toggle + HH */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-2.5 px-3 py-2 rounded-md border border-border bg-muted/30 flex-1 min-w-[200px]">
+              <Switch id="is-ongoing" checked={isOngoing} onCheckedChange={(v) => { setIsOngoing(v); if (v) setDueDate(undefined); }} />
+              <Label htmlFor="is-ongoing" className="text-xs font-medium cursor-pointer">Continuo (sin fecha fin)</Label>
+            </div>
+          </div>
+
+          {/* Horas Hombre */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Horas Hombre (HH)</label>
+            <div className="flex items-center gap-2">
+              <Select value={hhType || 'none'} onValueChange={(v) => setHhType(v === 'none' ? null : v)}>
+                <SelectTrigger className="h-8 text-xs w-28"><SelectValue placeholder="Tipo" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sin HH</SelectItem>
+                  <SelectItem value="diaria">Diaria</SelectItem>
+                  <SelectItem value="semanal">Semanal</SelectItem>
+                  <SelectItem value="total">Total</SelectItem>
+                </SelectContent>
+              </Select>
+              {hhType && (
+                <Input
+                  type="number"
+                  min={0}
+                  step={0.5}
+                  placeholder="Horas"
+                  value={hhValue ?? ''}
+                  onChange={(e) => setHhValue(e.target.value ? parseFloat(e.target.value) : null)}
+                  className="h-8 text-xs w-20"
+                />
+              )}
+              {hhType && hhValue && (
+                <span className="text-[10px] text-muted-foreground">
+                  {hhType === 'diaria' ? `≈ ${(hhValue * 5).toFixed(1)}h/sem` : hhType === 'semanal' ? `${hhValue}h/sem` : `${hhValue}h total`}
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Responsable (only for seguimiento) */}
