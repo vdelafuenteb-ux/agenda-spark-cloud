@@ -140,19 +140,26 @@ export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false,
           )}
 
           {/* Date */}
-          <span
-            className={cn(
-              'flex items-center gap-1 text-[10px] shrink-0',
-              isOverdue ? 'text-destructive font-medium' : 'text-muted-foreground'
-            )}
-          >
-            <CalendarIcon className="h-3 w-3" />
-            {subtask.due_date ? (
-              formatStoredDate(subtask.due_date, 'dd MMM', { locale: es })
-            ) : (
-              <span>Sin fecha</span>
-            )}
-          </span>
+          {subtask.completed && subtask.completed_at ? (
+            <span className="flex items-center gap-1 text-[10px] shrink-0 text-emerald-600 font-medium">
+              <Check className="h-3 w-3" />
+              {formatStoredDate(subtask.completed_at.split('T')[0], 'dd MMM', { locale: es })}
+            </span>
+          ) : (
+            <span
+              className={cn(
+                'flex items-center gap-1 text-[10px] shrink-0',
+                isOverdue ? 'text-destructive font-medium' : 'text-muted-foreground'
+              )}
+            >
+              <CalendarIcon className="h-3 w-3" />
+              {subtask.due_date ? (
+                formatStoredDate(subtask.due_date, 'dd MMM', { locale: es })
+              ) : (
+                <span>Sin fecha</span>
+              )}
+            </span>
+          )}
 
           <button
             type="button"
