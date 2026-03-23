@@ -304,9 +304,7 @@ export function generateReportPdf(opts: PdfOptions) {
 
   y += kpiH + 5;
 
-  // ==========================================
-  // CUMPLIMIENTO DE CIERRE (Page 1)
-  // ==========================================
+  // Keep compliance calc for narrative text
   const closedWithDue = completedTopics.filter(t => t.due_date && t.closed_at);
   const closedOnTime = closedWithDue.filter(t => {
     const closed = new Date(t.closed_at!);
@@ -316,67 +314,7 @@ export function generateReportPdf(opts: PdfOptions) {
     due.setHours(0, 0, 0, 0);
     return closed <= due;
   }).length;
-  const closedLate = closedWithDue.length - closedOnTime;
   const compliancePct = closedWithDue.length > 0 ? Math.round((closedOnTime / closedWithDue.length) * 100) : 100;
-
-  if (closedWithDue.length > 0) {
-    // Compliance bar
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(...SLATE_800);
-    doc.text('Cumplimiento de Cierre', margin, y);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(...SLATE_500);
-    doc.text(`${closedOnTime} a tiempo  /  ${closedLate} con atraso`, margin + 42, y);
-
-    y += 3;
-    const barW = contentW * 0.5;
-    const barH = 4;
-    // Background bar
-    doc.setFillColor(...SLATE_200);
-    doc.roundedRect(margin, y, barW, barH, 1.5, 1.5, 'F');
-    // Fill bar
-    const fillW = barW * (compliancePct / 100);
-    if (fillW > 0) {
-      doc.setFillColor(...(compliancePct >= 80 ? GREEN : compliancePct >= 50 ? AMBER : RED));
-      doc.roundedRect(margin, y, fillW, barH, 1.5, 1.5, 'F');
-    }
-    // Percentage label
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(...SLATE_800);
-    doc.text(`${compliancePct}%`, margin + barW + 3, y + 3.2);
-
-    y += barH + 5;
-  }
-
-  // ==========================================
-  // LOGROS DEL PERIODO - Compact (Page 1)
-  // ==========================================
-  if (includeCompleted && completedTopics.length > 0) {
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(...SLATE_800);
-    doc.text('Logros del Periodo', margin, y);
-    y += 4;
-
-    doc.setFontSize(7);
-    doc.setFont('helvetica', 'normal');
-    for (const t of completedTopics) {
-      y = checkPageBreak(doc, y, 5, margin);
-      const closeDateStr = t.closed_at
-        ? format(new Date(t.closed_at), 'dd MMM yyyy', { locale: es })
-        : t.updated_at ? format(new Date(t.updated_at), 'dd MMM yyyy', { locale: es }) : '';
-      doc.setTextColor(...GREEN);
-      doc.text('✓', margin, y);
-      doc.setTextColor(...SLATE_700);
-      const line = `${t.title}  —  ${closeDateStr}`;
-      const truncated = line.length > 90 ? line.substring(0, 87) + '...' : line;
-      doc.text(truncated, margin + 4, y);
-      y += 3.5;
-    }
-    y += 2;
-  }
 
   // ==========================================
   // ALERTAS DE ATRASO - Compact (Page 1)
