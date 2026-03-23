@@ -134,6 +134,7 @@ const Index = () => {
         status: data.status,
         start_date: data.start_date,
         due_date: data.due_date,
+        is_ongoing: (data as any).is_ongoing ?? false,
         assignee: data.assignee || null,
         department_id: (data as Record<string, unknown>).department_id as string | null || null,
         user_id: user!.id,
