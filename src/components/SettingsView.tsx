@@ -112,7 +112,7 @@ export function SettingsView({ tags, assignees, departments, topics, onDeleteTag
 
   const handleSaveAssignee = (id: string) => {
     if (!editingAssigneeName.trim()) return;
-    onUpdateAssignee(id, { name: editingAssigneeName.trim(), email: editingAssigneeEmail.trim() || null });
+    onUpdateAssignee(id, { name: editingAssigneeName.trim(), email: editingAssigneeEmail.trim() || null, weekly_capacity: editingAssigneeCapacity });
     setEditingAssigneeId(null);
     toast.success('Responsable actualizado');
   };
