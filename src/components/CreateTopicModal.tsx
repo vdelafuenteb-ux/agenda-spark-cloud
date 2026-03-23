@@ -129,17 +129,19 @@ export function CreateTopicModal({ open, onOpenChange, allTags, assignees, depar
           <DialogDescription>Configura todos los detalles del tema antes de crearlo.</DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-5">
+          {/* Título */}
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Título</label>
             <Input placeholder="Nombre del tema..." value={title} onChange={(event) => setTitle(event.target.value)} className="h-9 text-sm" autoFocus />
           </div>
 
-          <div className="flex items-center gap-3 flex-wrap">
+          {/* Row: Prioridad + Estado + Departamento */}
+          <div className="grid grid-cols-3 gap-3">
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Prioridad</label>
               <Select value={priority} onValueChange={(value: Priority) => setPriority(value)}>
-                <SelectTrigger className="w-28 h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="alta">Alta</SelectItem>
                   <SelectItem value="media">Media</SelectItem>
@@ -147,11 +149,10 @@ export function CreateTopicModal({ open, onOpenChange, allTags, assignees, depar
                 </SelectContent>
               </Select>
             </div>
-
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Estado</label>
               <Select value={status} onValueChange={(value: Status) => setStatus(value)}>
-                <SelectTrigger className="w-32 h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="activo">Activo</SelectItem>
                   <SelectItem value="seguimiento">Seguimiento</SelectItem>
@@ -160,111 +161,10 @@ export function CreateTopicModal({ open, onOpenChange, allTags, assignees, depar
                 </SelectContent>
               </Select>
             </div>
-
-            {status === 'seguimiento' && (
-              <div className="space-y-1.5 w-full">
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Responsable *</label>
-                {assignees.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 mb-1.5">
-                    {assignees.map((a) => (
-                      <button
-                        key={a.id}
-                        type="button"
-                        onClick={() => setAssignee(a.name)}
-                        className={cn(
-                          'inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium border transition-all',
-                          assignee === a.name
-                            ? 'bg-primary text-primary-foreground border-primary'
-                            : 'bg-transparent text-foreground border-border hover:border-primary/50'
-                        )}
-                      >
-                        <User className="h-2.5 w-2.5 mr-1" />
-                        {a.name}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                <div className="flex items-center gap-2">
-                  <Input
-                    placeholder="Nuevo responsable..."
-                    value={newAssigneeName}
-                    onChange={(e) => setNewAssigneeName(e.target.value)}
-                    onKeyDown={async (e) => {
-                      if (e.key === 'Enter' && newAssigneeName.trim()) {
-                        e.preventDefault();
-                        const created = await onCreateAssignee(newAssigneeName.trim());
-                        setAssignee(created.name);
-                        setNewAssigneeName('');
-                      }
-                    }}
-                    className="h-8 text-sm"
-                  />
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-8 shrink-0"
-                    disabled={!newAssigneeName.trim()}
-                    onClick={async () => {
-                      if (!newAssigneeName.trim()) return;
-                      const created = await onCreateAssignee(newAssigneeName.trim());
-                      setAssignee(created.name);
-                      setNewAssigneeName('');
-                    }}
-                  >
-                    <Plus className="h-3 w-3" />
-                  </Button>
-                </div>
-                {assignee && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Seleccionado: <span className="font-medium text-foreground">{assignee}</span>
-                  </p>
-                )}
-              </div>
-            )}
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Fecha inicio</label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-8 text-xs gap-1">
-                    <CalendarIcon className="h-3 w-3" />
-                    {startDate ? format(startDate, 'dd MMM yyyy', { locale: es }) : 'Hoy'}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar mode="single" selected={startDate} onSelect={(d) => d && setStartDate(d)} initialFocus />
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            {!isOngoing && (
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Fecha cierre</label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className="h-8 text-xs gap-1">
-                      <CalendarIcon className="h-3 w-3" />
-                      {dueDate ? format(dueDate, 'dd MMM yyyy', { locale: es }) : 'Sin fecha'}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar mode="single" selected={dueDate} onSelect={setDueDate} initialFocus />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            )}
-
-            <div className="flex items-center gap-2 py-1">
-              <Switch id="is-ongoing" checked={isOngoing} onCheckedChange={(v) => { setIsOngoing(v); if (v) setDueDate(undefined); }} />
-              <Label htmlFor="is-ongoing" className="text-xs font-medium cursor-pointer">Continuo (sin fecha fin)</Label>
-            </div>
-
-          {/* Department selector */}
-          {departments.length > 0 && (
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Departamento</label>
-              <Select value={departmentId} onValueChange={setDepartmentId}>
-                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Sin departamento" /></SelectTrigger>
+              <Select value={departmentId || 'none'} onValueChange={setDepartmentId}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Sin depto." /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Sin departamento</SelectItem>
                   {departments.map((d) => (
@@ -273,8 +173,111 @@ export function CreateTopicModal({ open, onOpenChange, allTags, assignees, depar
                 </SelectContent>
               </Select>
             </div>
-          )}
           </div>
+
+          {/* Row: Fechas + Continuo */}
+          <div className="grid grid-cols-2 gap-3 items-end">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Fecha inicio</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5 w-full justify-start font-normal">
+                    <CalendarIcon className="h-3 w-3 text-muted-foreground" />
+                    {startDate ? format(startDate, 'dd MMM yyyy', { locale: es }) : 'Hoy'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={startDate} onSelect={(d) => d && setStartDate(d)} initialFocus />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Fecha cierre</label>
+              {isOngoing ? (
+                <div className="h-8 flex items-center text-xs text-muted-foreground italic px-2">Sin fecha (continuo)</div>
+              ) : (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5 w-full justify-start font-normal">
+                      <CalendarIcon className="h-3 w-3 text-muted-foreground" />
+                      {dueDate ? format(dueDate, 'dd MMM yyyy', { locale: es }) : 'Sin fecha'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={dueDate} onSelect={setDueDate} initialFocus />
+                  </PopoverContent>
+                </Popover>
+              )}
+            </div>
+          </div>
+
+          {/* Continuo toggle */}
+          <div className="flex items-center gap-2.5 px-3 py-2 rounded-md border border-border bg-muted/30">
+            <Switch id="is-ongoing" checked={isOngoing} onCheckedChange={(v) => { setIsOngoing(v); if (v) setDueDate(undefined); }} />
+            <Label htmlFor="is-ongoing" className="text-xs font-medium cursor-pointer">Continuo (sin fecha fin)</Label>
+          </div>
+
+          {/* Responsable (only for seguimiento) */}
+          {status === 'seguimiento' && (
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Responsable *</label>
+              {assignees.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {assignees.map((a) => (
+                    <button
+                      key={a.id}
+                      type="button"
+                      onClick={() => setAssignee(a.name)}
+                      className={cn(
+                        'inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium border transition-all',
+                        assignee === a.name
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-transparent text-foreground border-border hover:border-primary/50'
+                      )}
+                    >
+                      <User className="h-2.5 w-2.5 mr-1" />
+                      {a.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <Input
+                  placeholder="Nuevo responsable..."
+                  value={newAssigneeName}
+                  onChange={(e) => setNewAssigneeName(e.target.value)}
+                  onKeyDown={async (e) => {
+                    if (e.key === 'Enter' && newAssigneeName.trim()) {
+                      e.preventDefault();
+                      const created = await onCreateAssignee(newAssigneeName.trim());
+                      setAssignee(created.name);
+                      setNewAssigneeName('');
+                    }
+                  }}
+                  className="h-8 text-sm"
+                />
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 shrink-0"
+                  disabled={!newAssigneeName.trim()}
+                  onClick={async () => {
+                    if (!newAssigneeName.trim()) return;
+                    const created = await onCreateAssignee(newAssigneeName.trim());
+                    setAssignee(created.name);
+                    setNewAssigneeName('');
+                  }}
+                >
+                  <Plus className="h-3 w-3" />
+                </Button>
+              </div>
+              {assignee && (
+                <p className="text-xs text-muted-foreground">
+                  Seleccionado: <span className="font-medium text-foreground">{assignee}</span>
+                </p>
+              )}
+            </div>
+          )}
 
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Etiquetas</label>
