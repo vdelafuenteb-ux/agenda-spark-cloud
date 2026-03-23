@@ -106,7 +106,7 @@ export function CreateTopicModal({ open, onOpenChange, allTags, assignees, depar
       newTags: pendingNewTags,
       notes,
       assignee: status === 'seguimiento' ? assignee.trim() : undefined,
-      department_id: departmentId || undefined,
+      department_id: departmentId && departmentId !== 'none' ? departmentId : undefined,
     });
     reset();
   };
@@ -253,7 +253,7 @@ export function CreateTopicModal({ open, onOpenChange, allTags, assignees, depar
               <Select value={departmentId} onValueChange={setDepartmentId}>
                 <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Sin departamento" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Sin departamento</SelectItem>
+                  <SelectItem value="none">Sin departamento</SelectItem>
                   {departments.map((d) => (
                     <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
                   ))}
