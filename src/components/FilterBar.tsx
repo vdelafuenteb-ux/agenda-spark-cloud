@@ -1,4 +1,4 @@
-import { Search, X, User, ChevronsDownUp, ChevronsUpDown, Mail, CalendarOff } from 'lucide-react';
+import { Search, X, User, ChevronsDownUp, ChevronsUpDown, Mail, CalendarOff, Infinity } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -18,9 +18,11 @@ interface FilterBarProps {
   onBulkEmail?: () => void;
   filterNoDueDate?: boolean;
   onToggleNoDueDate?: () => void;
+  filterOngoing?: 'all' | 'ongoing' | 'not_ongoing';
+  onCycleOngoing?: () => void;
 }
 
-export function FilterBar({ searchQuery, onSearchChange, allTags, selectedTagIds, onToggleTag, assignees, selectedAssignee, onAssigneeChange, forceExpand, onToggleExpand, onBulkEmail, filterNoDueDate, onToggleNoDueDate }: FilterBarProps) {
+export function FilterBar({ searchQuery, onSearchChange, allTags, selectedTagIds, onToggleTag, assignees, selectedAssignee, onAssigneeChange, forceExpand, onToggleExpand, onBulkEmail, filterNoDueDate, onToggleNoDueDate, filterOngoing, onCycleOngoing }: FilterBarProps) {
   return (
     <div className="space-y-2">
       {/* Search input */}
@@ -61,6 +63,21 @@ export function FilterBar({ searchQuery, onSearchChange, allTags, selectedTagIds
           >
             <CalendarOff className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Sin fecha fin</span>
+          </Button>
+        )}
+
+        {/* Ongoing filter */}
+        {onCycleOngoing && (
+          <Button
+            size="sm"
+            variant={filterOngoing !== 'all' ? "default" : "outline"}
+            className="h-9 text-xs gap-1 shrink-0"
+            onClick={onCycleOngoing}
+          >
+            <Infinity className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">
+              {filterOngoing === 'ongoing' ? 'Solo continuos' : filterOngoing === 'not_ongoing' ? 'Sin continuos' : 'Continuos'}
+            </span>
           </Button>
         )}
 

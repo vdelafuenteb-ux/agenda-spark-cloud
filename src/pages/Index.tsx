@@ -52,6 +52,7 @@ const Index = () => {
   const [forceExpand, setForceExpand] = useState<boolean | null>(null);
   const [bulkEmailOpen, setBulkEmailOpen] = useState(false);
   const [filterNoDueDate, setFilterNoDueDate] = useState(false);
+  const [filterOngoing, setFilterOngoing] = useState<'all' | 'ongoing' | 'not_ongoing'>('all');
 
   const toggleTagFilter = useCallback((tagId: string) => {
     setSelectedTagIds((prev) => (prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]));
@@ -72,6 +73,8 @@ const Index = () => {
       }
       if (selectedAssignee && topic.assignee !== selectedAssignee) return false;
       if (filterNoDueDate && topic.due_date) return false;
+      if (filterOngoing === 'ongoing' && !topic.is_ongoing) return false;
+      if (filterOngoing === 'not_ongoing' && topic.is_ongoing) return false;
       return true;
     });
     const priorityOrder: Record<string, number> = { alta: 0, media: 1, baja: 2 };
@@ -278,7 +281,7 @@ const Index = () => {
                   <ReportsList onNewReport={() => setReportOpen(true)} />
                 ) : (
                   <>
-                    <Tabs value={statusTab} onValueChange={(value) => { setStatusTab(value as StatusTab); setForceExpand(null); setSearchQuery(''); setSelectedTagIds([]); setSelectedAssignee(''); setFilterNoDueDate(false); }}>
+                    <Tabs value={statusTab} onValueChange={(value) => { setStatusTab(value as StatusTab); setForceExpand(null); setSearchQuery(''); setSelectedTagIds([]); setSelectedAssignee(''); setFilterNoDueDate(false); setFilterOngoing('all'); }}>
                       <TabsList className="w-full">
                         <TabsTrigger value="activo" className="flex-1 text-[11px] sm:text-xs px-1 sm:px-3">Activos <span className="hidden sm:inline">({statusCounts.activo})</span><span className="sm:hidden ml-0.5">{statusCounts.activo}</span></TabsTrigger>
                         <TabsTrigger value="seguimiento" className="flex-1 text-[11px] sm:text-xs px-1 sm:px-3"><span className="sm:hidden">Seguim.</span><span className="hidden sm:inline">Seguimiento</span> <span className="hidden sm:inline">({statusCounts.seguimiento})</span><span className="sm:hidden ml-0.5">{statusCounts.seguimiento}</span></TabsTrigger>
@@ -301,6 +304,8 @@ const Index = () => {
                       onBulkEmail={bulkEmailAssignee ? () => setBulkEmailOpen(true) : undefined}
                       filterNoDueDate={filterNoDueDate}
                       onToggleNoDueDate={() => setFilterNoDueDate(prev => !prev)}
+                      filterOngoing={filterOngoing}
+                      onCycleOngoing={() => setFilterOngoing(prev => prev === 'all' ? 'ongoing' : prev === 'ongoing' ? 'not_ongoing' : 'all')}
                     />
 
                     {isLoading ? (
