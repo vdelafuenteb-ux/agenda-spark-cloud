@@ -14,7 +14,16 @@ export interface SubtaskEntry {
   created_at: string;
 }
 
-type SubtaskWithEntries = Subtask & { subtask_entries: SubtaskEntry[] };
+export interface SubtaskContact {
+  id: string;
+  subtask_id: string;
+  name: string;
+  email: string;
+  sort_order: number;
+  created_at: string;
+}
+
+type SubtaskWithEntries = Subtask & { subtask_entries: SubtaskEntry[]; subtask_contacts: SubtaskContact[] };
 
 export interface ProgressEntry {
   id: string;
