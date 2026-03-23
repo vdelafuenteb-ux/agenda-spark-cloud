@@ -4,7 +4,6 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Users, Clock, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { cn } from '@/lib/utils';
 import { AssigneeProfileView } from '@/components/AssigneeProfileView';
 import type { TopicWithSubtasks } from '@/hooks/useTopics';
 import type { Assignee } from '@/hooks/useAssignees';
