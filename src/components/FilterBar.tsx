@@ -25,7 +25,9 @@ interface FilterBarProps {
   onToggleShowNotOngoing?: () => void;
 }
 
-export function FilterBar({ searchQuery, onSearchChange, allTags, selectedTagIds, onToggleTag, assignees, selectedAssignee, onAssigneeChange, forceExpand, onToggleExpand, onBulkEmail, filterNoDueDate, onToggleNoDueDate, filterOngoing, onCycleOngoing }: FilterBarProps) {
+export function FilterBar({ searchQuery, onSearchChange, allTags, selectedTagIds, onToggleTag, assignees, selectedAssignee, onAssigneeChange, forceExpand, onToggleExpand, onBulkEmail, filterNoDueDate, onToggleNoDueDate, showOngoing = true, showNotOngoing = true, onToggleShowOngoing, onToggleShowNotOngoing }: FilterBarProps) {
+  const hasOngoingFilter = onToggleShowOngoing && onToggleShowNotOngoing;
+  const isFiltered = !showOngoing || !showNotOngoing;
   return (
     <div className="space-y-2">
       {/* Search input */}
