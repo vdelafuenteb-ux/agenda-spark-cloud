@@ -279,6 +279,34 @@ export function useTopics() {
     onSuccess: invalidateTopics,
   });
 
+  const addSubtaskContact = useMutation({
+    mutationFn: async ({ subtask_id, name, email }: { subtask_id: string; name: string; email: string }) => {
+      const { data, error } = await supabase.from('subtask_contacts').insert({ subtask_id, name, email } as any).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: invalidateTopics,
+  });
+
+  const updateSubtaskContact = useMutation({
+    mutationFn: async ({ id, name, email }: { id: string; name?: string; email?: string }) => {
+      const updateData: Record<string, any> = {};
+      if (name !== undefined) updateData.name = name;
+      if (email !== undefined) updateData.email = email;
+      const { error } = await supabase.from('subtask_contacts').update(updateData).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: invalidateTopics,
+  });
+
+  const deleteSubtaskContact = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('subtask_contacts').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: invalidateTopics,
+  });
+
   return {
     topics: topicsQuery.data || [],
     isLoading: topicsQuery.isLoading,
@@ -296,5 +324,8 @@ export function useTopics() {
     addSubtaskEntry,
     updateSubtaskEntry,
     deleteSubtaskEntry,
+    addSubtaskContact,
+    updateSubtaskContact,
+    deleteSubtaskContact,
   };
 }
