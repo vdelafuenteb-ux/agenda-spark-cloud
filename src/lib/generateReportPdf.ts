@@ -582,11 +582,15 @@ export function generateReportPdf(opts: PdfOptions) {
   }
 
   // ==========================================
-  // DETAILED SECTIONS (Page 2+)
+  // DETAILED SECTIONS
   // ==========================================
   if (includeCompleted && completedTopics.length > 0) {
     renderSection('Logros del Periodo — Detalle', completedTopics, 'completed', SLATE_700);
   }
+
+  // Force new page before active/paused detail
+  doc.addPage();
+  y = margin;
 
   if (activeTopics.length > 0) {
     renderSection('Temas Activos — Detalle', activeTopics, 'active', SLATE_700);
