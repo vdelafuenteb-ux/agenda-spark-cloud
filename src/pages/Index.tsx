@@ -160,6 +160,8 @@ const Index = () => {
         assignee: data.assignee || null,
         department_id: (data as Record<string, unknown>).department_id as string | null || null,
         execution_order: (data as any).execution_order ?? null,
+        hh_type: (data as any).hh_type ?? null,
+        hh_value: (data as any).hh_value ?? null,
         user_id: user!.id,
       } as any);
 
