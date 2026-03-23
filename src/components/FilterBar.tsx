@@ -71,19 +71,29 @@ export function FilterBar({ searchQuery, onSearchChange, allTags, selectedTagIds
           </Button>
         )}
 
-        {/* Ongoing filter */}
-        {onCycleOngoing && (
-          <Button
-            size="sm"
-            variant={filterOngoing !== 'all' ? "default" : "outline"}
-            className="h-9 text-xs gap-1 shrink-0"
-            onClick={onCycleOngoing}
-          >
-            <Infinity className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">
-              {filterOngoing === 'ongoing' ? 'Solo continuos' : filterOngoing === 'not_ongoing' ? 'Sin continuos' : 'Continuos'}
-            </span>
-          </Button>
+        {/* Ongoing filter dropdown */}
+        {hasOngoingFilter && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                size="sm"
+                variant={isFiltered ? "default" : "outline"}
+                className="h-9 text-xs gap-1 shrink-0"
+              >
+                <Infinity className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Continuos</span>
+                <ChevronDown className="h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuCheckboxItem checked={showOngoing} onCheckedChange={onToggleShowOngoing}>
+                Continuos
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem checked={showNotOngoing} onCheckedChange={onToggleShowNotOngoing}>
+                No continuos
+              </DropdownMenuCheckboxItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
 
         {/* Bulk email button */}
