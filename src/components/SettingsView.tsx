@@ -330,6 +330,7 @@ export function SettingsView({ tags, assignees, departments, topics, onDeleteTag
                               ) : (
                                 <span className="text-xs text-muted-foreground/50 italic">Sin correo</span>
                               )}
+                              <span className="text-[10px] text-muted-foreground ml-1 shrink-0">{a.weekly_capacity || 45}h/sem</span>
                             </div>
                             <div className="flex items-center gap-0.5">
                               <Button
