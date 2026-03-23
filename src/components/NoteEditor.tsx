@@ -482,7 +482,7 @@ export function NoteEditor({
             onUpdate(note.id, { notebook_id: newNotebookId, section_id: newNotebookId !== note.notebook_id ? null : note.section_id });
           }}
         >
-          <SelectTrigger className="h-7 w-32 text-xs">
+          <SelectTrigger className="h-7 w-24 sm:w-32 text-xs shrink-0">
             <SelectValue placeholder="Sin libreta" />
           </SelectTrigger>
           <SelectContent>
