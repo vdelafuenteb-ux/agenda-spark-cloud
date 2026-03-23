@@ -80,7 +80,7 @@ export function FilterBar({ searchQuery, onSearchChange, allTags, selectedTagIds
                 variant={isFiltered ? "default" : "outline"}
                 className="h-9 text-xs gap-1 shrink-0"
               >
-                <Infinity className="h-3.5 w-3.5" />
+                <InfinityIcon className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">Continuos</span>
                 <ChevronDown className="h-3 w-3" />
               </Button>

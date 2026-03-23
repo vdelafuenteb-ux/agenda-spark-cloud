@@ -52,7 +52,8 @@ const Index = () => {
   const [forceExpand, setForceExpand] = useState<boolean | null>(null);
   const [bulkEmailOpen, setBulkEmailOpen] = useState(false);
   const [filterNoDueDate, setFilterNoDueDate] = useState(false);
-  const [filterOngoing, setFilterOngoing] = useState<'all' | 'ongoing' | 'not_ongoing'>('all');
+  const [showOngoing, setShowOngoing] = useState(true);
+  const [showNotOngoing, setShowNotOngoing] = useState(true);
 
   const toggleTagFilter = useCallback((tagId: string) => {
     setSelectedTagIds((prev) => (prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]));
