@@ -237,20 +237,27 @@ export function CreateTopicModal({ open, onOpenChange, allTags, assignees, depar
               </Popover>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Fecha cierre</label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-8 text-xs gap-1">
-                    <CalendarIcon className="h-3 w-3" />
-                    {dueDate ? format(dueDate, 'dd MMM yyyy', { locale: es }) : 'Sin fecha'}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar mode="single" selected={dueDate} onSelect={setDueDate} initialFocus />
-                </PopoverContent>
-              </Popover>
-          </div>
+            {!isOngoing && (
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Fecha cierre</label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-8 text-xs gap-1">
+                      <CalendarIcon className="h-3 w-3" />
+                      {dueDate ? format(dueDate, 'dd MMM yyyy', { locale: es }) : 'Sin fecha'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={dueDate} onSelect={setDueDate} initialFocus />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            )}
+
+            <div className="flex items-center gap-2 py-1">
+              <Switch id="is-ongoing" checked={isOngoing} onCheckedChange={(v) => { setIsOngoing(v); if (v) setDueDate(undefined); }} />
+              <Label htmlFor="is-ongoing" className="text-xs font-medium cursor-pointer">Continuo (sin fecha fin)</Label>
+            </div>
 
           {/* Department selector */}
           {departments.length > 0 && (
