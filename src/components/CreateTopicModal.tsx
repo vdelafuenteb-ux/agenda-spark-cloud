@@ -45,6 +45,8 @@ interface CreateTopicModalProps {
     assignee?: string;
     department_id?: string;
     execution_order?: number | null;
+    hh_type?: string | null;
+    hh_value?: number | null;
   }) => Promise<void> | void;
   isPending: boolean;
 }
