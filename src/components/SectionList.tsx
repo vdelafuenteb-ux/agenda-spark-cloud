@@ -25,7 +25,7 @@ interface SectionListProps {
   onSelectNote?: (noteId: string) => void;
 }
 
-export function SectionList({ notebook, sections, notes, onBack, onSelectSection, onCreateSection, onDeleteSection, onUpdateSection, onCreateNote, onShowUnsectioned }: SectionListProps) {
+export function SectionList({ notebook, sections, notes, onBack, onSelectSection, onCreateSection, onDeleteSection, onUpdateSection, onCreateNote, onShowUnsectioned, onSelectNote }: SectionListProps) {
   const [createOpen, setCreateOpen] = useState(false);
   const [newName, setNewName] = useState('');
   const [newColor, setNewColor] = useState(COLORS[0]);
