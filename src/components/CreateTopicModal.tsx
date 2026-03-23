@@ -85,6 +85,7 @@ export function CreateTopicModal({ open, onOpenChange, allTags, assignees, depar
     setNewTagColor(TAG_COLORS[0]);
     setNotes('');
     setIsOngoing(false);
+    setExecutionOrder(null);
   };
 
   const handleAddSubtask = () => {
