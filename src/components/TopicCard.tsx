@@ -89,6 +89,7 @@ export function TopicCard({
     return false;
   });
   const [subtasksExpanded, setSubtasksExpanded] = useState(false);
+  const [completedSubtasksExpanded, setCompletedSubtasksExpanded] = useState(false);
   const [newSubtask, setNewSubtask] = useState('');
   const [newAssigneeName, setNewAssigneeName] = useState('');
   const [editingTitle, setEditingTitle] = useState(false);
@@ -616,24 +617,62 @@ export function TopicCard({
                       transition={{ duration: 0.15 }}
                       className="overflow-hidden space-y-1.5"
                     >
-                {topic.subtasks.map((subtask) => {
-                  const subtaskIsToday = highlightToday && isStoredDateToday(subtask.due_date);
-                  const subtaskIsUpcoming = highlightUpcoming && !subtask.completed && isStoredDateUpcoming(subtask.due_date, 3);
+                {(() => {
+                  const pending = topic.subtasks.filter(s => !s.completed);
+                  const completed = topic.subtasks.filter(s => s.completed);
                   return (
-                  <SubtaskRow
-                    key={subtask.id}
-                    subtask={subtask}
-                    subtaskIsToday={subtaskIsToday}
-                    subtaskIsUpcoming={subtaskIsUpcoming}
-                    onToggleSubtask={onToggleSubtask}
-                    onUpdateSubtask={onUpdateSubtask}
-                    onDeleteSubtask={onDeleteSubtask}
-                    onAddSubtaskEntry={onAddSubtaskEntry}
-                    onUpdateSubtaskEntry={onUpdateSubtaskEntry}
-                    onDeleteSubtaskEntry={onDeleteSubtaskEntry}
-                  />
+                    <>
+                      {pending.map((subtask) => {
+                        const subtaskIsToday = highlightToday && isStoredDateToday(subtask.due_date);
+                        const subtaskIsUpcoming = highlightUpcoming && isStoredDateUpcoming(subtask.due_date, 3);
+                        return (
+                          <SubtaskRow
+                            key={subtask.id}
+                            subtask={subtask}
+                            subtaskIsToday={subtaskIsToday}
+                            subtaskIsUpcoming={subtaskIsUpcoming}
+                            onToggleSubtask={onToggleSubtask}
+                            onUpdateSubtask={onUpdateSubtask}
+                            onDeleteSubtask={onDeleteSubtask}
+                            onAddSubtaskEntry={onAddSubtaskEntry}
+                            onUpdateSubtaskEntry={onUpdateSubtaskEntry}
+                            onDeleteSubtaskEntry={onDeleteSubtaskEntry}
+                          />
+                        );
+                      })}
+                      {completed.length > 0 && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => setCompletedSubtasksExpanded(!completedSubtasksExpanded)}
+                            className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors mt-2 py-1"
+                          >
+                            {completedSubtasksExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                            Terminadas ({completed.length})
+                          </button>
+                          {completedSubtasksExpanded && (
+                            <div className="space-y-1 mt-1">
+                              {completed.map((subtask) => (
+                                <SubtaskRow
+                                  key={subtask.id}
+                                  subtask={subtask}
+                                  subtaskIsToday={false}
+                                  subtaskIsUpcoming={false}
+                                  onToggleSubtask={onToggleSubtask}
+                                  onUpdateSubtask={onUpdateSubtask}
+                                  onDeleteSubtask={onDeleteSubtask}
+                                  onAddSubtaskEntry={onAddSubtaskEntry}
+                                  onUpdateSubtaskEntry={onUpdateSubtaskEntry}
+                                  onDeleteSubtaskEntry={onDeleteSubtaskEntry}
+                                />
+                              ))}
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </>
                   );
-                })}
+                })()}
                 <div className="flex items-center gap-2 mt-2">
                   <Input
                     placeholder="Nueva subtarea..."
