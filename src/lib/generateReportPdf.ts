@@ -88,17 +88,17 @@ function drawKpiBox(doc: jsPDF, x: number, y: number, w: number, h: number, valu
   doc.roundedRect(x, y, w, h, 2, 2, 'S');
 
   doc.setFillColor(...color);
-  doc.rect(x, y, w, 1.5, 'F');
+  doc.rect(x, y, w, 1, 'F');
 
-  doc.setFontSize(16);
+  doc.setFontSize(13);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...color);
-  doc.text(value, x + w / 2, y + 12, { align: 'center' });
+  doc.text(value, x + w / 2, y + 9, { align: 'center' });
 
-  doc.setFontSize(7);
+  doc.setFontSize(6);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(...SLATE_500);
-  doc.text(label, x + w / 2, y + 18, { align: 'center' });
+  doc.text(label, x + w / 2, y + 14, { align: 'center' });
 }
 
 function checkPageBreak(doc: jsPDF, y: number, needed: number, margin: number): number {
