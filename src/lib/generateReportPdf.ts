@@ -239,34 +239,34 @@ export function generateReportPdf(opts: PdfOptions) {
 
   // Title centered
   doc.setTextColor(...SLATE_800);
-  doc.setFontSize(18);
+  doc.setFontSize(20);
   doc.setFont('helvetica', 'bold');
   doc.text(`${reportTitle} T&Transit`, pageW / 2, y, { align: 'center' });
-  y += 6;
+  y += 7;
 
   // Period centered
-  doc.setFontSize(9);
+  doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(...SLATE_500);
   doc.text(`Periodo: ${periodStr}`, pageW / 2, y, { align: 'center' });
 
   if (authorName) {
-    y += 4.5;
+    y += 5.5;
     const authorText = authorRole ? `${authorName} — ${authorRole}` : authorName;
     doc.text(authorText, pageW / 2, y, { align: 'center' });
   }
 
-  y += 4.5;
+  y += 5.5;
   doc.setFontSize(7);
   doc.setTextColor(...SLATE_300);
   doc.text(`Emitido: ${emittedStr}`, pageW / 2, y, { align: 'center' });
 
   // Thin separator line
-  y += 3;
+  y += 4;
   doc.setDrawColor(...SLATE_200);
   doc.setLineWidth(0.4);
   doc.line(margin, y, pageW - margin, y);
-  y += 6;
+  y += 7;
 
   // ==========================================
   // KPIs
