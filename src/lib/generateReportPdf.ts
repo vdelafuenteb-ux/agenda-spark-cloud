@@ -322,16 +322,16 @@ export function generateReportPdf(opts: PdfOptions) {
   const overdueTopics = activeTopics.filter(t => getTrafficLight(t.due_date).label === 'Atrasado');
   if (overdueTopics.length > 0) {
     y = checkPageBreak(doc, y, 10, margin);
-    doc.setFontSize(9);
+    doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...RED);
     doc.text('Alertas de Atraso', margin, y);
-    y += 4;
+    y += 5;
 
-    doc.setFontSize(7);
+    doc.setFontSize(8.5);
     doc.setFont('helvetica', 'normal');
     for (const t of overdueTopics) {
-      y = checkPageBreak(doc, y, 5, margin);
+      y = checkPageBreak(doc, y, 6, margin);
       const due = parseStoredDate(t.due_date!);
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -340,9 +340,9 @@ export function generateReportPdf(opts: PdfOptions) {
       doc.text('⚠', margin, y);
       doc.setTextColor(...SLATE_700);
       const line = `${t.title}  —  ${t.assignee || ownerName}  —  ${daysLate} dias de atraso`;
-      const truncated = line.length > 95 ? line.substring(0, 92) + '...' : line;
-      doc.text(truncated, margin + 4, y);
-      y += 3.5;
+      const truncated = line.length > 90 ? line.substring(0, 87) + '...' : line;
+      doc.text(truncated, margin + 5, y);
+      y += 4.5;
     }
     y += 2;
   }
