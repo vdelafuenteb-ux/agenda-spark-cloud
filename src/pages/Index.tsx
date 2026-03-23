@@ -281,6 +281,8 @@ const Index = () => {
             />
           ) : filter === 'dashboard' ? (
             <DashboardView topics={topics} assignees={assignees} onUpdateTopic={(id, data) => updateTopic.mutate({ id, ...data })} />
+          ) : filter === 'equipo' ? (
+            <TeamView topics={topics} assignees={assignees} onUpdateTopic={(id, data) => updateTopic.mutate({ id, ...data })} />
           ) : filter === 'historial_correos' ? (
             <EmailHistoryView />
           ) : filter === 'checklist' ? (

@@ -276,6 +276,16 @@ export function TopicCard({
               );
             }
 
+            // HH badge
+            if ((topic as any).hh_value && (topic as any).hh_type) {
+              const hhLabel = (topic as any).hh_type === 'diaria' ? '/día' : (topic as any).hh_type === 'semanal' ? '/sem' : 'total';
+              metaParts.push(
+                <span key="hh" className="inline-flex items-center gap-0.5 text-primary font-medium">
+                  {(topic as any).hh_value}h {hhLabel}
+                </span>
+              );
+            }
+
             const hasMetaOrTags = metaParts.length > 0 || topicTags.length > 0 || (topic.status !== 'activo');
 
             if (!hasMetaOrTags && totalCount === 0) return null;

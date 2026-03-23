@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Users, Clock, AlertTriangle, ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Users, Clock, AlertTriangle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { AssigneeProfileView } from '@/components/AssigneeProfileView';
 import type { TopicWithSubtasks } from '@/hooks/useTopics';
