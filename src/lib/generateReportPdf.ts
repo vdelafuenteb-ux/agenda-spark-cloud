@@ -302,7 +302,7 @@ export function generateReportPdf(opts: PdfOptions) {
     drawKpiBox(doc, margin + i * (kpiW + 3), y, kpiW, kpiH, kpi.value, kpi.label, kpi.color as [number, number, number]);
   });
 
-  y += kpiH + 5;
+  y += kpiH + 7;
 
   // Keep compliance calc for narrative text
   const closedWithDue = completedTopics.filter(t => t.due_date && t.closed_at);
