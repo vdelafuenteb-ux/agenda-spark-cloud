@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { formatStoredDate, parseStoredDate, toStoredDate, isStoredDateOverdue } from '@/lib/date';
 import { differenceInDays } from 'date-fns';
-import { CalendarIcon, Trash2, Eye, Pencil, Check, X, User } from 'lucide-react';
+import { CalendarIcon, Trash2, Eye, Pencil, Check, X, UserPlus, Mail } from 'lucide-react';
 import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -13,9 +13,9 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { ProgressLog } from '@/components/ProgressLog';
 import { cn } from '@/lib/utils';
 import type { Database } from '@/integrations/supabase/types';
-import type { SubtaskEntry } from '@/hooks/useTopics';
+import type { SubtaskEntry, SubtaskContact } from '@/hooks/useTopics';
 
-type Subtask = Database['public']['Tables']['subtasks']['Row'] & { subtask_entries: SubtaskEntry[] };
+type Subtask = Database['public']['Tables']['subtasks']['Row'] & { subtask_entries: SubtaskEntry[]; subtask_contacts: SubtaskContact[] };
 
 interface SubtaskRowProps {
   subtask: Subtask;
@@ -27,22 +27,25 @@ interface SubtaskRowProps {
   onAddSubtaskEntry: (subtaskId: string, content: string) => void;
   onUpdateSubtaskEntry?: (id: string, content: string) => void;
   onDeleteSubtaskEntry?: (id: string) => void;
+  onAddSubtaskContact?: (subtaskId: string, name: string, email: string) => void;
+  onUpdateSubtaskContact?: (id: string, name?: string, email?: string) => void;
+  onDeleteSubtaskContact?: (id: string) => void;
 }
 
-export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false, onToggleSubtask, onUpdateSubtask, onDeleteSubtask, onAddSubtaskEntry, onUpdateSubtaskEntry, onDeleteSubtaskEntry }: SubtaskRowProps) {
+export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false, onToggleSubtask, onUpdateSubtask, onDeleteSubtask, onAddSubtaskEntry, onUpdateSubtaskEntry, onDeleteSubtaskEntry, onAddSubtaskContact, onUpdateSubtaskContact, onDeleteSubtaskContact }: SubtaskRowProps) {
   const [detailOpen, setDetailOpen] = useState(false);
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState(subtask.title);
   const [editingTitleInSheet, setEditingTitleInSheet] = useState(false);
   const [sheetTitleDraft, setSheetTitleDraft] = useState(subtask.title);
-  const [contactDraft, setContactDraft] = useState(subtask.contact || '');
-  const [responsibleDraft, setResponsibleDraft] = useState(subtask.responsible || '');
+  const [newContactName, setNewContactName] = useState('');
+  const [newContactEmail, setNewContactEmail] = useState('');
 
   const entries = subtask.subtask_entries || [];
+  const contacts = subtask.subtask_contacts || [];
   const hasEntries = entries.length > 0;
   const isOverdue = !subtask.completed && isStoredDateOverdue(subtask.due_date);
 
-  // Last activity from bitácora
   const lastEntry = hasEntries ? entries[entries.length - 1] : null;
   const lastActivityDate = lastEntry ? new Date(lastEntry.created_at) : null;
   const daysSinceActivity = lastActivityDate ? differenceInDays(new Date(), lastActivityDate) : null;
@@ -51,6 +54,14 @@ export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false,
   const saveTitle = (draft: string) => {
     if (draft.trim() && draft.trim() !== subtask.title) {
       onUpdateSubtask(subtask.id, { title: draft.trim() });
+    }
+  };
+
+  const handleAddContact = () => {
+    if ((newContactName.trim() || newContactEmail.trim()) && onAddSubtaskContact) {
+      onAddSubtaskContact(subtask.id, newContactName.trim(), newContactEmail.trim());
+      setNewContactName('');
+      setNewContactEmail('');
     }
   };
 
@@ -73,19 +84,10 @@ export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false,
                 value={titleDraft}
                 onChange={(e) => setTitleDraft(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    saveTitle(titleDraft);
-                    setEditingTitle(false);
-                  }
-                  if (e.key === 'Escape') {
-                    setTitleDraft(subtask.title);
-                    setEditingTitle(false);
-                  }
+                  if (e.key === 'Enter') { saveTitle(titleDraft); setEditingTitle(false); }
+                  if (e.key === 'Escape') { setTitleDraft(subtask.title); setEditingTitle(false); }
                 }}
-                onBlur={() => {
-                  saveTitle(titleDraft);
-                  setEditingTitle(false);
-                }}
+                onBlur={() => { saveTitle(titleDraft); setEditingTitle(false); }}
                 className="text-sm bg-transparent border-b border-primary outline-none flex-1 min-w-0"
                 autoFocus
               />
@@ -96,10 +98,7 @@ export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false,
                   isOverdue && 'text-destructive font-medium',
                   subtaskIsUpcoming && !isOverdue && 'text-yellow-700 font-medium'
                 )}
-                onDoubleClick={() => {
-                  setTitleDraft(subtask.title);
-                  setEditingTitle(true);
-                }}
+                onDoubleClick={() => { setTitleDraft(subtask.title); setEditingTitle(true); }}
                 title="Doble clic para editar"
               >{subtask.title}</span>
             )}
@@ -112,15 +111,16 @@ export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false,
             {subtaskIsUpcoming && !isOverdue && (
               <Badge className="text-[9px] px-1 py-0 bg-yellow-500 text-white border-transparent shrink-0">Próxima</Badge>
             )}
+            {contacts.length > 0 && (
+              <Badge variant="outline" className="text-[9px] px-1 py-0 shrink-0 gap-0.5">
+                <Mail className="h-2.5 w-2.5" />{contacts.length}
+              </Badge>
+            )}
           </div>
 
-          {/* Detail panel trigger */}
           <button
             type="button"
-            onClick={() => {
-              setSheetTitleDraft(subtask.title);
-              setDetailOpen(true);
-            }}
+            onClick={() => { setSheetTitleDraft(subtask.title); setDetailOpen(true); }}
             className="flex items-center gap-0.5 text-[10px] transition-colors shrink-0 rounded p-0.5 hover:bg-accent text-muted-foreground hover:text-foreground"
             title="Ver detalle completo"
           >
@@ -128,7 +128,6 @@ export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false,
             {hasEntries && <span className="text-primary font-medium">{entries.length}</span>}
           </button>
 
-          {/* Last activity indicator */}
           {lastActivityDate && !subtask.completed && (
             <span className={cn(
               'text-[10px] whitespace-nowrap shrink-0 hidden sm:inline',
@@ -139,39 +138,27 @@ export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false,
             </span>
           )}
 
-          {/* Date */}
           {subtask.completed && subtask.completed_at ? (
             <span className="flex items-center gap-1 text-[10px] shrink-0 text-emerald-600 font-medium">
               <Check className="h-3 w-3" />
               {formatStoredDate(subtask.completed_at.split('T')[0], 'dd MMM', { locale: es })}
             </span>
           ) : (
-            <span
-              className={cn(
-                'flex items-center gap-1 text-[10px] shrink-0',
-                isOverdue ? 'text-destructive font-medium' : 'text-muted-foreground'
-              )}
-            >
+            <span className={cn(
+              'flex items-center gap-1 text-[10px] shrink-0',
+              isOverdue ? 'text-destructive font-medium' : 'text-muted-foreground'
+            )}>
               <CalendarIcon className="h-3 w-3" />
-              {subtask.due_date ? (
-                formatStoredDate(subtask.due_date, 'dd MMM', { locale: es })
-              ) : (
-                <span>Sin fecha</span>
-              )}
+              {subtask.due_date ? formatStoredDate(subtask.due_date, 'dd MMM', { locale: es }) : <span>Sin fecha</span>}
             </span>
           )}
 
-          <button
-            type="button"
-            onClick={() => onDeleteSubtask(subtask.id)}
-            className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
-          >
+          <button type="button" onClick={() => onDeleteSubtask(subtask.id)} className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
             <Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" />
           </button>
         </div>
       </div>
 
-      {/* Full detail Sheet */}
       <Sheet open={detailOpen} onOpenChange={setDetailOpen}>
         <SheetContent className="w-full sm:max-w-md overflow-y-auto">
           <SheetHeader className="pb-4">
@@ -188,14 +175,8 @@ export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false,
                     value={sheetTitleDraft}
                     onChange={(e) => setSheetTitleDraft(e.target.value)}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        saveTitle(sheetTitleDraft);
-                        setEditingTitleInSheet(false);
-                      }
-                      if (e.key === 'Escape') {
-                        setSheetTitleDraft(subtask.title);
-                        setEditingTitleInSheet(false);
-                      }
+                      if (e.key === 'Enter') { saveTitle(sheetTitleDraft); setEditingTitleInSheet(false); }
+                      if (e.key === 'Escape') { setSheetTitleDraft(subtask.title); setEditingTitleInSheet(false); }
                     }}
                     className="flex-1 text-sm font-medium bg-transparent border-b border-primary outline-none"
                     autoFocus
@@ -224,39 +205,25 @@ export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false,
               <div className="space-y-1">
                 <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Estado</label>
                 <div className="flex items-center gap-2">
-                  <Checkbox
-                    checked={subtask.completed}
-                    onCheckedChange={(checked) => onToggleSubtask(subtask.id, !!checked)}
-                  />
-                  <span className="text-xs">
-                    {subtask.completed ? 'Completada' : isOverdue ? 'Atrasada' : 'Pendiente'}
-                  </span>
+                  <Checkbox checked={subtask.completed} onCheckedChange={(checked) => onToggleSubtask(subtask.id, !!checked)} />
+                  <span className="text-xs">{subtask.completed ? 'Completada' : isOverdue ? 'Atrasada' : 'Pendiente'}</span>
                   {isOverdue && <Badge variant="destructive" className="text-[9px] px-1 py-0">Atrasada</Badge>}
                 </div>
               </div>
-
               <div className="space-y-1">
                 <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Vencimiento</label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="outline" size="sm" className="h-7 text-[11px] gap-1 w-full justify-start px-2">
                       <CalendarIcon className="h-3 w-3" />
-                      {subtask.due_date
-                        ? formatStoredDate(subtask.due_date, 'dd MMM yyyy', { locale: es })
-                        : 'Sin fecha'}
+                      {subtask.due_date ? formatStoredDate(subtask.due_date, 'dd MMM yyyy', { locale: es }) : 'Sin fecha'}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={parseStoredDate(subtask.due_date)}
-                      onSelect={(date) => onUpdateSubtask(subtask.id, { due_date: toStoredDate(date) })}
-                      initialFocus
-                    />
+                    <Calendar mode="single" selected={parseStoredDate(subtask.due_date)} onSelect={(date) => onUpdateSubtask(subtask.id, { due_date: toStoredDate(date) })} initialFocus />
                   </PopoverContent>
                 </Popover>
               </div>
-
               {subtask.completed && subtask.completed_at && (
                 <div className="space-y-1">
                   <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Cerrada</label>
@@ -268,44 +235,57 @@ export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false,
               )}
             </div>
 
-            {/* Contact + Responsible row */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                  <User className="h-3 w-3" /> Contacto
-                </label>
-                <Input
-                  placeholder="Ej: Juan Pérez"
-                  value={contactDraft}
-                  onChange={(e) => setContactDraft(e.target.value)}
-                  onBlur={() => {
-                    if (contactDraft !== (subtask.contact || '')) {
-                      onUpdateSubtask(subtask.id, { contact: contactDraft });
-                    }
-                  }}
-                  className="h-7 text-xs"
-                />
-              </div>
+            {/* Contacts section */}
+            <div className="space-y-2">
+              <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                <Mail className="h-3 w-3" /> Contactos de seguimiento ({contacts.length})
+              </label>
 
-              <div className="space-y-1">
-                <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                  <User className="h-3 w-3" /> Responsable
-                </label>
-                <Input
-                  placeholder="Ej: María López"
-                  value={responsibleDraft}
-                  onChange={(e) => setResponsibleDraft(e.target.value)}
-                  onBlur={() => {
-                    if (responsibleDraft !== (subtask.responsible || '')) {
-                      onUpdateSubtask(subtask.id, { responsible: responsibleDraft });
-                    }
-                  }}
-                  className="h-7 text-xs"
+              {contacts.map((contact) => (
+                <ContactRow
+                  key={contact.id}
+                  contact={contact}
+                  onUpdate={onUpdateSubtaskContact}
+                  onDelete={onDeleteSubtaskContact}
                 />
+              ))}
+
+              {/* Add new contact */}
+              <div className="flex gap-1.5 items-end">
+                <div className="flex-1 space-y-0.5">
+                  <span className="text-[10px] text-muted-foreground">Nombre</span>
+                  <Input
+                    placeholder="Ej: Juan Pérez"
+                    value={newContactName}
+                    onChange={(e) => setNewContactName(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleAddContact(); }}
+                    className="h-7 text-xs"
+                  />
+                </div>
+                <div className="flex-1 space-y-0.5">
+                  <span className="text-[10px] text-muted-foreground">Email</span>
+                  <Input
+                    placeholder="correo@ejemplo.com"
+                    value={newContactEmail}
+                    onChange={(e) => setNewContactEmail(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleAddContact(); }}
+                    className="h-7 text-xs"
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7 px-2 shrink-0"
+                  onClick={handleAddContact}
+                  disabled={!newContactName.trim() && !newContactEmail.trim()}
+                >
+                  <UserPlus className="h-3.5 w-3.5" />
+                </Button>
               </div>
             </div>
 
-            {/* Created date inline */}
+            {/* Created date */}
             <p className="text-[10px] text-muted-foreground">
               Creada: {formatStoredDate(subtask.created_at.split('T')[0], 'dd MMMM yyyy', { locale: es })}
             </p>
@@ -330,10 +310,7 @@ export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false,
                 variant="ghost"
                 size="sm"
                 className="text-xs text-destructive hover:text-destructive w-full justify-start gap-1.5"
-                onClick={() => {
-                  onDeleteSubtask(subtask.id);
-                  setDetailOpen(false);
-                }}
+                onClick={() => { onDeleteSubtask(subtask.id); setDetailOpen(false); }}
               >
                 <Trash2 className="h-3 w-3" /> Eliminar subtarea
               </Button>
@@ -342,5 +319,44 @@ export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false,
         </SheetContent>
       </Sheet>
     </>
+  );
+}
+
+function ContactRow({ contact, onUpdate, onDelete }: {
+  contact: SubtaskContact;
+  onUpdate?: (id: string, name?: string, email?: string) => void;
+  onDelete?: (id: string) => void;
+}) {
+  const [nameDraft, setNameDraft] = useState(contact.name);
+  const [emailDraft, setEmailDraft] = useState(contact.email);
+
+  return (
+    <div className="flex gap-1.5 items-center bg-accent/30 rounded-md px-2 py-1.5 group/contact">
+      <div className="flex-1 min-w-0">
+        <input
+          value={nameDraft}
+          onChange={(e) => setNameDraft(e.target.value)}
+          onBlur={() => { if (nameDraft !== contact.name && onUpdate) onUpdate(contact.id, nameDraft); }}
+          className="text-xs font-medium bg-transparent outline-none w-full truncate"
+          placeholder="Nombre"
+        />
+        <input
+          value={emailDraft}
+          onChange={(e) => setEmailDraft(e.target.value)}
+          onBlur={() => { if (emailDraft !== contact.email && onUpdate) onUpdate(contact.id, undefined, emailDraft); }}
+          className="text-[11px] text-muted-foreground bg-transparent outline-none w-full truncate"
+          placeholder="correo@ejemplo.com"
+        />
+      </div>
+      {onDelete && (
+        <button
+          type="button"
+          onClick={() => onDelete(contact.id)}
+          className="opacity-0 group-hover/contact:opacity-100 transition-opacity shrink-0"
+        >
+          <X className="h-3 w-3 text-muted-foreground hover:text-destructive" />
+        </button>
+      )}
+    </div>
   );
 }
