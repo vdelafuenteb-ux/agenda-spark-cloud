@@ -219,8 +219,8 @@ export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false,
               )}
             </div>
 
-            {/* Status + Date row */}
-            <div className="grid grid-cols-2 gap-3">
+            {/* Status + Date + Closed row */}
+            <div className={cn("grid gap-3", subtask.completed ? "grid-cols-3" : "grid-cols-2")}>
               <div className="space-y-1">
                 <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Estado</label>
                 <div className="flex items-center gap-2">
@@ -256,6 +256,16 @@ export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false,
                   </PopoverContent>
                 </Popover>
               </div>
+
+              {subtask.completed && subtask.completed_at && (
+                <div className="space-y-1">
+                  <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Cerrada</label>
+                  <div className="flex items-center gap-1 h-7 text-[11px] text-emerald-600 font-medium px-2 border rounded-md border-emerald-200 bg-emerald-50">
+                    <Check className="h-3 w-3" />
+                    {formatStoredDate(subtask.completed_at.split('T')[0], 'dd MMM yyyy', { locale: es })}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Contact + Responsible row */}
