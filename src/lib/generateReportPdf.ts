@@ -90,15 +90,15 @@ function drawKpiBox(doc: jsPDF, x: number, y: number, w: number, h: number, valu
   doc.setFillColor(...color);
   doc.rect(x, y, w, 1, 'F');
 
-  doc.setFontSize(13);
+  doc.setFontSize(15);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...color);
-  doc.text(value, x + w / 2, y + 9, { align: 'center' });
+  doc.text(value, x + w / 2, y + 10, { align: 'center' });
 
-  doc.setFontSize(6);
+  doc.setFontSize(7);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(...SLATE_500);
-  doc.text(label, x + w / 2, y + 14, { align: 'center' });
+  doc.text(label, x + w / 2, y + 16, { align: 'center' });
 }
 
 function checkPageBreak(doc: jsPDF, y: number, needed: number, margin: number): number {
@@ -239,34 +239,34 @@ export function generateReportPdf(opts: PdfOptions) {
 
   // Title centered
   doc.setTextColor(...SLATE_800);
-  doc.setFontSize(18);
+  doc.setFontSize(20);
   doc.setFont('helvetica', 'bold');
   doc.text(`${reportTitle} T&Transit`, pageW / 2, y, { align: 'center' });
-  y += 6;
+  y += 7;
 
   // Period centered
-  doc.setFontSize(9);
+  doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(...SLATE_500);
   doc.text(`Periodo: ${periodStr}`, pageW / 2, y, { align: 'center' });
 
   if (authorName) {
-    y += 4.5;
+    y += 5.5;
     const authorText = authorRole ? `${authorName} — ${authorRole}` : authorName;
     doc.text(authorText, pageW / 2, y, { align: 'center' });
   }
 
-  y += 4.5;
+  y += 5.5;
   doc.setFontSize(7);
   doc.setTextColor(...SLATE_300);
   doc.text(`Emitido: ${emittedStr}`, pageW / 2, y, { align: 'center' });
 
   // Thin separator line
-  y += 3;
+  y += 4;
   doc.setDrawColor(...SLATE_200);
   doc.setLineWidth(0.4);
   doc.line(margin, y, pageW - margin, y);
-  y += 6;
+  y += 7;
 
   // ==========================================
   // KPIs
@@ -281,14 +281,14 @@ export function generateReportPdf(opts: PdfOptions) {
   const onTrack = activeTopics.filter(t => t.due_date && getTrafficLight(t.due_date).label === 'Al dia').length;
   const noDate = activeTopics.filter(t => !t.due_date).length;
 
-  doc.setFontSize(11);
+  doc.setFontSize(13);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...SLATE_800);
   doc.text('Resumen Ejecutivo', margin, y);
-  y += 3;
+  y += 5;
 
   const kpiW = (contentW - 15) / 6;
-  const kpiH = 17;
+  const kpiH = 20;
   const kpis = [
     { value: String(topics.length), label: 'Temas Totales', color: PURPLE_700 },
     { value: String(onTrack), label: 'Al Dia', color: GREEN },
@@ -302,7 +302,7 @@ export function generateReportPdf(opts: PdfOptions) {
     drawKpiBox(doc, margin + i * (kpiW + 3), y, kpiW, kpiH, kpi.value, kpi.label, kpi.color as [number, number, number]);
   });
 
-  y += kpiH + 5;
+  y += kpiH + 7;
 
   // Keep compliance calc for narrative text
   const closedWithDue = completedTopics.filter(t => t.due_date && t.closed_at);
@@ -322,16 +322,16 @@ export function generateReportPdf(opts: PdfOptions) {
   const overdueTopics = activeTopics.filter(t => getTrafficLight(t.due_date).label === 'Atrasado');
   if (overdueTopics.length > 0) {
     y = checkPageBreak(doc, y, 10, margin);
-    doc.setFontSize(9);
+    doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...RED);
     doc.text('Alertas de Atraso', margin, y);
-    y += 4;
+    y += 5;
 
-    doc.setFontSize(7);
+    doc.setFontSize(8.5);
     doc.setFont('helvetica', 'normal');
     for (const t of overdueTopics) {
-      y = checkPageBreak(doc, y, 5, margin);
+      y = checkPageBreak(doc, y, 6, margin);
       const due = parseStoredDate(t.due_date!);
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -340,9 +340,9 @@ export function generateReportPdf(opts: PdfOptions) {
       doc.text('⚠', margin, y);
       doc.setTextColor(...SLATE_700);
       const line = `${t.title}  —  ${t.assignee || ownerName}  —  ${daysLate} dias de atraso`;
-      const truncated = line.length > 95 ? line.substring(0, 92) + '...' : line;
-      doc.text(truncated, margin + 4, y);
-      y += 3.5;
+      const truncated = line.length > 90 ? line.substring(0, 87) + '...' : line;
+      doc.text(truncated, margin + 5, y);
+      y += 4.5;
     }
     y += 2;
   }
@@ -350,8 +350,8 @@ export function generateReportPdf(opts: PdfOptions) {
   // ==========================================
   // NARRATIVA (Page 1)
   // ==========================================
-  y = checkPageBreak(doc, y, 12, margin);
-  doc.setFontSize(8);
+  y = checkPageBreak(doc, y, 14, margin);
+  doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(...SLATE_700);
   let narrative = `Durante el periodo evaluado se gestionaron ${topics.length} temas en total.`;
@@ -362,7 +362,7 @@ export function generateReportPdf(opts: PdfOptions) {
 
   const narrativeLines = doc.splitTextToSize(narrative, contentW);
   doc.text(narrativeLines, margin, y);
-  y += narrativeLines.length * 3.5 + 4;
+  y += narrativeLines.length * 4.5 + 5;
 
   // ==========================================
   // RESUMEN POR RESPONSABLE (continues on page 1)
@@ -377,18 +377,15 @@ export function generateReportPdf(opts: PdfOptions) {
     });
 
     if (assigneeMap.size > 0) {
-      doc.setFontSize(9);
+      doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...SLATE_800);
       doc.text('Resumen por Responsable', margin, y);
-      y += 3;
-
-      const tableW = 160;
-      const tableMarginL = margin + (contentW - tableW) / 2;
+      y += 5;
 
       autoTable(doc, {
         startY: y,
-        margin: { left: tableMarginL, right: pageW - tableMarginL - tableW },
+        margin: { left: margin, right: margin },
         head: [['Responsable', 'Temas', 'Activos', 'Seguim.', 'Pausados', 'Completados', 'Atrasados']],
         body: Array.from(assigneeMap.entries())
           .sort(([, a], [, b]) => b.length - a.length)
@@ -400,17 +397,17 @@ export function generateReportPdf(opts: PdfOptions) {
             const overdue = tList.filter(t => getTrafficLight(t.due_date).label === 'Atrasado').length;
             return [name, String(tList.length), String(active), String(seguimiento), String(paused), String(completed), String(overdue)];
           }),
-        styles: { fontSize: 7, cellPadding: 1.8, lineColor: SLATE_200 as any, lineWidth: 0.15, halign: 'center' },
-        headStyles: { fillColor: SLATE_700 as any, textColor: WHITE as any, fontStyle: 'bold', fontSize: 7 },
+        styles: { fontSize: 8, cellPadding: 2.5, lineColor: SLATE_200 as any, lineWidth: 0.15, halign: 'center' },
+        headStyles: { fillColor: SLATE_700 as any, textColor: WHITE as any, fontStyle: 'bold', fontSize: 8 },
         alternateRowStyles: { fillColor: SLATE_50 as any },
         columnStyles: {
-          0: { cellWidth: 38, halign: 'left' },
-          1: { cellWidth: 16 },
-          2: { cellWidth: 18 },
-          3: { cellWidth: 18 },
-          4: { cellWidth: 18 },
-          5: { cellWidth: 26 },
-          6: { cellWidth: 22 },
+          0: { cellWidth: 'auto', halign: 'left' },
+          1: { cellWidth: 20 },
+          2: { cellWidth: 22 },
+          3: { cellWidth: 22 },
+          4: { cellWidth: 22 },
+          5: { cellWidth: 28 },
+          6: { cellWidth: 24 },
         },
         didParseCell: (data) => {
           if (data.section === 'body' && data.column.index === 6) {
