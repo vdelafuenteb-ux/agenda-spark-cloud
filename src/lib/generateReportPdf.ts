@@ -350,8 +350,8 @@ export function generateReportPdf(opts: PdfOptions) {
   // ==========================================
   // NARRATIVA (Page 1)
   // ==========================================
-  y = checkPageBreak(doc, y, 12, margin);
-  doc.setFontSize(8);
+  y = checkPageBreak(doc, y, 14, margin);
+  doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(...SLATE_700);
   let narrative = `Durante el periodo evaluado se gestionaron ${topics.length} temas en total.`;
@@ -362,7 +362,7 @@ export function generateReportPdf(opts: PdfOptions) {
 
   const narrativeLines = doc.splitTextToSize(narrative, contentW);
   doc.text(narrativeLines, margin, y);
-  y += narrativeLines.length * 3.5 + 4;
+  y += narrativeLines.length * 4.5 + 5;
 
   // ==========================================
   // RESUMEN POR RESPONSABLE (continues on page 1)
