@@ -25,6 +25,8 @@ interface FilterBarProps {
   showNotOngoing?: boolean;
   onToggleShowOngoing?: () => void;
   onToggleShowNotOngoing?: () => void;
+  sortBy?: SortOption;
+  onSortChange?: (sort: SortOption) => void;
 }
 
 export function FilterBar({ searchQuery, onSearchChange, allTags, selectedTagIds, onToggleTag, assignees, selectedAssignee, onAssigneeChange, forceExpand, onToggleExpand, onBulkEmail, filterNoDueDate, onToggleNoDueDate, showOngoing = true, showNotOngoing = true, onToggleShowOngoing, onToggleShowNotOngoing }: FilterBarProps) {
