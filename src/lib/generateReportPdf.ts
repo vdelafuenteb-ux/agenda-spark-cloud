@@ -427,13 +427,7 @@ export function generateReportPdf(opts: PdfOptions) {
   y += narrativeLines.length * 3.5 + 4;
 
   // ==========================================
-  // FORCE PAGE 2 — Detail starts here
-  // ==========================================
-  doc.addPage();
-  y = margin;
-
-  // ==========================================
-  // RESUMEN POR RESPONSABLE (Page 2)
+  // RESUMEN POR RESPONSABLE (continues on page 1)
   // ==========================================
   if (includeResponsables) {
     const assigneeMap = new Map<string, TopicWithSubtasks[]>();
