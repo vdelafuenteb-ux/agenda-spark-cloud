@@ -312,6 +312,15 @@ export function SettingsView({ tags, assignees, departments, topics, onDeleteTag
                               placeholder="correo@ejemplo.com"
                               type="email"
                             />
+                            <Input
+                              type="number"
+                              min={1}
+                              value={editingAssigneeCapacity}
+                              onChange={(e) => setEditingAssigneeCapacity(parseInt(e.target.value) || 45)}
+                              className="h-7 text-sm w-16"
+                              placeholder="h/sem"
+                              title="Capacidad semanal (hrs)"
+                            />
                             <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-emerald-500" onClick={() => handleSaveAssignee(a.id)}>
                               <Check className="h-3.5 w-3.5" />
                             </Button>
