@@ -640,29 +640,15 @@ export function TopicCard({
                         );
                       })}
                       {completed.length > 0 && (
-                        <Collapsible>
-                          <CollapsibleTrigger className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors mt-2 py-1">
-                            <ChevronRight className="h-3 w-3 transition-transform data-[state=open]:hidden" />
-                            <ChevronDown className="h-3 w-3 transition-transform hidden data-[state=open]:inline" />
-                            Terminadas ({completed.length})
-                          </CollapsibleTrigger>
-                          <CollapsibleContent className="space-y-1 mt-1">
-                            {completed.map((subtask) => (
-                              <SubtaskRow
-                                key={subtask.id}
-                                subtask={subtask}
-                                subtaskIsToday={false}
-                                subtaskIsUpcoming={false}
-                                onToggleSubtask={onToggleSubtask}
-                                onUpdateSubtask={onUpdateSubtask}
-                                onDeleteSubtask={onDeleteSubtask}
-                                onAddSubtaskEntry={onAddSubtaskEntry}
-                                onUpdateSubtaskEntry={onUpdateSubtaskEntry}
-                                onDeleteSubtaskEntry={onDeleteSubtaskEntry}
-                              />
-                            ))}
-                          </CollapsibleContent>
-                        </Collapsible>
+                        <CompletedSubtasks
+                          completed={completed}
+                          onToggleSubtask={onToggleSubtask}
+                          onUpdateSubtask={onUpdateSubtask}
+                          onDeleteSubtask={onDeleteSubtask}
+                          onAddSubtaskEntry={onAddSubtaskEntry}
+                          onUpdateSubtaskEntry={onUpdateSubtaskEntry}
+                          onDeleteSubtaskEntry={onDeleteSubtaskEntry}
+                        />
                       )}
                     </>
                   );
