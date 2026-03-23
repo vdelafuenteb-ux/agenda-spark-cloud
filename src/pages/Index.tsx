@@ -83,7 +83,7 @@ const Index = () => {
       if (pinDiff !== 0) return pinDiff;
       return (priorityOrder[a.priority] ?? 2) - (priorityOrder[b.priority] ?? 2);
     });
-  }, [topics, statusTab, searchQuery, selectedTagIds, selectedAssignee, filterNoDueDate, getTagsForTopic]);
+  }, [topics, statusTab, searchQuery, selectedTagIds, selectedAssignee, filterNoDueDate, filterOngoing, getTagsForTopic]);
 
   const statusCounts = useMemo(() => {
     const counts = { activo: 0, seguimiento: 0, pausado: 0, completado: 0 };
