@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, FolderOpen, MoreHorizontal, Pencil, Trash2, StickyNote, ChevronRight } from 'lucide-react';
+import { Plus, FolderOpen, MoreHorizontal, Pencil, Trash2, StickyNote, ChevronRight, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
