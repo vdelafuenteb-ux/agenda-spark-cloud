@@ -23,9 +23,10 @@ interface NotebookGridProps {
   onUpdateNotebook: (id: string, data: { name?: string; color?: string }) => void;
   onShowAllNotes: () => void;
   onMoveNote?: (noteId: string, notebookId: string, sectionId: string | null) => void;
+  onQuickNote?: () => void;
 }
 
-export function NotebookGrid({ notebooks, sections, notes, onSelect, onSelectSection, onSelectNote, onCreateNotebook, onCreateSection, onDeleteNotebook, onUpdateNotebook, onShowAllNotes, onMoveNote }: NotebookGridProps) {
+export function NotebookGrid({ notebooks, sections, notes, onSelect, onSelectSection, onSelectNote, onCreateNotebook, onCreateSection, onDeleteNotebook, onUpdateNotebook, onShowAllNotes, onMoveNote, onQuickNote }: NotebookGridProps) {
   const [createOpen, setCreateOpen] = useState(false);
   const [newName, setNewName] = useState('');
   const [newColor, setNewColor] = useState(COLORS[0]);
@@ -105,6 +106,11 @@ export function NotebookGrid({ notebooks, sections, notes, onSelect, onSelectSec
           <p className="text-sm text-muted-foreground mt-0.5">Selecciona una libreta o arrastra notas sueltas para organizarlas</p>
         </div>
         <div className="flex gap-2">
+          {onQuickNote && (
+            <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={onQuickNote}>
+              <Plus className="h-3.5 w-3.5" /> Nota rápida
+            </Button>
+          )}
           <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={onShowAllNotes}>
             <StickyNote className="h-3.5 w-3.5" /> Todas las notas
           </Button>
