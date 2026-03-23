@@ -1,9 +1,11 @@
-import { Search, X, User, ChevronsDownUp, ChevronsUpDown, Mail, CalendarOff, Infinity as InfinityIcon, ChevronDown } from 'lucide-react';
+import { Search, X, User, ChevronsDownUp, ChevronsUpDown, Mail, CalendarOff, Infinity as InfinityIcon, ChevronDown, ArrowUpDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import type { Tag } from '@/hooks/useTags';
+
+export type SortOption = 'order' | 'priority' | 'due_date' | 'created';
 
 interface FilterBarProps {
   searchQuery: string;
