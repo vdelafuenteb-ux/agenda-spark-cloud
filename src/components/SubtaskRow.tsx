@@ -111,11 +111,6 @@ export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false,
             {subtaskIsUpcoming && !isOverdue && (
               <Badge className="text-[9px] px-1 py-0 bg-yellow-500 text-white border-transparent shrink-0">Próxima</Badge>
             )}
-            {contacts.length > 0 && (
-              <Badge variant="outline" className="text-[9px] px-1 py-0 shrink-0 gap-0.5">
-                <Mail className="h-2.5 w-2.5" />{contacts.length}
-              </Badge>
-            )}
           </div>
 
           <button
