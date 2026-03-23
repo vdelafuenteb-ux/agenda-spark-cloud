@@ -24,8 +24,8 @@ export function FilterBar({ searchQuery, onSearchChange, allTags, selectedTagIds
   return (
     <div className="space-y-2">
       {/* Search input */}
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1">
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="relative flex-1 min-w-[150px]">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input
             placeholder="Buscar temas..."
@@ -47,7 +47,7 @@ export function FilterBar({ searchQuery, onSearchChange, allTags, selectedTagIds
         {onToggleExpand && (
           <Button size="sm" variant="outline" className="h-9 text-xs gap-1 shrink-0" onClick={onToggleExpand}>
             {forceExpand ? <ChevronsDownUp className="h-3.5 w-3.5" /> : <ChevronsUpDown className="h-3.5 w-3.5" />}
-            {forceExpand ? 'Contraer' : 'Expandir'}
+            <span className="hidden sm:inline">{forceExpand ? 'Contraer' : 'Expandir'}</span>
           </Button>
         )}
 
@@ -60,7 +60,7 @@ export function FilterBar({ searchQuery, onSearchChange, allTags, selectedTagIds
             onClick={onToggleNoDueDate}
           >
             <CalendarOff className="h-3.5 w-3.5" />
-            Sin fecha fin
+            <span className="hidden sm:inline">Sin fecha fin</span>
           </Button>
         )}
 
@@ -68,7 +68,7 @@ export function FilterBar({ searchQuery, onSearchChange, allTags, selectedTagIds
         {onBulkEmail && selectedAssignee && selectedAssignee !== '_all' && selectedAssignee !== '' && (
           <Button size="sm" variant="outline" className="h-9 text-xs gap-1 shrink-0" onClick={onBulkEmail}>
             <Mail className="h-3.5 w-3.5" />
-            Correo masivo
+            <span className="hidden sm:inline">Correo masivo</span>
           </Button>
         )}
       </div>

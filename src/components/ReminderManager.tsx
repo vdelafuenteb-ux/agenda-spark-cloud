@@ -86,7 +86,7 @@ export function ReminderManager({ reminders, onCreate, onDelete }: ReminderManag
         />
         <div className="flex gap-2 items-center flex-wrap [&>*]:w-full [&>*]:sm:w-auto">
           <Select value={type} onValueChange={(v) => { setType(v as RecurrenceType); setDay(v === 'monthly' ? 1 : 1); }}>
-            <SelectTrigger className="h-8 text-xs w-36">
+            <SelectTrigger className="h-8 text-xs w-full sm:w-36">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

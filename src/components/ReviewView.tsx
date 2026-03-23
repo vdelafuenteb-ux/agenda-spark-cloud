@@ -283,7 +283,7 @@ export function ReviewView({ topics, onToggleSubtask }: ReviewViewProps) {
           </Select>
         )}
         <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
-          <SelectTrigger className="w-40 h-8 text-xs gap-1">
+          <SelectTrigger className="w-full sm:w-40 h-8 text-xs gap-1">
             <SelectValue placeholder="Estado" />
           </SelectTrigger>
           <SelectContent>

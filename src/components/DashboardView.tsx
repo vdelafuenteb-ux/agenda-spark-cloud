@@ -312,7 +312,7 @@ export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardVie
                   {metrics.closedWithDates} temas analizados
                 </Badge>
               </div>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* Compliance percentage */}
                 <div className="space-y-1.5">
                   <div className="flex items-baseline gap-1">

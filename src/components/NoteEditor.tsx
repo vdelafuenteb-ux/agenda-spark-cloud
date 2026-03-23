@@ -548,7 +548,7 @@ export function NoteEditor({
       </div>
 
       {/* Formatting toolbar */}
-      <div className="flex items-center gap-0.5 px-3 py-1 border-b border-border shrink-0 flex-wrap overflow-x-auto">
+      <div className="flex items-center gap-0.5 px-3 py-1 border-b border-border shrink-0 overflow-x-auto scrollbar-none">
         <ToolbarButton icon={Undo2} label="Deshacer" onClick={handleUndo} />
         <ToolbarButton icon={Redo2} label="Rehacer" onClick={handleRedo} />
         <Separator orientation="vertical" className="h-5 mx-1" />

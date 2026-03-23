@@ -185,6 +185,17 @@ export function CalendarView({ topics }: CalendarViewProps) {
                       {format(day, 'd')}
                     </span>
                     <div className="mt-0.5 flex flex-col gap-0.5">
+                      {/* Mobile: only colored dots */}
+                      <div className="flex items-center gap-0.5 flex-wrap sm:hidden">
+                        {events.slice(0, 5).map((ev, i) => (
+                          <span key={i} className="h-1.5 w-1.5 rounded-full shrink-0" style={{ backgroundColor: ev.color }} />
+                        ))}
+                        {events.length > 5 && (
+                          <span className="text-[8px] text-muted-foreground">+{events.length - 5}</span>
+                        )}
+                      </div>
+                      {/* Desktop: full labels */}
+                      <div className="hidden sm:flex sm:flex-col sm:gap-0.5">
                       {events.slice(0, 3).map((ev, i) => {
                         const done = ev.reminderId ? isCompleted(ev.reminderId, key) : false;
                         return (
@@ -199,6 +210,7 @@ export function CalendarView({ topics }: CalendarViewProps) {
                       {events.length > 3 && (
                         <span className="text-[9px] text-muted-foreground">+{events.length - 3} más</span>
                       )}
+                      </div>
                     </div>
                   </button>
                 </PopoverTrigger>
