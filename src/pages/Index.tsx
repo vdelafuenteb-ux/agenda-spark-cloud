@@ -327,6 +327,8 @@ const Index = () => {
                       showNotOngoing={showNotOngoing}
                       onToggleShowOngoing={() => setShowOngoing(prev => !prev)}
                       onToggleShowNotOngoing={() => setShowNotOngoing(prev => !prev)}
+                      sortBy={sortBy}
+                      onSortChange={setSortBy}
                     />
 
                     {isLoading ? (
