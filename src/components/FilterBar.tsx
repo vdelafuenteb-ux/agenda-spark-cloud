@@ -18,6 +18,8 @@ interface FilterBarProps {
   onBulkEmail?: () => void;
   filterNoDueDate?: boolean;
   onToggleNoDueDate?: () => void;
+  filterOngoing?: 'all' | 'ongoing' | 'not_ongoing';
+  onCycleOngoing?: () => void;
 }
 
 export function FilterBar({ searchQuery, onSearchChange, allTags, selectedTagIds, onToggleTag, assignees, selectedAssignee, onAssigneeChange, forceExpand, onToggleExpand, onBulkEmail, filterNoDueDate, onToggleNoDueDate }: FilterBarProps) {
