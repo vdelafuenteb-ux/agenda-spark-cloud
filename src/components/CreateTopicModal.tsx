@@ -253,7 +253,7 @@ export function CreateTopicModal({ open, onOpenChange, allTags, assignees, depar
               <Select value={departmentId} onValueChange={setDepartmentId}>
                 <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Sin departamento" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Sin departamento</SelectItem>
+                  <SelectItem value="none">Sin departamento</SelectItem>
                   {departments.map((d) => (
                     <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
                   ))}
