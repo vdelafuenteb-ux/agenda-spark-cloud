@@ -1,39 +1,44 @@
 
 
-## Plan: Página 1 = Resumen Ejecutivo puro, detalle desde página 2
+## Plan: Agrandar fuentes y espaciado en la primera página del resumen ejecutivo
 
-### Concepto
-Como presidente ejecutivo, la primera página debe ser una radiografía rápida: KPIs, logros del periodo (solo nombres, sin subtareas), alertas de atraso, y cumplimiento de cierre. Todo lo demás (tablas detalladas con subtareas, responsables, etc.) arranca en página 2.
-
-### Estructura de la Página 1 (Executive Summary)
-
-1. **Header** — Logo + Título + Periodo + Autor (como está)
-2. **KPIs** — Las 6 cajas actuales (Totales, Al Día, Próximos, Atrasados, Sin Fecha, Avance %)
-3. **KPI de Cumplimiento de Cierre** — Mini caja o barra mostrando % de temas cerrados a tiempo vs con atraso
-4. **Logros del Periodo** — Lista compacta solo con nombres de temas completados (sin tabla, sin subtareas, solo bullets con nombre + fecha de cierre)
-5. **Alertas de Atraso** — Lista compacta de temas atrasados con responsable y días de atraso
-6. **Narrativa** — Párrafo resumen ejecutivo
-7. **Forzar salto de página** después de esta sección
-
-### Desde Página 2 en adelante (Detalle)
-- Tabla de Resumen por Responsable
-- Sección "Logros del Periodo" con tabla detallada (subtareas, comentarios)
-- Sección "Temas Activos" con tabla detallada
-- Sección "Temas en Pausa" con tabla detallada
+La primera página tiene contenido que se ve pequeño y no aprovecha todo el espacio disponible. Se aumentarán las fuentes y el espaciado para que ocupe la hoja completa.
 
 ### Cambios en `src/lib/generateReportPdf.ts`
 
-**Página 1 — después de KPIs actuales, agregar:**
+**1. Cumplimiento de Cierre** (líneas ~307-317)
+- Eliminar la sección visual de cumplimiento de cierre (barra de progreso) que quedó — solo mantener el cálculo para la narrativa
 
-- **Cumplimiento de cierre**: calcular temas con `closed_at` y `due_date`, mostrar % a tiempo como una mini KPI box adicional o una barra de progreso dibujada
-- **Logros compactos**: lista simple tipo bullet con `doc.text()` — solo "✓ Nombre del tema — cerrado dd MMM yyyy"
-- **Alertas de atraso**: lista roja tipo "⚠ Nombre del tema — Responsable — X días de atraso"
-- **`doc.addPage()`** forzado antes de las secciones detalladas
+**2. KPI boxes** (líneas ~290-305)
+- Aumentar `kpiH` de 17 a 20
+- En `drawKpiBox`: valor de 13pt a 15pt, label de 6pt a 7pt, ajustar posiciones Y
 
-**Mover a página 2+:**
-- La tabla de "Resumen por Responsable" (actualmente en página 1)
-- Las secciones detalladas (renderSection) de Logros, Activos, Pausados
+**3. Header** (líneas ~232-269)
+- Título de 18pt a 20pt
+- Periodo de 9pt a 10pt
+- Autor de 9pt a 10pt
+- Más espaciado entre líneas (de 4.5 a 5.5)
+
+**4. Sección "Resumen Ejecutivo"** (línea ~284-288)
+- Título de 11pt a 13pt
+- Más espacio después del título
+
+**5. Alertas de Atraso** (líneas ~325-347)
+- Título de 9pt a 11pt
+- Items de 7pt a 8.5pt
+- Más espaciado entre items (3.5 → 4.5)
+
+**6. Narrativa** (líneas ~353-365)
+- De 8pt a 9pt
+- Más line height (3.5 → 4.5)
+
+**7. Tabla de Responsables** (líneas ~379-425)
+- Título de 9pt a 11pt
+- Font de tabla de 7pt a 8pt
+- cellPadding de 1.8 a 2.5
+- Head fontSize de 7pt a 8pt
+- Expandir `tableW` de 160 a usar todo `contentW`
 
 ### Archivo a modificar
-1. **`src/lib/generateReportPdf.ts`** — Reorganizar el flujo para que página 1 sea solo resumen ejecutivo compacto, y el detalle completo arranque en página 2
+- `src/lib/generateReportPdf.ts`
 
