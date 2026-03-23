@@ -281,14 +281,14 @@ export function generateReportPdf(opts: PdfOptions) {
   const onTrack = activeTopics.filter(t => t.due_date && getTrafficLight(t.due_date).label === 'Al dia').length;
   const noDate = activeTopics.filter(t => !t.due_date).length;
 
-  doc.setFontSize(11);
+  doc.setFontSize(13);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...SLATE_800);
   doc.text('Resumen Ejecutivo', margin, y);
-  y += 3;
+  y += 5;
 
   const kpiW = (contentW - 15) / 6;
-  const kpiH = 17;
+  const kpiH = 20;
   const kpis = [
     { value: String(topics.length), label: 'Temas Totales', color: PURPLE_700 },
     { value: String(onTrack), label: 'Al Dia', color: GREEN },
