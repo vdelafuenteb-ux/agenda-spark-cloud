@@ -342,6 +342,7 @@ export function SettingsView({ tags, assignees, departments, topics, onDeleteTag
                                   setEditingAssigneeId(a.id);
                                   setEditingAssigneeName(a.name);
                                   setEditingAssigneeEmail(a.email || '');
+                                  setEditingAssigneeCapacity(a.weekly_capacity || 45);
                                 }}
                               >
                                 <Pencil className="h-3.5 w-3.5" />
