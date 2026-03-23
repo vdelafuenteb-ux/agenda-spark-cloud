@@ -1,27 +1,54 @@
 
 
-## Plan: Corregir datos vacíos después de login
+## Plan: Sistema de Carga de Trabajo por Responsable
 
-### Problema
-Los hooks de datos (`useTopics`, `useTags`, `useAssignees`, etc.) ejecutan sus queries inmediatamente al montar el componente, antes de que la sesión de autenticación esté lista. Como el `staleTime` es de 5 minutos, los resultados vacíos (bloqueados por RLS) se cachean y no se vuelven a pedir después del login.
+### Resumen
+Agregar campos de Horas Hombre (HH) a cada tema y crear una vista de "Equipo" en el sidebar que muestre un resumen de carga de trabajo por responsable, incluyendo % de capacidad utilizada.
 
-### Solución
-Agregar un `useEffect` en `Index.tsx` que invalide todas las queries de React Query cuando el `user` cambie de `null` a un valor válido (es decir, después del login exitoso).
+### Cambios
 
-### Cambio en `src/pages/Index.tsx`
+**1. Base de datos: Agregar campos HH a la tabla `topics`**
+- Migración SQL con 3 columnas nuevas:
+  - `hh_type` (text, nullable): `'diaria'`, `'semanal'`, o `'total'`
+  - `hh_value` (numeric, nullable): cantidad de horas asignadas
+- También agregar a la tabla `assignees`:
+  - `weekly_capacity` (numeric, default 45): horas semanales disponibles del trabajador
 
-Agregar después de la línea 34 (`const { user, loading: authLoading } = useAuth();`):
+**2. UI en TopicCard y CreateTopicModal: Campo de HH**
+- Agregar un input numérico de "HH" con un selector de tipo (Diaria/Semanal/Total) en:
+  - `CreateTopicModal.tsx`: nuevo campo en el formulario de creación
+  - `TopicCard.tsx`: campo editable en la vista expandida
+- Se muestra como badge compacto en la vista colapsada (ej: "4h/sem")
 
-```typescript
-useEffect(() => {
-  if (user) {
-    queryClient.invalidateQueries();
-  }
-}, [user, queryClient]);
-```
+**3. Nueva vista "Equipo" en el sidebar**
+- Agregar filtro `'equipo'` al tipo `Filter` en `types/filters.ts`
+- Agregar entrada "Equipo" con icono `Users` en `AppSidebar.tsx`
+- Crear componente `TeamView.tsx` que muestre:
+  - Tarjetas por responsable con:
+    - HH semanales asignadas (normalizando diarias x5, totales prorrateadas)
+    - Capacidad semanal configurada
+    - Barra de progreso de % carga (verde <70%, amarillo 70-90%, rojo >90%)
+    - Cantidad de temas activos/seguimiento
+  - Vista resumen tipo ranking con barras de carga
+  - Click en responsable abre `AssigneeProfileView` existente
+- En `SettingsView.tsx` (sección responsables): agregar campo editable de "Capacidad semanal (hrs)" por responsable
 
-Esto forzará que todas las queries se vuelvan a ejecutar con la sesión autenticada después del login.
+**4. Conectar en Index.tsx**
+- Renderizar `TeamView` cuando `filter === 'equipo'`
+- Pasar topics y assignees como props
 
-### Archivo a modificar
-- `src/pages/Index.tsx` (agregar 1 import + 1 useEffect)
+### Lógica de normalización de HH
+- Diaria → semanal: valor x 5
+- Semanal → tal cual
+- Total → se divide entre semanas restantes hasta due_date (o se muestra como "total" sin normalizar si no hay fecha)
+
+### Archivos a modificar
+- `supabase/migrations/` — nueva migración (3 columnas)
+- `src/types/filters.ts` — agregar `'equipo'`
+- `src/components/AppSidebar.tsx` — nueva entrada sidebar
+- `src/components/CreateTopicModal.tsx` — campos HH
+- `src/components/TopicCard.tsx` — campos HH editables + badge
+- `src/components/SettingsView.tsx` — capacidad semanal por responsable
+- `src/pages/Index.tsx` — renderizar TeamView
+- **Nuevo:** `src/components/TeamView.tsx` — vista principal de equipo
 
