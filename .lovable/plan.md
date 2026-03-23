@@ -1,47 +1,39 @@
 
 
-## Plan: Garantizar cierre automático de subtareas con trigger de base de datos
+## Plan: Página 1 = Resumen Ejecutivo puro, detalle desde página 2
 
-### Diagnóstico
-La base de datos ya tiene todas las subtareas de temas cerrados marcadas como completadas. Lo que ves puede ser caché del navegador. Sin embargo, la lógica actual depende solo del frontend (Index.tsx línea 324-328), lo que significa que si alguien cierra un tema desde otro lugar o si el frontend falla, las subtareas podrían quedar abiertas.
+### Concepto
+Como presidente ejecutivo, la primera página debe ser una radiografía rápida: KPIs, logros del periodo (solo nombres, sin subtareas), alertas de atraso, y cumplimiento de cierre. Todo lo demás (tablas detalladas con subtareas, responsables, etc.) arranca en página 2.
 
-### Solución: Trigger en base de datos (a prueba de fallos)
+### Estructura de la Página 1 (Executive Summary)
 
-**1. Migración SQL** — Crear un trigger `on UPDATE` en `topics` que cuando `status` cambie a `'completado'`, automáticamente marque todas las subtareas pendientes como completadas:
+1. **Header** — Logo + Título + Periodo + Autor (como está)
+2. **KPIs** — Las 6 cajas actuales (Totales, Al Día, Próximos, Atrasados, Sin Fecha, Avance %)
+3. **KPI de Cumplimiento de Cierre** — Mini caja o barra mostrando % de temas cerrados a tiempo vs con atraso
+4. **Logros del Periodo** — Lista compacta solo con nombres de temas completados (sin tabla, sin subtareas, solo bullets con nombre + fecha de cierre)
+5. **Alertas de Atraso** — Lista compacta de temas atrasados con responsable y días de atraso
+6. **Narrativa** — Párrafo resumen ejecutivo
+7. **Forzar salto de página** después de esta sección
 
-```sql
-CREATE OR REPLACE FUNCTION public.auto_complete_subtasks_on_topic_close()
-RETURNS trigger AS $$
-BEGIN
-  IF NEW.status = 'completado' AND (OLD.status IS DISTINCT FROM 'completado') THEN
-    UPDATE public.subtasks 
-    SET completed = true, completed_at = now() 
-    WHERE topic_id = NEW.id AND completed = false;
-  END IF;
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+### Desde Página 2 en adelante (Detalle)
+- Tabla de Resumen por Responsable
+- Sección "Logros del Periodo" con tabla detallada (subtareas, comentarios)
+- Sección "Temas Activos" con tabla detallada
+- Sección "Temas en Pausa" con tabla detallada
 
-CREATE TRIGGER trg_auto_complete_subtasks
-AFTER UPDATE ON public.topics
-FOR EACH ROW
-EXECUTE FUNCTION public.auto_complete_subtasks_on_topic_close();
-```
+### Cambios en `src/lib/generateReportPdf.ts`
 
-**2. Re-ejecutar fix de datos existentes** — Por seguridad, incluir en la misma migración:
-```sql
-UPDATE public.subtasks SET completed = true, completed_at = now()
-WHERE topic_id IN (SELECT id FROM public.topics WHERE status = 'completado')
-AND completed = false;
-```
+**Página 1 — después de KPIs actuales, agregar:**
 
-**3. Mantener lógica frontend** — El código en `Index.tsx` (líneas 324-328) se mantiene para actualización optimista inmediata en la UI, pero el trigger garantiza consistencia a nivel de base de datos.
+- **Cumplimiento de cierre**: calcular temas con `closed_at` y `due_date`, mostrar % a tiempo como una mini KPI box adicional o una barra de progreso dibujada
+- **Logros compactos**: lista simple tipo bullet con `doc.text()` — solo "✓ Nombre del tema — cerrado dd MMM yyyy"
+- **Alertas de atraso**: lista roja tipo "⚠ Nombre del tema — Responsable — X días de atraso"
+- **`doc.addPage()`** forzado antes de las secciones detalladas
 
-### Archivos a modificar
-1. **Migración SQL** — Trigger + fix de datos
+**Mover a página 2+:**
+- La tabla de "Resumen por Responsable" (actualmente en página 1)
+- Las secciones detalladas (renderSection) de Logros, Activos, Pausados
 
-### Detalle técnico
-- El trigger usa `AFTER UPDATE` para no interferir con la transacción principal
-- La condición `OLD.status IS DISTINCT FROM 'completado'` evita re-ejecutar si ya estaba cerrado
-- No se modifican archivos de código, solo base de datos
+### Archivo a modificar
+1. **`src/lib/generateReportPdf.ts`** — Reorganizar el flujo para que página 1 sea solo resumen ejecutivo compacto, y el detalle completo arranque en página 2
 
