@@ -101,6 +101,29 @@ export function FilterBar({ searchQuery, onSearchChange, allTags, selectedTagIds
           </DropdownMenu>
         )}
 
+        {/* Sort dropdown */}
+        {onSortChange && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm" variant="outline" className="h-9 text-xs gap-1 shrink-0">
+                <ArrowUpDown className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">{sortLabels[sortBy]}</span>
+                <ChevronDown className="h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuLabel className="text-[10px] uppercase text-muted-foreground">Ordenar por</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuRadioGroup value={sortBy} onValueChange={(v) => onSortChange(v as SortOption)}>
+                <DropdownMenuRadioItem value="order">Orden de ejecución</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="priority">Prioridad</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="due_date">Fecha de vencimiento</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="created">Fecha de creación</DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+
         {/* Bulk email button */}
         {onBulkEmail && selectedAssignee && selectedAssignee !== '_all' && selectedAssignee !== '' && (
           <Button size="sm" variant="outline" className="h-9 text-xs gap-1 shrink-0" onClick={onBulkEmail}>
