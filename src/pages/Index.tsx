@@ -82,6 +82,10 @@ const Index = () => {
     return filtered.sort((a, b) => {
       const pinDiff = (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0);
       if (pinDiff !== 0) return pinDiff;
+      // Sort by execution_order first (null = last), then by priority
+      const orderA = (a as any).execution_order ?? Infinity;
+      const orderB = (b as any).execution_order ?? Infinity;
+      if (orderA !== orderB) return orderA - orderB;
       return (priorityOrder[a.priority] ?? 2) - (priorityOrder[b.priority] ?? 2);
     });
   }, [topics, statusTab, searchQuery, selectedTagIds, selectedAssignee, filterNoDueDate, showOngoing, showNotOngoing, getTagsForTopic]);

@@ -116,6 +116,7 @@ export function CreateTopicModal({ open, onOpenChange, allTags, assignees, depar
       notes,
       assignee: status === 'seguimiento' ? assignee.trim() : undefined,
       department_id: departmentId && departmentId !== 'none' ? departmentId : undefined,
+      execution_order: executionOrder,
     });
     reset();
   };
