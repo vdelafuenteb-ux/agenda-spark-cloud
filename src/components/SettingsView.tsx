@@ -61,6 +61,7 @@ export function SettingsView({ tags, assignees, departments, topics, onDeleteTag
   const [editingAssigneeId, setEditingAssigneeId] = useState<string | null>(null);
   const [editingAssigneeName, setEditingAssigneeName] = useState('');
   const [editingAssigneeEmail, setEditingAssigneeEmail] = useState('');
+  const [editingAssigneeCapacity, setEditingAssigneeCapacity] = useState(45);
   const [newDeptName, setNewDeptName] = useState('');
   const [editingDeptId, setEditingDeptId] = useState<string | null>(null);
   const [editingDeptName, setEditingDeptName] = useState('');
