@@ -43,10 +43,11 @@ export function useAssignees() {
   });
 
   const updateAssignee = useMutation({
-    mutationFn: async ({ id, name, email }: { id: string; name?: string; email?: string | null }) => {
+    mutationFn: async ({ id, name, email, weekly_capacity }: { id: string; name?: string; email?: string | null; weekly_capacity?: number }) => {
       const updateData: Record<string, any> = {};
       if (name !== undefined) updateData.name = name.trim();
       if (email !== undefined) updateData.email = email;
+      if (weekly_capacity !== undefined) updateData.weekly_capacity = weekly_capacity;
       const { error } = await supabase.from('assignees').update(updateData).eq('id', id);
       if (error) throw error;
     },

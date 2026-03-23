@@ -29,6 +29,7 @@ const filters: { key: Filter; label: string; icon: typeof LayoutList }[] = [
   { key: 'revision', label: 'Revisión', icon: Eye },
   { key: 'checklist', label: 'Checklist', icon: CheckSquare },
   { key: 'calendario', label: 'Calendario', icon: CalendarDays },
+  { key: 'equipo', label: 'Equipo', icon: Users },
   { key: 'notas', label: 'Notas', icon: StickyNote },
   { key: 'informes', label: 'Informes', icon: FileText },
   { key: 'historial_correos', label: 'Historial Correos', icon: MailCheck },
