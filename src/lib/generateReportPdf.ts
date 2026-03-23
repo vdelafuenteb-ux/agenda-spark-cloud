@@ -377,18 +377,15 @@ export function generateReportPdf(opts: PdfOptions) {
     });
 
     if (assigneeMap.size > 0) {
-      doc.setFontSize(9);
+      doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...SLATE_800);
       doc.text('Resumen por Responsable', margin, y);
-      y += 3;
-
-      const tableW = 160;
-      const tableMarginL = margin + (contentW - tableW) / 2;
+      y += 5;
 
       autoTable(doc, {
         startY: y,
-        margin: { left: tableMarginL, right: pageW - tableMarginL - tableW },
+        margin: { left: margin, right: margin },
         head: [['Responsable', 'Temas', 'Activos', 'Seguim.', 'Pausados', 'Completados', 'Atrasados']],
         body: Array.from(assigneeMap.entries())
           .sort(([, a], [, b]) => b.length - a.length)
@@ -400,17 +397,17 @@ export function generateReportPdf(opts: PdfOptions) {
             const overdue = tList.filter(t => getTrafficLight(t.due_date).label === 'Atrasado').length;
             return [name, String(tList.length), String(active), String(seguimiento), String(paused), String(completed), String(overdue)];
           }),
-        styles: { fontSize: 7, cellPadding: 1.8, lineColor: SLATE_200 as any, lineWidth: 0.15, halign: 'center' },
-        headStyles: { fillColor: SLATE_700 as any, textColor: WHITE as any, fontStyle: 'bold', fontSize: 7 },
+        styles: { fontSize: 8, cellPadding: 2.5, lineColor: SLATE_200 as any, lineWidth: 0.15, halign: 'center' },
+        headStyles: { fillColor: SLATE_700 as any, textColor: WHITE as any, fontStyle: 'bold', fontSize: 8 },
         alternateRowStyles: { fillColor: SLATE_50 as any },
         columnStyles: {
-          0: { cellWidth: 38, halign: 'left' },
-          1: { cellWidth: 16 },
-          2: { cellWidth: 18 },
-          3: { cellWidth: 18 },
-          4: { cellWidth: 18 },
-          5: { cellWidth: 26 },
-          6: { cellWidth: 22 },
+          0: { cellWidth: 'auto', halign: 'left' },
+          1: { cellWidth: 20 },
+          2: { cellWidth: 22 },
+          3: { cellWidth: 22 },
+          4: { cellWidth: 22 },
+          5: { cellWidth: 28 },
+          6: { cellWidth: 24 },
         },
         didParseCell: (data) => {
           if (data.section === 'body' && data.column.index === 6) {
