@@ -467,7 +467,7 @@ export function NoteEditor({
   return (
     <div className="flex flex-col h-full w-full">
       {/* Top bar */}
-      <div className="flex items-center gap-2 px-3 py-1.5 border-b border-border shrink-0">
+      <div className="flex items-center gap-2 px-3 py-1.5 border-b border-border shrink-0 overflow-x-auto">
         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onBack}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
@@ -482,7 +482,7 @@ export function NoteEditor({
             onUpdate(note.id, { notebook_id: newNotebookId, section_id: newNotebookId !== note.notebook_id ? null : note.section_id });
           }}
         >
-          <SelectTrigger className="h-7 w-32 text-xs">
+          <SelectTrigger className="h-7 w-24 sm:w-32 text-xs shrink-0">
             <SelectValue placeholder="Sin libreta" />
           </SelectTrigger>
           <SelectContent>
@@ -500,7 +500,7 @@ export function NoteEditor({
               value={note.section_id ?? '__none__'}
               onValueChange={(v) => onUpdate(note.id, { section_id: v === '__none__' ? null : v })}
             >
-              <SelectTrigger className="h-7 w-32 text-xs">
+              <SelectTrigger className="h-7 w-24 sm:w-32 text-xs shrink-0">
                 <SelectValue placeholder="Sin tema" />
               </SelectTrigger>
               <SelectContent>
@@ -548,7 +548,7 @@ export function NoteEditor({
       </div>
 
       {/* Formatting toolbar */}
-      <div className="flex items-center gap-0.5 px-3 py-1 border-b border-border shrink-0 flex-wrap overflow-x-auto">
+      <div className="flex items-center gap-0.5 px-3 py-1 border-b border-border shrink-0 overflow-x-auto scrollbar-none">
         <ToolbarButton icon={Undo2} label="Deshacer" onClick={handleUndo} />
         <ToolbarButton icon={Redo2} label="Rehacer" onClick={handleRedo} />
         <Separator orientation="vertical" className="h-5 mx-1" />

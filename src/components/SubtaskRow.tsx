@@ -131,7 +131,7 @@ export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false,
           {/* Last activity indicator */}
           {lastActivityDate && !subtask.completed && (
             <span className={cn(
-              'text-[10px] whitespace-nowrap shrink-0',
+              'text-[10px] whitespace-nowrap shrink-0 hidden sm:inline',
               isStale ? 'text-destructive font-medium' : 'text-muted-foreground'
             )}>
               últ: {formatStoredDate(lastEntry!.created_at.split('T')[0], 'dd MMM', { locale: es })}
@@ -157,7 +157,7 @@ export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false,
           <button
             type="button"
             onClick={() => onDeleteSubtask(subtask.id)}
-            className="opacity-0 group-hover:opacity-100 transition-opacity"
+            className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
           >
             <Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" />
           </button>

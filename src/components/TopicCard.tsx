@@ -480,7 +480,7 @@ export function TopicCard({
                     value={topic.department_id || 'none'}
                     onValueChange={(value) => onUpdate(topic.id, { department_id: value === 'none' ? null : value })}
                   >
-                    <SelectTrigger className="w-48 h-8 text-xs"><SelectValue placeholder="Sin departamento" /></SelectTrigger>
+                    <SelectTrigger className="w-full sm:w-48 h-8 text-xs"><SelectValue placeholder="Sin departamento" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">Sin departamento</SelectItem>
                       {departments.map((d) => (
@@ -492,7 +492,7 @@ export function TopicCard({
               )}
 
               {/* Status actions */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
               {(topic.status === 'activo' || topic.status === 'seguimiento') && (
                   <>
                     {topic.status === 'activo' && (

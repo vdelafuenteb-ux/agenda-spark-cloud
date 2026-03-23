@@ -273,10 +273,10 @@ const Index = () => {
                   <>
                     <Tabs value={statusTab} onValueChange={(value) => { setStatusTab(value as StatusTab); setForceExpand(null); setSearchQuery(''); setSelectedTagIds([]); setSelectedAssignee(''); setFilterNoDueDate(false); }}>
                       <TabsList className="w-full">
-                        <TabsTrigger value="activo" className="flex-1 text-xs">Activos ({statusCounts.activo})</TabsTrigger>
-                        <TabsTrigger value="seguimiento" className="flex-1 text-xs">Seguimiento ({statusCounts.seguimiento})</TabsTrigger>
-                        <TabsTrigger value="pausado" className="flex-1 text-xs">Pausados ({statusCounts.pausado})</TabsTrigger>
-                        <TabsTrigger value="completado" className="flex-1 text-xs">Cerrados ({statusCounts.completado})</TabsTrigger>
+                        <TabsTrigger value="activo" className="flex-1 text-[11px] sm:text-xs px-1 sm:px-3">Activos <span className="hidden sm:inline">({statusCounts.activo})</span><span className="sm:hidden ml-0.5">{statusCounts.activo}</span></TabsTrigger>
+                        <TabsTrigger value="seguimiento" className="flex-1 text-[11px] sm:text-xs px-1 sm:px-3"><span className="sm:hidden">Seguim.</span><span className="hidden sm:inline">Seguimiento</span> <span className="hidden sm:inline">({statusCounts.seguimiento})</span><span className="sm:hidden ml-0.5">{statusCounts.seguimiento}</span></TabsTrigger>
+                        <TabsTrigger value="pausado" className="flex-1 text-[11px] sm:text-xs px-1 sm:px-3">Pausados <span className="hidden sm:inline">({statusCounts.pausado})</span><span className="sm:hidden ml-0.5">{statusCounts.pausado}</span></TabsTrigger>
+                        <TabsTrigger value="completado" className="flex-1 text-[11px] sm:text-xs px-1 sm:px-3">Cerrados <span className="hidden sm:inline">({statusCounts.completado})</span><span className="sm:hidden ml-0.5">{statusCounts.completado}</span></TabsTrigger>
                       </TabsList>
                     </Tabs>
 

@@ -267,10 +267,10 @@ export function ReviewView({ topics, onToggleSubtask }: ReviewViewProps) {
       </Tabs>
 
       {/* Filters */}
-      <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex items-center gap-2 flex-wrap [&>*]:w-full [&>*]:sm:w-auto">
         {assigneeNames.length > 0 && (
           <Select value={selectedAssignee || '_all'} onValueChange={(v) => setSelectedAssignee(v === '_all' ? '' : v)}>
-            <SelectTrigger className="w-44 h-8 text-xs gap-1">
+            <SelectTrigger className="w-full sm:w-44 h-8 text-xs gap-1">
               <User className="h-3 w-3 shrink-0" />
               <SelectValue placeholder="Responsable" />
             </SelectTrigger>
@@ -283,7 +283,7 @@ export function ReviewView({ topics, onToggleSubtask }: ReviewViewProps) {
           </Select>
         )}
         <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
-          <SelectTrigger className="w-40 h-8 text-xs gap-1">
+          <SelectTrigger className="w-full sm:w-40 h-8 text-xs gap-1">
             <SelectValue placeholder="Estado" />
           </SelectTrigger>
           <SelectContent>
