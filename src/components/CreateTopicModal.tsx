@@ -35,6 +35,7 @@ interface CreateTopicModalProps {
     status: Status;
     start_date: string | null;
     due_date: string | null;
+    is_ongoing: boolean;
     subtasks: string[];
     tagIds: string[];
     newTags: { name: string; color: string }[];
