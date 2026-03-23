@@ -139,13 +139,39 @@ export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false,
               {formatStoredDate(subtask.completed_at.split('T')[0], 'dd MMM', { locale: es })}
             </span>
           ) : (
-            <span className={cn(
-              'flex items-center gap-1 text-[10px] shrink-0',
-              isOverdue ? 'text-destructive font-medium' : 'text-muted-foreground'
-            )}>
-              <CalendarIcon className="h-3 w-3" />
-              {subtask.due_date ? formatStoredDate(subtask.due_date, 'dd MMM', { locale: es }) : <span>Sin fecha</span>}
-            </span>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  onClick={(e) => e.stopPropagation()}
+                  className={cn(
+                    'flex items-center gap-1 text-[10px] shrink-0 rounded px-1 py-0.5 hover:bg-accent transition-colors cursor-pointer',
+                    isOverdue ? 'text-destructive font-medium' : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  <CalendarIcon className="h-3 w-3" />
+                  {subtask.due_date ? formatStoredDate(subtask.due_date, 'dd MMM', { locale: es }) : <span>Sin fecha</span>}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end" onClick={(e) => e.stopPropagation()}>
+                <Calendar
+                  mode="single"
+                  selected={subtask.due_date ? parseStoredDate(subtask.due_date) : undefined}
+                  onSelect={(date) => {
+                    onUpdateSubtask(subtask.id, { due_date: date ? toStoredDate(date) : null });
+                  }}
+                  initialFocus
+                  className="pointer-events-auto"
+                />
+                {subtask.due_date && (
+                  <div className="p-2 border-t">
+                    <Button variant="ghost" size="sm" className="w-full text-xs text-destructive" onClick={() => onUpdateSubtask(subtask.id, { due_date: null })}>
+                      Quitar fecha
+                    </Button>
+                  </div>
+                )}
+              </PopoverContent>
+            </Popover>
           )}
 
           <button type="button" onClick={() => onDeleteSubtask(subtask.id)} className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
