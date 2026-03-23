@@ -25,6 +25,7 @@ import { ChecklistView } from '@/components/ChecklistView';
 import { CalendarView } from '@/components/CalendarView';
 import { SettingsView } from '@/components/SettingsView';
 import { EmailHistoryView } from '@/components/EmailHistoryView';
+import { TeamView } from '@/components/TeamView';
 import { toast } from 'sonner';
 
 import type { Filter, StatusTab } from '@/types/filters';
