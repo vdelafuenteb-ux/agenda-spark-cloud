@@ -22,6 +22,7 @@ interface SectionListProps {
   onUpdateSection: (id: string, data: { name?: string; color?: string }) => void;
   onCreateNote: (data: { notebook_id: string; section_id?: string | null }) => void;
   onShowUnsectioned: () => void;
+  onSelectNote?: (noteId: string) => void;
 }
 
 export function SectionList({ notebook, sections, notes, onBack, onSelectSection, onCreateSection, onDeleteSection, onUpdateSection, onCreateNote, onShowUnsectioned }: SectionListProps) {
