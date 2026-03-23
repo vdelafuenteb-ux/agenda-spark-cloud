@@ -267,7 +267,7 @@ export function ReviewView({ topics, onToggleSubtask }: ReviewViewProps) {
       </Tabs>
 
       {/* Filters */}
-      <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex items-center gap-2 flex-wrap [&>*]:w-full [&>*]:sm:w-auto">
         {assigneeNames.length > 0 && (
           <Select value={selectedAssignee || '_all'} onValueChange={(v) => setSelectedAssignee(v === '_all' ? '' : v)}>
             <SelectTrigger className="w-44 h-8 text-xs gap-1">
