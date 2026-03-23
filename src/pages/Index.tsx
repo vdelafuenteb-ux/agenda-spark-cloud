@@ -305,8 +305,10 @@ const Index = () => {
                       onBulkEmail={bulkEmailAssignee ? () => setBulkEmailOpen(true) : undefined}
                       filterNoDueDate={filterNoDueDate}
                       onToggleNoDueDate={() => setFilterNoDueDate(prev => !prev)}
-                      filterOngoing={filterOngoing}
-                      onCycleOngoing={() => setFilterOngoing(prev => prev === 'all' ? 'ongoing' : prev === 'ongoing' ? 'not_ongoing' : 'all')}
+                      showOngoing={showOngoing}
+                      showNotOngoing={showNotOngoing}
+                      onToggleShowOngoing={() => setShowOngoing(prev => !prev)}
+                      onToggleShowNotOngoing={() => setShowNotOngoing(prev => !prev)}
                     />
 
                     {isLoading ? (
