@@ -500,7 +500,7 @@ export function NoteEditor({
               value={note.section_id ?? '__none__'}
               onValueChange={(v) => onUpdate(note.id, { section_id: v === '__none__' ? null : v })}
             >
-              <SelectTrigger className="h-7 w-32 text-xs">
+              <SelectTrigger className="h-7 w-24 sm:w-32 text-xs shrink-0">
                 <SelectValue placeholder="Sin tema" />
               </SelectTrigger>
               <SelectContent>
