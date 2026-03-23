@@ -1,7 +1,8 @@
-import { Search, X, User, ChevronsDownUp, ChevronsUpDown, Mail, CalendarOff, Infinity } from 'lucide-react';
+import { Search, X, User, ChevronsDownUp, ChevronsUpDown, Mail, CalendarOff, Infinity as InfinityIcon, ChevronDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem } from '@/components/ui/dropdown-menu';
 import type { Tag } from '@/hooks/useTags';
 
 interface FilterBarProps {
@@ -18,11 +19,15 @@ interface FilterBarProps {
   onBulkEmail?: () => void;
   filterNoDueDate?: boolean;
   onToggleNoDueDate?: () => void;
-  filterOngoing?: 'all' | 'ongoing' | 'not_ongoing';
-  onCycleOngoing?: () => void;
+  showOngoing?: boolean;
+  showNotOngoing?: boolean;
+  onToggleShowOngoing?: () => void;
+  onToggleShowNotOngoing?: () => void;
 }
 
-export function FilterBar({ searchQuery, onSearchChange, allTags, selectedTagIds, onToggleTag, assignees, selectedAssignee, onAssigneeChange, forceExpand, onToggleExpand, onBulkEmail, filterNoDueDate, onToggleNoDueDate, filterOngoing, onCycleOngoing }: FilterBarProps) {
+export function FilterBar({ searchQuery, onSearchChange, allTags, selectedTagIds, onToggleTag, assignees, selectedAssignee, onAssigneeChange, forceExpand, onToggleExpand, onBulkEmail, filterNoDueDate, onToggleNoDueDate, showOngoing = true, showNotOngoing = true, onToggleShowOngoing, onToggleShowNotOngoing }: FilterBarProps) {
+  const hasOngoingFilter = onToggleShowOngoing && onToggleShowNotOngoing;
+  const isFiltered = !showOngoing || !showNotOngoing;
   return (
     <div className="space-y-2">
       {/* Search input */}
@@ -66,19 +71,29 @@ export function FilterBar({ searchQuery, onSearchChange, allTags, selectedTagIds
           </Button>
         )}
 
-        {/* Ongoing filter */}
-        {onCycleOngoing && (
-          <Button
-            size="sm"
-            variant={filterOngoing !== 'all' ? "default" : "outline"}
-            className="h-9 text-xs gap-1 shrink-0"
-            onClick={onCycleOngoing}
-          >
-            <Infinity className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">
-              {filterOngoing === 'ongoing' ? 'Solo continuos' : filterOngoing === 'not_ongoing' ? 'Sin continuos' : 'Continuos'}
-            </span>
-          </Button>
+        {/* Ongoing filter dropdown */}
+        {hasOngoingFilter && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                size="sm"
+                variant={isFiltered ? "default" : "outline"}
+                className="h-9 text-xs gap-1 shrink-0"
+              >
+                <InfinityIcon className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Continuos</span>
+                <ChevronDown className="h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuCheckboxItem checked={showOngoing} onCheckedChange={onToggleShowOngoing}>
+                Continuos
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem checked={showNotOngoing} onCheckedChange={onToggleShowNotOngoing}>
+                No continuos
+              </DropdownMenuCheckboxItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
 
         {/* Bulk email button */}
