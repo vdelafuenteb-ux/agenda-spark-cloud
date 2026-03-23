@@ -243,6 +243,7 @@ export function NotesView() {
             });
           }}
           onShowUnsectioned={handleShowUnsectioned}
+          onSelectNote={handleSelectNote}
         />
       </ScrollArea>
     );
