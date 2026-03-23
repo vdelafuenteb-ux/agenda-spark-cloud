@@ -736,6 +736,9 @@ export function TopicCard({
                             onAddSubtaskEntry={onAddSubtaskEntry}
                             onUpdateSubtaskEntry={onUpdateSubtaskEntry}
                             onDeleteSubtaskEntry={onDeleteSubtaskEntry}
+                            onAddSubtaskContact={onAddSubtaskContact}
+                            onUpdateSubtaskContact={onUpdateSubtaskContact}
+                            onDeleteSubtaskContact={onDeleteSubtaskContact}
                           />
                         );
                       })}
