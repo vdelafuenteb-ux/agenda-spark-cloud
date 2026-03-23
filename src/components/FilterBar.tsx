@@ -22,7 +22,7 @@ interface FilterBarProps {
   onCycleOngoing?: () => void;
 }
 
-export function FilterBar({ searchQuery, onSearchChange, allTags, selectedTagIds, onToggleTag, assignees, selectedAssignee, onAssigneeChange, forceExpand, onToggleExpand, onBulkEmail, filterNoDueDate, onToggleNoDueDate }: FilterBarProps) {
+export function FilterBar({ searchQuery, onSearchChange, allTags, selectedTagIds, onToggleTag, assignees, selectedAssignee, onAssigneeChange, forceExpand, onToggleExpand, onBulkEmail, filterNoDueDate, onToggleNoDueDate, filterOngoing, onCycleOngoing }: FilterBarProps) {
   return (
     <div className="space-y-2">
       {/* Search input */}
