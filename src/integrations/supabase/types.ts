@@ -134,6 +134,39 @@ export type Database = {
         }
         Relationships: []
       }
+      entry_attachments: {
+        Row: {
+          created_at: string
+          entry_id: string
+          entry_type: string
+          file_name: string
+          file_size: number
+          file_type: string
+          file_url: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          entry_id: string
+          entry_type: string
+          file_name: string
+          file_size?: number
+          file_type?: string
+          file_url: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          entry_id?: string
+          entry_type?: string
+          file_name?: string
+          file_size?: number
+          file_type?: string
+          file_url?: string
+          id?: string
+        }
+        Relationships: []
+      }
       note_sections: {
         Row: {
           color: string
@@ -707,7 +740,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      owns_entry_attachment: {
+        Args: { _entry_id: string; _entry_type: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       topic_priority: "alta" | "media" | "baja"
