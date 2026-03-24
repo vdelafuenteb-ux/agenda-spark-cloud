@@ -496,22 +496,39 @@ export function NoteEditor({
         </Select>
         {note.notebook_id && (() => {
           const nbSections = sections.filter((s) => s.notebook_id === note.notebook_id);
-          if (nbSections.length === 0) return null;
           return (
-            <Select
-              value={note.section_id ?? '__none__'}
-              onValueChange={(v) => onUpdate(note.id, { section_id: v === '__none__' ? null : v })}
-            >
-              <SelectTrigger className="h-7 w-24 sm:w-32 text-xs shrink-0">
-                <SelectValue placeholder="Sin tema" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__none__" className="text-xs">Sin tema</SelectItem>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="h-7 px-2 text-xs shrink-0 max-w-[8rem] truncate">
+                  {note.section_id ? (nbSections.find(s => s.id === note.section_id)?.name ?? 'Sin tema') : 'Sin tema'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-48 p-1" align="end">
+                <button
+                  className={`w-full text-left px-2 py-1.5 text-xs rounded hover:bg-muted ${!note.section_id ? 'bg-accent font-medium' : ''}`}
+                  onClick={() => onUpdate(note.id, { section_id: null })}
+                >
+                  Sin tema
+                </button>
                 {nbSections.map((s) => (
-                  <SelectItem key={s.id} value={s.id} className="text-xs">{s.name}</SelectItem>
+                  <button
+                    key={s.id}
+                    className={`w-full text-left px-2 py-1.5 text-xs rounded hover:bg-muted flex items-center gap-2 ${note.section_id === s.id ? 'bg-accent font-medium' : ''}`}
+                    onClick={() => onUpdate(note.id, { section_id: s.id })}
+                  >
+                    <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
+                    <span className="truncate">{s.name}</span>
+                  </button>
                 ))}
-              </SelectContent>
-            </Select>
+                {onCreateSection && note.notebook_id && (
+                  <QuickCreateSection
+                    notebookId={note.notebook_id}
+                    onCreateSection={onCreateSection}
+                    onCreated={(sectionId) => onUpdate(note.id, { section_id: sectionId })}
+                  />
+                )}
+              </PopoverContent>
+            </Popover>
           );
         })()}
         <Popover>
