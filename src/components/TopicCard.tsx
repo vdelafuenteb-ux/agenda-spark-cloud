@@ -88,6 +88,8 @@ export function TopicCard({
   onAddProgressEntry,
   onUpdateProgressEntry,
   onDeleteProgressEntry,
+  onUploadFiles,
+  onDeleteAttachment,
   onAddTag,
   onRemoveTag,
   onCreateTag,

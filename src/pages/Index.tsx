@@ -373,15 +373,19 @@ const Index = () => {
                           onToggleSubtask={(id, completed) => toggleSubtask.mutate({ id, completed })}
                           onDeleteSubtask={(id) => deleteSubtask.mutate(id)}
                           onUpdateSubtask={(id, data) => updateSubtask.mutate({ id, ...data })}
-                           onAddSubtaskEntry={(subtaskId, content) => addSubtaskEntry.mutate({ subtask_id: subtaskId, content })}
+                           onAddSubtaskEntry={async (subtaskId, content) => { const res = await addSubtaskEntry.mutateAsync({ subtask_id: subtaskId, content }); return res; }}
                            onUpdateSubtaskEntry={(id, content) => updateSubtaskEntry.mutate({ id, content })}
                            onDeleteSubtaskEntry={(id) => deleteSubtaskEntry.mutate(id)}
                            onAddSubtaskContact={(subtaskId, name, email) => addSubtaskContact.mutate({ subtask_id: subtaskId, name, email })}
                            onUpdateSubtaskContact={(id, name, email) => updateSubtaskContact.mutate({ id, name, email })}
                            onDeleteSubtaskContact={(id) => deleteSubtaskContact.mutate(id)}
-                          onAddProgressEntry={(topicId, content) => addProgressEntry.mutate({ topic_id: topicId, content })}
+                          onAddProgressEntry={async (topicId, content) => { const res = await addProgressEntry.mutateAsync({ topic_id: topicId, content }); return res; }}
                           onUpdateProgressEntry={(id, content) => updateProgressEntry.mutate({ id, content })}
                           onDeleteProgressEntry={(id) => deleteProgressEntry.mutate(id)}
+                          onUploadFiles={(entryId, files) => {
+                            files.forEach(file => uploadEntryAttachment.mutate({ entryId, entryType: 'progress', file, userId: user!.id }));
+                          }}
+                          onDeleteAttachment={(id, fileUrl) => deleteEntryAttachment.mutate({ id, fileUrl })}
                           onAddTag={(topicId, tagId) => addTopicTag.mutate({ topic_id: topicId, tag_id: tagId })}
                           onRemoveTag={(topicId, tagId) => removeTopicTag.mutate({ topic_id: topicId, tag_id: tagId })}
                           onCreateTag={(name, color) => createTag.mutateAsync({ name, color })}

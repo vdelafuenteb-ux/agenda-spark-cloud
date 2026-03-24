@@ -34,7 +34,7 @@ interface SubtaskRowProps {
   onDeleteAttachment?: (id: string, fileUrl: string) => void;
 }
 
-export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false, onToggleSubtask, onUpdateSubtask, onDeleteSubtask, onAddSubtaskEntry, onUpdateSubtaskEntry, onDeleteSubtaskEntry, onAddSubtaskContact, onUpdateSubtaskContact, onDeleteSubtaskContact }: SubtaskRowProps) {
+export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false, onToggleSubtask, onUpdateSubtask, onDeleteSubtask, onAddSubtaskEntry, onUpdateSubtaskEntry, onDeleteSubtaskEntry, onAddSubtaskContact, onUpdateSubtaskContact, onDeleteSubtaskContact, onUploadFiles, onDeleteAttachment }: SubtaskRowProps) {
   const [detailOpen, setDetailOpen] = useState(false);
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState(subtask.title);
