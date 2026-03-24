@@ -1,9 +1,9 @@
-import { useState, useMemo, Fragment } from 'react';
+import { useState, useMemo, Fragment, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Mail, CheckCircle2, Search, X, CalendarIcon, Trash2, Clock, ChevronDown, ChevronRight, FileText } from 'lucide-react';
+import { Mail, CheckCircle2, Search, X, CalendarIcon, Trash2, Clock, ChevronDown, ChevronRight, FileText, AlertTriangle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -36,6 +36,27 @@ interface EmailBatch {
   topicCount: number;
 }
 
+const DEADLINE_HOURS = 48;
+
+function getDeadlineInfo(sentAt: string, confirmed: boolean) {
+  const sentTime = new Date(sentAt).getTime();
+  const deadlineTime = sentTime + DEADLINE_HOURS * 60 * 60 * 1000;
+  const now = Date.now();
+  const diffMs = deadlineTime - now;
+  const isOverdue = diffMs <= 0 && !confirmed;
+  const totalMinutes = Math.abs(Math.floor(diffMs / 60000));
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  if (confirmed) {
+    return { label: 'Respondido', isOverdue: false, color: 'text-green-600' };
+  }
+  if (isOverdue) {
+    return { label: `−${hours}h ${minutes}m`, isOverdue: true, color: 'text-destructive' };
+  }
+  return { label: `${hours}h ${minutes}m`, isOverdue: false, color: 'text-amber-600' };
+}
+
 export function EmailHistoryView() {
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
@@ -44,6 +65,13 @@ export function EmailHistoryView() {
   const [dateTo, setDateTo] = useState<Date | undefined>();
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [expandedBatches, setExpandedBatches] = useState<Set<string>>(new Set());
+  const [, setTick] = useState(0);
+
+  // Re-render every minute to update countdown
+  useEffect(() => {
+    const interval = setInterval(() => setTick(t => t + 1), 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   const { data: emails = [], isLoading } = useQuery({
     queryKey: ['notification_emails_all'],
@@ -119,7 +147,6 @@ export function EmailHistoryView() {
     return [...new Set(emails.map(e => e.assignee_name))].sort();
   }, [emails]);
 
-  // Group emails into batches by assignee + close timestamps (within 60 seconds)
   const batches = useMemo(() => {
     const sorted = [...emails].sort((a, b) => new Date(b.sent_at).getTime() - new Date(a.sent_at).getTime());
     const groups: EmailBatch[] = [];
@@ -158,6 +185,10 @@ export function EmailHistoryView() {
       if (selectedAssignee !== 'all' && b.assignee_name !== selectedAssignee) return false;
       if (statusFilter === 'pending' && b.allConfirmed) return false;
       if (statusFilter === 'confirmed' && !b.allConfirmed) return false;
+      if (statusFilter === 'overdue') {
+        const info = getDeadlineInfo(b.sent_at, b.allConfirmed);
+        if (!info.isOverdue) return false;
+      }
       if (dateFrom && new Date(b.sent_at) < dateFrom) return false;
       if (dateTo) {
         const endOfDay = new Date(dateTo);
@@ -172,7 +203,8 @@ export function EmailHistoryView() {
     const total = filtered.length;
     const confirmed = filtered.filter(b => b.allConfirmed).length;
     const pending = total - confirmed;
-    return { total, confirmed, pending };
+    const overdue = filtered.filter(b => getDeadlineInfo(b.sent_at, b.allConfirmed).isOverdue).length;
+    return { total, confirmed, pending, overdue };
   }, [filtered]);
 
   const clearFilters = () => {
@@ -198,7 +230,7 @@ export function EmailHistoryView() {
     <div className="flex-1 overflow-auto p-3 md:p-4">
       <div className="max-w-5xl mx-auto space-y-4">
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-4 gap-3">
           <div className="rounded-lg border border-border bg-card p-3 text-center">
             <p className="text-2xl font-bold text-foreground">{stats.total}</p>
             <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Total enviados</p>
@@ -210,6 +242,12 @@ export function EmailHistoryView() {
           <div className="rounded-lg border border-border bg-card p-3 text-center">
             <p className="text-2xl font-bold text-destructive">{stats.pending}</p>
             <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Pendientes</p>
+          </div>
+          <div className="rounded-lg border border-border bg-card p-3 text-center">
+            <p className="text-2xl font-bold text-destructive">{stats.overdue}</p>
+            <p className="text-[11px] text-muted-foreground uppercase tracking-wider flex items-center justify-center gap-1">
+              <AlertTriangle className="h-3 w-3" /> Fuera de plazo
+            </p>
           </div>
         </div>
 
@@ -245,6 +283,7 @@ export function EmailHistoryView() {
               <SelectItem value="all">Todos</SelectItem>
               <SelectItem value="pending">Pendientes</SelectItem>
               <SelectItem value="confirmed">Confirmados</SelectItem>
+              <SelectItem value="overdue">Fuera de plazo</SelectItem>
             </SelectContent>
           </Select>
 
@@ -307,6 +346,7 @@ export function EmailHistoryView() {
                     <th className="text-left px-3 py-2 font-medium text-muted-foreground">Email</th>
                     <th className="text-left px-3 py-2 font-medium text-muted-foreground">Temas</th>
                     <th className="text-left px-3 py-2 font-medium text-muted-foreground">Enviado</th>
+                    <th className="text-left px-3 py-2 font-medium text-muted-foreground">Plazo 48h</th>
                     <th className="text-right px-3 py-2 font-medium text-muted-foreground"></th>
                   </tr>
                 </thead>
@@ -314,13 +354,15 @@ export function EmailHistoryView() {
                   {filtered.map(batch => {
                     const isExpanded = expandedBatches.has(batch.key);
                     const batchIds = batch.emails.map(e => e.id);
+                    const deadline = getDeadlineInfo(batch.sent_at, batch.allConfirmed);
 
                     return (
                       <Fragment key={batch.key}>
                         <tr
                           className={cn(
                             "border-b border-border last:border-0 transition-colors hover:bg-muted/30 cursor-pointer",
-                            batch.allConfirmed && "bg-green-50/50 dark:bg-green-950/10"
+                            batch.allConfirmed && "bg-green-50/50 dark:bg-green-950/10",
+                            deadline.isOverdue && "bg-red-50 dark:bg-red-950/20"
                           )}
                           onClick={() => toggleExpand(batch.key)}
                         >
@@ -358,6 +400,12 @@ export function EmailHistoryView() {
                           <td className="px-3 py-2.5 text-muted-foreground font-mono">
                             {format(new Date(batch.sent_at), "dd MMM yyyy HH:mm", { locale: es })}
                           </td>
+                          <td className="px-3 py-2.5">
+                            <span className={cn("font-mono font-medium text-[11px] inline-flex items-center gap-1", deadline.color)}>
+                              {deadline.isOverdue && <AlertTriangle className="h-3 w-3" />}
+                              {deadline.label}
+                            </span>
+                          </td>
                           <td className="px-3 py-2.5 text-right" onClick={e => e.stopPropagation()}>
                             <button
                               onClick={() => deleteBatch.mutate(batchIds)}
@@ -369,7 +417,7 @@ export function EmailHistoryView() {
                         </tr>
                         {isExpanded && (
                           <tr>
-                            <td colSpan={8} className="bg-muted/20 px-0 py-0">
+                            <td colSpan={9} className="bg-muted/20 px-0 py-0">
                               <div className="px-8 py-2 space-y-1">
                                 <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-1.5">
                                   Temas incluidos en este envío
@@ -411,13 +459,15 @@ export function EmailHistoryView() {
             {filtered.map(batch => {
               const isExpanded = expandedBatches.has(batch.key);
               const batchIds = batch.emails.map(e => e.id);
+              const deadline = getDeadlineInfo(batch.sent_at, batch.allConfirmed);
 
               return (
                 <div
                   key={batch.key}
                   className={cn(
                     "rounded-lg border border-border overflow-hidden",
-                    batch.allConfirmed && "bg-green-50/50 dark:bg-green-950/10"
+                    batch.allConfirmed && "bg-green-50/50 dark:bg-green-950/10",
+                    deadline.isOverdue && "bg-red-50 dark:bg-red-950/20"
                   )}
                 >
                   <div
@@ -437,10 +487,16 @@ export function EmailHistoryView() {
                     </div>
                     <p className="text-[11px] text-muted-foreground truncate">{batch.assignee_email}</p>
                     <div className="flex items-center justify-between mt-2">
-                      <Badge variant="secondary" className="text-[10px] gap-1">
-                        <FileText className="h-2.5 w-2.5" />
-                        {batch.topicCount} {batch.topicCount === 1 ? 'tema' : 'temas'}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className="text-[10px] gap-1">
+                          <FileText className="h-2.5 w-2.5" />
+                          {batch.topicCount} {batch.topicCount === 1 ? 'tema' : 'temas'}
+                        </Badge>
+                        <span className={cn("font-mono font-medium text-[10px] inline-flex items-center gap-0.5", deadline.color)}>
+                          {deadline.isOverdue && <AlertTriangle className="h-2.5 w-2.5" />}
+                          {deadline.label}
+                        </span>
+                      </div>
                       <span className="text-[10px] text-muted-foreground">
                         {format(new Date(batch.sent_at), "dd MMM yyyy HH:mm", { locale: es })}
                       </span>
