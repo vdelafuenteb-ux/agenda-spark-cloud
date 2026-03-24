@@ -815,7 +815,7 @@ export function TopicCard({
                 }}
                 onUpdate={onUpdateProgressEntry ? (id, content) => onUpdateProgressEntry(id, content) : undefined}
                 onDelete={onDeleteProgressEntry}
-                onUploadFiles={onUploadFiles}
+                onUploadFiles={onUploadFiles ? (entryId, files) => onUploadFiles(entryId, 'progress', files) : undefined}
                 onDeleteAttachment={onDeleteAttachment}
               />
             </div>

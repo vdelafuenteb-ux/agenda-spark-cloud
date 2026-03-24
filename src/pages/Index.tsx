@@ -382,8 +382,8 @@ const Index = () => {
                           onAddProgressEntry={async (topicId, content) => { const res = await addProgressEntry.mutateAsync({ topic_id: topicId, content }); return res; }}
                           onUpdateProgressEntry={(id, content) => updateProgressEntry.mutate({ id, content })}
                           onDeleteProgressEntry={(id) => deleteProgressEntry.mutate(id)}
-                          onUploadFiles={(entryId, files) => {
-                            files.forEach(file => uploadEntryAttachment.mutate({ entryId, entryType: 'progress', file, userId: user!.id }));
+                          onUploadFiles={(entryId, entryType, files) => {
+                            files.forEach(file => uploadEntryAttachment.mutate({ entryId, entryType, file, userId: user!.id }));
                           }}
                           onDeleteAttachment={(id, fileUrl) => deleteEntryAttachment.mutate({ id, fileUrl })}
                           onAddTag={(topicId, tagId) => addTopicTag.mutate({ topic_id: topicId, tag_id: tagId })}

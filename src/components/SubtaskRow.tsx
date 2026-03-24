@@ -326,7 +326,7 @@ export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false,
                 }}
                 onUpdate={onUpdateSubtaskEntry ? (id, content) => onUpdateSubtaskEntry(id, content) : undefined}
                 onDelete={onDeleteSubtaskEntry}
-                onUploadFiles={onUploadFiles}
+                onUploadFiles={onUploadFiles ? (entryId, files) => onUploadFiles(entryId, 'subtask', files) : undefined}
                 onDeleteAttachment={onDeleteAttachment}
                 hideTitle
               />
