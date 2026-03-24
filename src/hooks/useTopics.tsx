@@ -25,11 +25,23 @@ export interface SubtaskContact {
 
 type SubtaskWithEntries = Subtask & { subtask_entries: SubtaskEntry[]; subtask_contacts: SubtaskContact[] };
 
+export interface EntryAttachment {
+  id: string;
+  entry_id: string;
+  entry_type: 'progress' | 'subtask';
+  file_name: string;
+  file_url: string;
+  file_type: string;
+  file_size: number;
+  created_at: string;
+}
+
 export interface ProgressEntry {
   id: string;
   topic_id: string;
   content: string;
   created_at: string;
+  attachments: EntryAttachment[];
 }
 
 export type TopicWithSubtasks = Topic & { subtasks: SubtaskWithEntries[]; progress_entries: ProgressEntry[] };
