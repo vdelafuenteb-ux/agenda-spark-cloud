@@ -237,8 +237,9 @@ export function useTopics() {
 
   const addProgressEntry = useMutation({
     mutationFn: async ({ topic_id, content }: { topic_id: string; content: string }) => {
-      const { error } = await supabase.from('progress_entries').insert({ topic_id, content });
+      const { data, error } = await supabase.from('progress_entries').insert({ topic_id, content }).select('id').single();
       if (error) throw error;
+      return data.id;
     },
     onSuccess: invalidateTopics,
   });
