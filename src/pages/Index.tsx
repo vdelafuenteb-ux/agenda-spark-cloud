@@ -290,6 +290,8 @@ const Index = () => {
             <ChecklistView />
           ) : filter === 'calendario' ? (
             <CalendarView topics={topics} />
+          ) : filter === 'contactos' ? (
+            <ContactsView />
           ) : filter === 'notas' ? (
             <NotesView />
           ) : filter === 'revision' ? (
