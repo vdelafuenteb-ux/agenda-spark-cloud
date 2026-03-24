@@ -53,12 +53,13 @@ export function useTopics() {
   const topicsQuery = useQuery({
     queryKey: ['topics'],
     queryFn: async (): Promise<TopicWithSubtasks[]> => {
-      const [topicsRes, subtasksRes, entriesRes, subtaskEntriesRes, contactsRes] = await Promise.all([
+      const [topicsRes, subtasksRes, entriesRes, subtaskEntriesRes, contactsRes, attachmentsRes] = await Promise.all([
         supabase.from('topics').select('*').order('sort_order', { ascending: true }).order('created_at', { ascending: false }),
         supabase.from('subtasks').select('*').order('sort_order', { ascending: true }).order('created_at', { ascending: true }),
         supabase.from('progress_entries').select('*').order('created_at', { ascending: true }),
         supabase.from('subtask_entries').select('*').order('created_at', { ascending: true }),
         supabase.from('subtask_contacts').select('*').order('sort_order', { ascending: true }).order('created_at', { ascending: true }),
+        supabase.from('entry_attachments').select('*').order('created_at', { ascending: true }),
       ]);
 
       if (topicsRes.error) throw topicsRes.error;
@@ -66,18 +67,29 @@ export function useTopics() {
       if (entriesRes.error) throw entriesRes.error;
       if (subtaskEntriesRes.error) throw subtaskEntriesRes.error;
       if (contactsRes.error) throw contactsRes.error;
+      if (attachmentsRes.error) throw attachmentsRes.error;
 
       const subtasks = subtasksRes.data || [];
       const entries = entriesRes.data || [];
       const subtaskEntries = subtaskEntriesRes.data || [];
       const contacts = (contactsRes.data || []) as unknown as SubtaskContact[];
+      const attachments = (attachmentsRes.data || []) as unknown as EntryAttachment[];
+
+      // Build lookup map for attachments by entry_id
+      const attachmentsByEntry = new Map<string, EntryAttachment[]>();
+      for (const a of attachments) {
+        const arr = attachmentsByEntry.get(a.entry_id);
+        if (arr) arr.push(a);
+        else attachmentsByEntry.set(a.entry_id, [a]);
+      }
 
       // Build lookup map for subtask entries
       const entriesBySubtask = new Map<string, SubtaskEntry[]>();
       for (const e of subtaskEntries) {
+        const enriched: SubtaskEntry = { ...e, attachments: attachmentsByEntry.get(e.id) || [] };
         const arr = entriesBySubtask.get(e.subtask_id);
-        if (arr) arr.push(e);
-        else entriesBySubtask.set(e.subtask_id, [e]);
+        if (arr) arr.push(enriched);
+        else entriesBySubtask.set(e.subtask_id, [enriched]);
       }
 
       // Build lookup map for subtask contacts
