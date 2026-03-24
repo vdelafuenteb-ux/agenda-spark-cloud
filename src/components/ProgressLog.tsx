@@ -200,9 +200,9 @@ export function ProgressLog({ entries, onAdd, onUpdate, onDelete, hideTitle = fa
 
       {entries.length > 0 ? (
         <ScrollArea className="max-h-[180px]">
-          <div className="space-y-2 pr-2">
+          <div className="divide-y divide-border pr-2">
             {entries.map(entry => (
-              <div key={entry.id} className="group rounded-md bg-muted/50 px-3 py-2">
+              <div key={entry.id} className="group px-3 py-2.5 first:pt-0">
                 {editingId === entry.id ? (
                   <div className="space-y-1">
                     <div className="flex items-center justify-between">
