@@ -1,4 +1,4 @@
-import { Eye, LayoutList, FileText, LogOut, StickyNote, BarChart3, CheckSquare, Settings, CalendarDays, MailCheck, Users } from 'lucide-react';
+import { Eye, LayoutList, FileText, LogOut, StickyNote, BarChart3, CheckSquare, Settings, CalendarDays, MailCheck, Users, Contact } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
