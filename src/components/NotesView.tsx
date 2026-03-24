@@ -183,6 +183,7 @@ export function NotesView() {
             onRemoveTag={(noteId, tagId) => removeNoteTag.mutate({ note_id: noteId, tag_id: tagId })}
             onBack={handleEditorBack}
             onUploadImage={uploadImage}
+            onCreateSection={(data) => createSection.mutateAsync(data)}
           />
         </div>
       </div>
