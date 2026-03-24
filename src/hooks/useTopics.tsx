@@ -335,6 +335,39 @@ export function useTopics() {
     onSuccess: invalidateTopics,
   });
 
+  const uploadEntryAttachment = useMutation({
+    mutationFn: async ({ entryId, entryType, file, userId }: { entryId: string; entryType: 'progress' | 'subtask'; file: File; userId: string }) => {
+      const ext = file.name.split('.').pop() || 'bin';
+      const path = `${userId}/${crypto.randomUUID()}.${ext}`;
+      const { error: uploadError } = await supabase.storage.from('progress-attachments').upload(path, file);
+      if (uploadError) throw uploadError;
+      const { data: urlData } = supabase.storage.from('progress-attachments').getPublicUrl(path);
+      const { error } = await supabase.from('entry_attachments').insert({
+        entry_id: entryId,
+        entry_type: entryType,
+        file_name: file.name,
+        file_url: urlData.publicUrl,
+        file_type: file.type,
+        file_size: file.size,
+      } as any);
+      if (error) throw error;
+    },
+    onSuccess: invalidateTopics,
+  });
+
+  const deleteEntryAttachment = useMutation({
+    mutationFn: async ({ id, fileUrl }: { id: string; fileUrl: string }) => {
+      // Extract storage path from URL
+      const pathMatch = fileUrl.match(/progress-attachments\/(.+)$/);
+      if (pathMatch) {
+        await supabase.storage.from('progress-attachments').remove([pathMatch[1]]);
+      }
+      const { error } = await supabase.from('entry_attachments').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: invalidateTopics,
+  });
+
   return {
     topics: topicsQuery.data || [],
     isLoading: topicsQuery.isLoading,
@@ -355,5 +388,7 @@ export function useTopics() {
     addSubtaskContact,
     updateSubtaskContact,
     deleteSubtaskContact,
+    uploadEntryAttachment,
+    deleteEntryAttachment,
   };
 }
