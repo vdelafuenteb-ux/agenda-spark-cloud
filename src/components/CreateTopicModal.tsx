@@ -108,7 +108,7 @@ export function CreateTopicModal({ open, onOpenChange, allTags, assignees, depar
 
   const handleSubmit = async () => {
     if (!title.trim()) return;
-    if (status === 'seguimiento' && !assignee.trim()) return;
+    if (status === 'seguimiento' && !assignee.trim()) return; // required only for seguimiento
     await onSubmit({
       title: title.trim(),
       priority,
@@ -120,7 +120,7 @@ export function CreateTopicModal({ open, onOpenChange, allTags, assignees, depar
       tagIds: selectedTagIds,
       newTags: pendingNewTags,
       notes,
-      assignee: status === 'seguimiento' ? assignee.trim() : undefined,
+      assignee: assignee.trim() || undefined,
       department_id: departmentId && departmentId !== 'none' ? departmentId : undefined,
       execution_order: executionOrder,
       hh_type: hhType,
@@ -274,10 +274,10 @@ export function CreateTopicModal({ open, onOpenChange, allTags, assignees, depar
             </div>
           </div>
 
-          {/* Responsable (only for seguimiento) */}
-          {status === 'seguimiento' && (
+          {/* Responsable */}
+          {(
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Responsable *</label>
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Responsable {status === 'seguimiento' ? '*' : ''}</label>
               {assignees.length > 0 && (
                 <div className="flex flex-wrap gap-1.5">
                   {assignees.map((a) => (
