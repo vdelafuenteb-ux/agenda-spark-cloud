@@ -108,7 +108,7 @@ export function CreateTopicModal({ open, onOpenChange, allTags, assignees, depar
 
   const handleSubmit = async () => {
     if (!title.trim()) return;
-    if (status === 'seguimiento' && !assignee.trim()) return;
+    if (status === 'seguimiento' && !assignee.trim()) return; // required only for seguimiento
     await onSubmit({
       title: title.trim(),
       priority,
