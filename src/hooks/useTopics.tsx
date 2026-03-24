@@ -284,8 +284,9 @@ export function useTopics() {
 
   const addSubtaskEntry = useMutation({
     mutationFn: async ({ subtask_id, content }: { subtask_id: string; content: string }) => {
-      const { error } = await supabase.from('subtask_entries').insert({ subtask_id, content });
+      const { data, error } = await supabase.from('subtask_entries').insert({ subtask_id, content }).select('id').single();
       if (error) throw error;
+      return data.id;
     },
     onSuccess: invalidateTopics,
   });
