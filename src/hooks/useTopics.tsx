@@ -111,9 +111,10 @@ export function useTopics() {
 
       const entriesByTopic = new Map<string, ProgressEntry[]>();
       for (const e of entries) {
+        const enriched: ProgressEntry = { ...e, attachments: attachmentsByEntry.get(e.id) || [] };
         const arr = entriesByTopic.get(e.topic_id);
-        if (arr) arr.push(e);
-        else entriesByTopic.set(e.topic_id, [e]);
+        if (arr) arr.push(enriched);
+        else entriesByTopic.set(e.topic_id, [enriched]);
       }
 
       return (topicsRes.data || []).map((topic) => ({
