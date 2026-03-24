@@ -24,15 +24,17 @@ interface SubtaskRowProps {
   onToggleSubtask: (id: string, completed: boolean) => void;
   onUpdateSubtask: (id: string, data: Record<string, unknown>) => void;
   onDeleteSubtask: (id: string) => void;
-  onAddSubtaskEntry: (subtaskId: string, content: string) => void;
+  onAddSubtaskEntry: (subtaskId: string, content: string) => Promise<string>;
   onUpdateSubtaskEntry?: (id: string, content: string) => void;
   onDeleteSubtaskEntry?: (id: string) => void;
   onAddSubtaskContact?: (subtaskId: string, name: string, email: string) => void;
   onUpdateSubtaskContact?: (id: string, name?: string, email?: string) => void;
   onDeleteSubtaskContact?: (id: string) => void;
+  onUploadFiles?: (entryId: string, entryType: 'progress' | 'subtask', files: File[]) => void;
+  onDeleteAttachment?: (id: string, fileUrl: string) => void;
 }
 
-export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false, onToggleSubtask, onUpdateSubtask, onDeleteSubtask, onAddSubtaskEntry, onUpdateSubtaskEntry, onDeleteSubtaskEntry, onAddSubtaskContact, onUpdateSubtaskContact, onDeleteSubtaskContact }: SubtaskRowProps) {
+export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false, onToggleSubtask, onUpdateSubtask, onDeleteSubtask, onAddSubtaskEntry, onUpdateSubtaskEntry, onDeleteSubtaskEntry, onAddSubtaskContact, onUpdateSubtaskContact, onDeleteSubtaskContact, onUploadFiles, onDeleteAttachment }: SubtaskRowProps) {
   const [detailOpen, setDetailOpen] = useState(false);
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState(subtask.title);
@@ -318,9 +320,14 @@ export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false,
               </label>
               <ProgressLog
                 entries={entries}
-                onAdd={(content) => onAddSubtaskEntry(subtask.id, content)}
+                onAdd={async (content) => {
+                  const id = await onAddSubtaskEntry(subtask.id, content);
+                  return id;
+                }}
                 onUpdate={onUpdateSubtaskEntry ? (id, content) => onUpdateSubtaskEntry(id, content) : undefined}
                 onDelete={onDeleteSubtaskEntry}
+                onUploadFiles={onUploadFiles ? (entryId, files) => onUploadFiles(entryId, 'subtask', files) : undefined}
+                onDeleteAttachment={onDeleteAttachment}
                 hideTitle
               />
             </div>

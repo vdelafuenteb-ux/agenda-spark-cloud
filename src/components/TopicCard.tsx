@@ -45,15 +45,17 @@ interface TopicCardProps {
   onToggleSubtask: (id: string, completed: boolean) => void;
   onUpdateSubtask: (id: string, data: Record<string, unknown>) => void;
   onDeleteSubtask: (id: string) => void;
-  onAddSubtaskEntry: (subtaskId: string, content: string) => void;
+  onAddSubtaskEntry: (subtaskId: string, content: string) => Promise<string>;
   onUpdateSubtaskEntry?: (id: string, content: string) => void;
   onDeleteSubtaskEntry?: (id: string) => void;
   onAddSubtaskContact?: (subtaskId: string, name: string, email: string) => void;
   onUpdateSubtaskContact?: (id: string, name?: string, email?: string) => void;
   onDeleteSubtaskContact?: (id: string) => void;
-  onAddProgressEntry: (topicId: string, content: string) => void;
+  onAddProgressEntry: (topicId: string, content: string) => Promise<string>;
   onUpdateProgressEntry?: (id: string, content: string) => void;
   onDeleteProgressEntry?: (id: string) => void;
+  onUploadFiles?: (entryId: string, entryType: 'progress' | 'subtask', files: File[]) => void;
+  onDeleteAttachment?: (id: string, fileUrl: string) => void;
   onAddTag: (topicId: string, tagId: string) => void;
   onRemoveTag: (topicId: string, tagId: string) => void;
   onCreateTag: (name: string, color: string) => Promise<any>;
@@ -86,6 +88,8 @@ export function TopicCard({
   onAddProgressEntry,
   onUpdateProgressEntry,
   onDeleteProgressEntry,
+  onUploadFiles,
+  onDeleteAttachment,
   onAddTag,
   onRemoveTag,
   onCreateTag,
@@ -739,6 +743,8 @@ export function TopicCard({
                             onAddSubtaskContact={onAddSubtaskContact}
                             onUpdateSubtaskContact={onUpdateSubtaskContact}
                             onDeleteSubtaskContact={onDeleteSubtaskContact}
+                            onUploadFiles={onUploadFiles}
+                            onDeleteAttachment={onDeleteAttachment}
                           />
                         );
                       })}
@@ -769,6 +775,8 @@ export function TopicCard({
                                   onAddSubtaskContact={onAddSubtaskContact}
                                   onUpdateSubtaskContact={onUpdateSubtaskContact}
                                   onDeleteSubtaskContact={onDeleteSubtaskContact}
+                                  onUploadFiles={onUploadFiles}
+                                  onDeleteAttachment={onDeleteAttachment}
                                 />
                               ))}
                             </div>
@@ -801,9 +809,14 @@ export function TopicCard({
 
               <ProgressLog
                 entries={topic.progress_entries}
-                onAdd={(content) => onAddProgressEntry(topic.id, content)}
+                onAdd={async (content) => {
+                  const id = await onAddProgressEntry(topic.id, content);
+                  return id;
+                }}
                 onUpdate={onUpdateProgressEntry ? (id, content) => onUpdateProgressEntry(id, content) : undefined}
                 onDelete={onDeleteProgressEntry}
+                onUploadFiles={onUploadFiles ? (entryId, files) => onUploadFiles(entryId, 'progress', files) : undefined}
+                onDeleteAttachment={onDeleteAttachment}
               />
             </div>
           </motion.div>
