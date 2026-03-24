@@ -62,6 +62,7 @@ export function NoteEditor({
   onRemoveTag,
   onBack,
   onUploadImage,
+  onCreateSection,
 }: NoteEditorProps) {
   const [title, setTitle] = useState(note.title);
   const editorRef = useRef<HTMLDivElement>(null);
