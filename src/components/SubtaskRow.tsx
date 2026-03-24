@@ -24,12 +24,14 @@ interface SubtaskRowProps {
   onToggleSubtask: (id: string, completed: boolean) => void;
   onUpdateSubtask: (id: string, data: Record<string, unknown>) => void;
   onDeleteSubtask: (id: string) => void;
-  onAddSubtaskEntry: (subtaskId: string, content: string) => void;
+  onAddSubtaskEntry: (subtaskId: string, content: string) => Promise<string>;
   onUpdateSubtaskEntry?: (id: string, content: string) => void;
   onDeleteSubtaskEntry?: (id: string) => void;
   onAddSubtaskContact?: (subtaskId: string, name: string, email: string) => void;
   onUpdateSubtaskContact?: (id: string, name?: string, email?: string) => void;
   onDeleteSubtaskContact?: (id: string) => void;
+  onUploadFiles?: (entryId: string, files: File[]) => void;
+  onDeleteAttachment?: (id: string, fileUrl: string) => void;
 }
 
 export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false, onToggleSubtask, onUpdateSubtask, onDeleteSubtask, onAddSubtaskEntry, onUpdateSubtaskEntry, onDeleteSubtaskEntry, onAddSubtaskContact, onUpdateSubtaskContact, onDeleteSubtaskContact }: SubtaskRowProps) {

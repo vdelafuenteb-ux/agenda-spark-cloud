@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Send, Pencil, Trash2, Check, X, Bold, Italic, List, Paperclip, FileText, Image, File, Download } from 'lucide-react';
+import { Send, Pencil, Trash2, Check, X, Bold, Italic, List, Paperclip, FileText, Image, File } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import type { EntryAttachment } from '@/hooks/useTopics';
