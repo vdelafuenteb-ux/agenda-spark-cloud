@@ -743,6 +743,8 @@ export function TopicCard({
                             onAddSubtaskContact={onAddSubtaskContact}
                             onUpdateSubtaskContact={onUpdateSubtaskContact}
                             onDeleteSubtaskContact={onDeleteSubtaskContact}
+                            onUploadFiles={onUploadFiles}
+                            onDeleteAttachment={onDeleteAttachment}
                           />
                         );
                       })}
