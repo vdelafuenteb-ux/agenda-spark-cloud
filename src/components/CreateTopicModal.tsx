@@ -120,7 +120,7 @@ export function CreateTopicModal({ open, onOpenChange, allTags, assignees, depar
       tagIds: selectedTagIds,
       newTags: pendingNewTags,
       notes,
-      assignee: status === 'seguimiento' ? assignee.trim() : undefined,
+      assignee: assignee.trim() || undefined,
       department_id: departmentId && departmentId !== 'none' ? departmentId : undefined,
       execution_order: executionOrder,
       hh_type: hhType,
