@@ -61,7 +61,7 @@ export function useChecklist() {
   });
 
   const updateItem = useMutation({
-    mutationFn: async ({ id, ...data }: { id: string; completed?: boolean; due_date?: string | null }) => {
+    mutationFn: async ({ id, ...data }: { id: string; completed?: boolean; due_date?: string | null; title?: string }) => {
       const { error } = await supabase
         .from('checklist_items')
         .update(data)
