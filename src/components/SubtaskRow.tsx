@@ -30,7 +30,7 @@ interface SubtaskRowProps {
   onAddSubtaskContact?: (subtaskId: string, name: string, email: string) => void;
   onUpdateSubtaskContact?: (id: string, name?: string, email?: string) => void;
   onDeleteSubtaskContact?: (id: string) => void;
-  onUploadFiles?: (entryId: string, files: File[]) => void;
+  onUploadFiles?: (entryId: string, entryType: 'progress' | 'subtask', files: File[]) => void;
   onDeleteAttachment?: (id: string, fileUrl: string) => void;
 }
 

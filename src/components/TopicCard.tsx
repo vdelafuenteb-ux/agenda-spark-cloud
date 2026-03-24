@@ -54,7 +54,7 @@ interface TopicCardProps {
   onAddProgressEntry: (topicId: string, content: string) => Promise<string>;
   onUpdateProgressEntry?: (id: string, content: string) => void;
   onDeleteProgressEntry?: (id: string) => void;
-  onUploadFiles?: (entryId: string, files: File[]) => void;
+  onUploadFiles?: (entryId: string, entryType: 'progress' | 'subtask', files: File[]) => void;
   onDeleteAttachment?: (id: string, fileUrl: string) => void;
   onAddTag: (topicId: string, tagId: string) => void;
   onRemoveTag: (topicId: string, tagId: string) => void;
