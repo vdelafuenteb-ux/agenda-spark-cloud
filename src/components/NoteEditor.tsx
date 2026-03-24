@@ -4,7 +4,7 @@ import { es } from 'date-fns/locale';
 import {
   ArrowLeft, Trash2, Tag, Bold, Italic, Underline as UnderlineIcon,
   Strikethrough, List, ListOrdered, AlignLeft, AlignCenter, AlignRight,
-  Heading1, Heading2, Heading3, Minus, ImagePlus, FileUp, Type, Undo2, Redo2,
+  Heading1, Heading2, Heading3, Minus, ImagePlus, FileUp, Type, Undo2, Redo2, Plus,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
