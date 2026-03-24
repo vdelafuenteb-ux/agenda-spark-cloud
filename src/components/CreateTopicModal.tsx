@@ -274,8 +274,8 @@ export function CreateTopicModal({ open, onOpenChange, allTags, assignees, depar
             </div>
           </div>
 
-          {/* Responsable (only for seguimiento) */}
-          {status === 'seguimiento' && (
+          {/* Responsable */}
+          {(
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Responsable *</label>
               {assignees.length > 0 && (
