@@ -12,6 +12,7 @@ export interface SubtaskEntry {
   subtask_id: string;
   content: string;
   created_at: string;
+  attachments: EntryAttachment[];
 }
 
 export interface SubtaskContact {
