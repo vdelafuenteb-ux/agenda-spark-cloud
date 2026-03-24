@@ -201,8 +201,11 @@ export function ProgressLog({ entries, onAdd, onUpdate, onDelete, hideTitle = fa
       {!hideTitle && <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Bitácora de avances</p>}
 
       {entries.length > 0 ? (
-        <ScrollArea className="max-h-[180px]">
-          <div className="divide-y divide-border pr-2">
+        <div
+          ref={scrollContainerRef}
+          className="max-h-[220px] overflow-y-auto pr-1 scrollbar-thin"
+        >
+          <div className="divide-y divide-border">
             {entries.map(entry => (
               <div key={entry.id} className="group px-3 py-2.5 first:pt-0">
                 {editingId === entry.id ? (
@@ -232,7 +235,7 @@ export function ProgressLog({ entries, onAdd, onUpdate, onDelete, hideTitle = fa
                 ) : (
                   <>
                     <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1">
+                      <div className="flex-1 break-words overflow-hidden">
                         <FormattedText content={entry.content} />
                       </div>
                       <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
@@ -265,9 +268,8 @@ export function ProgressLog({ entries, onAdd, onUpdate, onDelete, hideTitle = fa
                 )}
               </div>
             ))}
-            <div ref={bottomRef} />
           </div>
-        </ScrollArea>
+        </div>
       ) : (
         <p className="text-xs text-muted-foreground italic py-2">Sin entradas aún. Registra el primer avance.</p>
       )}
