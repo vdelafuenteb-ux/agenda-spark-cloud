@@ -80,6 +80,7 @@ export function ChecklistView() {
                   onToggle={() => toggleItem.mutate({ id: item.id, completed: true })}
                   onDelete={() => deleteItem.mutate(item.id)}
                   onUpdateDate={(due_date) => updateItem.mutate({ id: item.id, due_date })}
+                  onUpdateTitle={(title) => updateItem.mutate({ id: item.id, title })}
                 />
               ))}
             </div>
