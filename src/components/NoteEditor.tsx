@@ -28,6 +28,7 @@ interface NoteEditorProps {
   onRemoveTag: (noteId: string, tagId: string) => void;
   onBack: () => void;
   onUploadImage: (file: File) => Promise<string>;
+  onCreateSection?: (data: { notebook_id: string; name: string }) => Promise<NoteSection>;
 }
 
 function ToolbarButton({ icon: Icon, label, onClick, active }: { icon: any; label: string; onClick: () => void; active?: boolean }) {
