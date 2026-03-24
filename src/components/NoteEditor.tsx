@@ -15,6 +15,66 @@ import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { Note, Notebook, NoteSection } from '@/hooks/useNotes';
 import type { Tag as TagType } from '@/hooks/useTags';
+import { toast } from 'sonner';
+
+function QuickCreateSection({ notebookId, onCreateSection, onCreated }: {
+  notebookId: string;
+  onCreateSection: (data: { notebook_id: string; name: string }) => Promise<NoteSection>;
+  onCreated: (sectionId: string) => void;
+}) {
+  const [creating, setCreating] = useState(false);
+  const [name, setName] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleCreate = async () => {
+    if (!name.trim()) return;
+    setLoading(true);
+    try {
+      const section = await onCreateSection({ notebook_id: notebookId, name: name.trim() });
+      onCreated(section.id);
+      setName('');
+      setCreating(false);
+      toast.success('Tema creado');
+    } catch {
+      /* handled upstream */
+    }
+    setLoading(false);
+  };
+
+  if (!creating) {
+    return (
+      <>
+        <Separator className="my-1" />
+        <button
+          className="w-full text-left px-2 py-1.5 text-xs rounded hover:bg-muted flex items-center gap-1.5 text-muted-foreground"
+          onClick={() => setCreating(true)}
+        >
+          <Plus className="h-3 w-3" /> Crear tema...
+        </button>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <Separator className="my-1" />
+      <div className="flex items-center gap-1 px-1 py-1">
+        <Input
+          autoFocus
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') handleCreate(); if (e.key === 'Escape') setCreating(false); }}
+          placeholder="Nombre del tema"
+          className="h-7 text-xs flex-1"
+          disabled={loading}
+        />
+        <Button size="sm" className="h-7 px-2 text-xs" onClick={handleCreate} disabled={!name.trim() || loading}>
+          <Plus className="h-3 w-3" />
+        </Button>
+      </div>
+    </>
+  );
+}
 
 interface NoteEditorProps {
   note: Note;
