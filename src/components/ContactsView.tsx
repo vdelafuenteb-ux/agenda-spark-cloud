@@ -119,26 +119,26 @@ export function ContactsView() {
             ))}
           </div>
         ) : (
-          <div className="border rounded-lg">
+          <div className="border rounded-lg overflow-hidden">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Nombre</TableHead>
-                  <TableHead>Correo</TableHead>
-                  <TableHead>Cargo</TableHead>
-                  <TableHead>Celular</TableHead>
-                  <TableHead>Empresa</TableHead>
-                  <TableHead className="w-20"></TableHead>
+                  <TableHead className="w-[15%] min-w-[100px]">Nombre</TableHead>
+                  <TableHead className="w-[28%] min-w-[160px]">Correo</TableHead>
+                  <TableHead className="w-[20%] min-w-[110px]">Cargo</TableHead>
+                  <TableHead className="w-[14%] min-w-[100px]">Celular</TableHead>
+                  <TableHead className="w-[13%] min-w-[80px]">Empresa</TableHead>
+                  <TableHead className="w-[10%] min-w-[70px]"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filtered.map(c => (
                   <TableRow key={c.id} className="cursor-pointer" onClick={() => openEdit(c)}>
-                    <TableCell className="font-medium">{c.name}</TableCell>
-                    <TableCell className="text-muted-foreground">{c.email}</TableCell>
-                    <TableCell className="text-muted-foreground">{c.position}</TableCell>
-                    <TableCell className="text-muted-foreground">{c.phone}</TableCell>
-                    <TableCell className="text-muted-foreground">{c.company}</TableCell>
+                    <TableCell className="font-medium truncate max-w-0">{c.name}</TableCell>
+                    <TableCell className="text-muted-foreground truncate max-w-0 text-xs">{c.email}</TableCell>
+                    <TableCell className="text-muted-foreground truncate max-w-0 text-xs">{c.position}</TableCell>
+                    <TableCell className="text-muted-foreground whitespace-nowrap text-xs">{c.phone}</TableCell>
+                    <TableCell className="text-muted-foreground truncate max-w-0 text-xs">{c.company}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={e => { e.stopPropagation(); openEdit(c); }}>
