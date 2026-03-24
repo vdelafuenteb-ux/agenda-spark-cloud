@@ -26,6 +26,7 @@ import { CalendarView } from '@/components/CalendarView';
 import { SettingsView } from '@/components/SettingsView';
 import { EmailHistoryView } from '@/components/EmailHistoryView';
 import { TeamView } from '@/components/TeamView';
+import { ContactsView } from '@/components/ContactsView';
 import { toast } from 'sonner';
 
 import type { Filter, StatusTab } from '@/types/filters';
