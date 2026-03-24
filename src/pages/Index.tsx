@@ -247,7 +247,7 @@ const Index = () => {
             <div className="flex items-center gap-2">
               <SidebarTrigger />
               <h1 className="text-sm font-semibold text-foreground">
-                {filter === 'configuracion' ? 'Configuración' : filter === 'historial_correos' ? 'Historial de Correos' : filter === 'calendario' ? 'Calendario' : filter === 'notas' ? 'Notas' : filter === 'informes' ? 'Informes' : filter === 'revision' ? 'Revisión' : filter === 'dashboard' ? 'Dashboard' : filter === 'checklist' ? 'Checklist del Día' : filter === 'equipo' ? 'Equipo' : 'Temas'}
+                {filter === 'configuracion' ? 'Configuración' : filter === 'historial_correos' ? 'Historial de Correos' : filter === 'calendario' ? 'Calendario' : filter === 'notas' ? 'Notas' : filter === 'informes' ? 'Informes' : filter === 'revision' ? 'Revisión' : filter === 'dashboard' ? 'Dashboard' : filter === 'checklist' ? 'Checklist del Día' : filter === 'equipo' ? 'Equipo' : filter === 'contactos' ? 'Contactos' : 'Temas'}
               </h1>
             </div>
             {filter !== 'notas' && filter !== 'informes' && filter !== 'revision' && filter !== 'dashboard' && filter !== 'checklist' && filter !== 'calendario' && filter !== 'configuracion' && filter !== 'historial_correos' && filter !== 'equipo' && (
