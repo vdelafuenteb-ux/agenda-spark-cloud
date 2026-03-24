@@ -121,16 +121,18 @@ export function ProgressLog({ entries, onAdd, onUpdate, onDelete, hideTitle = fa
   const [text, setText] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const editTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'instant', block: 'nearest' });
+    const el = scrollContainerRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
   }, []);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    const el = scrollContainerRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
   }, [entries.length]);
 
   const handleSend = () => {
