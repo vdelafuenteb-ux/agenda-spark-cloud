@@ -277,7 +277,7 @@ export function CreateTopicModal({ open, onOpenChange, allTags, assignees, depar
           {/* Responsable */}
           {(
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Responsable *</label>
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Responsable {status === 'seguimiento' ? '*' : ''}</label>
               {assignees.length > 0 && (
                 <div className="flex flex-wrap gap-1.5">
                   {assignees.map((a) => (
