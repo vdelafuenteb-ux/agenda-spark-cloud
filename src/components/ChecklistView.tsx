@@ -120,23 +120,50 @@ export function ChecklistView() {
   );
 }
 
-function ChecklistRow({ item, completed, onToggle, onDelete, onUpdateDate }: {
+function ChecklistRow({ item, completed, onToggle, onDelete, onUpdateDate, onUpdateTitle }: {
   item: { id: string; title: string; due_date: string | null };
   completed?: boolean;
   onToggle: () => void;
   onDelete: () => void;
   onUpdateDate: (due_date: string | null) => void;
+  onUpdateTitle: (title: string) => void;
 }) {
   const [dateOpen, setDateOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(item.title);
   const isToday = isStoredDateToday(item.due_date);
   const isOverdue = !completed && isStoredDateOverdue(item.due_date);
+
+  const commitEdit = () => {
+    setEditing(false);
+    const trimmed = draft.trim();
+    if (trimmed && trimmed !== item.title) {
+      onUpdateTitle(trimmed);
+    } else {
+      setDraft(item.title);
+    }
+  };
 
   return (
     <div className={`flex items-center gap-3 rounded-md px-3 py-2 hover:bg-accent/50 group transition-colors ${isOverdue ? 'bg-destructive/5' : ''}`}>
       <Checkbox checked={!!completed} onCheckedChange={onToggle} />
-      <span className={`flex-1 text-sm ${completed ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
-        {item.title}
-      </span>
+      {editing ? (
+        <Input
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={commitEdit}
+          onKeyDown={(e) => { if (e.key === 'Enter') commitEdit(); if (e.key === 'Escape') { setDraft(item.title); setEditing(false); } }}
+          className="flex-1 h-7 text-sm"
+          autoFocus
+        />
+      ) : (
+        <span
+          className={`flex-1 text-sm cursor-pointer ${completed ? 'text-muted-foreground line-through' : 'text-foreground'}`}
+          onDoubleClick={() => { if (!completed) { setDraft(item.title); setEditing(true); } }}
+        >
+          {item.title}
+        </span>
+      )}
       {item.due_date && (
         <Badge
           variant={isOverdue ? 'destructive' : isToday ? 'default' : 'outline'}
