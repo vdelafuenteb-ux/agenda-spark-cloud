@@ -801,9 +801,14 @@ export function TopicCard({
 
               <ProgressLog
                 entries={topic.progress_entries}
-                onAdd={(content) => onAddProgressEntry(topic.id, content)}
+                onAdd={async (content) => {
+                  const id = await onAddProgressEntry(topic.id, content);
+                  return id;
+                }}
                 onUpdate={onUpdateProgressEntry ? (id, content) => onUpdateProgressEntry(id, content) : undefined}
                 onDelete={onDeleteProgressEntry}
+                onUploadFiles={onUploadFiles}
+                onDeleteAttachment={onDeleteAttachment}
               />
             </div>
           </motion.div>

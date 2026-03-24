@@ -318,9 +318,14 @@ export function SubtaskRow({ subtask, subtaskIsToday, subtaskIsUpcoming = false,
               </label>
               <ProgressLog
                 entries={entries}
-                onAdd={(content) => onAddSubtaskEntry(subtask.id, content)}
+                onAdd={async (content) => {
+                  const id = await onAddSubtaskEntry(subtask.id, content);
+                  return id;
+                }}
                 onUpdate={onUpdateSubtaskEntry ? (id, content) => onUpdateSubtaskEntry(id, content) : undefined}
                 onDelete={onDeleteSubtaskEntry}
+                onUploadFiles={onUploadFiles}
+                onDeleteAttachment={onDeleteAttachment}
                 hideTitle
               />
             </div>
