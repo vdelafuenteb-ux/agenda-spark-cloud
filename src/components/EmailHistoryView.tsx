@@ -699,6 +699,7 @@ export function EmailHistoryView() {
                               <span className="text-[10px] text-muted-foreground shrink-0">{i + 1}.</span>
                               <span className="text-xs text-foreground truncate">{email.topic_title}</span>
                             </div>
+                            {isWeekly ? (
                             <div className="flex items-center gap-2 shrink-0" onClick={e => e.stopPropagation()}>
                               {email.confirmed ? (
                                 <>
@@ -723,6 +724,9 @@ export function EmailHistoryView() {
                                 </>
                               )}
                             </div>
+                            ) : (
+                            <span className="text-[10px] text-muted-foreground shrink-0">Informativo</span>
+                            )}
                           </div>
                         );
                       })}
