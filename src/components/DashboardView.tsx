@@ -217,36 +217,15 @@ export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardVie
     };
   }, [topics]);
 
-  const kpis = [
-    {
-      title: 'Temas Activos',
-      value: metrics.byStatus.activo.length,
-      subtitle: `de ${topics.length} totales`,
-      icon: Target,
-      color: 'text-blue-500',
-    },
-    {
-      title: 'Subtareas',
-      value: `${metrics.completedSubtasks.length}/${metrics.allSubtasks.length}`,
-      subtitle: `${metrics.subtaskProgress}% completadas`,
-      icon: ListChecks,
-      color: 'text-emerald-500',
-    },
-    {
-      title: 'Seguimiento',
-      value: metrics.byStatus.seguimiento.length,
-      subtitle: `${metrics.byStatus.pausado.length} pausados`,
-      icon: Clock,
-      color: 'text-cyan-500',
-    },
-    {
-      title: 'Cerrados',
-      value: metrics.byStatus.completado.length,
-      subtitle: `${metrics.byStatus.pausado.length} pausados`,
-      icon: CheckCircle2,
-      color: 'text-emerald-500',
-    },
-  ];
+  const totalOpen = metrics.byStatus.activo.length + metrics.byStatus.seguimiento.length + metrics.byStatus.pausado.length;
+  const totalActivos = metrics.byStatus.activo.length + metrics.byStatus.seguimiento.length;
+  const totalPausados = metrics.byStatus.pausado.length;
+
+  // On-track: active/seguimiento, not ongoing, has due_date, not overdue
+  const activeAndTracking = [...metrics.byStatus.activo, ...metrics.byStatus.seguimiento];
+  const nonOngoingActive = activeAndTracking.filter(t => !t.is_ongoing);
+  const onTrackCount = nonOngoingActive.filter(t => t.due_date && !isStoredDateOverdue(t.due_date)).length;
+  const overdueCount = metrics.overdue.length;
 
 
   const trendChartConfig = {
