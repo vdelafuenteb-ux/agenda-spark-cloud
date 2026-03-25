@@ -1,30 +1,19 @@
 
 
-## Plan: Fix assignee table logic consistency
+## Plan: Compact KPI cards — single row, smaller text, cleaner layout
 
-The problem: in the assignee ranking logic, topics without a due date or marked as "ongoing" are not counted in any deadline column (al día / atrasados / por vencer), so the numbers don't add up. Per your rule: those should count as "al día". Also, "Total" currently includes completed topics but should only show activo + seguimiento + pausado.
+### Problem
+The 4 KPI cards (Temas Totales, Estado de Plazos, Subtareas, Cerrados) are too wide and the "Estado de Plazos" card wraps its indicators to multiple lines. The user wants all cards in one row, narrower, with smaller but formal text.
 
 ### Changes in `src/components/DashboardView.tsx`
 
-**Assignee map logic (lines 182-206):**
+**KPI Cards section (lines 277-340):**
 
-1. Change `total` to only count non-completed topics (activo + seguimiento + pausado)
-2. Topics with `is_ongoing` or no `due_date` → count as `onTrackCount` (al día) instead of being skipped
-3. This ensures: `onTrackCount + overdueCount + dueSoonCount === activeCount` for each assignee
+1. Reduce padding from `p-4` to `p-3` on all CardContent elements
+2. Reduce main number size from `text-2xl` to `text-xl`
+3. Reduce label size from `text-xs` to `text-[11px]`
+4. For "Estado de Plazos" card: put all 3 indicators (al día, por vencer, atrasados) in a single row using `flex-nowrap` with tighter `gap-2`, reduce the number size from `text-lg` to `text-sm font-bold`, and the dot from `h-3 w-3` to `h-2.5 w-2.5`
+5. Keep the grid as `grid-cols-2 lg:grid-cols-4` but add `max-w-5xl` to constrain overall width
 
-```
-// Before (broken):
-if (t.is_ongoing || !t.due_date) {
-  // no deadline status  ← DROPPED, not counted anywhere
-}
-
-// After (fixed):
-if (t.is_ongoing || !t.due_date) {
-  entry.onTrackCount++;  ← counted as "al día"
-}
-```
-
-And for `total`: only increment when status is not `completado`.
-
-**No other files affected.** The semáforo KPI card already works correctly via subtraction.
+No other files affected.
 
