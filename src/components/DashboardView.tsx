@@ -241,11 +241,11 @@ export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardVie
   const totalActivos = metrics.byStatus.activo.length + metrics.byStatus.seguimiento.length;
   const totalPausados = metrics.byStatus.pausado.length;
 
-  // On-track: active/seguimiento, not ongoing, has due_date, not overdue
+  // Semáforo: al día = not overdue and not dueSoon (includes no date, ongoing, etc.)
   const activeAndTracking = [...metrics.byStatus.activo, ...metrics.byStatus.seguimiento];
-  const nonOngoingActive = activeAndTracking.filter(t => !t.is_ongoing);
-  const onTrackCount = nonOngoingActive.filter(t => t.due_date && !isStoredDateOverdue(t.due_date)).length;
   const overdueCount = metrics.overdue.length;
+  const dueSoonCount = metrics.dueSoon.length;
+  const onTrackCount = activeAndTracking.length - overdueCount - dueSoonCount;
 
 
   const trendChartConfig = {
@@ -292,11 +292,16 @@ export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardVie
                 <span className="text-xs font-medium text-muted-foreground">Estado de Plazos</span>
                 <AlertTriangle className="h-4 w-4 text-amber-500" />
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3 flex-wrap">
                 <div className="flex items-center gap-1.5">
                   <div className="h-3 w-3 rounded-full bg-emerald-500" />
                   <span className="text-lg font-bold text-foreground">{onTrackCount}</span>
                   <span className="text-[10px] text-muted-foreground">al día</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="h-3 w-3 rounded-full bg-yellow-500" />
+                  <span className="text-lg font-bold text-foreground">{dueSoonCount}</span>
+                  <span className="text-[10px] text-muted-foreground">por vencer</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div className="h-3 w-3 rounded-full bg-destructive" />
