@@ -11,9 +11,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { Assignee } from '@/hooks/useAssignees';
 
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { toStoredDate } from '@/lib/date';
+
+
 import type { TopicWithSubtasks } from '@/hooks/useTopics';
 import { isStoredDateOverdue } from '@/lib/date';
 import { startOfWeek, subWeeks, isAfter, isBefore, addDays, format } from 'date-fns';
