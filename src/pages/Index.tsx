@@ -281,7 +281,8 @@ const Index = () => {
                 topic_id: created.id,
                 assignee_name: assignee.name,
                 assignee_email: assignee.email,
-              });
+                email_type: 'new_topic',
+              } as any);
               queryClient.invalidateQueries({ queryKey: ['notification_emails'] });
               toast.success(`Se notificó a ${assignee.name} del nuevo tema`);
             } else {
