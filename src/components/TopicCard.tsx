@@ -106,6 +106,8 @@ export function TopicCard({
   const [titleDraft, setTitleDraft] = useState(topic.title);
   const [showPauseDialog, setShowPauseDialog] = useState(false);
   const [pauseReasonDraft, setPauseReasonDraft] = useState(topic.pause_reason || '');
+  const [showCloseDialog, setShowCloseDialog] = useState(false);
+  const [closeDateDraft, setCloseDateDraft] = useState('');
 
   useEffect(() => {
     if (forceExpand !== null) {
@@ -639,7 +641,12 @@ export function TopicCard({
                       size="sm"
                       variant="default"
                       className="flex-1 h-9 text-xs gap-2"
-                      onClick={() => onUpdate(topic.id, { status: 'completado', closed_at: new Date().toISOString() })}
+                      onClick={() => {
+                        const now = new Date();
+                        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+                        setCloseDateDraft(now.toISOString().slice(0, 16));
+                        setShowCloseDialog(true);
+                      }}
                     >
                       <CheckCircle2 className="h-3.5 w-3.5" /> Cerrar
                     </Button>
@@ -684,7 +691,12 @@ export function TopicCard({
                       size="sm"
                       variant="default"
                       className="flex-1 h-9 text-xs gap-2"
-                      onClick={() => onUpdate(topic.id, { status: 'completado', pause_reason: '', paused_at: null, closed_at: new Date().toISOString() })}
+                      onClick={() => {
+                        const now = new Date();
+                        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+                        setCloseDateDraft(now.toISOString().slice(0, 16));
+                        setShowCloseDialog(true);
+                      }}
                     >
                       <CheckCircle2 className="h-3.5 w-3.5" /> Cerrar
                     </Button>
@@ -849,6 +861,43 @@ export function TopicCard({
               }}
             >
               <Pause className="h-3.5 w-3.5 mr-1" /> Pausar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Close confirmation dialog */}
+      <Dialog open={showCloseDialog} onOpenChange={setShowCloseDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>¿Confirmar cierre de este tema?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Confirma la fecha y hora en que se cerró realmente este tema.
+          </p>
+          <Input
+            type="datetime-local"
+            value={closeDateDraft}
+            onChange={(e) => setCloseDateDraft(e.target.value)}
+            className="w-full"
+          />
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setShowCloseDialog(false)}>Cancelar</Button>
+            <Button
+              onClick={() => {
+                const closedAt = closeDateDraft
+                  ? new Date(closeDateDraft).toISOString()
+                  : new Date().toISOString();
+                onUpdate(topic.id, {
+                  status: 'completado',
+                  closed_at: closedAt,
+                  pause_reason: '',
+                  paused_at: null,
+                });
+                setShowCloseDialog(false);
+              }}
+            >
+              <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Confirmar cierre
             </Button>
           </DialogFooter>
         </DialogContent>
