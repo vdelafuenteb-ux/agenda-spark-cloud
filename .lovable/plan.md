@@ -1,26 +1,30 @@
 
 
-## Plan: Rediseñar tarjetas KPI del Dashboard
+## Plan: Fix assignee table logic consistency
 
-### Cambios en `src/components/DashboardView.tsx`
+The problem: in the assignee ranking logic, topics without a due date or marked as "ongoing" are not counted in any deadline column (al día / atrasados / por vencer), so the numbers don't add up. Per your rule: those should count as "al día". Also, "Total" currently includes completed topics but should only show activo + seguimiento + pausado.
 
-Reemplazar las 4 tarjetas KPI actuales por este nuevo orden y estructura:
+### Changes in `src/components/DashboardView.tsx`
 
-1. **Temas Totales** — Valor: activos + seguimiento + pausados. Subtítulo con desglose: `X activos · Y en pausa`  
-   (donde "activos" = activo + seguimiento)
+**Assignee map logic (lines 182-206):**
 
-2. **Semáforo** — Dos indicadores lado a lado:  
-   - **Al Día**: cantidad de temas no atrasados (activos + seguimiento, con fecha, no ongoing, no overdue) — color verde  
-   - **Atrasados**: cantidad overdue — color rojo  
+1. Change `total` to only count non-completed topics (activo + seguimiento + pausado)
+2. Topics with `is_ongoing` or no `due_date` → count as `onTrackCount` (al día) instead of being skipped
+3. This ensures: `onTrackCount + overdueCount + dueSoonCount === activeCount` for each assignee
 
-3. **Subtareas** — Sin cambios: `completadas/total` con porcentaje
+```
+// Before (broken):
+if (t.is_ongoing || !t.due_date) {
+  // no deadline status  ← DROPPED, not counted anywhere
+}
 
-4. **Cerrados** — Sin cambios: total completados
+// After (fixed):
+if (t.is_ongoing || !t.due_date) {
+  entry.onTrackCount++;  ← counted as "al día"
+}
+```
 
-### Detalle técnico
+And for `total`: only increment when status is not `completado`.
 
-- En `metrics`, calcular `totalActive = activo.length + seguimiento.length + pausado.length` y `onTrack = nonOngoing con fecha y no overdue`
-- Tarjeta 1: valor = `totalActive`, subtítulo = `${activo + seguimiento} activos · ${pausado} en pausa`
-- Tarjeta 2: renderizado custom con dos columnas (verde/rojo) en vez de un solo número
-- Reordenar el array `kpis` acorde
+**No other files affected.** The semáforo KPI card already works correctly via subtraction.
 
