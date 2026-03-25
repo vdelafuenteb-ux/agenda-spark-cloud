@@ -24,6 +24,7 @@ interface EmailRecord {
   confirmed: boolean;
   confirmed_at: string | null;
   topic_title?: string;
+  email_type?: string;
 }
 
 interface EmailBatch {
