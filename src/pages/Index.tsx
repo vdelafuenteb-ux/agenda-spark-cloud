@@ -374,7 +374,7 @@ const Index = () => {
                           assignees={assignees}
                           departments={departments}
                           onCreateAssignee={(name) => createAssignee.mutateAsync(name)}
-                          forceExpand={forceExpand}
+                          forceExpand={expandedTopicId === topic.id ? true : forceExpand}
                           onUpdate={(id, data) => {
                             updateTopic.mutate({ id, ...data });
                             if ((data as Record<string, unknown>).status === 'completado') {
