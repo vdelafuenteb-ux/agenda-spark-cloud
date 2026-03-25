@@ -241,11 +241,11 @@ export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardVie
   const totalActivos = metrics.byStatus.activo.length + metrics.byStatus.seguimiento.length;
   const totalPausados = metrics.byStatus.pausado.length;
 
-  // On-track: active/seguimiento, not ongoing, has due_date, not overdue
+  // Semáforo: al día = not overdue and not dueSoon (includes no date, ongoing, etc.)
   const activeAndTracking = [...metrics.byStatus.activo, ...metrics.byStatus.seguimiento];
-  const nonOngoingActive = activeAndTracking.filter(t => !t.is_ongoing);
-  const onTrackCount = nonOngoingActive.filter(t => t.due_date && !isStoredDateOverdue(t.due_date)).length;
   const overdueCount = metrics.overdue.length;
+  const dueSoonCount = metrics.dueSoon.length;
+  const onTrackCount = activeAndTracking.length - overdueCount - dueSoonCount;
 
 
   const trendChartConfig = {
