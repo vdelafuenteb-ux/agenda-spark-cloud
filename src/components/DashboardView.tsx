@@ -196,11 +196,12 @@ export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardVie
           if (t.is_ongoing || !t.due_date) {
             entry.onTrackCount++;
           } else if (isStoredDateOverdue(t.due_date)) {
-          entry.overdueCount++;
-        } else {
-          const due = new Date(t.due_date + 'T23:59:59');
-          if (isBefore(due, threeDaysFromNow)) entry.dueSoonCount++;
-          else entry.onTrackCount++;
+            entry.overdueCount++;
+          } else {
+            const due = new Date(t.due_date + 'T23:59:59');
+            if (isBefore(due, threeDaysFromNow)) entry.dueSoonCount++;
+            else entry.onTrackCount++;
+          }
         }
       }
       assigneeMap.set(t.assignee, entry);
