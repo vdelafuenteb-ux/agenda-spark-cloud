@@ -614,8 +614,8 @@ export function EmailHistoryView() {
                   key={batch.key}
                   className={cn(
                     "rounded-lg border border-border overflow-hidden",
-                    batch.allConfirmed && "bg-green-50/50 dark:bg-green-950/10",
-                    deadline.isOverdue && "bg-red-50 dark:bg-red-950/20"
+                    isWeekly && batch.allConfirmed && "bg-green-50/50 dark:bg-green-950/10",
+                    isWeekly && deadline.isOverdue && "bg-red-50 dark:bg-red-950/20"
                   )}
                 >
                   <div
