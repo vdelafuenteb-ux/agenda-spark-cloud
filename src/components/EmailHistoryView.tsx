@@ -558,6 +558,7 @@ export function EmailHistoryView() {
                                         <span className="text-[10px] text-muted-foreground w-4">{i + 1}.</span>
                                         <span className="text-xs text-foreground">{email.topic_title}</span>
                                       </div>
+                                      {isWeekly ? (
                                       <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
                                         {email.confirmed ? (
                                           <>
@@ -582,6 +583,9 @@ export function EmailHistoryView() {
                                           </>
                                         )}
                                       </div>
+                                      ) : (
+                                      <span className="text-[10px] text-muted-foreground">Informativo</span>
+                                      )}
                                     </div>
                                   );
                                 })}
