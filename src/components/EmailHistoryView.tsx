@@ -307,9 +307,24 @@ export function EmailHistoryView() {
     toggleConfirmed.mutate({ id, confirmed: false });
   };
 
+  const isWeekly = activeTab === 'weekly';
+
   return (
     <div className="flex-1 overflow-auto p-3 md:p-4">
       <div className="max-w-5xl mx-auto space-y-4">
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as any); setExpandedBatches(new Set()); clearFilters(); }}>
+          <TabsList className="w-full sm:w-auto">
+            <TabsTrigger value="weekly" className="text-xs gap-1.5">
+              <Mail className="h-3.5 w-3.5" />
+              Seguimiento semanal
+            </TabsTrigger>
+            <TabsTrigger value="new_topic" className="text-xs gap-1.5">
+              <FileText className="h-3.5 w-3.5" />
+              Temas adicionales
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
         {/* Stats */}
         <div className="grid grid-cols-4 gap-3">
           <div className="rounded-lg border border-border bg-card p-3 text-center">
