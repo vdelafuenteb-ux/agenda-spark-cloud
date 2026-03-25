@@ -6,6 +6,14 @@ const corsHeaders = {
 
 const FIREBASE_EMAIL_URL = "https://us-central1-sistemattransit.cloudfunctions.net/correoAdministracion";
 
+interface SummaryItem {
+  title: string;
+  parentTitle?: string;
+  assignee: string;
+  dueDate: string | null;
+  type: 'subtask' | 'topic';
+}
+
 function formatDate(dateStr?: string | null): string {
   if (!dateStr) return "";
   try {
@@ -37,6 +45,38 @@ function addDays(dateStr: string, days: number): string {
   return d.toISOString().split("T")[0];
 }
 
+function buildItems(
+  topics: any[],
+  matchFn: (date: string | null) => boolean,
+  includeCompleted: boolean,
+): SummaryItem[] {
+  const items: SummaryItem[] = [];
+  for (const topic of topics) {
+    const subs = (topic.subtasks || []).filter((s: any) =>
+      (includeCompleted || !s.completed) && matchFn(s.due_date)
+    );
+    for (const sub of subs) {
+      items.push({
+        title: sub.title,
+        parentTitle: topic.title,
+        assignee: sub.responsible || topic.assignee || "",
+        dueDate: sub.due_date,
+        type: 'subtask',
+      });
+    }
+    // Only show topic row if no matching subtasks and topic itself matches
+    if (subs.length === 0 && matchFn(topic.due_date)) {
+      items.push({
+        title: topic.title,
+        assignee: topic.assignee || "",
+        dueDate: topic.due_date,
+        type: 'topic',
+      });
+    }
+  }
+  return items;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -48,21 +88,19 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    // Chile timezone today
     const nowUtc = new Date();
     const chileStr = nowUtc.toLocaleDateString("en-CA", { timeZone: "America/Santiago" });
-    const today = chileStr; // YYYY-MM-DD
+    const today = chileStr;
     const limitDate = addDays(today, 3);
 
     console.log(`Daily summary: today=${today}, upcoming limit=${limitDate}`);
 
     const RECIPIENT_EMAIL = "matias@transitglobalgroup.com";
 
-    // Find the user by email
     const { data: users, error: usersErr } = await supabase.auth.admin.listUsers();
     if (usersErr) throw usersErr;
 
-    const targetUser = users.users.find(u => u.email === RECIPIENT_EMAIL);
+    const targetUser = users.users.find((u: any) => u.email === RECIPIENT_EMAIL);
     if (!targetUser) {
       console.log(`User ${RECIPIENT_EMAIL} not found, skipping`);
       return new Response(
@@ -72,123 +110,88 @@ Deno.serve(async (req) => {
     }
 
     let emailsSent = 0;
-
-    // Process only the target user
     const user = targetUser;
-    {
 
-      // Fetch active/seguimiento topics with subtasks
-      const { data: topics, error: topicsErr } = await supabase
-        .from("topics")
-        .select("*, subtasks(*)")
-        .eq("user_id", user.id)
-        .in("status", ["activo", "seguimiento"]);
+    const { data: topics, error: topicsErr } = await supabase
+      .from("topics")
+      .select("*, subtasks(*)")
+      .eq("user_id", user.id)
+      .in("status", ["activo", "seguimiento"]);
 
-      if (topicsErr) {
-        console.error(`Error fetching topics for ${user.id}:`, topicsErr);
-        return new Response(JSON.stringify({ error: "Error fetching topics" }), { status: 500, headers: corsHeaders });
+    if (topicsErr) {
+      console.error(`Error fetching topics for ${user.id}:`, topicsErr);
+      return new Response(JSON.stringify({ error: "Error fetching topics" }), { status: 500, headers: corsHeaders });
+    }
+
+    if (!topics || topics.length === 0) {
+      return new Response(JSON.stringify({ message: "No active topics found" }), { status: 200, headers: corsHeaders });
+    }
+
+    // Fetch checklist items
+    const { data: checklistItems } = await supabase
+      .from("checklist_items")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("completed", false);
+
+    // Build individual items (like ReviewView)
+    const todayItems = buildItems(topics, (d) => isToday(d, today), true);
+    const overdueItems = buildItems(topics, (d) => isOverdue(d, today), false);
+    const upcomingItems = buildItems(topics, (d) => isUpcoming(d, today, limitDate), false);
+
+    // Checklist categorization
+    const todayChecklist = (checklistItems || []).filter((i: any) => isToday(i.due_date, today));
+    const overdueChecklist = (checklistItems || []).filter((i: any) => isOverdue(i.due_date, today));
+    const upcomingChecklist = (checklistItems || []).filter((i: any) => isUpcoming(i.due_date, today, limitDate));
+
+    const totalItems = todayItems.length + overdueItems.length + upcomingItems.length +
+      todayChecklist.length + overdueChecklist.length + upcomingChecklist.length;
+
+    if (totalItems === 0) {
+      console.log(`No items for user ${user.id}, skipping`);
+      return new Response(JSON.stringify({ message: "No pending items" }), { status: 200, headers: corsHeaders });
+    }
+
+    // Build HTML email
+    let mensaje = `<div style="font-family:Arial,sans-serif;max-width:650px;margin:0 auto;">`;
+    mensaje += `<h2 style="color:#1a1a1a;margin-bottom:4px;">📋 Resumen diario — ${formatDate(today)}</h2>`;
+    mensaje += `<p style="color:#666;margin-top:0;">Tu revisión del día con temas, subtareas y checklist.</p>`;
+
+    mensaje += buildSection("📌 Hoy", todayItems, todayChecklist, today, "#2563eb");
+    mensaje += buildSection("🔴 Atrasados", overdueItems, overdueChecklist, today, "#dc2626");
+    mensaje += buildSection("🟡 Próximos (3 días)", upcomingItems, upcomingChecklist, today, "#d97706");
+
+    mensaje += `<hr style="border:none;border-top:1px solid #eee;margin:20px 0;">`;
+    mensaje += `<p style="font-size:11px;color:#aaa;">📧 Correo automático de resumen diario.</p>`;
+    mensaje += `</div>`;
+
+    const overdueTotal = overdueItems.length + overdueChecklist.length;
+    const todayTotal = todayItems.length + todayChecklist.length;
+    const upcomingTotal = upcomingItems.length + upcomingChecklist.length;
+
+    const asunto = `📋 Resumen diario | ${overdueTotal > 0 ? `🔴 ${overdueTotal} atrasado${overdueTotal > 1 ? "s" : ""} | ` : ""}${todayTotal} hoy | ${upcomingTotal} próximos`;
+
+    try {
+      const response = await fetch(FIREBASE_EMAIL_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          para: user.email,
+          asunto,
+          mensaje,
+          cc: [],
+        }),
+      });
+
+      if (!response.ok) {
+        const result = await response.json();
+        console.error(`Failed to send daily summary to ${user.email}:`, result);
+      } else {
+        emailsSent++;
+        console.log(`Sent daily summary to ${user.email}: ${todayTotal} today, ${overdueTotal} overdue, ${upcomingTotal} upcoming`);
       }
-
-      if (!topics || topics.length === 0) {
-        return new Response(JSON.stringify({ message: "No active topics found" }), { status: 200, headers: corsHeaders });
-      }
-
-      // Fetch checklist items
-      const { data: checklistItems } = await supabase
-        .from("checklist_items")
-        .select("*")
-        .eq("user_id", user.id)
-        .eq("completed", false);
-
-      // Fetch reminders
-      const { data: reminders } = await supabase
-        .from("reminders")
-        .select("*")
-        .eq("user_id", user.id);
-
-      // Categorize topics
-      const todayTopics: any[] = [];
-      const overdueTopics: any[] = [];
-      const upcomingTopics: any[] = [];
-
-      for (const t of topics) {
-        const topicToday = isToday(t.due_date, today);
-        const topicOverdue = !t.is_ongoing && isOverdue(t.due_date, today);
-        const topicUpcoming = isUpcoming(t.due_date, today, limitDate);
-
-        const subtasksToday = (t.subtasks || []).filter((s: any) => isToday(s.due_date, today));
-        const subtasksOverdue = (t.subtasks || []).filter((s: any) => !s.completed && isOverdue(s.due_date, today));
-        const subtasksUpcoming = (t.subtasks || []).filter((s: any) => !s.completed && isUpcoming(s.due_date, today, limitDate));
-
-        if (topicToday || subtasksToday.length > 0) {
-          todayTopics.push({ ...t, matchCount: subtasksToday.length || 1 });
-        }
-        if (topicOverdue || subtasksOverdue.length > 0) {
-          overdueTopics.push({ ...t, matchCount: subtasksOverdue.length || 1 });
-        }
-        if (topicUpcoming || subtasksUpcoming.length > 0) {
-          upcomingTopics.push({ ...t, matchCount: subtasksUpcoming.length || 1 });
-        }
-      }
-
-      // Checklist categorization
-      const todayChecklist = (checklistItems || []).filter((i: any) => isToday(i.due_date, today));
-      const overdueChecklist = (checklistItems || []).filter((i: any) => isOverdue(i.due_date, today));
-      const upcomingChecklist = (checklistItems || []).filter((i: any) => isUpcoming(i.due_date, today, limitDate));
-
-      const totalItems = todayTopics.length + overdueTopics.length + upcomingTopics.length +
-        todayChecklist.length + overdueChecklist.length + upcomingChecklist.length;
-
-      if (totalItems === 0) {
-        console.log(`No items for user ${user.id}, skipping`);
-        return new Response(JSON.stringify({ message: "No pending items" }), { status: 200, headers: corsHeaders });
-      }
-
-      // Build HTML email
-      let mensaje = `<div style="font-family:Arial,sans-serif;max-width:650px;margin:0 auto;">`;
-      mensaje += `<h2 style="color:#1a1a1a;margin-bottom:4px;">📋 Resumen diario — ${formatDate(today)}</h2>`;
-      mensaje += `<p style="color:#666;margin-top:0;">Tu revisión del día con temas, subtareas y checklist.</p>`;
-
-      // --- HOY ---
-      const todayTotal = todayTopics.reduce((s: number, t: any) => s + t.matchCount, 0) + todayChecklist.length;
-      mensaje += buildSection("📌 Hoy", todayTopics, todayChecklist, today, "#2563eb", todayTotal);
-
-      // --- ATRASADOS ---
-      const overdueTotal = overdueTopics.reduce((s: number, t: any) => s + t.matchCount, 0) + overdueChecklist.length;
-      mensaje += buildSection("🔴 Atrasados", overdueTopics, overdueChecklist, today, "#dc2626", overdueTotal);
-
-      // --- PRÓXIMOS ---
-      const upcomingTotal = upcomingTopics.reduce((s: number, t: any) => s + t.matchCount, 0) + upcomingChecklist.length;
-      mensaje += buildSection("🟡 Próximos (3 días)", upcomingTopics, upcomingChecklist, today, "#d97706", upcomingTotal);
-
-      mensaje += `<hr style="border:none;border-top:1px solid #eee;margin:20px 0;">`;
-      mensaje += `<p style="font-size:11px;color:#aaa;">📧 Correo automático de resumen diario.</p>`;
-      mensaje += `</div>`;
-
-      const asunto = `📋 Resumen diario | ${overdueTotal > 0 ? `🔴 ${overdueTotal} atrasado${overdueTotal > 1 ? "s" : ""} | ` : ""}${todayTotal} hoy | ${upcomingTotal} próximos`;
-
-      try {
-        const response = await fetch(FIREBASE_EMAIL_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            para: user.email,
-            asunto,
-            mensaje,
-            cc: [],
-          }),
-        });
-
-        if (!response.ok) {
-          const result = await response.json();
-          console.error(`Failed to send daily summary to ${user.email}:`, result);
-        } else {
-          emailsSent++;
-          console.log(`Sent daily summary to ${user.email}: ${todayTotal} today, ${overdueTotal} overdue, ${upcomingTotal} upcoming`);
-        }
-      } catch (emailError) {
-        console.error(`Error sending to ${user.email}:`, emailError);
-      }
+    } catch (emailError) {
+      console.error(`Error sending to ${user.email}:`, emailError);
     }
 
     return new Response(
@@ -207,12 +210,13 @@ Deno.serve(async (req) => {
 
 function buildSection(
   title: string,
-  topics: any[],
+  items: SummaryItem[],
   checklist: any[],
   today: string,
   color: string,
-  total: number,
 ): string {
+  const total = items.length + checklist.length;
+
   if (total === 0) {
     return `<div style="margin:16px 0;padding:12px;background:#f9f9f9;border-radius:8px;border-left:4px solid ${color};">
       <h3 style="margin:0;color:${color};font-size:15px;">${title} <span style="font-weight:normal;color:#999;">(0)</span></h3>
@@ -223,20 +227,23 @@ function buildSection(
   let html = `<div style="margin:16px 0;padding:12px 16px;background:#f9f9f9;border-radius:8px;border-left:4px solid ${color};">`;
   html += `<h3 style="margin:0 0 8px;color:${color};font-size:15px;">${title} <span style="font-weight:normal;color:#999;">(${total})</span></h3>`;
 
-  if (topics.length > 0) {
+  if (items.length > 0) {
     html += `<table style="width:100%;border-collapse:collapse;font-size:13px;">`;
-    html += `<thead><tr style="background:#fff;"><th style="padding:4px 8px;text-align:left;border-bottom:1px solid #ddd;">Tema</th>`;
+    html += `<thead><tr style="background:#fff;"><th style="padding:4px 8px;text-align:left;border-bottom:1px solid #ddd;">Item</th>`;
     html += `<th style="padding:4px 8px;text-align:left;border-bottom:1px solid #ddd;">Responsable</th>`;
-    html += `<th style="padding:4px 8px;text-align:center;border-bottom:1px solid #ddd;">Vence</th>`;
-    html += `<th style="padding:4px 8px;text-align:center;border-bottom:1px solid #ddd;">Items</th></tr></thead><tbody>`;
+    html += `<th style="padding:4px 8px;text-align:center;border-bottom:1px solid #ddd;">Vence</th></tr></thead><tbody>`;
 
-    for (const t of topics) {
-      const venceColor = isOverdue(t.due_date, today) ? "color:#dc2626;font-weight:600;" : "";
+    for (const item of items) {
+      const venceColor = isOverdue(item.dueDate, today) ? "color:#dc2626;font-weight:600;" : "";
       html += `<tr>`;
-      html += `<td style="padding:4px 8px;border-bottom:1px solid #eee;font-weight:500;">${t.title}</td>`;
-      html += `<td style="padding:4px 8px;border-bottom:1px solid #eee;color:#666;">${t.assignee || "—"}</td>`;
-      html += `<td style="padding:4px 8px;border-bottom:1px solid #eee;text-align:center;${venceColor}">${formatDate(t.due_date) || "—"}</td>`;
-      html += `<td style="padding:4px 8px;border-bottom:1px solid #eee;text-align:center;">${t.matchCount}</td>`;
+      html += `<td style="padding:4px 8px;border-bottom:1px solid #eee;">`;
+      html += `<span style="font-weight:500;">${item.title}</span>`;
+      if (item.parentTitle) {
+        html += `<br><span style="font-size:11px;color:#888;">→ ${item.parentTitle}</span>`;
+      }
+      html += `</td>`;
+      html += `<td style="padding:4px 8px;border-bottom:1px solid #eee;color:#666;">${item.assignee || "—"}</td>`;
+      html += `<td style="padding:4px 8px;border-bottom:1px solid #eee;text-align:center;${venceColor}">${formatDate(item.dueDate) || "—"}</td>`;
       html += `</tr>`;
     }
     html += `</tbody></table>`;
