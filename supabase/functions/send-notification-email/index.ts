@@ -129,25 +129,38 @@ Deno.serve(async (req) => {
 
     const response = await fetch(FIREBASE_EMAIL_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json, text/plain;q=0.9, */*;q=0.8",
+      },
       body: JSON.stringify({
         para: to_email,
         asunto: `🚨 1 TEMA ACTIVO — ¡Actualizar a la brevedad! | Máx. 48 hrs para responder`,
         mensaje: mensaje,
         cc: CC_EMAILS,
       }),
+      signal: AbortSignal.timeout(15000),
     });
 
     const responseText = await response.text();
-    let result: any;
-    try {
-      result = JSON.parse(responseText);
-    } catch {
-      throw new Error(`Firebase API returned non-JSON: ${responseText.substring(0, 200)}`);
+    const contentType = response.headers.get("content-type") || "";
+    let result: any = null;
+
+    if (contentType.includes("application/json") && responseText) {
+      try {
+        result = JSON.parse(responseText);
+      } catch {
+        result = null;
+      }
     }
 
     if (!response.ok) {
-      throw new Error(result.error || `Firebase email API failed [${response.status}]`);
+      throw new Error(
+        result?.error ||
+        result?.message ||
+        responseText ||
+        `Firebase email API failed [${response.status}]`
+      );
     }
 
     return new Response(
@@ -156,7 +169,11 @@ Deno.serve(async (req) => {
     );
   } catch (error: unknown) {
     console.error("Error sending notification email:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const errorMessage = error instanceof DOMException && error.name === "TimeoutError"
+      ? "El servicio de correo tardó demasiado en responder"
+      : error instanceof Error
+        ? error.message
+        : "Unknown error";
     return new Response(
       JSON.stringify({ error: errorMessage }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
