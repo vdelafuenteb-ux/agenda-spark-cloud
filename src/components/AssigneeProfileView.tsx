@@ -21,6 +21,7 @@ interface AssigneeProfileViewProps {
   assignee?: Assignee;
   topics: TopicWithSubtasks[];
   onBack: () => void;
+  onNavigateToTopic?: (topicId: string, status: string) => void;
 }
 
 function CollapsibleSection({ title, icon: Icon, count, defaultOpen = false, children, badge }: {
