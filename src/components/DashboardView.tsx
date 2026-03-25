@@ -520,22 +520,28 @@ export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardVie
                   <TableHeader>
                     <TableRow>
                       <TableHead className="text-xs">Nombre</TableHead>
-                      <TableHead className="text-xs text-center">Temas</TableHead>
-                      <TableHead className="text-xs text-center">Subtareas</TableHead>
-                      <TableHead className="text-xs text-center">Cerrados</TableHead>
+                      <TableHead className="text-xs text-center">Total</TableHead>
+                      <TableHead className="text-xs text-center">Activos</TableHead>
+                      <TableHead className="text-xs text-center">Pausados</TableHead>
+                      <TableHead className="text-xs text-center border-l">Al día</TableHead>
                       <TableHead className="text-xs text-center">Atrasados</TableHead>
                       <TableHead className="text-xs text-center">Por vencer</TableHead>
-                      <TableHead className="text-xs">Avance</TableHead>
+                      <TableHead className="text-xs border-l">Avance</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {metrics.assigneeRanking.map((a) => (
                       <TableRow key={a.name} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedAssignee(a.name)}>
                         <TableCell className="text-sm font-medium text-primary underline underline-offset-2">{a.name}</TableCell>
-                        <TableCell className="text-sm text-center">{a.total}</TableCell>
-                        <TableCell className="text-sm text-center">{a.subtasksDone}/{a.subtasksTotal}</TableCell>
-                        <TableCell className="text-sm text-center">
-                          <Badge variant="outline" className="text-[10px]">{a.closedCount}</Badge>
+                        <TableCell className="text-sm text-center font-medium">{a.total}</TableCell>
+                        <TableCell className="text-sm text-center">{a.activeCount}</TableCell>
+                        <TableCell className="text-sm text-center">{a.pausedCount}</TableCell>
+                        <TableCell className="text-sm text-center border-l">
+                          {a.onTrackCount > 0 ? (
+                            <Badge variant="outline" className="text-[10px] border-emerald-500/50 text-emerald-600">{a.onTrackCount}</Badge>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">0</span>
+                          )}
                         </TableCell>
                         <TableCell className="text-sm text-center">
                           {a.overdueCount > 0 ? (
@@ -551,7 +557,7 @@ export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardVie
                             <span className="text-muted-foreground text-xs">0</span>
                           )}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="border-l">
                           <div className="flex items-center gap-2">
                             <Progress value={a.progress} className="h-2 flex-1" />
                             <span className="text-xs text-muted-foreground w-8">{a.progress}%</span>
