@@ -57,6 +57,7 @@ const Index = () => {
   const [showOngoing, setShowOngoing] = useState(true);
   const [showNotOngoing, setShowNotOngoing] = useState(true);
   const [sortBy, setSortBy] = useState<SortOption>('order');
+  const [expandedTopicId, setExpandedTopicId] = useState<string | null>(null);
 
   const toggleTagFilter = useCallback((tagId: string) => {
     setSelectedTagIds((prev) => (prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]));
@@ -104,6 +105,15 @@ const Index = () => {
       return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
     });
   }, [topics, statusTab, searchQuery, selectedTagIds, selectedAssignee, filterNoDueDate, showOngoing, showNotOngoing, getTagsForTopic, sortBy]);
+
+  useEffect(() => {
+    if (expandedTopicId && filter === 'todos') {
+      setTimeout(() => {
+        const el = document.querySelector(`[data-topic-id="${expandedTopicId}"]`);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+    }
+  }, [expandedTopicId, filter]);
 
   const statusCounts = useMemo(() => {
     const counts = { activo: 0, seguimiento: 0, pausado: 0, completado: 0 };
@@ -284,6 +294,7 @@ const Index = () => {
             <DashboardView topics={topics} assignees={assignees} onUpdateTopic={(id, data) => updateTopic.mutate({ id, ...data })} onNavigateToTopic={(topicId, status) => {
               setFilter('todos');
               setStatusTab(status as StatusTab);
+              setExpandedTopicId(topicId);
               setForceExpand(null);
               setSearchQuery('');
               setSelectedTagIds([]);
@@ -319,7 +330,7 @@ const Index = () => {
                   <ReportsList onNewReport={() => setReportOpen(true)} />
                 ) : (
                   <>
-                    <Tabs value={statusTab} onValueChange={(value) => { setStatusTab(value as StatusTab); setForceExpand(null); setSearchQuery(''); setSelectedTagIds([]); setSelectedAssignee(''); setFilterNoDueDate(false); setShowOngoing(true); setShowNotOngoing(true); setSortBy('order'); }}>
+                    <Tabs value={statusTab} onValueChange={(value) => { setStatusTab(value as StatusTab); setForceExpand(null); setExpandedTopicId(null); setSearchQuery(''); setSelectedTagIds([]); setSelectedAssignee(''); setFilterNoDueDate(false); setShowOngoing(true); setShowNotOngoing(true); setSortBy('order'); }}>
                       <TabsList className="w-full">
                         <TabsTrigger value="activo" className="flex-1 text-[11px] sm:text-xs px-1 sm:px-3">Activos <span className="hidden sm:inline">({statusCounts.activo})</span><span className="sm:hidden ml-0.5">{statusCounts.activo}</span></TabsTrigger>
                         <TabsTrigger value="seguimiento" className="flex-1 text-[11px] sm:text-xs px-1 sm:px-3"><span className="sm:hidden">Seguim.</span><span className="hidden sm:inline">Seguimiento</span> <span className="hidden sm:inline">({statusCounts.seguimiento})</span><span className="sm:hidden ml-0.5">{statusCounts.seguimiento}</span></TabsTrigger>
@@ -372,7 +383,7 @@ const Index = () => {
                           assignees={assignees}
                           departments={departments}
                           onCreateAssignee={(name) => createAssignee.mutateAsync(name)}
-                          forceExpand={forceExpand}
+                          forceExpand={expandedTopicId === topic.id ? true : forceExpand}
                           onUpdate={(id, data) => {
                             updateTopic.mutate({ id, ...data });
                             if ((data as Record<string, unknown>).status === 'completado') {

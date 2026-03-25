@@ -137,7 +137,7 @@ export function TopicCard({
   };
 
   return (
-    <div className={cn(
+    <div data-topic-id={topic.id} className={cn(
       'bg-card rounded-lg shadow-sm hover:shadow-md transition-shadow border-l-4',
       isCompleted
         ? 'border-l-emerald-500'
