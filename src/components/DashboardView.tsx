@@ -274,7 +274,7 @@ export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardVie
     <div className="flex-1 overflow-auto p-3 md:p-4">
       <div className="max-w-6xl mx-auto space-y-4">
         {/* KPI Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 max-w-5xl">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mx-auto">
           {/* 1. Temas Totales */}
           <Card>
             <CardContent className="p-3">
