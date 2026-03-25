@@ -471,6 +471,7 @@ export function EmailHistoryView() {
                           <td className="px-3 py-2.5 text-muted-foreground">
                             {isExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
                           </td>
+                          {isWeekly && (
                           <td className="px-3 py-2.5" onClick={e => e.stopPropagation()}>
                             {batch.allConfirmed ? (
                               <Checkbox
@@ -490,6 +491,8 @@ export function EmailHistoryView() {
                               />
                             )}
                           </td>
+                          )}
+                          {isWeekly && (
                           <td className="px-3 py-2.5">
                             {batch.allConfirmed ? (
                               <span className="inline-flex items-center gap-1 text-green-600">
@@ -503,6 +506,15 @@ export function EmailHistoryView() {
                               </span>
                             )}
                           </td>
+                          )}
+                          {!isWeekly && (
+                          <td className="px-3 py-2.5">
+                            <span className="inline-flex items-center gap-1 text-green-600">
+                              <CheckCircle2 className="h-3 w-3" />
+                              <span className="text-[10px] font-medium">Enviado</span>
+                            </span>
+                          </td>
+                          )}
                           <td className="px-3 py-2.5 font-medium text-foreground">{batch.assignee_name}</td>
                           <td className="px-3 py-2.5 text-muted-foreground">{batch.assignee_email}</td>
                           <td className="px-3 py-2.5">
@@ -514,12 +526,14 @@ export function EmailHistoryView() {
                           <td className="px-3 py-2.5 text-muted-foreground font-mono">
                             {format(new Date(batch.sent_at), "dd MMM yyyy HH:mm", { locale: es })}
                           </td>
+                          {isWeekly && (
                           <td className="px-3 py-2.5">
                             <span className={cn("font-mono font-medium text-[11px] inline-flex items-center gap-1", deadline.color)}>
                               {deadline.isOverdue && <AlertTriangle className="h-3 w-3" />}
                               {deadline.label}
                             </span>
                           </td>
+                          )}
                           <td className="px-3 py-2.5 text-right" onClick={e => e.stopPropagation()}>
                             <button
                               onClick={() => deleteBatch.mutate(batchIds)}
