@@ -662,6 +662,7 @@ export function EmailHistoryView() {
                       <div className="flex items-center justify-between mb-1">
                         <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Temas</p>
                         <div className="flex items-center gap-2">
+                          {isWeekly && (
                           <div onClick={e => e.stopPropagation()}>
                             {batch.allConfirmed ? (
                               <Checkbox
@@ -681,6 +682,7 @@ export function EmailHistoryView() {
                               />
                             )}
                           </div>
+                          )}
                           <button
                             onClick={(e) => { e.stopPropagation(); deleteBatch.mutate(batchIds); }}
                             className="text-muted-foreground hover:text-destructive transition-colors"
