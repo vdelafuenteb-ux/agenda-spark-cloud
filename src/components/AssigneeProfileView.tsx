@@ -65,6 +65,8 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
     },
   });
 
+  const DEADLINE_HOURS = 48;
+
   const metrics = useMemo(() => {
     const now = new Date();
     const threeDaysFromNow = addDays(now, 3);
@@ -94,14 +96,23 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
     const baja = assigneeTopics.filter(t => t.priority === 'baja' && t.status !== 'completado');
 
     const emailsSent = emailHistory.length;
-    // Use confirmed as the response metric (confirmed = the admin marked the person responded)
     const emailsConfirmed = emailHistory.filter((e: any) => e.confirmed).length;
     const responseRate = emailsSent > 0 ? Math.round((emailsConfirmed / emailsSent) * 100) : 0;
+
+    // Email response compliance (a tiempo vs fuera de plazo)
+    const confirmedEmails = emailHistory.filter((e: any) => e.confirmed && e.confirmed_at);
+    const onTimeEmails = confirmedEmails.filter((e: any) => {
+      const deadlineTime = new Date(e.sent_at).getTime() + DEADLINE_HOURS * 60 * 60 * 1000;
+      return new Date(e.confirmed_at).getTime() <= deadlineTime;
+    });
+    const lateEmails = confirmedEmails.length - onTimeEmails.length;
+    const complianceRate = confirmedEmails.length > 0 ? Math.round((onTimeEmails.length / confirmedEmails.length) * 100) : 0;
 
     return {
       assigneeTopics, active, seguimiento, completed,
       overdue, dueSoon, allSubtasks, completedSubtasks, subtaskProgress,
       alta, media, baja, emailsSent, emailsConfirmed, responseRate,
+      onTimeEmails: onTimeEmails.length, lateEmails, complianceRate, confirmedTotal: confirmedEmails.length,
     };
   }, [topics, assigneeName, emailHistory]);
 
