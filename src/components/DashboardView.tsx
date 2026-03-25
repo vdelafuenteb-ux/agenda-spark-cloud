@@ -179,7 +179,7 @@ export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardVie
     const avgCreatedMonthly = topics.length / totalMonthsSpan;
 
     // Assignee ranking
-    const assigneeMap = new Map<string, { total: number; subtasksTotal: number; subtasksDone: number; overdueCount: number; dueSoonCount: number; closedCount: number }>();
+    const assigneeMap = new Map<string, { total: number; activeCount: number; pausedCount: number; subtasksTotal: number; subtasksDone: number; overdueCount: number; dueSoonCount: number; onTrackCount: number; closedCount: number }>();
     for (const t of topics) {
       if (!t.assignee) continue;
       const entry = assigneeMap.get(t.assignee) || { total: 0, activeCount: 0, pausedCount: 0, subtasksTotal: 0, subtasksDone: 0, overdueCount: 0, dueSoonCount: 0, onTrackCount: 0, closedCount: 0 };
