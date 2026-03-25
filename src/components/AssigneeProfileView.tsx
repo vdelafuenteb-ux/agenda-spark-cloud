@@ -333,9 +333,9 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
                     const pending = t.subtasks.filter(s => !s.completed).length;
                     const isOverdue = isStoredDateOverdue(t.due_date);
                     return (
-                      <div key={t.id} className={`rounded-md border p-2.5 space-y-1 ${isOverdue ? 'border-destructive/30 bg-destructive/5' : 'border-border'}`}>
+                      <div key={t.id} className={`rounded-md border p-2.5 space-y-1 ${isOverdue ? 'border-destructive/30 bg-destructive/5' : 'border-border'} ${onNavigateToTopic ? 'cursor-pointer hover:bg-muted/50' : ''}`} onClick={() => onNavigateToTopic?.(t.id, t.status)}>
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-medium truncate flex-1">{t.title}</span>
+                          <span className="text-xs font-medium truncate flex-1 text-primary">{t.title}</span>
                           <button onClick={() => handleSendReminder(t)} disabled={sendingId === t.id || !assignee?.email}
                             className="p-1 rounded-full hover:bg-muted transition-colors disabled:opacity-30">
                             {sendingId === t.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Bell className="h-3 w-3 text-muted-foreground" />}
