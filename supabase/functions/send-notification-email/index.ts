@@ -138,7 +138,13 @@ Deno.serve(async (req) => {
       }),
     });
 
-    const result = await response.json();
+    const responseText = await response.text();
+    let result: any;
+    try {
+      result = JSON.parse(responseText);
+    } catch {
+      throw new Error(`Firebase API returned non-JSON: ${responseText.substring(0, 200)}`);
+    }
 
     if (!response.ok) {
       throw new Error(result.error || `Firebase email API failed [${response.status}]`);
