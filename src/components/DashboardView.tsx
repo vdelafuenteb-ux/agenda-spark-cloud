@@ -23,6 +23,7 @@ interface DashboardViewProps {
   topics: TopicWithSubtasks[];
   assignees: Assignee[];
   onUpdateTopic?: (id: string, data: any) => void;
+  onNavigateToTopic?: (topicId: string, status: string) => void;
 }
 
 const PRIORITY_COLORS = {
@@ -38,7 +39,7 @@ const STATUS_COLORS = {
   completado: 'hsl(142 71% 45%)',
 };
 
-export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardViewProps) {
+export function DashboardView({ topics, assignees, onUpdateTopic, onNavigateToTopic }: DashboardViewProps) {
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [selectedAssignee, setSelectedAssignee] = useState<string | null>(null);
 
@@ -266,6 +267,7 @@ export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardVie
         assignee={assigneeObj}
         topics={topics}
         onBack={() => setSelectedAssignee(null)}
+        onNavigateToTopic={onNavigateToTopic}
       />
     );
   }

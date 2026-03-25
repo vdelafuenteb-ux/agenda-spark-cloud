@@ -21,6 +21,7 @@ interface AssigneeProfileViewProps {
   assignee?: Assignee;
   topics: TopicWithSubtasks[];
   onBack: () => void;
+  onNavigateToTopic?: (topicId: string, status: string) => void;
 }
 
 function CollapsibleSection({ title, icon: Icon, count, defaultOpen = false, children, badge }: {
@@ -47,7 +48,7 @@ function CollapsibleSection({ title, icon: Icon, count, defaultOpen = false, chi
   );
 }
 
-export function AssigneeProfileView({ assigneeName, assignee, topics, onBack }: AssigneeProfileViewProps) {
+export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, onNavigateToTopic }: AssigneeProfileViewProps) {
   const [sendingId, setSendingId] = useState<string | null>(null);
 
   const { data: emailHistory = [] } = useQuery({
@@ -293,8 +294,8 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack }: 
                         const pending = t.subtasks.filter(s => !s.completed).length;
                         const isOverdue = isStoredDateOverdue(t.due_date);
                         return (
-                          <TableRow key={t.id} className={isOverdue ? 'bg-destructive/5' : ''}>
-                            <TableCell className="text-sm font-medium max-w-[200px] truncate">{t.title}</TableCell>
+                          <TableRow key={t.id} className={`${isOverdue ? 'bg-destructive/5' : ''} ${onNavigateToTopic ? 'cursor-pointer hover:bg-muted/50' : ''}`} onClick={() => onNavigateToTopic?.(t.id, t.status)}>
+                            <TableCell className="text-sm font-medium max-w-[200px] truncate text-primary">{t.title}</TableCell>
                             <TableCell className="text-center">
                               <Badge variant={t.priority === 'alta' ? 'destructive' : t.priority === 'media' ? 'outline' : 'secondary'} className="text-[9px]">{t.priority}</Badge>
                             </TableCell>
@@ -332,9 +333,9 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack }: 
                     const pending = t.subtasks.filter(s => !s.completed).length;
                     const isOverdue = isStoredDateOverdue(t.due_date);
                     return (
-                      <div key={t.id} className={`rounded-md border p-2.5 space-y-1 ${isOverdue ? 'border-destructive/30 bg-destructive/5' : 'border-border'}`}>
+                      <div key={t.id} className={`rounded-md border p-2.5 space-y-1 ${isOverdue ? 'border-destructive/30 bg-destructive/5' : 'border-border'} ${onNavigateToTopic ? 'cursor-pointer hover:bg-muted/50' : ''}`} onClick={() => onNavigateToTopic?.(t.id, t.status)}>
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-medium truncate flex-1">{t.title}</span>
+                          <span className="text-xs font-medium truncate flex-1 text-primary">{t.title}</span>
                           <button onClick={() => handleSendReminder(t)} disabled={sendingId === t.id || !assignee?.email}
                             className="p-1 rounded-full hover:bg-muted transition-colors disabled:opacity-30">
                             {sendingId === t.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Bell className="h-3 w-3 text-muted-foreground" />}
