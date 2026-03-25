@@ -1,53 +1,46 @@
 
 
-## Plan: Notificación de tema nuevo agregado al responsable
+## Plan: Corregir resumen diario para mostrar subtareas individuales (como en Revisión)
 
-### Resumen
+### Problema
 
-Cuando se crea un tema en estado "seguimiento" con responsable asignado, enviar automáticamente un correo informativo al responsable notificándole que se agregó un nuevo tema a su listado. Este correo es **informativo** (sin plazo de 48h obligatorio), a menos que la fecha de cierre del tema sea dentro de 1-2 días, en cuyo caso se menciona la urgencia.
+El correo de resumen diario muestra el **tema** ("Feria Logistec" con fecha 30 abr) cuando en realidad lo atrasado es una **subtarea** dentro de ese tema. La vista de Revisión lo hace correctamente: muestra la subtarea con su fecha y el tema como referencia debajo.
 
----
+### Solución
 
-### Flujo
+Cambiar la lógica del edge function `send-daily-summary` para que en lugar de agrupar por tema, muestre **filas individuales por subtarea** (y solo el tema si no tiene subtareas que coincidan), igual que `buildItems` en `ReviewView.tsx`.
 
-1. Se crea un tema con estado "seguimiento" y responsable asignado
-2. El sistema verifica que el responsable tenga correo configurado
-3. Se envía automáticamente un correo con:
-   - **Asunto**: `📋 Nuevo tema agregado a tu listado de seguimiento`
-   - **Cuerpo**: Detalle del tema (título, fecha inicio, fecha cierre, subtareas)
-   - **Si la fecha de cierre es ≤ 2 días**: Se agrega advertencia de urgencia con plazo
-   - **Sin plazo de 48h** para responder (no es un recordatorio)
-4. Se registra en `notification_emails` para el historial
-5. Se muestra un toast confirmando el envío
+### Cambios en `supabase/functions/send-daily-summary/index.ts`
 
-### Archivos a crear/modificar
+**Categorización (líneas 109-131)**: En vez de pushear el topic completo con `matchCount`, construir una lista de items individuales:
+
+```text
+Estructura actual:         Estructura nueva:
+─────────────────         ─────────────────
+Topic "Feria"  (1)        Subtarea "X" → Tema: Feria (vence: 20 mar)
+                          
+Topic "Cargo"  (1)        Topic "Cargo" (vence: 19 mar)
+```
+
+Cada item tendrá: `title`, `parentTitle` (si es subtarea), `assignee`, `dueDate`, `type` ('subtask' | 'topic').
+
+**Tabla HTML (`buildSection`)**: Actualizar para mostrar:
+- Columna "Item" con el título de la subtarea
+- Debajo en gris: `→ Tema padre` (si es subtarea)
+- Columna "Vence" con la fecha de la subtarea/tema correspondiente
+- Eliminar columna "Items" (ya no aplica, cada fila es un item)
+
+### Tabla resultante en el correo
+
+| Item | Responsable | Vence |
+|---|---|---|
+| Seguimiento Clientes<br>`→ Cargo Aviation` | Matias Sapunar | 19 mar |
+| Documentación respaldo... | Vicente Godoy | 20 mar |
+| Check List cosas por hacer<br>`→ Feria Logistec` | Gabriel Rojas | 20 mar |
+
+### Archivo a modificar
 
 | Archivo | Cambio |
 |---|---|
-| `supabase/functions/send-new-topic-notification/index.ts` | **Nuevo** — Edge function para enviar correo informativo de tema nuevo |
-| `src/pages/Index.tsx` | Después de crear un tema "seguimiento" con responsable, invocar la edge function y registrar en historial |
-
-### Edge Function: `send-new-topic-notification`
-
-Recibe: `to_email`, `to_name`, `topic_title`, `start_date`, `due_date`, `subtasks`, `is_urgent` (si due_date ≤ 2 días).
-
-Construye HTML similar al existente pero con tono informativo:
-- Asunto: `📋 Nuevo tema agregado a tu listado de seguimiento`
-- Si es urgente: `⚠️ Nuevo tema URGENTE agregado — vence en [X] días`
-- CC a Matías y Vicente (misma lógica actual)
-- Sin mención de "48 horas para responder" salvo que sea urgente
-
-### Cambio en `Index.tsx` → `handleCreateTopic`
-
-Al final del flujo de creación, si `status === 'seguimiento'` y hay `assignee` con email:
-1. Calcular si es urgente: `due_date` existe y es ≤ 2 días desde hoy
-2. Invocar `send-new-topic-notification`
-3. Registrar en `notification_emails` via insert directo
-4. Toast informativo: "Se notificó a [nombre] del nuevo tema"
-5. Si falla el envío, solo warning (no bloquea la creación)
-
-### Notas técnicas
-- No requiere cambios de base de datos
-- El correo se registra en `notification_emails` igual que los demás, para que aparezca en el historial
-- Se reutiliza la misma infraestructura de Firebase email (`FIREBASE_EMAIL_URL`)
+| `supabase/functions/send-daily-summary/index.ts` | Refactorizar categorización para items individuales y actualizar `buildSection` |
 
