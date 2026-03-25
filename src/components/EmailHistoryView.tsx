@@ -373,6 +373,7 @@ export function EmailHistoryView() {
             </SelectContent>
           </Select>
 
+          {isWeekly && (
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-full sm:w-[140px] h-8 text-xs">
               <SelectValue placeholder="Estado" />
@@ -384,6 +385,7 @@ export function EmailHistoryView() {
               <SelectItem value="overdue">Fuera de plazo</SelectItem>
             </SelectContent>
           </Select>
+          )}
 
           <div className="flex gap-2 w-full sm:w-auto">
             <Popover>
