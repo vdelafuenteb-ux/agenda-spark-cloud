@@ -168,6 +168,16 @@ export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardVie
       weeklyTrend.push({ week: label, completados: completedInWeek, creados: createdInWeek });
     }
 
+    // Creation averages across all history
+    const createdDates = topics.map(t => new Date(t.created_at));
+    const oldestCreated = createdDates.length > 0 ? new Date(Math.min(...createdDates.map(d => d.getTime()))) : now;
+    const totalDaysSpan = Math.max(differenceInDays(now, oldestCreated), 1);
+    const totalWeeksSpan = Math.max(totalDaysSpan / 7, 1);
+    const totalMonthsSpan = Math.max(totalDaysSpan / 30, 1);
+    const avgCreatedDaily = topics.length / totalDaysSpan;
+    const avgCreatedWeekly = topics.length / totalWeeksSpan;
+    const avgCreatedMonthly = topics.length / totalMonthsSpan;
+
     // Assignee ranking
     const assigneeMap = new Map<string, { total: number; subtasksTotal: number; subtasksDone: number; overdueCount: number; dueSoonCount: number; closedCount: number }>();
     for (const t of topics) {
