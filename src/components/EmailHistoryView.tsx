@@ -211,9 +211,14 @@ export function EmailHistoryView() {
     },
   });
 
+  const weeklyEmails = useMemo(() => emails.filter(e => (e.email_type || 'weekly') === 'weekly'), [emails]);
+  const newTopicEmails = useMemo(() => emails.filter(e => e.email_type === 'new_topic'), [emails]);
+
+  const activeEmails = activeTab === 'weekly' ? weeklyEmails : newTopicEmails;
+
   const uniqueAssignees = useMemo(() => {
-    return [...new Set(emails.map(e => e.assignee_name))].sort();
-  }, [emails]);
+    return [...new Set(activeEmails.map(e => e.assignee_name))].sort();
+  }, [activeEmails]);
 
   const batches = useMemo(() => {
     const sorted = [...emails].sort((a, b) => new Date(b.sent_at).getTime() - new Date(a.sent_at).getTime());
