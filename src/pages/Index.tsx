@@ -242,6 +242,57 @@ const Index = () => {
       } else {
         toast.success('Tema creado');
       }
+
+      // Auto-notify assignee when topic is "seguimiento"
+      if (data.status === 'seguimiento' && data.assignee) {
+        const assignee = assignees.find(a => a.name === data.assignee);
+        if (assignee?.email) {
+          try {
+            // Calculate urgency: due_date exists and is <= 2 days from now
+            let isUrgent = false;
+            let daysUntilDue: number | null = null;
+            if (data.due_date) {
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+              const due = new Date(data.due_date);
+              due.setHours(0, 0, 0, 0);
+              daysUntilDue = Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+              isUrgent = daysUntilDue <= 2;
+            }
+
+            const { error: emailError } = await supabase.functions.invoke('send-new-topic-notification', {
+              body: {
+                to_email: assignee.email,
+                to_name: assignee.name,
+                topic_title: data.title,
+                start_date: data.start_date,
+                due_date: data.due_date,
+                subtasks: data.subtasks.map(t => ({ title: t, completed: false })),
+                is_urgent: isUrgent,
+                days_until_due: daysUntilDue,
+              },
+            });
+
+            if (!emailError) {
+              // Log in notification_emails for history
+              await supabase.from('notification_emails').insert({
+                user_id: user!.id,
+                topic_id: created.id,
+                assignee_name: assignee.name,
+                assignee_email: assignee.email,
+              });
+              queryClient.invalidateQueries({ queryKey: ['notification_emails'] });
+              toast.success(`Se notificó a ${assignee.name} del nuevo tema`);
+            } else {
+              console.error('Error sending new topic notification:', emailError);
+              toast.warning('Tema creado, pero no se pudo enviar la notificación');
+            }
+          } catch (notifError) {
+            console.error('Error sending new topic notification:', notifError);
+            toast.warning('Tema creado, pero no se pudo enviar la notificación');
+          }
+        }
+      }
     } catch (error: any) {
       toast.error(error.message || 'Error al crear tema');
     }
