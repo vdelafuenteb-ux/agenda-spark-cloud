@@ -58,7 +58,25 @@ export function NotificationSection({ topic, assignees }: NotificationSectionPro
       });
 
       if (error) {
-        const message = typeof error.message === 'string' ? error.message : 'Error al enviar';
+        let message = typeof error.message === 'string' ? error.message : 'Error al enviar';
+        const response = (error as { context?: Response }).context;
+
+        if (response instanceof Response) {
+          try {
+            const payload = await response.json();
+            if (payload?.error || payload?.message) {
+              message = payload.error || payload.message;
+            }
+          } catch {
+            try {
+              const text = await response.text();
+              if (text) message = text;
+            } catch {
+              // ignore parsing fallback errors
+            }
+          }
+        }
+
         throw new Error(message);
       }
 
