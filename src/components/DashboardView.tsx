@@ -15,7 +15,7 @@ import type { Assignee } from '@/hooks/useAssignees';
 
 import type { TopicWithSubtasks } from '@/hooks/useTopics';
 import { isStoredDateOverdue } from '@/lib/date';
-import { startOfWeek, subWeeks, isAfter, isBefore, addDays, format } from 'date-fns';
+import { startOfWeek, subWeeks, isAfter, isBefore, addDays, format, differenceInDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { AssigneeProfileView } from './AssigneeProfileView';
 
@@ -168,6 +168,16 @@ export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardVie
       weeklyTrend.push({ week: label, completados: completedInWeek, creados: createdInWeek });
     }
 
+    // Creation averages across all history
+    const createdDates = topics.map(t => new Date(t.created_at));
+    const oldestCreated = createdDates.length > 0 ? new Date(Math.min(...createdDates.map(d => d.getTime()))) : now;
+    const totalDaysSpan = Math.max(differenceInDays(now, oldestCreated), 1);
+    const totalWeeksSpan = Math.max(totalDaysSpan / 7, 1);
+    const totalMonthsSpan = Math.max(totalDaysSpan / 30, 1);
+    const avgCreatedDaily = topics.length / totalDaysSpan;
+    const avgCreatedWeekly = topics.length / totalWeeksSpan;
+    const avgCreatedMonthly = topics.length / totalMonthsSpan;
+
     // Assignee ranking
     const assigneeMap = new Map<string, { total: number; subtasksTotal: number; subtasksDone: number; overdueCount: number; dueSoonCount: number; closedCount: number }>();
     for (const t of topics) {
@@ -214,6 +224,9 @@ export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardVie
       closedWithDates: closedWithDates.length,
       avgDelayDays,
       avgEarlyDays,
+      avgCreatedDaily,
+      avgCreatedWeekly,
+      avgCreatedMonthly,
     };
   }, [topics]);
 
@@ -460,7 +473,7 @@ export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardVie
               Tendencia Semanal (últimas 8 semanas)
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-4 pt-0">
+          <CardContent className="p-4 pt-0 space-y-3">
             <ChartContainer config={trendChartConfig} className="aspect-auto h-[200px] w-full">
               <AreaChart data={metrics.weeklyTrend} margin={{ top: 5, right: 5, bottom: 5, left: -20 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-border/40" />
@@ -471,6 +484,16 @@ export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardVie
                 <Area type="monotone" dataKey="completados" stackId="2" stroke="hsl(142 71% 45%)" fill="hsl(142 71% 45% / 0.2)" strokeWidth={2} />
               </AreaChart>
             </ChartContainer>
+
+            {/* Creation averages */}
+            <div className="flex items-center gap-4 pt-1 border-t">
+              <span className="text-[11px] text-muted-foreground font-medium">Promedio de creación:</span>
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-foreground"><span className="font-semibold">{metrics.avgCreatedDaily.toFixed(1)}</span> <span className="text-muted-foreground">/ día</span></span>
+                <span className="text-xs text-foreground"><span className="font-semibold">{metrics.avgCreatedWeekly.toFixed(1)}</span> <span className="text-muted-foreground">/ semana</span></span>
+                <span className="text-xs text-foreground"><span className="font-semibold">{metrics.avgCreatedMonthly.toFixed(1)}</span> <span className="text-muted-foreground">/ mes</span></span>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
