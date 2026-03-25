@@ -106,7 +106,16 @@ const Index = () => {
     });
   }, [topics, statusTab, searchQuery, selectedTagIds, selectedAssignee, filterNoDueDate, showOngoing, showNotOngoing, getTagsForTopic, sortBy]);
 
-  const statusCounts = useMemo(() => {
+  useEffect(() => {
+    if (expandedTopicId && filter === 'todos') {
+      setTimeout(() => {
+        const el = document.querySelector(`[data-topic-id="${expandedTopicId}"]`);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+    }
+  }, [expandedTopicId, filter]);
+
+
     const counts = { activo: 0, seguimiento: 0, pausado: 0, completado: 0 };
     for (const t of topics) {
       if (t.status in counts) counts[t.status as keyof typeof counts]++;
