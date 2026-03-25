@@ -349,6 +349,7 @@ export type Database = {
           assignee_name: string
           confirmed: boolean
           confirmed_at: string | null
+          email_type: string
           id: string
           responded: boolean
           responded_at: string | null
@@ -361,6 +362,7 @@ export type Database = {
           assignee_name: string
           confirmed?: boolean
           confirmed_at?: string | null
+          email_type?: string
           id?: string
           responded?: boolean
           responded_at?: string | null
@@ -373,6 +375,7 @@ export type Database = {
           assignee_name?: string
           confirmed?: boolean
           confirmed_at?: string | null
+          email_type?: string
           id?: string
           responded?: boolean
           responded_at?: string | null

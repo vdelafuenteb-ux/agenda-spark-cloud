@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Mail, CheckCircle2, Search, X, CalendarIcon, Trash2, Clock, ChevronDown, ChevronRight, FileText, AlertTriangle } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -24,6 +25,7 @@ interface EmailRecord {
   confirmed: boolean;
   confirmed_at: string | null;
   topic_title?: string;
+  email_type?: string;
 }
 
 interface EmailBatch {
@@ -125,6 +127,7 @@ function ConfirmDatetimePopover({
 
 export function EmailHistoryView() {
   const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState<'weekly' | 'new_topic'>('weekly');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedAssignee, setSelectedAssignee] = useState<string>('all');
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
@@ -208,12 +211,17 @@ export function EmailHistoryView() {
     },
   });
 
+  const weeklyEmails = useMemo(() => emails.filter(e => (e.email_type || 'weekly') === 'weekly'), [emails]);
+  const newTopicEmails = useMemo(() => emails.filter(e => e.email_type === 'new_topic'), [emails]);
+
+  const activeEmails = activeTab === 'weekly' ? weeklyEmails : newTopicEmails;
+
   const uniqueAssignees = useMemo(() => {
-    return [...new Set(emails.map(e => e.assignee_name))].sort();
-  }, [emails]);
+    return [...new Set(activeEmails.map(e => e.assignee_name))].sort();
+  }, [activeEmails]);
 
   const batches = useMemo(() => {
-    const sorted = [...emails].sort((a, b) => new Date(b.sent_at).getTime() - new Date(a.sent_at).getTime());
+    const sorted = [...activeEmails].sort((a, b) => new Date(b.sent_at).getTime() - new Date(a.sent_at).getTime());
     const groups: EmailBatch[] = [];
 
     sorted.forEach(email => {
@@ -239,7 +247,7 @@ export function EmailHistoryView() {
     });
 
     return groups;
-  }, [emails]);
+  }, [activeEmails]);
 
   const filtered = useMemo(() => {
     return batches.filter(b => {
@@ -299,10 +307,26 @@ export function EmailHistoryView() {
     toggleConfirmed.mutate({ id, confirmed: false });
   };
 
+  const isWeekly = activeTab === 'weekly';
+
   return (
     <div className="flex-1 overflow-auto p-3 md:p-4">
       <div className="max-w-5xl mx-auto space-y-4">
-        {/* Stats */}
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as any); setExpandedBatches(new Set()); clearFilters(); }}>
+          <TabsList className="w-full sm:w-auto">
+            <TabsTrigger value="weekly" className="text-xs gap-1.5">
+              <Mail className="h-3.5 w-3.5" />
+              Seguimiento semanal
+            </TabsTrigger>
+            <TabsTrigger value="new_topic" className="text-xs gap-1.5">
+              <FileText className="h-3.5 w-3.5" />
+              Temas adicionales
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+        {/* Stats - only for weekly */}
+        {isWeekly && (
         <div className="grid grid-cols-4 gap-3">
           <div className="rounded-lg border border-border bg-card p-3 text-center">
             <p className="text-2xl font-bold text-foreground">{stats.total}</p>
@@ -323,6 +347,7 @@ export function EmailHistoryView() {
             </p>
           </div>
         </div>
+        )}
 
         {/* Filters */}
         <div className="flex flex-wrap items-center gap-2">
@@ -348,6 +373,7 @@ export function EmailHistoryView() {
             </SelectContent>
           </Select>
 
+          {isWeekly && (
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-full sm:w-[140px] h-8 text-xs">
               <SelectValue placeholder="Estado" />
@@ -359,6 +385,7 @@ export function EmailHistoryView() {
               <SelectItem value="overdue">Fuera de plazo</SelectItem>
             </SelectContent>
           </Select>
+          )}
 
           <div className="flex gap-2 w-full sm:w-auto">
             <Popover>
@@ -413,13 +440,13 @@ export function EmailHistoryView() {
                 <thead>
                   <tr className="bg-muted/50 border-b border-border">
                     <th className="text-left px-3 py-2 font-medium text-muted-foreground w-8"></th>
-                    <th className="text-left px-3 py-2 font-medium text-muted-foreground">Confirmado</th>
-                    <th className="text-left px-3 py-2 font-medium text-muted-foreground">Estado</th>
+                    {isWeekly && <th className="text-left px-3 py-2 font-medium text-muted-foreground">Confirmado</th>}
+                    {isWeekly && <th className="text-left px-3 py-2 font-medium text-muted-foreground">Estado</th>}
                     <th className="text-left px-3 py-2 font-medium text-muted-foreground">Persona</th>
                     <th className="text-left px-3 py-2 font-medium text-muted-foreground">Email</th>
                     <th className="text-left px-3 py-2 font-medium text-muted-foreground">Temas</th>
                     <th className="text-left px-3 py-2 font-medium text-muted-foreground">Enviado</th>
-                    <th className="text-left px-3 py-2 font-medium text-muted-foreground">Plazo 48h</th>
+                    {isWeekly && <th className="text-left px-3 py-2 font-medium text-muted-foreground">Plazo 48h</th>}
                     <th className="text-right px-3 py-2 font-medium text-muted-foreground"></th>
                   </tr>
                 </thead>
@@ -436,14 +463,15 @@ export function EmailHistoryView() {
                         <tr
                           className={cn(
                             "border-b border-border last:border-0 transition-colors hover:bg-muted/30 cursor-pointer",
-                            batch.allConfirmed && "bg-green-50/50 dark:bg-green-950/10",
-                            deadline.isOverdue && "bg-red-50 dark:bg-red-950/20"
+                            isWeekly && batch.allConfirmed && "bg-green-50/50 dark:bg-green-950/10",
+                            isWeekly && deadline.isOverdue && "bg-red-50 dark:bg-red-950/20"
                           )}
                           onClick={() => toggleExpand(batch.key)}
                         >
                           <td className="px-3 py-2.5 text-muted-foreground">
                             {isExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
                           </td>
+                          {isWeekly && (
                           <td className="px-3 py-2.5" onClick={e => e.stopPropagation()}>
                             {batch.allConfirmed ? (
                               <Checkbox
@@ -463,6 +491,8 @@ export function EmailHistoryView() {
                               />
                             )}
                           </td>
+                          )}
+                          {isWeekly && (
                           <td className="px-3 py-2.5">
                             {batch.allConfirmed ? (
                               <span className="inline-flex items-center gap-1 text-green-600">
@@ -476,6 +506,15 @@ export function EmailHistoryView() {
                               </span>
                             )}
                           </td>
+                          )}
+                          {!isWeekly && (
+                          <td className="px-3 py-2.5">
+                            <span className="inline-flex items-center gap-1 text-green-600">
+                              <CheckCircle2 className="h-3 w-3" />
+                              <span className="text-[10px] font-medium">Enviado</span>
+                            </span>
+                          </td>
+                          )}
                           <td className="px-3 py-2.5 font-medium text-foreground">{batch.assignee_name}</td>
                           <td className="px-3 py-2.5 text-muted-foreground">{batch.assignee_email}</td>
                           <td className="px-3 py-2.5">
@@ -487,12 +526,14 @@ export function EmailHistoryView() {
                           <td className="px-3 py-2.5 text-muted-foreground font-mono">
                             {format(new Date(batch.sent_at), "dd MMM yyyy HH:mm", { locale: es })}
                           </td>
+                          {isWeekly && (
                           <td className="px-3 py-2.5">
                             <span className={cn("font-mono font-medium text-[11px] inline-flex items-center gap-1", deadline.color)}>
                               {deadline.isOverdue && <AlertTriangle className="h-3 w-3" />}
                               {deadline.label}
                             </span>
                           </td>
+                          )}
                           <td className="px-3 py-2.5 text-right" onClick={e => e.stopPropagation()}>
                             <button
                               onClick={() => deleteBatch.mutate(batchIds)}
@@ -504,7 +545,7 @@ export function EmailHistoryView() {
                         </tr>
                         {isExpanded && (
                           <tr>
-                            <td colSpan={9} className="bg-muted/20 px-0 py-0">
+                            <td colSpan={isWeekly ? 9 : 6} className="bg-muted/20 px-0 py-0">
                               <div className="px-8 py-2 space-y-1">
                                 <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-1.5">
                                   Temas incluidos en este envío
@@ -517,6 +558,7 @@ export function EmailHistoryView() {
                                         <span className="text-[10px] text-muted-foreground w-4">{i + 1}.</span>
                                         <span className="text-xs text-foreground">{email.topic_title}</span>
                                       </div>
+                                      {isWeekly ? (
                                       <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
                                         {email.confirmed ? (
                                           <>
@@ -541,6 +583,9 @@ export function EmailHistoryView() {
                                           </>
                                         )}
                                       </div>
+                                      ) : (
+                                      <span className="text-[10px] text-muted-foreground">Informativo</span>
+                                      )}
                                     </div>
                                   );
                                 })}
@@ -569,8 +614,8 @@ export function EmailHistoryView() {
                   key={batch.key}
                   className={cn(
                     "rounded-lg border border-border overflow-hidden",
-                    batch.allConfirmed && "bg-green-50/50 dark:bg-green-950/10",
-                    deadline.isOverdue && "bg-red-50 dark:bg-red-950/20"
+                    isWeekly && batch.allConfirmed && "bg-green-50/50 dark:bg-green-950/10",
+                    isWeekly && deadline.isOverdue && "bg-red-50 dark:bg-red-950/20"
                   )}
                 >
                   <div
@@ -580,10 +625,14 @@ export function EmailHistoryView() {
                     <div className="flex items-center justify-between mb-1.5">
                       <span className="text-sm font-medium text-foreground">{batch.assignee_name}</span>
                       <div className="flex items-center gap-2">
-                        {batch.allConfirmed ? (
-                          <Badge className="text-[10px] bg-green-100 text-green-700 border-0 dark:bg-green-900/30 dark:text-green-400">Confirmado</Badge>
+                        {isWeekly ? (
+                          batch.allConfirmed ? (
+                            <Badge className="text-[10px] bg-green-100 text-green-700 border-0 dark:bg-green-900/30 dark:text-green-400">Confirmado</Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-[10px]">Pendiente</Badge>
+                          )
                         ) : (
-                          <Badge variant="outline" className="text-[10px]">Pendiente</Badge>
+                          <Badge className="text-[10px] bg-green-100 text-green-700 border-0 dark:bg-green-900/30 dark:text-green-400">Enviado</Badge>
                         )}
                         {isExpanded ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
                       </div>
@@ -595,10 +644,12 @@ export function EmailHistoryView() {
                           <FileText className="h-2.5 w-2.5" />
                           {batch.topicCount} {batch.topicCount === 1 ? 'tema' : 'temas'}
                         </Badge>
+                        {isWeekly && (
                         <span className={cn("font-mono font-medium text-[10px] inline-flex items-center gap-0.5", deadline.color)}>
                           {deadline.isOverdue && <AlertTriangle className="h-2.5 w-2.5" />}
                           {deadline.label}
                         </span>
+                        )}
                       </div>
                       <span className="text-[10px] text-muted-foreground">
                         {format(new Date(batch.sent_at), "dd MMM yyyy HH:mm", { locale: es })}
@@ -611,6 +662,7 @@ export function EmailHistoryView() {
                       <div className="flex items-center justify-between mb-1">
                         <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Temas</p>
                         <div className="flex items-center gap-2">
+                          {isWeekly && (
                           <div onClick={e => e.stopPropagation()}>
                             {batch.allConfirmed ? (
                               <Checkbox
@@ -630,6 +682,7 @@ export function EmailHistoryView() {
                               />
                             )}
                           </div>
+                          )}
                           <button
                             onClick={(e) => { e.stopPropagation(); deleteBatch.mutate(batchIds); }}
                             className="text-muted-foreground hover:text-destructive transition-colors"
@@ -646,6 +699,7 @@ export function EmailHistoryView() {
                               <span className="text-[10px] text-muted-foreground shrink-0">{i + 1}.</span>
                               <span className="text-xs text-foreground truncate">{email.topic_title}</span>
                             </div>
+                            {isWeekly ? (
                             <div className="flex items-center gap-2 shrink-0" onClick={e => e.stopPropagation()}>
                               {email.confirmed ? (
                                 <>
@@ -670,6 +724,9 @@ export function EmailHistoryView() {
                                 </>
                               )}
                             </div>
+                            ) : (
+                            <span className="text-[10px] text-muted-foreground shrink-0">Informativo</span>
+                            )}
                           </div>
                         );
                       })}
