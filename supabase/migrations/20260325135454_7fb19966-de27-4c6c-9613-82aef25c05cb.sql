@@ -1,0 +1,1 @@
+ALTER TABLE notification_emails ADD COLUMN email_type text NOT NULL DEFAULT 'weekly';
