@@ -221,7 +221,7 @@ export function EmailHistoryView() {
   }, [activeEmails]);
 
   const batches = useMemo(() => {
-    const sorted = [...emails].sort((a, b) => new Date(b.sent_at).getTime() - new Date(a.sent_at).getTime());
+    const sorted = [...activeEmails].sort((a, b) => new Date(b.sent_at).getTime() - new Date(a.sent_at).getTime());
     const groups: EmailBatch[] = [];
 
     sorted.forEach(email => {
@@ -247,7 +247,7 @@ export function EmailHistoryView() {
     });
 
     return groups;
-  }, [emails]);
+  }, [activeEmails]);
 
   const filtered = useMemo(() => {
     return batches.filter(b => {
