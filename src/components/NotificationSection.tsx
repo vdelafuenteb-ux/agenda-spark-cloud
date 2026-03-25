@@ -221,16 +221,19 @@ export function NotificationSection({ topic, assignees }: NotificationSectionPro
         <div className="space-y-1 max-h-32 overflow-y-auto">
           <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Correos enviados</p>
           {emails.map((email) => {
-            const onTime = email.confirmed && email.confirmed_at ? isOnTime(email.sent_at, email.confirmed_at) : null;
+            const isNewTopic = (email as any).email_type === 'new_topic';
+            const onTime = !isNewTopic && email.confirmed && email.confirmed_at ? isOnTime(email.sent_at, email.confirmed_at) : null;
             return (
               <div
                 key={email.id}
                 className={cn(
                   "flex items-center gap-2 text-[11px] py-1 px-1.5 rounded transition-colors",
-                  email.confirmed ? "bg-green-50 dark:bg-green-950/30" : "bg-muted/30"
+                  !isNewTopic && email.confirmed ? "bg-green-50 dark:bg-green-950/30" : "bg-muted/30"
                 )}
               >
-                {email.confirmed ? (
+                {isNewTopic ? (
+                  <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-green-600" />
+                ) : email.confirmed ? (
                   <Checkbox
                     checked={true}
                     onCheckedChange={() => toggleConfirmed.mutate({ id: email.id, confirmed: false })}
@@ -242,10 +245,15 @@ export function NotificationSection({ topic, assignees }: NotificationSectionPro
                     onConfirm={(confirmedAt) => toggleConfirmed.mutate({ id: email.id, confirmed: true, confirmed_at: confirmedAt })}
                   />
                 )}
-                <span className={cn("truncate", email.confirmed && "line-through opacity-70")}>
+                <span className={cn("truncate", !isNewTopic && email.confirmed && "line-through opacity-70")}>
                   {email.assignee_name}
                 </span>
-                {email.confirmed ? (
+                {isNewTopic ? (
+                  <span className="text-[9px] shrink-0 flex items-center gap-0.5 text-muted-foreground">
+                    <CheckCircle2 className="h-2.5 w-2.5" />
+                    Notificado
+                  </span>
+                ) : email.confirmed ? (
                   <span className={cn(
                     "text-[9px] shrink-0 flex items-center gap-0.5",
                     onTime === true ? "text-green-600 dark:text-green-400" : "text-destructive"
