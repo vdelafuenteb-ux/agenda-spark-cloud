@@ -106,6 +106,8 @@ export function TopicCard({
   const [titleDraft, setTitleDraft] = useState(topic.title);
   const [showPauseDialog, setShowPauseDialog] = useState(false);
   const [pauseReasonDraft, setPauseReasonDraft] = useState(topic.pause_reason || '');
+  const [showCloseDialog, setShowCloseDialog] = useState(false);
+  const [closeDateDraft, setCloseDateDraft] = useState('');
 
   useEffect(() => {
     if (forceExpand !== null) {
