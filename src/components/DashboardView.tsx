@@ -224,6 +224,9 @@ export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardVie
       closedWithDates: closedWithDates.length,
       avgDelayDays,
       avgEarlyDays,
+      avgCreatedDaily,
+      avgCreatedWeekly,
+      avgCreatedMonthly,
     };
   }, [topics]);
 
