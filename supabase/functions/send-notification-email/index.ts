@@ -169,7 +169,11 @@ Deno.serve(async (req) => {
     );
   } catch (error: unknown) {
     console.error("Error sending notification email:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const errorMessage = error instanceof DOMException && error.name === "TimeoutError"
+      ? "El servicio de correo tardó demasiado en responder"
+      : error instanceof Error
+        ? error.message
+        : "Unknown error";
     return new Response(
       JSON.stringify({ error: errorMessage }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

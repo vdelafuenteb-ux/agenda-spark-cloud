@@ -37,12 +37,6 @@ export function NotificationSection({ topic, assignees }: NotificationSectionPro
 
     setSending(true);
     try {
-      await logEmail.mutateAsync({
-        topic_id: topic.id,
-        assignee_name: assignee.name,
-        assignee_email: assignee.email,
-      });
-
       const { data, error } = await supabase.functions.invoke('send-notification-email', {
         body: {
           to_email: assignee.email,
@@ -70,6 +64,18 @@ export function NotificationSection({ topic, assignees }: NotificationSectionPro
 
       if (!data?.success) {
         throw new Error('No se pudo enviar el correo');
+      }
+
+      try {
+        await logEmail.mutateAsync({
+          topic_id: topic.id,
+          assignee_name: assignee.name,
+          assignee_email: assignee.email,
+        });
+      } catch (logError) {
+        console.error('Email sent but failed to log:', logError);
+        toast.warning(`Correo enviado a ${assignee.name}, pero no se pudo registrar en el historial`);
+        return;
       }
 
       toast.success(`Correo enviado a ${assignee.name}`);
