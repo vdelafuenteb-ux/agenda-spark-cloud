@@ -182,17 +182,24 @@ export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardVie
     const assigneeMap = new Map<string, { total: number; subtasksTotal: number; subtasksDone: number; overdueCount: number; dueSoonCount: number; closedCount: number }>();
     for (const t of topics) {
       if (!t.assignee) continue;
-      const entry = assigneeMap.get(t.assignee) || { total: 0, subtasksTotal: 0, subtasksDone: 0, overdueCount: 0, dueSoonCount: 0, closedCount: 0 };
+      const entry = assigneeMap.get(t.assignee) || { total: 0, activeCount: 0, pausedCount: 0, subtasksTotal: 0, subtasksDone: 0, overdueCount: 0, dueSoonCount: 0, onTrackCount: 0, closedCount: 0 };
       entry.total++;
       entry.subtasksTotal += t.subtasks.length;
       entry.subtasksDone += t.subtasks.filter(s => s.completed).length;
       if (t.status === 'completado') {
         entry.closedCount++;
+      } else if (t.status === 'pausado') {
+        entry.pausedCount++;
       } else if (t.status === 'activo' || t.status === 'seguimiento') {
-        if (isStoredDateOverdue(t.due_date)) entry.overdueCount++;
-        else if (t.due_date && !isStoredDateOverdue(t.due_date)) {
+        entry.activeCount++;
+        if (t.is_ongoing || !t.due_date) {
+          // no deadline status
+        } else if (isStoredDateOverdue(t.due_date)) {
+          entry.overdueCount++;
+        } else {
           const due = new Date(t.due_date + 'T23:59:59');
           if (isBefore(due, threeDaysFromNow)) entry.dueSoonCount++;
+          else entry.onTrackCount++;
         }
       }
       assigneeMap.set(t.assignee, entry);
