@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Send, Pencil, Trash2, Check, X, Bold, Italic, List, Paperclip, FileText, Image, File } from 'lucide-react';
+import { Send, Pencil, Trash2, Check, X, Bold, Italic, List, Paperclip, FileText, Image, File, Ban } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import type { EntryAttachment } from '@/hooks/useTopics';
@@ -350,7 +350,7 @@ export function ProgressLog({ entries, onAdd, onUpdate, onDelete, onUploadFiles,
 
       <div className="space-y-1">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-0.5">
+          <div className="flex items-center gap-1">
             <FormatToolbar targetRef={textareaRef} value={text} setValue={setText} />
             {onUploadFiles && (
               <>
@@ -361,6 +361,21 @@ export function ProgressLog({ entries, onAdd, onUpdate, onDelete, onUploadFiles,
                 <input ref={fileInputRef} type="file" multiple className="hidden" onChange={handleFileSelect} />
               </>
             )}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-6 px-2 text-[10px] gap-1 border-orange-300 text-orange-600 hover:bg-orange-50 dark:border-orange-700 dark:text-orange-400 dark:hover:bg-orange-950"
+              onClick={async () => {
+                setSending(true);
+                try { await onAdd("**Sin avances esta semana**"); } finally { setSending(false); }
+              }}
+              disabled={sending}
+              title="Registrar sin avances"
+            >
+              <Ban className="h-3 w-3" />
+              Sin avances
+            </Button>
           </div>
           <Button size="sm" variant="ghost" className="h-7 shrink-0" onClick={handleSend} disabled={(!text.trim() && pendingFiles.length === 0) || sending}>
             <Send className="h-3.5 w-3.5" />
