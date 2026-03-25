@@ -463,8 +463,8 @@ export function EmailHistoryView() {
                         <tr
                           className={cn(
                             "border-b border-border last:border-0 transition-colors hover:bg-muted/30 cursor-pointer",
-                            batch.allConfirmed && "bg-green-50/50 dark:bg-green-950/10",
-                            deadline.isOverdue && "bg-red-50 dark:bg-red-950/20"
+                            isWeekly && batch.allConfirmed && "bg-green-50/50 dark:bg-green-950/10",
+                            isWeekly && deadline.isOverdue && "bg-red-50 dark:bg-red-950/20"
                           )}
                           onClick={() => toggleExpand(batch.key)}
                         >
