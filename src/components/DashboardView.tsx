@@ -294,21 +294,21 @@ export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardVie
                 <span className="text-[11px] font-medium text-muted-foreground">Estado de Plazos</span>
                 <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
               </div>
-              <div className="flex items-start gap-3 flex-nowrap">
-                <div className="flex flex-col items-center">
-                  <div className="h-1.5 w-full rounded-full bg-emerald-500 mb-1" />
-                  <span className="text-sm font-bold text-foreground">{onTrackCount}</span>
-                  <span className="text-[9px] text-muted-foreground">al día</span>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="flex flex-col items-start">
+                  <div className="h-2 w-full rounded-full bg-emerald-500 mb-1.5" />
+                  <span className="text-lg font-bold text-foreground">{onTrackCount}</span>
+                  <span className="text-[10px] text-muted-foreground">al día</span>
                 </div>
-                <div className="flex flex-col items-center">
-                  <div className="h-1.5 w-full rounded-full bg-yellow-500 mb-1" />
-                  <span className="text-sm font-bold text-foreground">{dueSoonCount}</span>
-                  <span className="text-[9px] text-muted-foreground">por vencer</span>
+                <div className="flex flex-col items-start">
+                  <div className="h-2 w-full rounded-full bg-yellow-500 mb-1.5" />
+                  <span className="text-lg font-bold text-foreground">{dueSoonCount}</span>
+                  <span className="text-[10px] text-muted-foreground">por vencer</span>
                 </div>
-                <div className="flex flex-col items-center">
-                  <div className="h-1.5 w-full rounded-full bg-destructive mb-1" />
-                  <span className="text-sm font-bold text-foreground">{overdueCount}</span>
-                  <span className="text-[9px] text-muted-foreground">atrasados</span>
+                <div className="flex flex-col items-start">
+                  <div className="h-2 w-full rounded-full bg-destructive mb-1.5" />
+                  <span className="text-lg font-bold text-foreground">{overdueCount}</span>
+                  <span className="text-[10px] text-muted-foreground">atrasados</span>
                 </div>
               </div>
             </CardContent>
