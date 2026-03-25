@@ -1,27 +1,26 @@
 
 
-## Plan: Diálogo de confirmación al cerrar tema con fecha/hora editable
+## Plan: Botón "Sin Avances" en la bitácora
 
 ### Problema
-Al cerrar un tema, se guarda `closed_at = now()` automáticamente. Si el responsable respondió ayer y el usuario revisa hoy, el cierre queda con fecha incorrecta, afectando los KPIs de cumplimiento.
+Los responsables reportan "sin avances" por correo y el usuario necesita registrarlo rápidamente en la bitácora. Actualmente hay que escribirlo manualmente.
 
 ### Solución
-Agregar un diálogo de confirmación (igual al de pausar) que muestre la fecha/hora actual y permita editarla antes de confirmar el cierre.
+Agregar un botón "Sin avances" junto a la barra de herramientas de formato que, al hacer clic, inserte automáticamente una entrada predefinida: `**Sin avances esta semana**` en la bitácora.
 
-### Cambios en `src/components/TopicCard.tsx`
+### Cambios en `src/components/ProgressLog.tsx`
 
-1. **Nuevo estado**: `showCloseDialog` (boolean) y `closeDateDraft` (string, formato `datetime-local`)
-2. **Botones "Cerrar"** (líneas ~642 y ~687): En vez de llamar `onUpdate` directamente, abrir el diálogo con `closeDateDraft` inicializado a `now()`
-3. **Nuevo Dialog** (junto al de pausa):
-   - Título: "¿Confirmar cierre de este tema?"
-   - Mensaje: "Confirma la fecha y hora en que se cerró realmente este tema"
-   - Input `datetime-local` con el valor editable
-   - Botones: Cancelar / Confirmar cierre
-   - Al confirmar: `onUpdate(topic.id, { status: 'completado', closed_at: isoFromLocal, pause_reason: '', paused_at: null })`
+1. Agregar un botón con ícono `Ban` (o `AlertCircle`) y texto "Sin avances" en la barra de herramientas, junto al botón de adjuntar archivo
+2. Al hacer clic, llama directamente a `onAdd("**Sin avances esta semana**")` sin necesidad de escribir nada — se registra como entrada inmediata
+3. El botón tendrá estilo sutil (variant `outline`, tamaño `sm`, color naranja/muted) para diferenciarlo de las herramientas de formato
+
+### Integración con el KPI de estancamiento (plan anterior aprobado)
+
+Cuando se implemente el KPI de "semanas sin avance" en `AssigneeProfileView`, estas entradas de "Sin avances" **no contarán como actividad real** — el cálculo seguirá basándose en entradas con contenido sustantivo. Esto se puede hacer filtrando entradas que contengan exactamente `**Sin avances esta semana**`.
 
 ### Archivo afectado
 
 | Archivo | Cambio |
 |---|---|
-| `src/components/TopicCard.tsx` | Agregar diálogo de confirmación con datetime editable para cerrar temas |
+| `src/components/ProgressLog.tsx` | Agregar botón "Sin avances" que registra entrada automática |
 
