@@ -10,6 +10,7 @@ import { ArrowLeft, Mail, CheckCircle2, AlertTriangle, Target, ListChecks, Trend
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { formatStoredDate, isStoredDateOverdue } from '@/lib/date';
+import { cn } from '@/lib/utils';
 import { isBefore, addDays, format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
