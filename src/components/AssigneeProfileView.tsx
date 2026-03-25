@@ -366,6 +366,32 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
             </Card>
           </CollapsibleSection>
 
+          {/* Email compliance card */}
+          {metrics.confirmedTotal > 0 && (
+            <Card>
+              <CardContent className="p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="text-xs font-medium">Cumplimiento de respuesta de correos</span>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="flex-1">
+                    <Progress value={metrics.complianceRate} className="h-2" />
+                  </div>
+                  <span className={cn(
+                    "text-sm font-bold",
+                    metrics.complianceRate >= 80 ? "text-green-600" : metrics.complianceRate >= 50 ? "text-yellow-600" : "text-destructive"
+                  )}>{metrics.complianceRate}%</span>
+                </div>
+                <div className="flex gap-4 mt-1.5 text-[10px] text-muted-foreground">
+                  <span>A tiempo: <strong className="text-green-600">{metrics.onTimeEmails}</strong></span>
+                  <span>Fuera de plazo: <strong className="text-destructive">{metrics.lateEmails}</strong></span>
+                  <span>Total confirmados: <strong className="text-foreground">{metrics.confirmedTotal}</strong></span>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Collapsible: Email History */}
           <CollapsibleSection title="Historial de correos" icon={Mail} count={emailHistory.length} defaultOpen={false}>
             <Card>
@@ -388,37 +414,64 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
                             <TableHead className="text-xs">Tema</TableHead>
                             <TableHead className="text-xs text-center">Enviado</TableHead>
                             <TableHead className="text-xs text-center">Confirmado</TableHead>
+                            <TableHead className="text-xs text-center">Plazo</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {emailHistory.map((e: any) => (
-                            <TableRow key={e.id}>
-                              <TableCell className="text-xs">{e.topics?.title || e.topic_id}</TableCell>
-                              <TableCell className="text-xs text-center text-muted-foreground">
-                                {format(new Date(e.sent_at), 'dd MMM HH:mm', { locale: es })}
-                              </TableCell>
-                              <TableCell className="text-center">
-                                {e.confirmed ? (
-                                  <CheckCircle2 className="h-3.5 w-3.5 text-green-600 mx-auto" />
-                                ) : (
-                                  <span className="text-xs text-muted-foreground">—</span>
-                                )}
-                              </TableCell>
-                            </TableRow>
-                          ))}
+                          {emailHistory.map((e: any) => {
+                            const onTime = e.confirmed && e.confirmed_at
+                              ? new Date(e.confirmed_at).getTime() <= new Date(e.sent_at).getTime() + DEADLINE_HOURS * 60 * 60 * 1000
+                              : null;
+                            return (
+                              <TableRow key={e.id}>
+                                <TableCell className="text-xs">{e.topics?.title || e.topic_id}</TableCell>
+                                <TableCell className="text-xs text-center text-muted-foreground">
+                                  {format(new Date(e.sent_at), 'dd MMM HH:mm', { locale: es })}
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  {e.confirmed ? (
+                                    <CheckCircle2 className="h-3.5 w-3.5 text-green-600 mx-auto" />
+                                  ) : (
+                                    <span className="text-xs text-muted-foreground">—</span>
+                                  )}
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  {onTime !== null ? (
+                                    <Badge variant={onTime ? 'secondary' : 'destructive'} className="text-[9px]">
+                                      {onTime ? 'A tiempo' : 'Fuera de plazo'}
+                                    </Badge>
+                                  ) : (
+                                    <span className="text-xs text-muted-foreground">—</span>
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
                         </TableBody>
                       </Table>
                     </div>
                     <div className="sm:hidden space-y-1.5 max-h-[250px] overflow-auto">
-                      {emailHistory.map((e: any) => (
-                        <div key={e.id} className="flex items-center justify-between py-1.5 border-b border-border last:border-0">
-                          <div className="min-w-0">
-                            <p className="text-xs font-medium truncate">{e.topics?.title || e.topic_id}</p>
-                            <p className="text-[10px] text-muted-foreground">{format(new Date(e.sent_at), 'dd MMM HH:mm', { locale: es })}</p>
+                      {emailHistory.map((e: any) => {
+                        const onTime = e.confirmed && e.confirmed_at
+                          ? new Date(e.confirmed_at).getTime() <= new Date(e.sent_at).getTime() + DEADLINE_HOURS * 60 * 60 * 1000
+                          : null;
+                        return (
+                          <div key={e.id} className="flex items-center justify-between py-1.5 border-b border-border last:border-0">
+                            <div className="min-w-0">
+                              <p className="text-xs font-medium truncate">{e.topics?.title || e.topic_id}</p>
+                              <p className="text-[10px] text-muted-foreground">{format(new Date(e.sent_at), 'dd MMM HH:mm', { locale: es })}</p>
+                            </div>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              {e.confirmed ? <CheckCircle2 className="h-3.5 w-3.5 text-green-600" /> : <span className="text-[10px] text-muted-foreground">—</span>}
+                              {onTime !== null && (
+                                <Badge variant={onTime ? 'secondary' : 'destructive'} className="text-[8px]">
+                                  {onTime ? 'A tiempo' : 'Tarde'}
+                                </Badge>
+                              )}
+                            </div>
                           </div>
-                          {e.confirmed ? <CheckCircle2 className="h-3.5 w-3.5 text-green-600 shrink-0" /> : <span className="text-[10px] text-muted-foreground">—</span>}
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </>
                 )}
