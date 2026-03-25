@@ -625,10 +625,14 @@ export function EmailHistoryView() {
                     <div className="flex items-center justify-between mb-1.5">
                       <span className="text-sm font-medium text-foreground">{batch.assignee_name}</span>
                       <div className="flex items-center gap-2">
-                        {batch.allConfirmed ? (
-                          <Badge className="text-[10px] bg-green-100 text-green-700 border-0 dark:bg-green-900/30 dark:text-green-400">Confirmado</Badge>
+                        {isWeekly ? (
+                          batch.allConfirmed ? (
+                            <Badge className="text-[10px] bg-green-100 text-green-700 border-0 dark:bg-green-900/30 dark:text-green-400">Confirmado</Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-[10px]">Pendiente</Badge>
+                          )
                         ) : (
-                          <Badge variant="outline" className="text-[10px]">Pendiente</Badge>
+                          <Badge className="text-[10px] bg-green-100 text-green-700 border-0 dark:bg-green-900/30 dark:text-green-400">Enviado</Badge>
                         )}
                         {isExpanded ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
                       </div>
