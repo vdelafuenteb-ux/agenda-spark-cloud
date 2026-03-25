@@ -581,7 +581,9 @@ export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardVie
                       <span className="text-xs text-muted-foreground">{a.subtasksDone}/{a.subtasksTotal} ({a.progress}%)</span>
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
-                      <Badge variant="outline" className="text-[9px]">{a.closedCount} cerrados</Badge>
+                      <Badge variant="outline" className="text-[9px]">{a.activeCount} activos</Badge>
+                      <Badge variant="outline" className="text-[9px]">{a.pausedCount} pausados</Badge>
+                      {a.onTrackCount > 0 && <Badge variant="outline" className="text-[9px] border-emerald-500/50 text-emerald-600">{a.onTrackCount} al día</Badge>}
                       {a.overdueCount > 0 && <Badge variant="destructive" className="text-[9px]">{a.overdueCount} atrasados</Badge>}
                       {a.dueSoonCount > 0 && <Badge variant="outline" className="text-[9px] border-yellow-500/50 text-yellow-600">{a.dueSoonCount} por vencer</Badge>}
                     </div>
