@@ -691,7 +691,12 @@ export function TopicCard({
                       size="sm"
                       variant="default"
                       className="flex-1 h-9 text-xs gap-2"
-                      onClick={() => onUpdate(topic.id, { status: 'completado', pause_reason: '', paused_at: null, closed_at: new Date().toISOString() })}
+                      onClick={() => {
+                        const now = new Date();
+                        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+                        setCloseDateDraft(now.toISOString().slice(0, 16));
+                        setShowCloseDialog(true);
+                      }}
                     >
                       <CheckCircle2 className="h-3.5 w-3.5" /> Cerrar
                     </Button>
