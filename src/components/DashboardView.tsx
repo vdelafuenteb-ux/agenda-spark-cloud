@@ -248,25 +248,8 @@ export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardVie
     },
   ];
 
-  const statusChartConfig = {
-    value: { label: 'Temas' },
-    Activos: { label: 'Activos', color: STATUS_COLORS.activo },
-    Seguimiento: { label: 'Seguimiento', color: STATUS_COLORS.seguimiento },
-    Pausados: { label: 'Pausados', color: STATUS_COLORS.pausado },
-    Completados: { label: 'Completados', color: STATUS_COLORS.completado },
-  };
 
-  const trendChartConfig = {
-    completados: { label: 'Completados', color: 'hsl(142 71% 45%)' },
-    creados: { label: 'Creados', color: 'hsl(217 91% 60%)' },
-  };
 
-  const priorityChartConfig = {
-    value: { label: 'Temas' },
-    Alta: { label: 'Alta', color: PRIORITY_COLORS.alta },
-    Media: { label: 'Media', color: PRIORITY_COLORS.media },
-    Baja: { label: 'Baja', color: PRIORITY_COLORS.baja },
-  };
 
   // Show assignee profile if selected
   if (selectedAssignee) {
