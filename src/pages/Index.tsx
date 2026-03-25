@@ -281,7 +281,18 @@ const Index = () => {
               onDeleteDepartment={(id) => deleteDepartment.mutate(id)}
             />
           ) : filter === 'dashboard' ? (
-            <DashboardView topics={topics} assignees={assignees} onUpdateTopic={(id, data) => updateTopic.mutate({ id, ...data })} />
+            <DashboardView topics={topics} assignees={assignees} onUpdateTopic={(id, data) => updateTopic.mutate({ id, ...data })} onNavigateToTopic={(topicId, status) => {
+              setFilter('todos');
+              setStatusTab(status as StatusTab);
+              setForceExpand(null);
+              setSearchQuery('');
+              setSelectedTagIds([]);
+              setSelectedAssignee('');
+              setFilterNoDueDate(false);
+              setShowOngoing(true);
+              setShowNotOngoing(true);
+              setSortBy('order');
+            }} />
           ) : filter === 'equipo' ? (
             <TeamView topics={topics} assignees={assignees} onUpdateTopic={(id, data) => updateTopic.mutate({ id, ...data })} />
           ) : filter === 'historial_correos' ? (
