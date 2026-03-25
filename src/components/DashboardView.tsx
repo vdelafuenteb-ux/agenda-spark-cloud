@@ -388,8 +388,11 @@ export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardVie
               ) : (
                 <div className="space-y-1.5">
                   {metrics.overdue.slice(0, 6).map((t) => (
-                    <div key={t.id} className="flex items-center justify-between text-xs gap-1">
-                      <span className="text-foreground truncate flex-1">{t.title}</span>
+                    <div key={t.id} className="flex items-center text-xs gap-2">
+                      <span className="text-foreground truncate flex-1 min-w-0">{t.title}</span>
+                      {t.assignee && (
+                        <span className="text-[10px] text-muted-foreground shrink-0 max-w-[80px] truncate">{t.assignee}</span>
+                      )}
                       <Badge variant="destructive" className="text-[9px] shrink-0">
                         {t.due_date}
                       </Badge>
