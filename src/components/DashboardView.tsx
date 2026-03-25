@@ -179,20 +179,27 @@ export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardVie
     const avgCreatedMonthly = topics.length / totalMonthsSpan;
 
     // Assignee ranking
-    const assigneeMap = new Map<string, { total: number; subtasksTotal: number; subtasksDone: number; overdueCount: number; dueSoonCount: number; closedCount: number }>();
+    const assigneeMap = new Map<string, { total: number; activeCount: number; pausedCount: number; subtasksTotal: number; subtasksDone: number; overdueCount: number; dueSoonCount: number; onTrackCount: number; closedCount: number }>();
     for (const t of topics) {
       if (!t.assignee) continue;
-      const entry = assigneeMap.get(t.assignee) || { total: 0, subtasksTotal: 0, subtasksDone: 0, overdueCount: 0, dueSoonCount: 0, closedCount: 0 };
+      const entry = assigneeMap.get(t.assignee) || { total: 0, activeCount: 0, pausedCount: 0, subtasksTotal: 0, subtasksDone: 0, overdueCount: 0, dueSoonCount: 0, onTrackCount: 0, closedCount: 0 };
       entry.total++;
       entry.subtasksTotal += t.subtasks.length;
       entry.subtasksDone += t.subtasks.filter(s => s.completed).length;
       if (t.status === 'completado') {
         entry.closedCount++;
+      } else if (t.status === 'pausado') {
+        entry.pausedCount++;
       } else if (t.status === 'activo' || t.status === 'seguimiento') {
-        if (isStoredDateOverdue(t.due_date)) entry.overdueCount++;
-        else if (t.due_date && !isStoredDateOverdue(t.due_date)) {
+        entry.activeCount++;
+        if (t.is_ongoing || !t.due_date) {
+          // no deadline status
+        } else if (isStoredDateOverdue(t.due_date)) {
+          entry.overdueCount++;
+        } else {
           const due = new Date(t.due_date + 'T23:59:59');
           if (isBefore(due, threeDaysFromNow)) entry.dueSoonCount++;
+          else entry.onTrackCount++;
         }
       }
       assigneeMap.set(t.assignee, entry);
@@ -513,22 +520,28 @@ export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardVie
                   <TableHeader>
                     <TableRow>
                       <TableHead className="text-xs">Nombre</TableHead>
-                      <TableHead className="text-xs text-center">Temas</TableHead>
-                      <TableHead className="text-xs text-center">Subtareas</TableHead>
-                      <TableHead className="text-xs text-center">Cerrados</TableHead>
+                      <TableHead className="text-xs text-center">Total</TableHead>
+                      <TableHead className="text-xs text-center">Activos</TableHead>
+                      <TableHead className="text-xs text-center">Pausados</TableHead>
+                      <TableHead className="text-xs text-center border-l">Al día</TableHead>
                       <TableHead className="text-xs text-center">Atrasados</TableHead>
                       <TableHead className="text-xs text-center">Por vencer</TableHead>
-                      <TableHead className="text-xs">Avance</TableHead>
+                      <TableHead className="text-xs border-l">Avance</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {metrics.assigneeRanking.map((a) => (
                       <TableRow key={a.name} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedAssignee(a.name)}>
                         <TableCell className="text-sm font-medium text-primary underline underline-offset-2">{a.name}</TableCell>
-                        <TableCell className="text-sm text-center">{a.total}</TableCell>
-                        <TableCell className="text-sm text-center">{a.subtasksDone}/{a.subtasksTotal}</TableCell>
-                        <TableCell className="text-sm text-center">
-                          <Badge variant="outline" className="text-[10px]">{a.closedCount}</Badge>
+                        <TableCell className="text-sm text-center font-medium">{a.total}</TableCell>
+                        <TableCell className="text-sm text-center">{a.activeCount}</TableCell>
+                        <TableCell className="text-sm text-center">{a.pausedCount}</TableCell>
+                        <TableCell className="text-sm text-center border-l">
+                          {a.onTrackCount > 0 ? (
+                            <Badge variant="outline" className="text-[10px] border-emerald-500/50 text-emerald-600">{a.onTrackCount}</Badge>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">0</span>
+                          )}
                         </TableCell>
                         <TableCell className="text-sm text-center">
                           {a.overdueCount > 0 ? (
@@ -544,7 +557,7 @@ export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardVie
                             <span className="text-muted-foreground text-xs">0</span>
                           )}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="border-l">
                           <div className="flex items-center gap-2">
                             <Progress value={a.progress} className="h-2 flex-1" />
                             <span className="text-xs text-muted-foreground w-8">{a.progress}%</span>
@@ -568,7 +581,9 @@ export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardVie
                       <span className="text-xs text-muted-foreground">{a.subtasksDone}/{a.subtasksTotal} ({a.progress}%)</span>
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
-                      <Badge variant="outline" className="text-[9px]">{a.closedCount} cerrados</Badge>
+                      <Badge variant="outline" className="text-[9px]">{a.activeCount} activos</Badge>
+                      <Badge variant="outline" className="text-[9px]">{a.pausedCount} pausados</Badge>
+                      {a.onTrackCount > 0 && <Badge variant="outline" className="text-[9px] border-emerald-500/50 text-emerald-600">{a.onTrackCount} al día</Badge>}
                       {a.overdueCount > 0 && <Badge variant="destructive" className="text-[9px]">{a.overdueCount} atrasados</Badge>}
                       {a.dueSoonCount > 0 && <Badge variant="outline" className="text-[9px] border-yellow-500/50 text-yellow-600">{a.dueSoonCount} por vencer</Badge>}
                     </div>
