@@ -249,6 +249,11 @@ export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardVie
   ];
 
 
+  const trendChartConfig = {
+    completados: { label: 'Completados', color: 'hsl(142 71% 45%)' },
+    creados: { label: 'Creados', color: 'hsl(217 91% 60%)' },
+  };
+
 
 
   // Show assignee profile if selected
