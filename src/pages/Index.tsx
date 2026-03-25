@@ -285,6 +285,7 @@ const Index = () => {
             <DashboardView topics={topics} assignees={assignees} onUpdateTopic={(id, data) => updateTopic.mutate({ id, ...data })} onNavigateToTopic={(topicId, status) => {
               setFilter('todos');
               setStatusTab(status as StatusTab);
+              setExpandedTopicId(topicId);
               setForceExpand(null);
               setSearchQuery('');
               setSelectedTagIds([]);
