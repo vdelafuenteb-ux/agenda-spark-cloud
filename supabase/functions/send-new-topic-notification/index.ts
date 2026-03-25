@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { to_email, to_name, topic_title, start_date, due_date, subtasks, is_urgent, days_until_due } = await req.json();
+    const { to_email, to_name, topic_title, start_date, due_date, subtasks, is_urgent, days_until_due, initial_note } = await req.json();
 
     if (!to_email || !topic_title) {
       return new Response(
@@ -111,6 +111,17 @@ Deno.serve(async (req) => {
         mensaje += `</li>`;
       });
       mensaje += `</ul>`;
+    }
+
+    // Initial note / bitácora
+    if (initial_note) {
+      // Convert basic HTML formatting and newlines for readability
+      const formattedNote = initial_note
+        .replace(/\n/g, '<br>');
+      mensaje += `<div style="margin:16px 0;padding:12px 16px;background:#f8f9fa;border-left:3px solid #6c757d;border-radius:4px;">`;
+      mensaje += `<p style="margin:0 0 6px;font-size:12px;font-weight:600;color:#555;text-transform:uppercase;">📝 Detalle / Instrucciones</p>`;
+      mensaje += `<p style="margin:0;font-size:14px;color:#333;line-height:1.6;white-space:pre-wrap;word-wrap:break-word;">${formattedNote}</p>`;
+      mensaje += `</div>`;
     }
 
     mensaje += `<hr style="border:none;border-top:1px solid #ddd;margin:20px 0 12px;"/>`;
