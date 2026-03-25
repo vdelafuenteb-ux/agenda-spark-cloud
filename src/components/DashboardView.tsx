@@ -274,41 +274,41 @@ export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardVie
     <div className="flex-1 overflow-auto p-3 md:p-4">
       <div className="max-w-6xl mx-auto space-y-4">
         {/* KPI Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 max-w-5xl">
           {/* 1. Temas Totales */}
           <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-medium text-muted-foreground">Temas Totales</span>
-                <Target className="h-4 w-4 text-primary" />
+            <CardContent className="p-3">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-[11px] font-medium text-muted-foreground">Temas Totales</span>
+                <Target className="h-3.5 w-3.5 text-primary" />
               </div>
-              <div className="text-2xl font-bold text-foreground">{totalOpen}</div>
-              <p className="text-[11px] text-muted-foreground mt-1">{totalActivos} activos · {totalPausados} en pausa</p>
+              <div className="text-xl font-bold text-foreground">{totalOpen}</div>
+              <p className="text-[10px] text-muted-foreground mt-0.5">{totalActivos} activos · {totalPausados} en pausa</p>
             </CardContent>
           </Card>
 
           {/* 2. Semáforo */}
           <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-medium text-muted-foreground">Estado de Plazos</span>
-                <AlertTriangle className="h-4 w-4 text-amber-500" />
+            <CardContent className="p-3">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-[11px] font-medium text-muted-foreground">Estado de Plazos</span>
+                <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
               </div>
-              <div className="flex items-center gap-3 flex-wrap">
-                <div className="flex items-center gap-1.5">
-                  <div className="h-3 w-3 rounded-full bg-emerald-500" />
-                  <span className="text-lg font-bold text-foreground">{onTrackCount}</span>
-                  <span className="text-[10px] text-muted-foreground">al día</span>
+              <div className="flex items-center gap-2 flex-nowrap">
+                <div className="flex items-center gap-1">
+                  <div className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                  <span className="text-sm font-bold text-foreground">{onTrackCount}</span>
+                  <span className="text-[9px] text-muted-foreground">al día</span>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="h-3 w-3 rounded-full bg-yellow-500" />
-                  <span className="text-lg font-bold text-foreground">{dueSoonCount}</span>
-                  <span className="text-[10px] text-muted-foreground">por vencer</span>
+                <div className="flex items-center gap-1">
+                  <div className="h-2.5 w-2.5 rounded-full bg-yellow-500" />
+                  <span className="text-sm font-bold text-foreground">{dueSoonCount}</span>
+                  <span className="text-[9px] text-muted-foreground">por vencer</span>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="h-3 w-3 rounded-full bg-destructive" />
-                  <span className="text-lg font-bold text-foreground">{overdueCount}</span>
-                  <span className="text-[10px] text-muted-foreground">atrasados</span>
+                <div className="flex items-center gap-1">
+                  <div className="h-2.5 w-2.5 rounded-full bg-destructive" />
+                  <span className="text-sm font-bold text-foreground">{overdueCount}</span>
+                  <span className="text-[9px] text-muted-foreground">atrasados</span>
                 </div>
               </div>
             </CardContent>
@@ -316,25 +316,25 @@ export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardVie
 
           {/* 3. Subtareas */}
           <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-medium text-muted-foreground">Subtareas</span>
-                <ListChecks className="h-4 w-4 text-emerald-500" />
+            <CardContent className="p-3">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-[11px] font-medium text-muted-foreground">Subtareas</span>
+                <ListChecks className="h-3.5 w-3.5 text-emerald-500" />
               </div>
-              <div className="text-2xl font-bold text-foreground">{metrics.completedSubtasks.length}/{metrics.allSubtasks.length}</div>
-              <p className="text-[11px] text-muted-foreground mt-1">{metrics.subtaskProgress}% completadas</p>
+              <div className="text-xl font-bold text-foreground">{metrics.completedSubtasks.length}/{metrics.allSubtasks.length}</div>
+              <p className="text-[10px] text-muted-foreground mt-0.5">{metrics.subtaskProgress}% completadas</p>
             </CardContent>
           </Card>
 
           {/* 4. Cerrados */}
           <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-medium text-muted-foreground">Cerrados</span>
-                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+            <CardContent className="p-3">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-[11px] font-medium text-muted-foreground">Cerrados</span>
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
               </div>
-              <div className="text-2xl font-bold text-foreground">{metrics.byStatus.completado.length}</div>
-              <p className="text-[11px] text-muted-foreground mt-1">temas completados</p>
+              <div className="text-xl font-bold text-foreground">{metrics.byStatus.completado.length}</div>
+              <p className="text-[10px] text-muted-foreground mt-0.5">temas completados</p>
             </CardContent>
           </Card>
         </div>
