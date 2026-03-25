@@ -473,7 +473,7 @@ export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardVie
               Tendencia Semanal (últimas 8 semanas)
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-4 pt-0">
+          <CardContent className="p-4 pt-0 space-y-3">
             <ChartContainer config={trendChartConfig} className="aspect-auto h-[200px] w-full">
               <AreaChart data={metrics.weeklyTrend} margin={{ top: 5, right: 5, bottom: 5, left: -20 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-border/40" />
@@ -484,6 +484,16 @@ export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardVie
                 <Area type="monotone" dataKey="completados" stackId="2" stroke="hsl(142 71% 45%)" fill="hsl(142 71% 45% / 0.2)" strokeWidth={2} />
               </AreaChart>
             </ChartContainer>
+
+            {/* Creation averages */}
+            <div className="flex items-center gap-4 pt-1 border-t">
+              <span className="text-[11px] text-muted-foreground font-medium">Promedio de creación:</span>
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-foreground"><span className="font-semibold">{metrics.avgCreatedDaily.toFixed(1)}</span> <span className="text-muted-foreground">/ día</span></span>
+                <span className="text-xs text-foreground"><span className="font-semibold">{metrics.avgCreatedWeekly.toFixed(1)}</span> <span className="text-muted-foreground">/ semana</span></span>
+                <span className="text-xs text-foreground"><span className="font-semibold">{metrics.avgCreatedMonthly.toFixed(1)}</span> <span className="text-muted-foreground">/ mes</span></span>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
