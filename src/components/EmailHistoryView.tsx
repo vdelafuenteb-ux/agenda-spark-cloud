@@ -38,7 +38,7 @@ interface EmailBatch {
 
 const DEADLINE_HOURS = 48;
 
-function getDeadlineInfo(sentAt: string, confirmed: boolean) {
+function getDeadlineInfo(sentAt: string, confirmed: boolean, confirmedAt?: string | null) {
   const sentTime = new Date(sentAt).getTime();
   const deadlineTime = sentTime + DEADLINE_HOURS * 60 * 60 * 1000;
   const now = Date.now();
@@ -48,13 +48,79 @@ function getDeadlineInfo(sentAt: string, confirmed: boolean) {
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
 
+  if (confirmed && confirmedAt) {
+    const confirmedTime = new Date(confirmedAt).getTime();
+    const onTime = confirmedTime <= deadlineTime;
+    return {
+      label: onTime ? 'A tiempo' : 'Fuera de plazo',
+      isOverdue: false,
+      color: onTime ? 'text-green-600' : 'text-destructive',
+      onTime,
+    };
+  }
   if (confirmed) {
-    return { label: 'Respondido', isOverdue: false, color: 'text-green-600' };
+    return { label: 'Respondido', isOverdue: false, color: 'text-green-600', onTime: true };
   }
   if (isOverdue) {
-    return { label: `−${hours}h ${minutes}m`, isOverdue: true, color: 'text-destructive' };
+    return { label: `−${hours}h ${minutes}m`, isOverdue: true, color: 'text-destructive', onTime: false };
   }
-  return { label: `${hours}h ${minutes}m`, isOverdue: false, color: 'text-amber-600' };
+  return { label: `${hours}h ${minutes}m`, isOverdue: false, color: 'text-amber-600', onTime: false };
+}
+
+function toLocalDatetime(isoStr: string) {
+  const d = new Date(isoStr);
+  const offset = d.getTimezoneOffset();
+  const local = new Date(d.getTime() - offset * 60000);
+  return local.toISOString().slice(0, 16);
+}
+
+function ConfirmDatetimePopover({
+  emailId,
+  sentAt,
+  onConfirm,
+}: {
+  emailId: string;
+  sentAt: string;
+  onConfirm: (id: string, confirmedAt: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [value, setValue] = useState(toLocalDatetime(new Date().toISOString()));
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Checkbox
+          checked={false}
+          onCheckedChange={() => setOpen(true)}
+          className="h-3.5 w-3.5"
+        />
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-3 space-y-2" align="end" onClick={e => e.stopPropagation()}>
+        <p className="text-xs font-medium">¿Cuándo respondió?</p>
+        <Input
+          type="datetime-local"
+          value={value}
+          onChange={e => setValue(e.target.value)}
+          className="h-8 text-xs"
+        />
+        <div className="flex gap-2 justify-end">
+          <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setOpen(false)}>
+            Cancelar
+          </Button>
+          <Button
+            size="sm"
+            className="h-7 text-xs"
+            onClick={() => {
+              onConfirm(emailId, new Date(value).toISOString());
+              setOpen(false);
+            }}
+          >
+            Confirmar
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
 }
 
 export function EmailHistoryView() {
@@ -67,7 +133,6 @@ export function EmailHistoryView() {
   const [expandedBatches, setExpandedBatches] = useState<Set<string>>(new Set());
   const [, setTick] = useState(0);
 
-  // Re-render every minute to update countdown
   useEffect(() => {
     const interval = setInterval(() => setTick(t => t + 1), 60000);
     return () => clearInterval(interval);
@@ -94,12 +159,12 @@ export function EmailHistoryView() {
   };
 
   const toggleConfirmed = useMutation({
-    mutationFn: async ({ id, confirmed }: { id: string; confirmed: boolean }) => {
+    mutationFn: async ({ id, confirmed, confirmed_at }: { id: string; confirmed: boolean; confirmed_at?: string }) => {
       const { error } = await supabase
         .from('notification_emails')
         .update({
           confirmed,
-          confirmed_at: confirmed ? new Date().toISOString() : null,
+          confirmed_at: confirmed ? (confirmed_at || new Date().toISOString()) : null,
         } as any)
         .eq('id', id);
       if (error) throw error;
@@ -108,12 +173,12 @@ export function EmailHistoryView() {
   });
 
   const toggleBatchConfirmed = useMutation({
-    mutationFn: async ({ ids, confirmed }: { ids: string[]; confirmed: boolean }) => {
+    mutationFn: async ({ ids, confirmed, confirmed_at }: { ids: string[]; confirmed: boolean; confirmed_at?: string }) => {
       const { error } = await supabase
         .from('notification_emails')
         .update({
           confirmed,
-          confirmed_at: confirmed ? new Date().toISOString() : null,
+          confirmed_at: confirmed ? (confirmed_at || new Date().toISOString()) : null,
         } as any)
         .in('id', ids);
       if (error) throw error;
@@ -224,6 +289,14 @@ export function EmailHistoryView() {
       else next.add(key);
       return next;
     });
+  };
+
+  const handleConfirmEmail = (id: string, confirmedAt: string) => {
+    toggleConfirmed.mutate({ id, confirmed: true, confirmed_at: confirmedAt });
+  };
+
+  const handleUnconfirmEmail = (id: string) => {
+    toggleConfirmed.mutate({ id, confirmed: false });
   };
 
   return (
@@ -354,7 +427,9 @@ export function EmailHistoryView() {
                   {filtered.map(batch => {
                     const isExpanded = expandedBatches.has(batch.key);
                     const batchIds = batch.emails.map(e => e.id);
-                    const deadline = getDeadlineInfo(batch.sent_at, batch.allConfirmed);
+                    // For batch-level deadline, use the first email's confirmed_at if all confirmed
+                    const batchConfirmedAt = batch.allConfirmed ? batch.emails[0]?.confirmed_at : null;
+                    const deadline = getDeadlineInfo(batch.sent_at, batch.allConfirmed, batchConfirmedAt);
 
                     return (
                       <Fragment key={batch.key}>
@@ -370,11 +445,23 @@ export function EmailHistoryView() {
                             {isExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
                           </td>
                           <td className="px-3 py-2.5" onClick={e => e.stopPropagation()}>
-                            <Checkbox
-                              checked={batch.allConfirmed}
-                              onCheckedChange={(checked) => toggleBatchConfirmed.mutate({ ids: batchIds, confirmed: !!checked })}
-                              className="h-4 w-4"
-                            />
+                            {batch.allConfirmed ? (
+                              <Checkbox
+                                checked={true}
+                                onCheckedChange={() => {
+                                  batchIds.forEach(id => handleUnconfirmEmail(id));
+                                }}
+                                className="h-4 w-4"
+                              />
+                            ) : (
+                              <ConfirmDatetimePopover
+                                emailId={batchIds[0]}
+                                sentAt={batch.sent_at}
+                                onConfirm={(_, confirmedAt) => {
+                                  toggleBatchConfirmed.mutate({ ids: batchIds, confirmed: true, confirmed_at: confirmedAt });
+                                }}
+                              />
+                            )}
                           </td>
                           <td className="px-3 py-2.5">
                             {batch.allConfirmed ? (
@@ -422,26 +509,41 @@ export function EmailHistoryView() {
                                 <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-1.5">
                                   Temas incluidos en este envío
                                 </p>
-                                {batch.emails.map((email, i) => (
-                                  <div key={email.id} className="flex items-center justify-between gap-2 py-1 border-b border-border/50 last:border-0">
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-[10px] text-muted-foreground w-4">{i + 1}.</span>
-                                      <span className="text-xs text-foreground">{email.topic_title}</span>
+                                {batch.emails.map((email, i) => {
+                                  const emailDeadline = getDeadlineInfo(email.sent_at, email.confirmed, email.confirmed_at);
+                                  return (
+                                    <div key={email.id} className="flex items-center justify-between gap-2 py-1 border-b border-border/50 last:border-0">
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-[10px] text-muted-foreground w-4">{i + 1}.</span>
+                                        <span className="text-xs text-foreground">{email.topic_title}</span>
+                                      </div>
+                                      <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                                        {email.confirmed ? (
+                                          <>
+                                            <span className={cn("text-[10px] font-medium", emailDeadline.color)}>
+                                              {emailDeadline.label}
+                                            </span>
+                                            <CheckCircle2 className="h-3 w-3 text-green-600" />
+                                            <Checkbox
+                                              checked={true}
+                                              onCheckedChange={() => handleUnconfirmEmail(email.id)}
+                                              className="h-3.5 w-3.5"
+                                            />
+                                          </>
+                                        ) : (
+                                          <>
+                                            <Clock className="h-3 w-3 text-muted-foreground" />
+                                            <ConfirmDatetimePopover
+                                              emailId={email.id}
+                                              sentAt={email.sent_at}
+                                              onConfirm={handleConfirmEmail}
+                                            />
+                                          </>
+                                        )}
+                                      </div>
                                     </div>
-                                    <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
-                                      {email.confirmed ? (
-                                        <CheckCircle2 className="h-3 w-3 text-green-600" />
-                                      ) : (
-                                        <Clock className="h-3 w-3 text-muted-foreground" />
-                                      )}
-                                      <Checkbox
-                                        checked={email.confirmed}
-                                        onCheckedChange={(checked) => toggleConfirmed.mutate({ id: email.id, confirmed: !!checked })}
-                                        className="h-3.5 w-3.5"
-                                      />
-                                    </div>
-                                  </div>
-                                ))}
+                                  );
+                                })}
                               </div>
                             </td>
                           </tr>
@@ -459,7 +561,8 @@ export function EmailHistoryView() {
             {filtered.map(batch => {
               const isExpanded = expandedBatches.has(batch.key);
               const batchIds = batch.emails.map(e => e.id);
-              const deadline = getDeadlineInfo(batch.sent_at, batch.allConfirmed);
+              const batchConfirmedAt = batch.allConfirmed ? batch.emails[0]?.confirmed_at : null;
+              const deadline = getDeadlineInfo(batch.sent_at, batch.allConfirmed, batchConfirmedAt);
 
               return (
                 <div
@@ -509,11 +612,23 @@ export function EmailHistoryView() {
                         <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Temas</p>
                         <div className="flex items-center gap-2">
                           <div onClick={e => e.stopPropagation()}>
-                            <Checkbox
-                              checked={batch.allConfirmed}
-                              onCheckedChange={(checked) => toggleBatchConfirmed.mutate({ ids: batchIds, confirmed: !!checked })}
-                              className="h-4 w-4"
-                            />
+                            {batch.allConfirmed ? (
+                              <Checkbox
+                                checked={true}
+                                onCheckedChange={() => {
+                                  batchIds.forEach(id => handleUnconfirmEmail(id));
+                                }}
+                                className="h-4 w-4"
+                              />
+                            ) : (
+                              <ConfirmDatetimePopover
+                                emailId={batchIds[0]}
+                                sentAt={batch.sent_at}
+                                onConfirm={(_, confirmedAt) => {
+                                  toggleBatchConfirmed.mutate({ ids: batchIds, confirmed: true, confirmed_at: confirmedAt });
+                                }}
+                              />
+                            )}
                           </div>
                           <button
                             onClick={(e) => { e.stopPropagation(); deleteBatch.mutate(batchIds); }}
@@ -523,26 +638,41 @@ export function EmailHistoryView() {
                           </button>
                         </div>
                       </div>
-                      {batch.emails.map((email, i) => (
-                        <div key={email.id} className="flex items-center justify-between gap-2 py-1 border-b border-border/50 last:border-0">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <span className="text-[10px] text-muted-foreground shrink-0">{i + 1}.</span>
-                            <span className="text-xs text-foreground truncate">{email.topic_title}</span>
+                      {batch.emails.map((email, i) => {
+                        const emailDeadline = getDeadlineInfo(email.sent_at, email.confirmed, email.confirmed_at);
+                        return (
+                          <div key={email.id} className="flex items-center justify-between gap-2 py-1 border-b border-border/50 last:border-0">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="text-[10px] text-muted-foreground shrink-0">{i + 1}.</span>
+                              <span className="text-xs text-foreground truncate">{email.topic_title}</span>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0" onClick={e => e.stopPropagation()}>
+                              {email.confirmed ? (
+                                <>
+                                  <span className={cn("text-[10px] font-medium", emailDeadline.color)}>
+                                    {emailDeadline.label}
+                                  </span>
+                                  <CheckCircle2 className="h-3 w-3 text-green-600" />
+                                  <Checkbox
+                                    checked={true}
+                                    onCheckedChange={() => handleUnconfirmEmail(email.id)}
+                                    className="h-3.5 w-3.5"
+                                  />
+                                </>
+                              ) : (
+                                <>
+                                  <Clock className="h-3 w-3 text-muted-foreground" />
+                                  <ConfirmDatetimePopover
+                                    emailId={email.id}
+                                    sentAt={email.sent_at}
+                                    onConfirm={handleConfirmEmail}
+                                  />
+                                </>
+                              )}
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2 shrink-0" onClick={e => e.stopPropagation()}>
-                            {email.confirmed ? (
-                              <CheckCircle2 className="h-3 w-3 text-green-600" />
-                            ) : (
-                              <Clock className="h-3 w-3 text-muted-foreground" />
-                            )}
-                            <Checkbox
-                              checked={email.confirmed}
-                              onCheckedChange={(checked) => toggleConfirmed.mutate({ id: email.id, confirmed: !!checked })}
-                              className="h-3.5 w-3.5"
-                            />
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>

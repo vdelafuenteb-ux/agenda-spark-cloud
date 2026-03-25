@@ -82,12 +82,12 @@ export function useNotificationEmails(topicId?: string) {
   });
 
   const toggleConfirmed = useMutation({
-    mutationFn: async ({ id, confirmed }: { id: string; confirmed: boolean }) => {
+    mutationFn: async ({ id, confirmed, confirmed_at }: { id: string; confirmed: boolean; confirmed_at?: string }) => {
       const { error } = await supabase
         .from('notification_emails')
         .update({
           confirmed,
-          confirmed_at: confirmed ? new Date().toISOString() : null,
+          confirmed_at: confirmed ? (confirmed_at || new Date().toISOString()) : null,
         })
         .eq('id', id);
       if (error) throw error;
