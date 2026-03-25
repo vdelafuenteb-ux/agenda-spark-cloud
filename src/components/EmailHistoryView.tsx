@@ -644,10 +644,12 @@ export function EmailHistoryView() {
                           <FileText className="h-2.5 w-2.5" />
                           {batch.topicCount} {batch.topicCount === 1 ? 'tema' : 'temas'}
                         </Badge>
+                        {isWeekly && (
                         <span className={cn("font-mono font-medium text-[10px] inline-flex items-center gap-0.5", deadline.color)}>
                           {deadline.isOverdue && <AlertTriangle className="h-2.5 w-2.5" />}
                           {deadline.label}
                         </span>
+                        )}
                       </div>
                       <span className="text-[10px] text-muted-foreground">
                         {format(new Date(batch.sent_at), "dd MMM yyyy HH:mm", { locale: es })}
