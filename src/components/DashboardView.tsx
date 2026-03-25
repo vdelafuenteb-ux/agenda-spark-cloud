@@ -23,6 +23,7 @@ interface DashboardViewProps {
   topics: TopicWithSubtasks[];
   assignees: Assignee[];
   onUpdateTopic?: (id: string, data: any) => void;
+  onNavigateToTopic?: (topicId: string, status: string) => void;
 }
 
 const PRIORITY_COLORS = {
