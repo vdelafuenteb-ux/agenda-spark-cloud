@@ -1,46 +1,35 @@
 
 
-## Plan: Corregir resumen diario para mostrar subtareas individuales (como en Revisión)
+## Plan: Separar correos informativos de correos de seguimiento semanal
 
 ### Problema
-
-El correo de resumen diario muestra el **tema** ("Feria Logistec" con fecha 30 abr) cuando en realidad lo atrasado es una **subtarea** dentro de ese tema. La vista de Revisión lo hace correctamente: muestra la subtarea con su fecha y el tema como referencia debajo.
+Los correos de notificación de "tema nuevo agregado" se mezclan con los correos masivos del lunes en el historial, apareciendo con estado "Pendiente" y plazo de 48h, cuando en realidad son informativos y no requieren confirmación.
 
 ### Solución
 
-Cambiar la lógica del edge function `send-daily-summary` para que en lugar de agrupar por tema, muestre **filas individuales por subtarea** (y solo el tema si no tiene subtareas que coincidan), igual que `buildItems` en `ReviewView.tsx`.
-
-### Cambios en `supabase/functions/send-daily-summary/index.ts`
-
-**Categorización (líneas 109-131)**: En vez de pushear el topic completo con `matchCount`, construir una lista de items individuales:
-
-```text
-Estructura actual:         Estructura nueva:
-─────────────────         ─────────────────
-Topic "Feria"  (1)        Subtarea "X" → Tema: Feria (vence: 20 mar)
-                          
-Topic "Cargo"  (1)        Topic "Cargo" (vence: 19 mar)
+**1. Migración de base de datos** — Agregar columna `email_type` a `notification_emails`:
+```sql
+ALTER TABLE notification_emails 
+  ADD COLUMN email_type text NOT NULL DEFAULT 'weekly';
 ```
+- `'weekly'` = correos masivos del lunes (con plazo 48h y confirmación)
+- `'new_topic'` = notificación informativa de tema nuevo (sin plazo)
 
-Cada item tendrá: `title`, `parentTitle` (si es subtarea), `assignee`, `dueDate`, `type` ('subtask' | 'topic').
+**2. Marcar correos de tema nuevo** — En `src/pages/Index.tsx`, al insertar en `notification_emails` después de crear un tema, agregar `email_type: 'new_topic'`.
 
-**Tabla HTML (`buildSection`)**: Actualizar para mostrar:
-- Columna "Item" con el título de la subtarea
-- Debajo en gris: `→ Tema padre` (si es subtarea)
-- Columna "Vence" con la fecha de la subtarea/tema correspondiente
-- Eliminar columna "Items" (ya no aplica, cada fila es un item)
+**3. Sub-pestañas en EmailHistoryView** — Agregar dos tabs dentro del historial:
+- **"Seguimiento semanal"** (default): Muestra solo `email_type = 'weekly'`. Mantiene toda la lógica actual (48h, confirmación, estadísticas).
+- **"Temas adicionales"**: Muestra solo `email_type = 'new_topic'`. Sin plazo de 48h, sin checkbox de confirmación, solo muestra que se envió la notificación (fecha, persona, tema).
 
-### Tabla resultante en el correo
+**4. NotificationSection** — El correo automático de tema nuevo que aparece en la sección del tema individual también se mostrará sin el plazo de 48h ni opción de confirmar cuando sea tipo `new_topic`.
 
-| Item | Responsable | Vence |
-|---|---|---|
-| Seguimiento Clientes<br>`→ Cargo Aviation` | Matias Sapunar | 19 mar |
-| Documentación respaldo... | Vicente Godoy | 20 mar |
-| Check List cosas por hacer<br>`→ Feria Logistec` | Gabriel Rojas | 20 mar |
-
-### Archivo a modificar
+### Archivos a modificar
 
 | Archivo | Cambio |
 |---|---|
-| `supabase/functions/send-daily-summary/index.ts` | Refactorizar categorización para items individuales y actualizar `buildSection` |
+| Migración SQL | Agregar columna `email_type` con default `'weekly'` |
+| `src/pages/Index.tsx` | Insertar con `email_type: 'new_topic'` |
+| `src/components/EmailHistoryView.tsx` | Agregar tabs "Seguimiento semanal" / "Temas adicionales", filtrar por tipo, ocultar plazo en la pestaña informativa |
+| `src/hooks/useNotificationEmails.tsx` | Agregar `email_type` a la interfaz |
+| `src/components/NotificationSection.tsx` | Ocultar plazo/confirmación para correos tipo `new_topic` |
 
