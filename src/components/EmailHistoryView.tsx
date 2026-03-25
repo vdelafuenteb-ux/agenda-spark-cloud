@@ -127,6 +127,7 @@ function ConfirmDatetimePopover({
 
 export function EmailHistoryView() {
   const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState<'weekly' | 'new_topic'>('weekly');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedAssignee, setSelectedAssignee] = useState<string>('all');
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
