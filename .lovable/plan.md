@@ -1,43 +1,26 @@
 
 
-## Lista de Contactos
+## Plan: Rediseñar tarjetas KPI del Dashboard
 
-Agregar una nueva sección "Contactos" en la app donde el usuario pueda gestionar una lista de contactos con nombre, correo, cargo, celular y empresa, con búsqueda rápida.
+### Cambios en `src/components/DashboardView.tsx`
 
-### Cambios
+Reemplazar las 4 tarjetas KPI actuales por este nuevo orden y estructura:
 
-**1. Migración SQL -- nueva tabla `contacts`**
-- Columnas: `id` (uuid PK), `user_id` (uuid), `name` (text), `email` (text), `phone` (text), `position` (text, cargo), `company` (text), `created_at` (timestamptz)
-- RLS: CRUD scoped a `auth.uid() = user_id`
+1. **Temas Totales** — Valor: activos + seguimiento + pausados. Subtítulo con desglose: `X activos · Y en pausa`  
+   (donde "activos" = activo + seguimiento)
 
-**2. `src/types/filters.ts`**
-- Agregar `'contactos'` al tipo `Filter`
+2. **Semáforo** — Dos indicadores lado a lado:  
+   - **Al Día**: cantidad de temas no atrasados (activos + seguimiento, con fecha, no ongoing, no overdue) — color verde  
+   - **Atrasados**: cantidad overdue — color rojo  
 
-**3. `src/components/AppSidebar.tsx`**
-- Agregar entrada "Contactos" con icono `Contact` (lucide) en la lista de filtros del sidebar
+3. **Subtareas** — Sin cambios: `completadas/total` con porcentaje
 
-**4. `src/hooks/useContacts.tsx`** (nuevo)
-- Hook con React Query para CRUD de contactos: `useQuery(['contacts'])`, `createContact`, `updateContact`, `deleteContact`
+4. **Cerrados** — Sin cambios: total completados
 
-**5. `src/components/ContactsView.tsx`** (nuevo)
-- Vista principal con:
-  - Barra de búsqueda rápida (filtra por nombre, email, empresa, cargo)
-  - Botón "Nuevo Contacto" que abre un dialog/formulario inline
-  - Tabla/lista de contactos mostrando nombre, correo, cargo, celular, empresa
-  - Edición inline o via dialog al hacer clic
-  - Botón eliminar con confirmación
-- Diseño responsive: tabla en desktop, cards en móvil
+### Detalle técnico
 
-**6. `src/pages/Index.tsx`**
-- Importar `ContactsView`
-- Agregar condicional `filter === 'contactos'` para renderizar la vista
-- Agregar título "Contactos" al header
-
-### Archivos a crear/modificar
-- 1 migración SQL
-- `src/types/filters.ts`
-- `src/components/AppSidebar.tsx`
-- `src/hooks/useContacts.tsx` (nuevo)
-- `src/components/ContactsView.tsx` (nuevo)
-- `src/pages/Index.tsx`
+- En `metrics`, calcular `totalActive = activo.length + seguimiento.length + pausado.length` y `onTrack = nonOngoing con fecha y no overdue`
+- Tarjeta 1: valor = `totalActive`, subtítulo = `${activo + seguimiento} activos · ${pausado} en pausa`
+- Tarjeta 2: renderizado custom con dos columnas (verde/rojo) en vez de un solo número
+- Reordenar el array `kpis` acorde
 
