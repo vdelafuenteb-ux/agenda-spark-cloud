@@ -253,18 +253,63 @@ export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardVie
       <div className="max-w-6xl mx-auto space-y-4">
         {/* KPI Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {kpis.map((kpi) => (
-            <Card key={kpi.title}>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium text-muted-foreground">{kpi.title}</span>
-                  <kpi.icon className={`h-4 w-4 ${kpi.color}`} />
+          {/* 1. Temas Totales */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-medium text-muted-foreground">Temas Totales</span>
+                <Target className="h-4 w-4 text-primary" />
+              </div>
+              <div className="text-2xl font-bold text-foreground">{totalOpen}</div>
+              <p className="text-[11px] text-muted-foreground mt-1">{totalActivos} activos · {totalPausados} en pausa</p>
+            </CardContent>
+          </Card>
+
+          {/* 2. Semáforo */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-medium text-muted-foreground">Estado de Plazos</span>
+                <AlertTriangle className="h-4 w-4 text-amber-500" />
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1.5">
+                  <div className="h-3 w-3 rounded-full bg-emerald-500" />
+                  <span className="text-lg font-bold text-foreground">{onTrackCount}</span>
+                  <span className="text-[10px] text-muted-foreground">al día</span>
                 </div>
-                <div className="text-2xl font-bold text-foreground">{kpi.value}</div>
-                <p className="text-[11px] text-muted-foreground mt-1">{kpi.subtitle}</p>
-              </CardContent>
-            </Card>
-          ))}
+                <div className="flex items-center gap-1.5">
+                  <div className="h-3 w-3 rounded-full bg-destructive" />
+                  <span className="text-lg font-bold text-foreground">{overdueCount}</span>
+                  <span className="text-[10px] text-muted-foreground">atrasados</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 3. Subtareas */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-medium text-muted-foreground">Subtareas</span>
+                <ListChecks className="h-4 w-4 text-emerald-500" />
+              </div>
+              <div className="text-2xl font-bold text-foreground">{metrics.completedSubtasks.length}/{metrics.allSubtasks.length}</div>
+              <p className="text-[11px] text-muted-foreground mt-1">{metrics.subtaskProgress}% completadas</p>
+            </CardContent>
+          </Card>
+
+          {/* 4. Cerrados */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-medium text-muted-foreground">Cerrados</span>
+                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+              </div>
+              <div className="text-2xl font-bold text-foreground">{metrics.byStatus.completado.length}</div>
+              <p className="text-[11px] text-muted-foreground mt-1">temas completados</p>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Closure Compliance KPI */}
