@@ -294,8 +294,8 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
                         const pending = t.subtasks.filter(s => !s.completed).length;
                         const isOverdue = isStoredDateOverdue(t.due_date);
                         return (
-                          <TableRow key={t.id} className={isOverdue ? 'bg-destructive/5' : ''}>
-                            <TableCell className="text-sm font-medium max-w-[200px] truncate">{t.title}</TableCell>
+                          <TableRow key={t.id} className={`${isOverdue ? 'bg-destructive/5' : ''} ${onNavigateToTopic ? 'cursor-pointer hover:bg-muted/50' : ''}`} onClick={() => onNavigateToTopic?.(t.id, t.status)}>
+                            <TableCell className="text-sm font-medium max-w-[200px] truncate text-primary">{t.title}</TableCell>
                             <TableCell className="text-center">
                               <Badge variant={t.priority === 'alta' ? 'destructive' : t.priority === 'media' ? 'outline' : 'secondary'} className="text-[9px]">{t.priority}</Badge>
                             </TableCell>
