@@ -292,11 +292,16 @@ export function DashboardView({ topics, assignees, onUpdateTopic }: DashboardVie
                 <span className="text-xs font-medium text-muted-foreground">Estado de Plazos</span>
                 <AlertTriangle className="h-4 w-4 text-amber-500" />
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3 flex-wrap">
                 <div className="flex items-center gap-1.5">
                   <div className="h-3 w-3 rounded-full bg-emerald-500" />
                   <span className="text-lg font-bold text-foreground">{onTrackCount}</span>
                   <span className="text-[10px] text-muted-foreground">al día</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="h-3 w-3 rounded-full bg-yellow-500" />
+                  <span className="text-lg font-bold text-foreground">{dueSoonCount}</span>
+                  <span className="text-[10px] text-muted-foreground">por vencer</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div className="h-3 w-3 rounded-full bg-destructive" />
