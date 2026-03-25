@@ -1,0 +1,1 @@
+UPDATE notification_emails SET email_type = 'new_topic' WHERE id = '324a2c76-9850-4e4c-a809-1a753abd3621';
