@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { to_email, to_name, topic_title, start_date, due_date, subtasks, is_urgent, days_until_due } = await req.json();
+    const { to_email, to_name, topic_title, start_date, due_date, subtasks, is_urgent, days_until_due, initial_note } = await req.json();
 
     if (!to_email || !topic_title) {
       return new Response(

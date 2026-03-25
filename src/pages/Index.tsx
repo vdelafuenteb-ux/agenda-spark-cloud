@@ -270,6 +270,7 @@ const Index = () => {
                 subtasks: data.subtasks.map(t => ({ title: t, completed: false })),
                 is_urgent: isUrgent,
                 days_until_due: daysUntilDue,
+                initial_note: data.notes.trim() || null,
               },
             });
 
