@@ -267,6 +267,7 @@ export function DashboardView({ topics, assignees, onUpdateTopic, onNavigateToTo
         assignee={assigneeObj}
         topics={topics}
         onBack={() => setSelectedAssignee(null)}
+        onNavigateToTopic={onNavigateToTopic}
       />
     );
   }
