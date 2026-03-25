@@ -325,7 +325,8 @@ export function EmailHistoryView() {
             </TabsTrigger>
           </TabsList>
         </Tabs>
-        {/* Stats */}
+        {/* Stats - only for weekly */}
+        {isWeekly && (
         <div className="grid grid-cols-4 gap-3">
           <div className="rounded-lg border border-border bg-card p-3 text-center">
             <p className="text-2xl font-bold text-foreground">{stats.total}</p>
@@ -346,6 +347,7 @@ export function EmailHistoryView() {
             </p>
           </div>
         </div>
+        )}
 
         {/* Filters */}
         <div className="flex flex-wrap items-center gap-2">
