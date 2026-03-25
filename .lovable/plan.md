@@ -1,55 +1,53 @@
 
 
-## Plan: Hora de respuesta editable + estadística de cumplimiento en ficha del responsable
+## Plan: Notificación de tema nuevo agregado al responsable
 
 ### Resumen
 
-Tres cambios principales:
-1. Al confirmar un correo, permitir editar la hora/fecha de respuesta (no solo usar `now()`).
-2. Determinar si la respuesta fue "a tiempo" (dentro de 48h) o "fuera de plazo" comparando `confirmed_at` vs `sent_at + 48h`.
-3. Agregar una estadística de cumplimiento de respuesta de correos en la ficha personal de cada responsable.
+Cuando se crea un tema en estado "seguimiento" con responsable asignado, enviar automáticamente un correo informativo al responsable notificándole que se agregó un nuevo tema a su listado. Este correo es **informativo** (sin plazo de 48h obligatorio), a menos que la fecha de cierre del tema sea dentro de 1-2 días, en cuyo caso se menciona la urgencia.
 
 ---
 
-### 1. Hora de confirmación editable
+### Flujo
 
-**EmailHistoryView.tsx** y **NotificationSection.tsx**: Al hacer clic en el checkbox de confirmación, en lugar de guardar `new Date().toISOString()` directamente, mostrar un pequeño popover/input de fecha-hora para que el admin pueda ajustar cuándo realmente respondió la persona. Por defecto se pre-llena con la hora actual pero es editable.
+1. Se crea un tema con estado "seguimiento" y responsable asignado
+2. El sistema verifica que el responsable tenga correo configurado
+3. Se envía automáticamente un correo con:
+   - **Asunto**: `📋 Nuevo tema agregado a tu listado de seguimiento`
+   - **Cuerpo**: Detalle del tema (título, fecha inicio, fecha cierre, subtareas)
+   - **Si la fecha de cierre es ≤ 2 días**: Se agrega advertencia de urgencia con plazo
+   - **Sin plazo de 48h** para responder (no es un recordatorio)
+4. Se registra en `notification_emails` para el historial
+5. Se muestra un toast confirmando el envío
 
-- Agregar un componente inline (popover con input `datetime-local`) que aparece al confirmar.
-- Al guardar, envía el `confirmed_at` editado al update de Supabase.
-- Si se desmarca, se limpia `confirmed_at` como antes.
-
-**useNotificationEmails.tsx**: Modificar `toggleConfirmed` para aceptar un `confirmed_at` opcional en lugar de siempre usar `now()`.
-
-### 2. Indicador "a tiempo" vs "fuera de plazo" en confirmados
-
-**EmailHistoryView.tsx**: En la columna "Plazo 48h", cuando el correo está confirmado, en vez de solo mostrar "Respondido", mostrar:
-- **"A tiempo"** (verde) si `confirmed_at <= sent_at + 48h`
-- **"Fuera de plazo"** (rojo) si `confirmed_at > sent_at + 48h`
-
-Actualizar `getDeadlineInfo()` para recibir `confirmed_at` y calcular si fue dentro del plazo.
-
-### 3. Estadística de cumplimiento de correos en ficha del responsable
-
-**AssigneeProfileView.tsx**: Agregar una tarjeta/sección compacta (similar a "Cumplimiento de cierre" del dashboard) que muestre:
-- Total de correos confirmados
-- Respondidos a tiempo vs fuera de plazo
-- Porcentaje de cumplimiento
-
-Esto se calcula comparando `confirmed_at` vs `sent_at + 48h` para cada correo confirmado del responsable.
-
----
-
-### Archivos a modificar
+### Archivos a crear/modificar
 
 | Archivo | Cambio |
 |---|---|
-| `src/components/EmailHistoryView.tsx` | Popover para editar `confirmed_at`, actualizar `getDeadlineInfo` para mostrar a tiempo/fuera de plazo |
-| `src/hooks/useNotificationEmails.tsx` | `toggleConfirmed` acepta `confirmed_at` personalizado |
-| `src/components/AssigneeProfileView.tsx` | Agregar KPI de cumplimiento de respuesta de correos con desglose a tiempo/fuera de plazo |
-| `src/components/NotificationSection.tsx` | Actualizar el toggle de confirmación para permitir editar hora |
+| `supabase/functions/send-new-topic-notification/index.ts` | **Nuevo** — Edge function para enviar correo informativo de tema nuevo |
+| `src/pages/Index.tsx` | Después de crear un tema "seguimiento" con responsable, invocar la edge function y registrar en historial |
+
+### Edge Function: `send-new-topic-notification`
+
+Recibe: `to_email`, `to_name`, `topic_title`, `start_date`, `due_date`, `subtasks`, `is_urgent` (si due_date ≤ 2 días).
+
+Construye HTML similar al existente pero con tono informativo:
+- Asunto: `📋 Nuevo tema agregado a tu listado de seguimiento`
+- Si es urgente: `⚠️ Nuevo tema URGENTE agregado — vence en [X] días`
+- CC a Matías y Vicente (misma lógica actual)
+- Sin mención de "48 horas para responder" salvo que sea urgente
+
+### Cambio en `Index.tsx` → `handleCreateTopic`
+
+Al final del flujo de creación, si `status === 'seguimiento'` y hay `assignee` con email:
+1. Calcular si es urgente: `due_date` existe y es ≤ 2 días desde hoy
+2. Invocar `send-new-topic-notification`
+3. Registrar en `notification_emails` via insert directo
+4. Toast informativo: "Se notificó a [nombre] del nuevo tema"
+5. Si falla el envío, solo warning (no bloquea la creación)
 
 ### Notas técnicas
-- No se requieren cambios de base de datos: `confirmed_at` (timestamptz) ya existe.
-- El cálculo es: `new Date(confirmed_at) <= new Date(sent_at).getTime() + 48*60*60*1000` → a tiempo.
+- No requiere cambios de base de datos
+- El correo se registra en `notification_emails` igual que los demás, para que aparezca en el historial
+- Se reutiliza la misma infraestructura de Firebase email (`FIREBASE_EMAIL_URL`)
 
