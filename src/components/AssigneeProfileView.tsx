@@ -67,6 +67,23 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
     },
   });
 
+  const { data: scoreSnapshots = [] } = useQuery({
+    queryKey: ['score_snapshots', assigneeName],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('score_snapshots')
+        .select('*')
+        .eq('assignee_name', assigneeName)
+        .order('snapshot_date', { ascending: true })
+        .limit(52);
+      if (error) throw error;
+      return (data || []).map((s: any) => ({
+        ...s,
+        label: format(new Date(s.snapshot_date + 'T12:00:00'), 'dd MMM', { locale: es }),
+      }));
+    },
+  });
+
   const DEADLINE_HOURS = 48;
 
   const metrics = useMemo(() => {
