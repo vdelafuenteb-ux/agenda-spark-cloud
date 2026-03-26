@@ -279,8 +279,6 @@ export function TeamView({ topics, assignees, onUpdateTopic }: TeamViewProps) {
     return best;
   }, [rankedAssignees]);
 
-  // Global KPIs
-  const totalWeeklyHours = rankedAssignees.reduce((s, m) => s + m.weeklyHours, 0);
 
   if (selectedAssignee) {
     const assignee = assignees.find(a => a.name === selectedAssignee);
