@@ -405,7 +405,7 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
                       <div className="flex items-center justify-between">
                         <span className="text-xs text-muted-foreground flex items-center gap-1.5">
                           <TrendingUp className="h-3 w-3" /> Velocidad de ejecución
-                          <Badge variant="outline" className="text-[8px] h-4 px-1 border-muted-foreground/30">10%</Badge>
+                          <Badge variant="outline" className="text-[8px] h-4 px-1 border-muted-foreground/30">{metrics.redistributedWeights.velocity ?? 10}%</Badge>
                         </span>
                         <span className={cn(
                           "text-xs font-bold",
