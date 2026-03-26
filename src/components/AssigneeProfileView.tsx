@@ -145,15 +145,35 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
     const avgDelayDays = closureLate > 0 ? Math.round(totalDelayDays / closureLate) : 0;
     const avgEarlyDays = closureOnTime > 0 ? Math.round(totalEarlyDays / closureOnTime) : 0;
 
-    // Productivity Score calculation (4 dimensions — subtask completion removed to avoid overlap with timeliness)
+    // Velocity: % of allotted time used (lower = faster, score = 100 - avgPctUsed capped at 0)
+    const closedWithStartAndDue = completed.filter(t => t.start_date && t.due_date && t.closed_at);
+    let velocityScore: number | null = null;
+    let avgPctUsed: number | null = null;
+    if (closedWithStartAndDue.length > 0) {
+      const pcts = closedWithStartAndDue.map(t => {
+        const start = new Date(t.start_date!).getTime();
+        const due = new Date(t.due_date! + 'T23:59:59').getTime();
+        const closed = new Date(t.closed_at!).getTime();
+        const totalTime = due - start;
+        if (totalTime <= 0) return 100;
+        const usedTime = closed - start;
+        return Math.min(Math.round((usedTime / totalTime) * 100), 150); // cap at 150% for late closures
+      });
+      avgPctUsed = Math.round(pcts.reduce((a, b) => a + b, 0) / pcts.length);
+      // Score: 100% used = 50pts, 50% used = 100pts, 150% used = 0pts
+      velocityScore = Math.max(0, Math.min(100, Math.round(100 - (avgPctUsed - 50) * (100 / 100))));
+    }
+
+    // Productivity Score calculation (5 dimensions)
     const dimensions: { value: number; weight: number }[] = [];
-    if (closedWithDates.length > 0) dimensions.push({ value: closureComplianceRate ?? 0, weight: 0.35 });
-    if (confirmedEmails.length > 0) dimensions.push({ value: complianceRate, weight: 0.25 });
+    if (closedWithDates.length > 0) dimensions.push({ value: closureComplianceRate ?? 0, weight: 0.30 });
+    if (confirmedEmails.length > 0) dimensions.push({ value: complianceRate, weight: 0.20 });
     if (completedWithDue.length > 0) dimensions.push({ value: subtaskTimelinessRate ?? 0, weight: 0.25 });
     const activeWithDue = activeAndTracking.filter(t => t.due_date && !t.is_ongoing);
     const activeOnTime = activeWithDue.filter(t => !isStoredDateOverdue(t.due_date));
     const deadlineCompliance = activeWithDue.length > 0 ? Math.round((activeOnTime.length / activeWithDue.length) * 100) : null;
     if (deadlineCompliance !== null) dimensions.push({ value: deadlineCompliance, weight: 0.15 });
+    if (velocityScore !== null) dimensions.push({ value: velocityScore, weight: 0.10 });
 
     let productivityScore: number | null = null;
     if (dimensions.length > 0) {
@@ -169,6 +189,7 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
       closureOnTime, closureLate, closureComplianceRate, avgDelayDays, avgEarlyDays, closedWithDatesTotal: closedWithDates.length,
       productivityScore, subtasksOnTime: subtasksOnTime.length, subtasksLate, subtaskTimelinessRate,
       completedWithDueTotal: completedWithDue.length, pendingOverdueSubtasks: pendingOverdueSubtasks.length,
+      velocityScore, avgPctUsed,
     };
   }, [topics, assigneeName, emailHistory]);
 
@@ -346,6 +367,25 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
                         <span>A tiempo: <strong className="text-green-600">{metrics.onTimeEmails}</strong></span>
                         <span>Fuera de plazo: <strong className="text-destructive">{metrics.lateEmails}</strong></span>
                         <span>Total: <strong className="text-foreground">{metrics.confirmedTotal}</strong></span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Velocidad de ejecución */}
+                  {metrics.velocityScore !== null && metrics.avgPctUsed !== null && (
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+                          <TrendingUp className="h-3 w-3" /> Velocidad de ejecución
+                        </span>
+                        <span className={cn(
+                          "text-xs font-bold",
+                          metrics.velocityScore >= 80 ? "text-green-600" : metrics.velocityScore >= 50 ? "text-yellow-600" : "text-destructive"
+                        )}>{metrics.velocityScore}pts</span>
+                      </div>
+                      <Progress value={metrics.velocityScore} className="h-1.5" />
+                      <div className="flex gap-3 text-[10px] text-muted-foreground">
+                        <span>Usa en prom. <strong className={metrics.avgPctUsed <= 80 ? "text-green-600" : metrics.avgPctUsed <= 100 ? "text-yellow-600" : "text-destructive"}>{metrics.avgPctUsed}%</strong> del plazo</span>
                       </div>
                     </div>
                   )}
