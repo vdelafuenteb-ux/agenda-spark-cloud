@@ -422,8 +422,28 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
                       </div>
                     </div>
                   )}
+                  {/* 5. Cumplimiento de plazos activos — 10% */}
+                  {metrics.deadlineCompliance !== null && (
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+                          <CalendarClock className="h-3 w-3" /> Plazos activos al día
+                          <Badge variant="outline" className="text-[8px] h-4 px-1 border-muted-foreground/30">{metrics.redistributedWeights.deadline ?? 10}%</Badge>
+                        </span>
+                        <span className={cn(
+                          "text-xs font-bold",
+                          metrics.deadlineCompliance >= 80 ? "text-green-600" : metrics.deadlineCompliance >= 50 ? "text-yellow-600" : "text-destructive"
+                        )}>{metrics.deadlineCompliance}%</span>
+                      </div>
+                      <Progress value={metrics.deadlineCompliance} className="h-1.5" />
+                      <div className="flex gap-3 text-[10px] text-muted-foreground">
+                        <span>Al día: <strong className="text-green-600">{metrics.activeOnTimeTotal}</strong></span>
+                        <span>Atrasados: <strong className="text-destructive">{metrics.activeWithDueTotal - metrics.activeOnTimeTotal}</strong></span>
+                        <span>Total: <strong className="text-foreground">{metrics.activeWithDueTotal}</strong></span>
+                      </div>
+                    </div>
+                  )}
 
-                  {/* Separador visual */}
                   {metrics.allSubtasks.length > 0 && (
                     <>
                       <div className="border-t border-border pt-2">
