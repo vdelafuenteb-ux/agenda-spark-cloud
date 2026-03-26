@@ -342,114 +342,112 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
                 <div className="flex-1 space-y-3 min-w-0">
                   <span className="text-sm font-semibold text-foreground">Rendimiento</span>
 
-                  {/* 1. Eficiencia de cierre de temas — 50% */}
-                  {metrics.closureComplianceRate !== null && (
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground flex items-center gap-1.5">
-                          <CheckCircle2 className="h-3 w-3" /> Cierre de temas a tiempo
-                          <Badge variant="outline" className="text-[8px] h-4 px-1 border-muted-foreground/30">{metrics.redistributedWeights.closure ?? 50}%</Badge>
-                        </span>
-                        <span className={cn(
-                          "text-xs font-bold",
-                          metrics.closureComplianceRate >= 80 ? "text-green-600" : metrics.closureComplianceRate >= 50 ? "text-yellow-600" : "text-destructive"
-                        )}>{metrics.closureComplianceRate}%</span>
-                      </div>
-                      <Progress value={metrics.closureComplianceRate} className="h-1.5" />
-                      <div className="flex gap-3 text-[10px] text-muted-foreground flex-wrap">
-                        <span>A tiempo: <strong className="text-green-600">{metrics.closureOnTime}</strong></span>
-                        <span>Con atraso: <strong className="text-destructive">{metrics.closureLate}</strong></span>
-                        <span>Total: <strong className="text-foreground">{metrics.closedWithDatesTotal}</strong></span>
-                        {metrics.avgDelayDays > 0 && <span>Prom. atraso: <strong className="text-destructive">{metrics.avgDelayDays}d</strong></span>}
-                        {metrics.avgEarlyDays > 0 && <span>Prom. anticipación: <strong className="text-green-600">{metrics.avgEarlyDays}d</strong></span>}
-                      </div>
-                    </div>
-                  )}
+                  {/* Metrics sorted by weight descending */}
+                  {(() => {
+                    const metricItems: { key: string; weight: number; node: React.ReactNode }[] = [];
 
-                  {/* 2. Puntualidad de subtareas — 20% */}
-                  {metrics.subtaskTimelinessRate !== null && (
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground flex items-center gap-1.5">
-                          <ListChecks className="h-3 w-3" /> Puntualidad de subtareas
-                          <Badge variant="outline" className="text-[8px] h-4 px-1 border-muted-foreground/30">{metrics.redistributedWeights.subtask ?? 20}%</Badge>
-                        </span>
-                        <span className={cn(
-                          "text-xs font-bold",
-                          metrics.subtaskTimelinessRate >= 80 ? "text-green-600" : metrics.subtaskTimelinessRate >= 50 ? "text-yellow-600" : "text-destructive"
-                        )}>{metrics.subtaskTimelinessRate}%</span>
-                      </div>
-                      <Progress value={metrics.subtaskTimelinessRate} className="h-1.5" />
-                      <div className="flex gap-3 text-[10px] text-muted-foreground">
-                        <span>A tiempo: <strong className="text-green-600">{metrics.subtasksOnTime}</strong></span>
-                        <span>Con atraso: <strong className="text-destructive">{metrics.subtasksLate}</strong></span>
-                        <span>Total: <strong className="text-foreground">{metrics.completedWithDueTotal}</strong></span>
-                      </div>
-                    </div>
-                  )}
+                    if (metrics.closureComplianceRate !== null) {
+                      metricItems.push({ key: 'closure', weight: metrics.redistributedWeights.closure ?? 0, node: (
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+                              <CheckCircle2 className="h-3 w-3" /> Cierre de temas a tiempo
+                              <Badge variant="outline" className="text-[8px] h-4 px-1 border-muted-foreground/30">{metrics.redistributedWeights.closure ?? 0}%</Badge>
+                            </span>
+                            <span className={cn("text-xs font-bold", metrics.closureComplianceRate >= 80 ? "text-green-600" : metrics.closureComplianceRate >= 50 ? "text-yellow-600" : "text-destructive")}>{metrics.closureComplianceRate}%</span>
+                          </div>
+                          <Progress value={metrics.closureComplianceRate} className="h-1.5" />
+                          <div className="flex gap-3 text-[10px] text-muted-foreground flex-wrap">
+                            <span>A tiempo: <strong className="text-green-600">{metrics.closureOnTime}</strong></span>
+                            <span>Con atraso: <strong className="text-destructive">{metrics.closureLate}</strong></span>
+                            <span>Total: <strong className="text-foreground">{metrics.closedWithDatesTotal}</strong></span>
+                            {metrics.avgDelayDays > 0 && <span>Prom. atraso: <strong className="text-destructive">{metrics.avgDelayDays}d</strong></span>}
+                            {metrics.avgEarlyDays > 0 && <span>Prom. anticipación: <strong className="text-green-600">{metrics.avgEarlyDays}d</strong></span>}
+                          </div>
+                        </div>
+                      )});
+                    }
 
-                  {/* 3. Respuesta de correos — 10% */}
-                  {metrics.confirmedTotal > 0 && (
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground flex items-center gap-1.5">
-                          <Mail className="h-3 w-3" /> Respuesta de correos
-                          <Badge variant="outline" className="text-[8px] h-4 px-1 border-muted-foreground/30">{metrics.redistributedWeights.email ?? 10}%</Badge>
-                        </span>
-                        <span className={cn(
-                          "text-xs font-bold",
-                          metrics.complianceRate >= 80 ? "text-green-600" : metrics.complianceRate >= 50 ? "text-yellow-600" : "text-destructive"
-                        )}>{metrics.complianceRate}%</span>
-                      </div>
-                      <Progress value={metrics.complianceRate} className="h-1.5" />
-                      <div className="flex gap-3 text-[10px] text-muted-foreground">
-                        <span>A tiempo: <strong className="text-green-600">{metrics.onTimeEmails}</strong></span>
-                        <span>Fuera de plazo: <strong className="text-destructive">{metrics.lateEmails}</strong></span>
-                        <span>Total: <strong className="text-foreground">{metrics.confirmedTotal}</strong></span>
-                      </div>
-                    </div>
-                  )}
+                    if (metrics.subtaskTimelinessRate !== null) {
+                      metricItems.push({ key: 'subtask', weight: metrics.redistributedWeights.subtask ?? 0, node: (
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+                              <ListChecks className="h-3 w-3" /> Puntualidad de subtareas
+                              <Badge variant="outline" className="text-[8px] h-4 px-1 border-muted-foreground/30">{metrics.redistributedWeights.subtask ?? 0}%</Badge>
+                            </span>
+                            <span className={cn("text-xs font-bold", metrics.subtaskTimelinessRate >= 80 ? "text-green-600" : metrics.subtaskTimelinessRate >= 50 ? "text-yellow-600" : "text-destructive")}>{metrics.subtaskTimelinessRate}%</span>
+                          </div>
+                          <Progress value={metrics.subtaskTimelinessRate} className="h-1.5" />
+                          <div className="flex gap-3 text-[10px] text-muted-foreground">
+                            <span>A tiempo: <strong className="text-green-600">{metrics.subtasksOnTime}</strong></span>
+                            <span>Con atraso: <strong className="text-destructive">{metrics.subtasksLate}</strong></span>
+                            <span>Total: <strong className="text-foreground">{metrics.completedWithDueTotal}</strong></span>
+                          </div>
+                        </div>
+                      )});
+                    }
 
-                  {/* 4. Velocidad de ejecución — 10% */}
-                  {metrics.velocityScore !== null && metrics.avgPctUsed !== null && (
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground flex items-center gap-1.5">
-                          <TrendingUp className="h-3 w-3" /> Velocidad de ejecución
-                          <Badge variant="outline" className="text-[8px] h-4 px-1 border-muted-foreground/30">{metrics.redistributedWeights.velocity ?? 10}%</Badge>
-                        </span>
-                        <span className={cn(
-                          "text-xs font-bold",
-                          metrics.avgPctUsed <= 70 ? "text-green-600" : metrics.avgPctUsed <= 100 ? "text-yellow-600" : "text-destructive"
-                        )}>{metrics.avgPctUsed}%</span>
-                      </div>
-                      <Progress value={Math.max(0, 100 - metrics.avgPctUsed + 50)} className="h-1.5" />
-                      <div className="flex gap-3 text-[10px] text-muted-foreground">
-                        <span>Usa en promedio el <strong className={metrics.avgPctUsed <= 70 ? "text-green-600" : metrics.avgPctUsed <= 100 ? "text-yellow-600" : "text-destructive"}>{metrics.avgPctUsed}%</strong> del plazo asignado</span>
-                      </div>
-                    </div>
-                  )}
-                  {/* 5. Cumplimiento de plazos activos — 10% */}
-                  {metrics.deadlineCompliance !== null && (
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground flex items-center gap-1.5">
-                          <CalendarClock className="h-3 w-3" /> Plazos activos al día
-                          <Badge variant="outline" className="text-[8px] h-4 px-1 border-muted-foreground/30">{metrics.redistributedWeights.deadline ?? 10}%</Badge>
-                        </span>
-                        <span className={cn(
-                          "text-xs font-bold",
-                          metrics.deadlineCompliance >= 80 ? "text-green-600" : metrics.deadlineCompliance >= 50 ? "text-yellow-600" : "text-destructive"
-                        )}>{metrics.deadlineCompliance}%</span>
-                      </div>
-                      <Progress value={metrics.deadlineCompliance} className="h-1.5" />
-                      <div className="flex gap-3 text-[10px] text-muted-foreground">
-                        <span>Al día: <strong className="text-green-600">{metrics.activeOnTimeTotal}</strong></span>
-                        <span>Atrasados: <strong className="text-destructive">{metrics.activeWithDueTotal - metrics.activeOnTimeTotal}</strong></span>
-                        <span>Total: <strong className="text-foreground">{metrics.activeWithDueTotal}</strong></span>
-                      </div>
-                    </div>
-                  )}
+                    if (metrics.confirmedTotal > 0) {
+                      metricItems.push({ key: 'email', weight: metrics.redistributedWeights.email ?? 0, node: (
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+                              <Mail className="h-3 w-3" /> Respuesta de correos
+                              <Badge variant="outline" className="text-[8px] h-4 px-1 border-muted-foreground/30">{metrics.redistributedWeights.email ?? 0}%</Badge>
+                            </span>
+                            <span className={cn("text-xs font-bold", metrics.complianceRate >= 80 ? "text-green-600" : metrics.complianceRate >= 50 ? "text-yellow-600" : "text-destructive")}>{metrics.complianceRate}%</span>
+                          </div>
+                          <Progress value={metrics.complianceRate} className="h-1.5" />
+                          <div className="flex gap-3 text-[10px] text-muted-foreground">
+                            <span>A tiempo: <strong className="text-green-600">{metrics.onTimeEmails}</strong></span>
+                            <span>Fuera de plazo: <strong className="text-destructive">{metrics.lateEmails}</strong></span>
+                            <span>Total: <strong className="text-foreground">{metrics.confirmedTotal}</strong></span>
+                          </div>
+                        </div>
+                      )});
+                    }
+
+                    if (metrics.velocityScore !== null && metrics.avgPctUsed !== null) {
+                      metricItems.push({ key: 'velocity', weight: metrics.redistributedWeights.velocity ?? 0, node: (
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+                              <TrendingUp className="h-3 w-3" /> Velocidad de ejecución
+                              <Badge variant="outline" className="text-[8px] h-4 px-1 border-muted-foreground/30">{metrics.redistributedWeights.velocity ?? 0}%</Badge>
+                            </span>
+                            <span className={cn("text-xs font-bold", metrics.avgPctUsed <= 70 ? "text-green-600" : metrics.avgPctUsed <= 100 ? "text-yellow-600" : "text-destructive")}>{metrics.avgPctUsed}%</span>
+                          </div>
+                          <Progress value={Math.max(0, 100 - metrics.avgPctUsed + 50)} className="h-1.5" />
+                          <div className="flex gap-3 text-[10px] text-muted-foreground">
+                            <span>Usa en promedio el <strong className={metrics.avgPctUsed <= 70 ? "text-green-600" : metrics.avgPctUsed <= 100 ? "text-yellow-600" : "text-destructive"}>{metrics.avgPctUsed}%</strong> del plazo asignado</span>
+                          </div>
+                        </div>
+                      )});
+                    }
+
+                    if (metrics.deadlineCompliance !== null) {
+                      metricItems.push({ key: 'deadline', weight: metrics.redistributedWeights.deadline ?? 0, node: (
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+                              <CalendarClock className="h-3 w-3" /> Plazos activos al día
+                              <Badge variant="outline" className="text-[8px] h-4 px-1 border-muted-foreground/30">{metrics.redistributedWeights.deadline ?? 0}%</Badge>
+                            </span>
+                            <span className={cn("text-xs font-bold", metrics.deadlineCompliance >= 80 ? "text-green-600" : metrics.deadlineCompliance >= 50 ? "text-yellow-600" : "text-destructive")}>{metrics.deadlineCompliance}%</span>
+                          </div>
+                          <Progress value={metrics.deadlineCompliance} className="h-1.5" />
+                          <div className="flex gap-3 text-[10px] text-muted-foreground">
+                            <span>Al día: <strong className="text-green-600">{metrics.activeOnTimeTotal}</strong></span>
+                            <span>Atrasados: <strong className="text-destructive">{metrics.activeWithDueTotal - metrics.activeOnTimeTotal}</strong></span>
+                            <span>Total: <strong className="text-foreground">{metrics.activeWithDueTotal}</strong></span>
+                          </div>
+                        </div>
+                      )});
+                    }
+
+                    return metricItems.sort((a, b) => b.weight - a.weight).map(m => <div key={m.key}>{m.node}</div>);
+                  })()}
 
                   {metrics.allSubtasks.length > 0 && (
                     <>
