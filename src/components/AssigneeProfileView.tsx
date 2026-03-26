@@ -145,11 +145,12 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
     const avgDelayDays = closureLate > 0 ? Math.round(totalDelayDays / closureLate) : 0;
     const avgEarlyDays = closureOnTime > 0 ? Math.round(totalEarlyDays / closureOnTime) : 0;
 
-    // Productivity Score calculation
+    // Productivity Score calculation (5 dimensions)
     const dimensions: { value: number; weight: number }[] = [];
-    if (closedWithDates.length > 0) dimensions.push({ value: closureComplianceRate ?? 0, weight: 0.40 });
-    if (confirmedEmails.length > 0) dimensions.push({ value: complianceRate, weight: 0.25 });
-    if (allSubtasks.length > 0) dimensions.push({ value: subtaskProgress, weight: 0.20 });
+    if (closedWithDates.length > 0) dimensions.push({ value: closureComplianceRate ?? 0, weight: 0.30 });
+    if (confirmedEmails.length > 0) dimensions.push({ value: complianceRate, weight: 0.20 });
+    if (allSubtasks.length > 0) dimensions.push({ value: subtaskProgress, weight: 0.15 });
+    if (completedWithDue.length > 0) dimensions.push({ value: subtaskTimelinessRate ?? 0, weight: 0.20 });
     const activeWithDue = activeAndTracking.filter(t => t.due_date && !t.is_ongoing);
     const activeOnTime = activeWithDue.filter(t => !isStoredDateOverdue(t.due_date));
     const deadlineCompliance = activeWithDue.length > 0 ? Math.round((activeOnTime.length / activeWithDue.length) * 100) : null;
@@ -167,7 +168,8 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
       alta, media, baja, emailsSent, emailsConfirmed, responseRate,
       onTimeEmails: onTimeEmails.length, lateEmails, complianceRate, confirmedTotal: confirmedEmails.length,
       closureOnTime, closureLate, closureComplianceRate, avgDelayDays, avgEarlyDays, closedWithDatesTotal: closedWithDates.length,
-      productivityScore,
+      productivityScore, subtasksOnTime: subtasksOnTime.length, subtasksLate, subtaskTimelinessRate,
+      completedWithDueTotal: completedWithDue.length, pendingOverdueSubtasks: pendingOverdueSubtasks.length,
     };
   }, [topics, assigneeName, emailHistory]);
 
