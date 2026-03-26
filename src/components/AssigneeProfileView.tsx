@@ -92,6 +92,20 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
       ? Math.round((completedSubtasks.length / allSubtasks.length) * 100)
       : 0;
 
+    // Subtask timeliness: completed with due_date → on time or late
+    const completedWithDue = completedSubtasks.filter(s => s.due_date && s.completed_at);
+    const subtasksOnTime = completedWithDue.filter(s => {
+      const dueDate = new Date(s.due_date! + 'T23:59:59');
+      const completedDate = new Date(s.completed_at!);
+      return completedDate.getTime() <= dueDate.getTime();
+    });
+    const subtasksLate = completedWithDue.length - subtasksOnTime.length;
+    const subtaskTimelinessRate = completedWithDue.length > 0
+      ? Math.round((subtasksOnTime.length / completedWithDue.length) * 100)
+      : null;
+    // Pending overdue subtasks (not completed, past due)
+    const pendingOverdueSubtasks = allSubtasks.filter(s => !s.completed && s.due_date && isStoredDateOverdue(s.due_date));
+
     const alta = assigneeTopics.filter(t => t.priority === 'alta' && t.status !== 'completado');
     const media = assigneeTopics.filter(t => t.priority === 'media' && t.status !== 'completado');
     const baja = assigneeTopics.filter(t => t.priority === 'baja' && t.status !== 'completado');
@@ -131,11 +145,12 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
     const avgDelayDays = closureLate > 0 ? Math.round(totalDelayDays / closureLate) : 0;
     const avgEarlyDays = closureOnTime > 0 ? Math.round(totalEarlyDays / closureOnTime) : 0;
 
-    // Productivity Score calculation
+    // Productivity Score calculation (5 dimensions)
     const dimensions: { value: number; weight: number }[] = [];
-    if (closedWithDates.length > 0) dimensions.push({ value: closureComplianceRate ?? 0, weight: 0.40 });
-    if (confirmedEmails.length > 0) dimensions.push({ value: complianceRate, weight: 0.25 });
-    if (allSubtasks.length > 0) dimensions.push({ value: subtaskProgress, weight: 0.20 });
+    if (closedWithDates.length > 0) dimensions.push({ value: closureComplianceRate ?? 0, weight: 0.30 });
+    if (confirmedEmails.length > 0) dimensions.push({ value: complianceRate, weight: 0.20 });
+    if (allSubtasks.length > 0) dimensions.push({ value: subtaskProgress, weight: 0.15 });
+    if (completedWithDue.length > 0) dimensions.push({ value: subtaskTimelinessRate ?? 0, weight: 0.20 });
     const activeWithDue = activeAndTracking.filter(t => t.due_date && !t.is_ongoing);
     const activeOnTime = activeWithDue.filter(t => !isStoredDateOverdue(t.due_date));
     const deadlineCompliance = activeWithDue.length > 0 ? Math.round((activeOnTime.length / activeWithDue.length) * 100) : null;
@@ -153,7 +168,8 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
       alta, media, baja, emailsSent, emailsConfirmed, responseRate,
       onTimeEmails: onTimeEmails.length, lateEmails, complianceRate, confirmedTotal: confirmedEmails.length,
       closureOnTime, closureLate, closureComplianceRate, avgDelayDays, avgEarlyDays, closedWithDatesTotal: closedWithDates.length,
-      productivityScore,
+      productivityScore, subtasksOnTime: subtasksOnTime.length, subtasksLate, subtaskTimelinessRate,
+      completedWithDueTotal: completedWithDue.length, pendingOverdueSubtasks: pendingOverdueSubtasks.length,
     };
   }, [topics, assigneeName, emailHistory]);
 
@@ -263,6 +279,31 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
                         <span className="text-xs font-bold">{metrics.subtaskProgress}%</span>
                       </div>
                       <Progress value={metrics.subtaskProgress} className="h-1.5" />
+                      <div className="flex gap-3 text-[10px] text-muted-foreground flex-wrap">
+                        <span>{metrics.completedSubtasks.length}/{metrics.allSubtasks.length} completadas</span>
+                        {metrics.pendingOverdueSubtasks > 0 && <span>Atrasadas: <strong className="text-destructive">{metrics.pendingOverdueSubtasks}</strong></span>}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Puntualidad de subtareas */}
+                  {metrics.subtaskTimelinessRate !== null && (
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+                          <ListChecks className="h-3 w-3" /> Puntualidad de subtareas
+                        </span>
+                        <span className={cn(
+                          "text-xs font-bold",
+                          metrics.subtaskTimelinessRate >= 80 ? "text-green-600" : metrics.subtaskTimelinessRate >= 50 ? "text-yellow-600" : "text-destructive"
+                        )}>{metrics.subtaskTimelinessRate}%</span>
+                      </div>
+                      <Progress value={metrics.subtaskTimelinessRate} className="h-1.5" />
+                      <div className="flex gap-3 text-[10px] text-muted-foreground">
+                        <span>A tiempo: <strong className="text-green-600">{metrics.subtasksOnTime}</strong></span>
+                        <span>Con atraso: <strong className="text-destructive">{metrics.subtasksLate}</strong></span>
+                        <span>Total: <strong className="text-foreground">{metrics.completedWithDueTotal}</strong></span>
+                      </div>
                     </div>
                   )}
 
