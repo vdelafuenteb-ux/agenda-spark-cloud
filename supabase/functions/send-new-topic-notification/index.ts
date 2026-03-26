@@ -73,7 +73,8 @@ Deno.serve(async (req) => {
       asunto = `📋 Nuevo tema agregado a tu listado de seguimiento`;
     }
 
-    let mensaje = `<p>Hola ${to_name || ""},</p>`;
+    let mensaje = `<div style="max-width:600px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333;">`;
+    mensaje += `<p>Hola ${to_name || ""},</p>`;
 
     if (is_urgent) {
       mensaje += `<p style="color:#c0392b;font-weight:bold;">⚠️ Se ha agregado un nuevo tema a tu listado de seguimiento que requiere atención urgente (vence en ${days_until_due} día${days_until_due !== 1 ? "s" : ""}).</p>`;
@@ -81,32 +82,25 @@ Deno.serve(async (req) => {
       mensaje += `<p>Se ha agregado un nuevo tema a tu listado de seguimiento para que lo tengas en consideración. Este tema aparecerá en tu reporte del próximo lunes.</p>`;
     }
 
-    // Topic detail table
-    mensaje += `<table style="width:100%;border-collapse:collapse;margin:16px 0;font-size:14px;table-layout:fixed;">`;
-    mensaje += `<thead><tr style="background-color:#f2f2f2;text-align:left;">`;
-    mensaje += `<th style="padding:8px;border:1px solid #ddd;width:30%;">Tema</th>`;
-    mensaje += `<th style="padding:8px;border:1px solid #ddd;width:100px;">Inicio</th>`;
-    mensaje += `<th style="padding:8px;border:1px solid #ddd;width:100px;">Vencimiento</th>`;
-    mensaje += `<th style="padding:8px;border:1px solid #ddd;width:100px;">Subtareas</th>`;
-    mensaje += `</tr></thead><tbody>`;
-
+    // Topic detail card (mobile-friendly)
     const isOverdue = due_date && new Date(due_date) < new Date(new Date().toDateString());
-    const rowBg = isOverdue ? "background-color:#fff5f5;" : "";
-    const rowColor = isOverdue ? "color:#c0392b;" : "";
+    const cardBorder = isOverdue ? "border-left:4px solid #c0392b;" : "border-left:4px solid #3498db;";
+    const titleColor = isOverdue ? "color:#c0392b;" : "color:#2c3e50;";
 
-    mensaje += `<tr style="${rowBg}${rowColor}">`;
-    mensaje += `<td style="padding:6px 8px;border:1px solid #ddd;font-weight:600;">${topic_title}</td>`;
-    mensaje += `<td style="padding:6px 8px;border:1px solid #ddd;">${formatDate(start_date) || "—"}</td>`;
-    mensaje += `<td style="padding:6px 8px;border:1px solid #ddd;">${formatDate(due_date) || "—"}</td>`;
-    mensaje += `<td style="padding:6px 8px;border:1px solid #ddd;">${pendingCount > 0 ? `${pendingCount} pendiente${pendingCount > 1 ? "s" : ""}` : "Sin subtareas"}</td>`;
-    mensaje += `</tr>`;
-    mensaje += `</tbody></table>`;
+    mensaje += `<div style="margin:16px 0;padding:12px 16px;background:#f8f9fa;border-radius:6px;${cardBorder}">`;
+    mensaje += `<p style="margin:0 0 8px;font-size:16px;font-weight:700;${titleColor}">${topic_title}</p>`;
+    mensaje += `<table style="width:100%;border-collapse:collapse;font-size:13px;">`;
+    mensaje += `<tr><td style="padding:4px 0;color:#888;width:100px;">Inicio</td><td style="padding:4px 0;font-weight:500;">${formatDate(start_date) || "—"}</td></tr>`;
+    mensaje += `<tr><td style="padding:4px 0;color:#888;">Vencimiento</td><td style="padding:4px 0;font-weight:500;">${formatDate(due_date) || "—"}</td></tr>`;
+    mensaje += `<tr><td style="padding:4px 0;color:#888;">Subtareas</td><td style="padding:4px 0;font-weight:500;">${pendingCount > 0 ? `${pendingCount} pendiente${pendingCount > 1 ? "s" : ""}` : "Sin subtareas"}</td></tr>`;
+    mensaje += `</table>`;
+    mensaje += `</div>`;
 
     // Pending subtasks detail
     if (pendingCount > 0) {
-      mensaje += `<p style="margin-top:16px;"><strong>Subtareas:</strong></p><ul style="margin:0;">`;
+      mensaje += `<p style="margin-top:16px;"><strong>Subtareas:</strong></p><ul style="margin:0;padding-left:20px;">`;
       pendingSubtasks.forEach((s: any) => {
-        mensaje += `<li>${s.title}`;
+        mensaje += `<li style="margin-bottom:4px;">${s.title}`;
         if (s.due_date) mensaje += ` <em style="color:#888;">(vence: ${formatDate(s.due_date)})</em>`;
         mensaje += `</li>`;
       });
@@ -115,9 +109,7 @@ Deno.serve(async (req) => {
 
     // Initial note / bitácora
     if (initial_note) {
-      // Convert basic HTML formatting and newlines for readability
-      const formattedNote = initial_note
-        .replace(/\n/g, '<br>');
+      const formattedNote = initial_note.replace(/\n/g, '<br>');
       mensaje += `<div style="margin:16px 0;padding:12px 16px;background:#f8f9fa;border-left:3px solid #6c757d;border-radius:4px;">`;
       mensaje += `<p style="margin:0 0 6px;font-size:12px;font-weight:600;color:#555;text-transform:uppercase;">📝 Detalle / Instrucciones</p>`;
       mensaje += `<p style="margin:0;font-size:14px;color:#333;line-height:1.6;white-space:pre-wrap;word-wrap:break-word;">${formattedNote}</p>`;
@@ -129,8 +121,10 @@ Deno.serve(async (req) => {
     if (is_urgent) {
       mensaje += `<p><strong>⚠️ Este tema es urgente. Por favor revísalo a la brevedad.</strong></p>`;
     } else {
-      mensaje += `<p>Este correo es informativo. El detalle completo lo recibirás en el reporte del próximo lunes.</p>`;
+      mensaje += `<p style="font-size:13px;color:#666;">Este correo es informativo. El detalle completo lo recibirás en el reporte del próximo lunes.</p>`;
     }
+
+    mensaje += `</div>`;
 
     const CC_EMAILS = ["matias@transitglobalgroup.com", "vicente@transitglobalgroup.com"]
       .filter((cc) => cc.toLowerCase() !== to_email.toLowerCase());

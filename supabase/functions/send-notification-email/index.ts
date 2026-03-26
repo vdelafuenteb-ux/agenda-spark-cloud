@@ -78,43 +78,39 @@ Deno.serve(async (req) => {
     const rowBg = isOverdue ? "background-color:#fff5f5;" : "";
     const rowColor = isOverdue ? "color:#c0392b;" : "";
 
-    // Build executive HTML email body with summary table (same format as bulk)
-    let mensaje = `<p>Hola ${to_name || ""},</p>`;
+    // Build mobile-friendly HTML email
+    let mensaje = `<div style="max-width:600px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333;">`;
+    mensaje += `<p>Hola ${to_name || ""},</p>`;
     mensaje += `<p>Tienes <strong>1 tema</strong> pendiente de actualizar. <strong>Responde este correo</strong> con el estado.</p>`;
 
-    // Summary table
-    mensaje += `<table style="width:100%;border-collapse:collapse;margin:16px 0;font-size:14px;table-layout:fixed;">`;
-    mensaje += `<thead><tr style="background-color:#f2f2f2;text-align:left;">`;
-    mensaje += `<th style="padding:8px;border:1px solid #ddd;width:28px;">#</th>`;
-    mensaje += `<th style="padding:8px;border:1px solid #ddd;width:20%;">Tema</th>`;
-    mensaje += `<th style="padding:8px;border:1px solid #ddd;">Último comentario</th>`;
-    mensaje += `<th style="padding:8px;border:1px solid #ddd;width:80px;">Inicio</th>`;
-    mensaje += `<th style="padding:8px;border:1px solid #ddd;width:80px;">Vencimiento</th>`;
-    mensaje += `<th style="padding:8px;border:1px solid #ddd;width:90px;">Pendientes</th>`;
-    mensaje += `</tr></thead><tbody>`;
+    // Topic card
+    const cardBorder = isOverdue ? "border-left:4px solid #c0392b;" : "border-left:4px solid #3498db;";
+    const titleColor = isOverdue ? "color:#c0392b;" : "color:#2c3e50;";
 
-    mensaje += `<tr style="${rowBg}${rowColor}">`;
-    mensaje += `<td style="padding:6px 8px;border:1px solid #ddd;text-align:center;">1</td>`;
-    mensaje += `<td style="padding:6px 8px;border:1px solid #ddd;font-weight:600;">${topic_title}</td>`;
-    mensaje += `<td style="padding:6px 8px;border:1px solid #ddd;${isOverdue ? '' : 'color:#555;'}font-size:13px;word-wrap:break-word;">${truncated || "<em style='color:#aaa;'>—</em>"}</td>`;
-    mensaje += `<td style="padding:6px 8px;border:1px solid #ddd;">${formatDate(start_date) || "—"}</td>`;
-    mensaje += `<td style="padding:6px 8px;border:1px solid #ddd;">${formatDate(due_date) || "—"}</td>`;
-    mensaje += `<td style="padding:6px 8px;border:1px solid #ddd;color:${pendingColor};">${pendingText}</td>`;
-    mensaje += `</tr>`;
-    mensaje += `</tbody></table>`;
+    mensaje += `<div style="margin:12px 0;padding:12px 16px;background:#f8f9fa;border-radius:6px;${cardBorder}">`;
+    mensaje += `<p style="margin:0 0 8px;font-size:15px;font-weight:700;${titleColor}">1. ${topic_title}</p>`;
+    mensaje += `<table style="width:100%;border-collapse:collapse;font-size:13px;">`;
+    mensaje += `<tr><td style="padding:3px 0;color:#888;width:110px;">Inicio</td><td style="padding:3px 0;">${formatDate(start_date) || "—"}</td></tr>`;
+    mensaje += `<tr><td style="padding:3px 0;color:#888;">Vencimiento</td><td style="padding:3px 0;">${formatDate(due_date) || "—"}</td></tr>`;
+    mensaje += `<tr><td style="padding:3px 0;color:#888;">Pendientes</td><td style="padding:3px 0;color:${pendingColor};">${pendingText}</td></tr>`;
+    if (truncated) {
+      mensaje += `<tr><td style="padding:3px 0;color:#888;vertical-align:top;">Último avance</td><td style="padding:3px 0;color:#555;font-size:12px;word-wrap:break-word;">${truncated}</td></tr>`;
+    }
+    mensaje += `</table>`;
+    mensaje += `</div>`;
 
     if (isOverdue) {
-      mensaje += `<p style="font-size:12px;color:#999;margin:0 0 16px;">🔴 La fila en rojo indica que el tema tiene fecha de vencimiento ya pasada.</p>`;
+      mensaje += `<p style="font-size:12px;color:#c0392b;margin:0 0 12px;">🔴 Este tema tiene fecha de vencimiento ya pasada.</p>`;
     }
 
     // Detail section — pending subtasks
     if (pendingCount > 0) {
-      mensaje += `<p style="margin-top:16px;"><strong>Detalle de subtareas pendientes:</strong></p>`;
-      mensaje += `<p style="margin:8px 0 2px;"><strong>1. ${topic_title}</strong></p><ul style="margin:0;">`;
+      mensaje += `<p style="margin-top:12px;"><strong>Subtareas pendientes:</strong></p>`;
+      mensaje += `<ul style="margin:0;padding-left:20px;">`;
       pendingSubtasks.forEach((s: any) => {
-        mensaje += `<li>${s.title}`;
+        mensaje += `<li style="margin-bottom:4px;">${s.title}`;
         if (s.due_date) mensaje += ` <em style="color:#888;">(vence: ${formatDate(s.due_date)})</em>`;
-        if (s.notes) mensaje += `<br/><span style="color:#666;font-size:0.9em;">📝 ${s.notes}</span>`;
+        if (s.notes) mensaje += `<br/><span style="color:#666;font-size:12px;">📝 ${s.notes}</span>`;
         mensaje += `</li>`;
       });
       mensaje += `</ul>`;
@@ -123,6 +119,7 @@ Deno.serve(async (req) => {
     mensaje += `<hr style="border:none;border-top:1px solid #ddd;margin:20px 0 12px;"/>`;
     mensaje += `<p><strong>⚠️ Responde actualizando CADA tema. Plazo máximo: 48 HORAS.</strong></p>`;
     mensaje += `<p><strong>No olvides responder a todos</strong> para que tu respuesta llegue a todo el equipo.</p>`;
+    mensaje += `</div>`;
 
     const CC_EMAILS = ["matias@transitglobalgroup.com", "vicente@transitglobalgroup.com"]
       .filter((cc) => cc.toLowerCase() !== to_email.toLowerCase());
