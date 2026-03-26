@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Users, Clock, AlertTriangle, Trophy, Target, Zap, Mail, TrendingUp } from 'lucide-react';
+import { Users, Trophy, Target, Zap, Mail } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
+import { useDepartments } from '@/hooks/useDepartments';
 import { supabase } from '@/integrations/supabase/client';
 import { isStoredDateOverdue } from '@/lib/date';
 import { AssigneeProfileView } from '@/components/AssigneeProfileView';
@@ -52,12 +52,6 @@ function getLoadColor(pct: number): string {
   if (pct < 70) return 'text-emerald-600 dark:text-emerald-400';
   if (pct < 90) return 'text-yellow-600 dark:text-yellow-400';
   return 'text-destructive';
-}
-
-function getBarColor(pct: number): string {
-  if (pct < 70) return '[&>div]:bg-emerald-500';
-  if (pct < 90) return '[&>div]:bg-yellow-500';
-  return '[&>div]:bg-destructive';
 }
 
 function MiniScoreCircle({ score }: { score: number }) {
@@ -186,6 +180,7 @@ function calculateAssigneeScore(
 
 export function TeamView({ topics, assignees, onUpdateTopic }: TeamViewProps) {
   const [selectedAssignee, setSelectedAssignee] = useState<string | null>(null);
+  const { departments } = useDepartments();
 
   // Fetch all notification emails for score calculation
   const { data: allEmails = [] } = useQuery({
@@ -204,6 +199,23 @@ export function TeamView({ topics, assignees, onUpdateTopic }: TeamViewProps) {
     topics.filter(t => t.status === 'activo' || t.status === 'seguimiento'),
     [topics]
   );
+
+  // Department KPIs
+  const deptMetrics = useMemo(() => {
+    return departments.map(dept => {
+      const deptTopics = activeTopics.filter(t => t.department_id === dept.id);
+      const deptAssignees = new Set(deptTopics.map(t => t.assignee).filter(Boolean));
+      // Avg score of assignees in this dept
+      const scores: number[] = [];
+      deptAssignees.forEach(name => {
+        if (!name) return;
+        const s = calculateAssigneeScore(name, topics, allEmails);
+        if (s.score !== null) scores.push(s.score);
+      });
+      const avgScore = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
+      return { dept, activeCount: deptTopics.length, avgScore, assigneeCount: deptAssignees.size };
+    }).filter(d => d.activeCount > 0 || d.assigneeCount > 0);
+  }, [departments, activeTopics, topics, allEmails]);
 
   const rankedAssignees = useMemo(() => {
     const results: AssigneeScore[] = assignees.map(a => {
@@ -267,11 +279,6 @@ export function TeamView({ topics, assignees, onUpdateTopic }: TeamViewProps) {
     return best;
   }, [rankedAssignees]);
 
-  // Global KPIs
-  const totalWeeklyHours = rankedAssignees.reduce((s, m) => s + m.weeklyHours, 0);
-  const totalCapacity = rankedAssignees.reduce((s, m) => s + m.capacity, 0);
-  const globalLoadPct = totalCapacity > 0 ? Math.round((totalWeeklyHours / totalCapacity) * 100) : 0;
-  const overloadedCount = rankedAssignees.filter(m => m.loadPct >= 90).length;
 
   if (selectedAssignee) {
     const assignee = assignees.find(a => a.name === selectedAssignee);
@@ -295,47 +302,48 @@ export function TeamView({ topics, assignees, onUpdateTopic }: TeamViewProps) {
   return (
     <main className="flex-1 overflow-auto p-3 md:p-4">
       <div className="max-w-5xl mx-auto space-y-4">
-        {/* KPIs globales */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Card>
-            <CardContent className="pt-4 pb-3 px-4">
-              <div className="flex items-center gap-2 mb-1">
-                <Users className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">Equipo</span>
-              </div>
-              <p className="text-2xl font-bold">{assignees.length}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4 pb-3 px-4">
-              <div className="flex items-center gap-2 mb-1">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">HH Semanal</span>
-              </div>
-              <p className="text-2xl font-bold">{Math.round(totalWeeklyHours)}h</p>
-              <p className="text-[10px] text-muted-foreground">de {totalCapacity}h capacidad</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4 pb-3 px-4">
-              <div className="flex items-center gap-2 mb-1">
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">Carga Global</span>
-              </div>
-              <p className={cn('text-2xl font-bold', getLoadColor(globalLoadPct))}>{globalLoadPct}%</p>
-              <Progress value={Math.min(globalLoadPct, 100)} className={cn('h-1.5 mt-1', getBarColor(globalLoadPct))} />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4 pb-3 px-4">
-              <div className="flex items-center gap-2 mb-1">
-                <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">Sobrecargados</span>
-              </div>
-              <p className={cn('text-2xl font-bold', overloadedCount > 0 ? 'text-destructive' : 'text-emerald-600')}>{overloadedCount}</p>
-            </CardContent>
-          </Card>
-        </div>
+        {/* KPIs por departamento */}
+        {deptMetrics.length > 0 ? (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {deptMetrics.map(d => (
+              <Card key={d.dept.id}>
+                <CardContent className="pt-4 pb-3 px-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground truncate">{d.dept.name}</span>
+                  </div>
+                  <div className="flex items-baseline gap-2">
+                    <p className="text-2xl font-bold">{d.activeCount}</p>
+                    <span className="text-[10px] text-muted-foreground">temas</span>
+                  </div>
+                  <div className="flex items-center justify-between mt-1">
+                    <span className="text-[10px] text-muted-foreground">{d.assigneeCount} persona{d.assigneeCount !== 1 ? 's' : ''}</span>
+                    {d.avgScore !== null ? (
+                      <span className={cn('text-xs font-semibold', getScoreColor(d.avgScore))}>
+                        Score: {d.avgScore}
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-muted-foreground/50">Score: n/a</span>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <Card>
+              <CardContent className="pt-4 pb-3 px-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">Equipo</span>
+                </div>
+                <p className="text-2xl font-bold">{assignees.length}</p>
+                <p className="text-[10px] text-muted-foreground">Sin departamentos configurados</p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Ranking */}
         <div className="space-y-2">
