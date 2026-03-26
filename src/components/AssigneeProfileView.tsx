@@ -185,20 +185,24 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
     }
 
     // Productivity Score calculation (5 dimensions)
-    const dimensions: { value: number; weight: number }[] = [];
-    if (closedWithDates.length > 0) dimensions.push({ value: closureComplianceRate ?? 0, weight: 0.50 });
-    if (confirmedEmails.length > 0) dimensions.push({ value: complianceRate, weight: 0.10 });
-    if (completedWithDue.length > 0) dimensions.push({ value: subtaskTimelinessRate ?? 0, weight: 0.20 });
+    const dimensions: { key: string; value: number; weight: number }[] = [];
+    if (closedWithDates.length > 0) dimensions.push({ key: 'closure', value: closureComplianceRate ?? 0, weight: 0.50 });
+    if (confirmedEmails.length > 0) dimensions.push({ key: 'email', value: complianceRate, weight: 0.10 });
+    if (completedWithDue.length > 0) dimensions.push({ key: 'subtask', value: subtaskTimelinessRate ?? 0, weight: 0.20 });
     const activeWithDue = activeAndTracking.filter(t => t.due_date && !t.is_ongoing);
     const activeOnTime = activeWithDue.filter(t => !isStoredDateOverdue(t.due_date));
     const deadlineCompliance = activeWithDue.length > 0 ? Math.round((activeOnTime.length / activeWithDue.length) * 100) : null;
-    if (deadlineCompliance !== null) dimensions.push({ value: deadlineCompliance, weight: 0.15 });
-    if (velocityScore !== null) dimensions.push({ value: velocityScore, weight: 0.10 });
+    if (deadlineCompliance !== null) dimensions.push({ key: 'deadline', value: deadlineCompliance, weight: 0.15 });
+    if (velocityScore !== null) dimensions.push({ key: 'velocity', value: velocityScore, weight: 0.10 });
 
     let productivityScore: number | null = null;
+    const totalWeight = dimensions.reduce((s, d) => s + d.weight, 0);
+    const redistributedWeights: Record<string, number> = {};
     if (dimensions.length > 0) {
-      const totalWeight = dimensions.reduce((s, d) => s + d.weight, 0);
       productivityScore = Math.round(dimensions.reduce((s, d) => s + d.value * (d.weight / totalWeight), 0));
+      for (const d of dimensions) {
+        redistributedWeights[d.key] = Math.round((d.weight / totalWeight) * 100);
+      }
     }
 
     return {
@@ -209,7 +213,7 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
       closureOnTime, closureLate, closureComplianceRate, avgDelayDays, avgEarlyDays, closedWithDatesTotal: closedWithDates.length,
       productivityScore, subtasksOnTime: subtasksOnTime.length, subtasksLate, subtaskTimelinessRate,
       completedWithDueTotal: completedWithDue.length, pendingOverdueSubtasks: pendingOverdueSubtasks.length,
-      velocityScore, avgPctUsed,
+      velocityScore, avgPctUsed, redistributedWeights,
     };
   }, [topics, assigneeName, emailHistory]);
 
@@ -333,7 +337,7 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
                       <div className="flex items-center justify-between">
                         <span className="text-xs text-muted-foreground flex items-center gap-1.5">
                           <CheckCircle2 className="h-3 w-3" /> Cierre de temas a tiempo
-                          <Badge variant="outline" className="text-[8px] h-4 px-1 border-muted-foreground/30">50%</Badge>
+                          <Badge variant="outline" className="text-[8px] h-4 px-1 border-muted-foreground/30">{metrics.redistributedWeights.closure ?? 50}%</Badge>
                         </span>
                         <span className={cn(
                           "text-xs font-bold",
@@ -357,7 +361,7 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
                       <div className="flex items-center justify-between">
                         <span className="text-xs text-muted-foreground flex items-center gap-1.5">
                           <ListChecks className="h-3 w-3" /> Puntualidad de subtareas
-                          <Badge variant="outline" className="text-[8px] h-4 px-1 border-muted-foreground/30">20%</Badge>
+                          <Badge variant="outline" className="text-[8px] h-4 px-1 border-muted-foreground/30">{metrics.redistributedWeights.subtask ?? 20}%</Badge>
                         </span>
                         <span className={cn(
                           "text-xs font-bold",
@@ -379,7 +383,7 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
                       <div className="flex items-center justify-between">
                         <span className="text-xs text-muted-foreground flex items-center gap-1.5">
                           <Mail className="h-3 w-3" /> Respuesta de correos
-                          <Badge variant="outline" className="text-[8px] h-4 px-1 border-muted-foreground/30">10%</Badge>
+                          <Badge variant="outline" className="text-[8px] h-4 px-1 border-muted-foreground/30">{metrics.redistributedWeights.email ?? 10}%</Badge>
                         </span>
                         <span className={cn(
                           "text-xs font-bold",
@@ -401,7 +405,7 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
                       <div className="flex items-center justify-between">
                         <span className="text-xs text-muted-foreground flex items-center gap-1.5">
                           <TrendingUp className="h-3 w-3" /> Velocidad de ejecución
-                          <Badge variant="outline" className="text-[8px] h-4 px-1 border-muted-foreground/30">10%</Badge>
+                          <Badge variant="outline" className="text-[8px] h-4 px-1 border-muted-foreground/30">{metrics.redistributedWeights.velocity ?? 10}%</Badge>
                         </span>
                         <span className={cn(
                           "text-xs font-bold",
