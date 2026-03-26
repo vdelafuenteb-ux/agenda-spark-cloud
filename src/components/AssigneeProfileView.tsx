@@ -192,7 +192,7 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
     const activeWithDue = activeAndTracking.filter(t => t.due_date && !t.is_ongoing);
     const activeOnTime = activeWithDue.filter(t => !isStoredDateOverdue(t.due_date));
     const deadlineCompliance = activeWithDue.length > 0 ? Math.round((activeOnTime.length / activeWithDue.length) * 100) : null;
-    if (deadlineCompliance !== null) dimensions.push({ key: 'deadline', value: deadlineCompliance, weight: 0.15 });
+    if (deadlineCompliance !== null) dimensions.push({ key: 'deadline', value: deadlineCompliance, weight: 0.10 });
     if (velocityScore !== null) dimensions.push({ key: 'velocity', value: velocityScore, weight: 0.10 });
 
     let productivityScore: number | null = null;
