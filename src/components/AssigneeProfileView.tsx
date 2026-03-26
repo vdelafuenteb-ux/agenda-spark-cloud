@@ -226,63 +226,91 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
 
           {/* Rendimiento consolidado */}
           <Card>
-            <CardContent className="p-4 space-y-3">
-              <span className="text-sm font-semibold text-foreground">Rendimiento</span>
+            <CardContent className="p-4">
+              <div className="flex items-start gap-5">
+                {/* Circular Score */}
+                {metrics.productivityScore !== null && (() => {
+                  const score = metrics.productivityScore;
+                  const label = score >= 90 ? 'Excelente' : score >= 70 ? 'Bueno' : score >= 50 ? 'Regular' : score >= 30 ? 'Bajo' : 'Crítico';
+                  const color = score >= 90 ? '#22c55e' : score >= 70 ? '#84cc16' : score >= 50 ? '#eab308' : score >= 30 ? '#f97316' : '#ef4444';
+                  const radius = 40;
+                  const circumference = 2 * Math.PI * radius;
+                  const offset = circumference - (score / 100) * circumference;
+                  return (
+                    <div className="flex flex-col items-center shrink-0">
+                      <svg width="100" height="100" viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r={radius} fill="none" stroke="hsl(var(--muted))" strokeWidth="8" />
+                        <circle cx="50" cy="50" r={radius} fill="none" stroke={color} strokeWidth="8"
+                          strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={offset}
+                          transform="rotate(-90 50 50)" className="transition-all duration-700" />
+                        <text x="50" y="46" textAnchor="middle" className="fill-foreground text-2xl font-bold" fontSize="24">{score}</text>
+                        <text x="50" y="60" textAnchor="middle" className="fill-muted-foreground" fontSize="9">pts</text>
+                      </svg>
+                      <span className="text-[10px] font-semibold mt-0.5" style={{ color }}>{label}</span>
+                    </div>
+                  );
+                })()}
 
-              {/* Subtareas completadas */}
-              {metrics.allSubtasks.length > 0 && (
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">Subtareas completadas</span>
-                    <span className="text-xs font-bold">{metrics.subtaskProgress}%</span>
-                  </div>
-                  <Progress value={metrics.subtaskProgress} className="h-1.5" />
-                </div>
-              )}
+                {/* Progress bars */}
+                <div className="flex-1 space-y-3 min-w-0">
+                  <span className="text-sm font-semibold text-foreground">Rendimiento</span>
 
-              {/* Eficiencia de cierre */}
-              {metrics.closureComplianceRate !== null && (
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground flex items-center gap-1.5">
-                      <CheckCircle2 className="h-3 w-3" /> Eficiencia de cierre
-                    </span>
-                    <span className={cn(
-                      "text-xs font-bold",
-                      metrics.closureComplianceRate >= 80 ? "text-green-600" : metrics.closureComplianceRate >= 50 ? "text-yellow-600" : "text-destructive"
-                    )}>{metrics.closureComplianceRate}%</span>
-                  </div>
-                  <Progress value={metrics.closureComplianceRate} className="h-1.5" />
-                  <div className="flex gap-3 text-[10px] text-muted-foreground flex-wrap">
-                    <span>A tiempo: <strong className="text-green-600">{metrics.closureOnTime}</strong></span>
-                    <span>Con atraso: <strong className="text-destructive">{metrics.closureLate}</strong></span>
-                    <span>Total: <strong className="text-foreground">{metrics.closedWithDatesTotal}</strong></span>
-                    {metrics.avgDelayDays > 0 && <span>Prom. atraso: <strong className="text-destructive">{metrics.avgDelayDays}d</strong></span>}
-                    {metrics.avgEarlyDays > 0 && <span>Prom. anticipación: <strong className="text-green-600">{metrics.avgEarlyDays}d</strong></span>}
-                  </div>
-                </div>
-              )}
+                  {/* Subtareas completadas */}
+                  {metrics.allSubtasks.length > 0 && (
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground">Subtareas completadas</span>
+                        <span className="text-xs font-bold">{metrics.subtaskProgress}%</span>
+                      </div>
+                      <Progress value={metrics.subtaskProgress} className="h-1.5" />
+                    </div>
+                  )}
 
-              {/* Cumplimiento de correos */}
-              {metrics.confirmedTotal > 0 && (
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground flex items-center gap-1.5">
-                      <Mail className="h-3 w-3" /> Respuesta de correos
-                    </span>
-                    <span className={cn(
-                      "text-xs font-bold",
-                      metrics.complianceRate >= 80 ? "text-green-600" : metrics.complianceRate >= 50 ? "text-yellow-600" : "text-destructive"
-                    )}>{metrics.complianceRate}%</span>
-                  </div>
-                  <Progress value={metrics.complianceRate} className="h-1.5" />
-                  <div className="flex gap-3 text-[10px] text-muted-foreground">
-                    <span>A tiempo: <strong className="text-green-600">{metrics.onTimeEmails}</strong></span>
-                    <span>Fuera de plazo: <strong className="text-destructive">{metrics.lateEmails}</strong></span>
-                    <span>Total: <strong className="text-foreground">{metrics.confirmedTotal}</strong></span>
-                  </div>
+                  {/* Eficiencia de cierre de temas */}
+                  {metrics.closureComplianceRate !== null && (
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+                          <CheckCircle2 className="h-3 w-3" /> Eficiencia de cierre de temas
+                        </span>
+                        <span className={cn(
+                          "text-xs font-bold",
+                          metrics.closureComplianceRate >= 80 ? "text-green-600" : metrics.closureComplianceRate >= 50 ? "text-yellow-600" : "text-destructive"
+                        )}>{metrics.closureComplianceRate}%</span>
+                      </div>
+                      <Progress value={metrics.closureComplianceRate} className="h-1.5" />
+                      <div className="flex gap-3 text-[10px] text-muted-foreground flex-wrap">
+                        <span>A tiempo: <strong className="text-green-600">{metrics.closureOnTime}</strong></span>
+                        <span>Con atraso: <strong className="text-destructive">{metrics.closureLate}</strong></span>
+                        <span>Total: <strong className="text-foreground">{metrics.closedWithDatesTotal}</strong></span>
+                        {metrics.avgDelayDays > 0 && <span>Prom. atraso: <strong className="text-destructive">{metrics.avgDelayDays}d</strong></span>}
+                        {metrics.avgEarlyDays > 0 && <span>Prom. anticipación: <strong className="text-green-600">{metrics.avgEarlyDays}d</strong></span>}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Cumplimiento de correos */}
+                  {metrics.confirmedTotal > 0 && (
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+                          <Mail className="h-3 w-3" /> Respuesta de correos
+                        </span>
+                        <span className={cn(
+                          "text-xs font-bold",
+                          metrics.complianceRate >= 80 ? "text-green-600" : metrics.complianceRate >= 50 ? "text-yellow-600" : "text-destructive"
+                        )}>{metrics.complianceRate}%</span>
+                      </div>
+                      <Progress value={metrics.complianceRate} className="h-1.5" />
+                      <div className="flex gap-3 text-[10px] text-muted-foreground">
+                        <span>A tiempo: <strong className="text-green-600">{metrics.onTimeEmails}</strong></span>
+                        <span>Fuera de plazo: <strong className="text-destructive">{metrics.lateEmails}</strong></span>
+                        <span>Total: <strong className="text-foreground">{metrics.confirmedTotal}</strong></span>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
             </CardContent>
           </Card>
 
