@@ -279,6 +279,31 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
                         <span className="text-xs font-bold">{metrics.subtaskProgress}%</span>
                       </div>
                       <Progress value={metrics.subtaskProgress} className="h-1.5" />
+                      <div className="flex gap-3 text-[10px] text-muted-foreground flex-wrap">
+                        <span>{metrics.completedSubtasks.length}/{metrics.allSubtasks.length} completadas</span>
+                        {metrics.pendingOverdueSubtasks > 0 && <span>Atrasadas: <strong className="text-destructive">{metrics.pendingOverdueSubtasks}</strong></span>}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Puntualidad de subtareas */}
+                  {metrics.subtaskTimelinessRate !== null && (
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+                          <ListChecks className="h-3 w-3" /> Puntualidad de subtareas
+                        </span>
+                        <span className={cn(
+                          "text-xs font-bold",
+                          metrics.subtaskTimelinessRate >= 80 ? "text-green-600" : metrics.subtaskTimelinessRate >= 50 ? "text-yellow-600" : "text-destructive"
+                        )}>{metrics.subtaskTimelinessRate}%</span>
+                      </div>
+                      <Progress value={metrics.subtaskTimelinessRate} className="h-1.5" />
+                      <div className="flex gap-3 text-[10px] text-muted-foreground">
+                        <span>A tiempo: <strong className="text-green-600">{metrics.subtasksOnTime}</strong></span>
+                        <span>Con atraso: <strong className="text-destructive">{metrics.subtasksLate}</strong></span>
+                        <span>Total: <strong className="text-foreground">{metrics.completedWithDueTotal}</strong></span>
+                      </div>
                     </div>
                   )}
 
