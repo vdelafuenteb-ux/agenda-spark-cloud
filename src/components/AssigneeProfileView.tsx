@@ -131,12 +131,29 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
     const avgDelayDays = closureLate > 0 ? Math.round(totalDelayDays / closureLate) : 0;
     const avgEarlyDays = closureOnTime > 0 ? Math.round(totalEarlyDays / closureOnTime) : 0;
 
+    // Productivity Score calculation
+    const dimensions: { value: number; weight: number }[] = [];
+    if (closedWithDates.length > 0) dimensions.push({ value: closureComplianceRate ?? 0, weight: 0.40 });
+    if (confirmedEmails.length > 0) dimensions.push({ value: complianceRate, weight: 0.25 });
+    if (allSubtasks.length > 0) dimensions.push({ value: subtaskProgress, weight: 0.20 });
+    const activeWithDue = activeAndTracking.filter(t => t.due_date && !t.is_ongoing);
+    const activeOnTime = activeWithDue.filter(t => !isStoredDateOverdue(t.due_date));
+    const deadlineCompliance = activeWithDue.length > 0 ? Math.round((activeOnTime.length / activeWithDue.length) * 100) : null;
+    if (deadlineCompliance !== null) dimensions.push({ value: deadlineCompliance, weight: 0.15 });
+
+    let productivityScore: number | null = null;
+    if (dimensions.length > 0) {
+      const totalWeight = dimensions.reduce((s, d) => s + d.weight, 0);
+      productivityScore = Math.round(dimensions.reduce((s, d) => s + d.value * (d.weight / totalWeight), 0));
+    }
+
     return {
       assigneeTopics, active, seguimiento, completed,
       overdue, dueSoon, allSubtasks, completedSubtasks, subtaskProgress,
       alta, media, baja, emailsSent, emailsConfirmed, responseRate,
       onTimeEmails: onTimeEmails.length, lateEmails, complianceRate, confirmedTotal: confirmedEmails.length,
       closureOnTime, closureLate, closureComplianceRate, avgDelayDays, avgEarlyDays, closedWithDatesTotal: closedWithDates.length,
+      productivityScore,
     };
   }, [topics, assigneeName, emailHistory]);
 
