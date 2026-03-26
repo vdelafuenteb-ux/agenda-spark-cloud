@@ -109,11 +109,34 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
     const lateEmails = confirmedEmails.length - onTimeEmails.length;
     const complianceRate = confirmedEmails.length > 0 ? Math.round((onTimeEmails.length / confirmedEmails.length) * 100) : 0;
 
+    // Closure compliance (cierre a tiempo vs con atraso)
+    const closedWithDates = completed.filter(t => t.due_date && t.closed_at);
+    let closureOnTime = 0;
+    let closureLate = 0;
+    let totalDelayDays = 0;
+    let totalEarlyDays = 0;
+    for (const t of closedWithDates) {
+      const closedDate = new Date(t.closed_at!);
+      const dueDate = new Date(t.due_date! + 'T23:59:59');
+      const diffDays = Math.round((closedDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+      if (diffDays <= 0) {
+        closureOnTime++;
+        totalEarlyDays += Math.abs(diffDays);
+      } else {
+        closureLate++;
+        totalDelayDays += diffDays;
+      }
+    }
+    const closureComplianceRate = closedWithDates.length > 0 ? Math.round((closureOnTime / closedWithDates.length) * 100) : null;
+    const avgDelayDays = closureLate > 0 ? Math.round(totalDelayDays / closureLate) : 0;
+    const avgEarlyDays = closureOnTime > 0 ? Math.round(totalEarlyDays / closureOnTime) : 0;
+
     return {
       assigneeTopics, active, seguimiento, completed,
       overdue, dueSoon, allSubtasks, completedSubtasks, subtaskProgress,
       alta, media, baja, emailsSent, emailsConfirmed, responseRate,
       onTimeEmails: onTimeEmails.length, lateEmails, complianceRate, confirmedTotal: confirmedEmails.length,
+      closureOnTime, closureLate, closureComplianceRate, avgDelayDays, avgEarlyDays, closedWithDatesTotal: closedWithDates.length,
     };
   }, [topics, assigneeName, emailHistory]);
 
