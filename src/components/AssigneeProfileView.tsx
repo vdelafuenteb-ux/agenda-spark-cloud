@@ -292,15 +292,31 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
                   const radius = 40;
                   const circumference = 2 * Math.PI * radius;
                   const offset = circumference - (score / 100) * circumference;
+                  // Trend arrow
+                  const prevSnapshot = scoreSnapshots.length >= 2 ? scoreSnapshots[scoreSnapshots.length - 2] : null;
+                  const previousScore = prevSnapshot ? prevSnapshot.score : null;
+                  const trendDiff = previousScore !== null ? score - previousScore : null;
                   return (
                     <div className="flex flex-col items-center shrink-0">
+                      {scoreSnapshots.length >= 1 && (
+                        <Button variant="ghost" size="sm" className="text-[10px] h-6 px-2 mb-1 gap-1" onClick={() => setShowTrend(true)}>
+                          <BarChart3 className="h-3 w-3" /> Tendencias
+                        </Button>
+                      )}
                       <svg width="100" height="100" viewBox="0 0 100 100">
                         <circle cx="50" cy="50" r={radius} fill="none" stroke="hsl(var(--muted))" strokeWidth="8" />
                         <circle cx="50" cy="50" r={radius} fill="none" stroke={color} strokeWidth="8"
                           strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={offset}
                           transform="rotate(-90 50 50)" className="transition-all duration-700" />
-                        <text x="50" y="46" textAnchor="middle" className="fill-foreground text-2xl font-bold" fontSize="24">{score}</text>
-                        <text x="50" y="60" textAnchor="middle" className="fill-muted-foreground" fontSize="9">pts</text>
+                        <text x="50" y="42" textAnchor="middle" className="fill-foreground text-2xl font-bold" fontSize="24">{score}</text>
+                        <text x="50" y="54" textAnchor="middle" className="fill-muted-foreground" fontSize="9">pts</text>
+                        {trendDiff !== null && (
+                          <>
+                            {trendDiff > 0 && <text x="50" y="68" textAnchor="middle" fill="#22c55e" fontSize="14">↑</text>}
+                            {trendDiff < 0 && <text x="50" y="68" textAnchor="middle" fill="#ef4444" fontSize="14">↓</text>}
+                            {trendDiff === 0 && <text x="50" y="68" textAnchor="middle" fill="hsl(var(--muted-foreground))" fontSize="12">=</text>}
+                          </>
+                        )}
                       </svg>
                       <span className="text-[10px] font-semibold mt-0.5" style={{ color }}>{label}</span>
                     </div>
