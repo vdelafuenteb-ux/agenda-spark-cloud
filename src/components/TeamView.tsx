@@ -1,8 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Users, Trophy, Target, Zap, Mail, Building2 } from 'lucide-react';
+import { Users, Trophy, Target, Zap, Mail } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { useDepartments } from '@/hooks/useDepartments';
