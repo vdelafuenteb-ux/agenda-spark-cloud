@@ -53,6 +53,7 @@ function CollapsibleSection({ title, icon: Icon, count, defaultOpen = false, chi
 
 export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, onNavigateToTopic }: AssigneeProfileViewProps) {
   const [sendingId, setSendingId] = useState<string | null>(null);
+  const [showTrend, setShowTrend] = useState(false);
 
   const { data: emailHistory = [] } = useQuery({
     queryKey: ['notification_emails_assignee', assigneeName],
