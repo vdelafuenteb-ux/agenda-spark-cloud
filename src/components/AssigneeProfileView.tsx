@@ -302,19 +302,19 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
                   const previousScore = prevSnapshot ? prevSnapshot.score : null;
                   const trendDiff = previousScore !== null ? score - previousScore : null;
                   return (
-                    <div className="flex flex-col items-center shrink-0 w-[120px]">
-                      <svg width="110" height="110" viewBox="0 0 110 110">
-                        <circle cx="55" cy="55" r={radius} fill="none" stroke="hsl(var(--muted))" strokeWidth="7" />
-                        <circle cx="55" cy="55" r={radius} fill="none" stroke={color} strokeWidth="7"
+                    <div className="flex flex-col items-center shrink-0 w-[130px]">
+                      <svg width="120" height="120" viewBox="0 0 120 120">
+                        <circle cx="60" cy="60" r={radius} fill="none" stroke="hsl(var(--muted))" strokeWidth="7" />
+                        <circle cx="60" cy="60" r={radius} fill="none" stroke={color} strokeWidth="7"
                           strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={offset}
-                          transform="rotate(-90 55 55)" className="transition-all duration-700" />
-                        <text x="55" y={trendDiff !== null ? "50" : "55"} textAnchor="middle" dominantBaseline="central" className="fill-foreground font-bold" fontSize="28">{score}</text>
-                        <text x="55" y={trendDiff !== null ? "66" : "70"} textAnchor="middle" className="fill-muted-foreground" fontSize="10">pts</text>
+                          transform="rotate(-90 60 60)" className="transition-all duration-700" />
+                        <text x="60" y="55" textAnchor="middle" dominantBaseline="central" className="fill-foreground font-bold" fontSize="32">{score}</text>
+                        <text x="60" y="76" textAnchor="middle" className="fill-muted-foreground" fontSize="10">puntos</text>
                         {trendDiff !== null && (
                           <>
-                            {trendDiff > 0 && <text x="55" y="80" textAnchor="middle" fill="#22c55e" fontSize="13">▲ +{trendDiff}</text>}
-                            {trendDiff < 0 && <text x="55" y="80" textAnchor="middle" fill="#ef4444" fontSize="13">▼ {trendDiff}</text>}
-                            {trendDiff === 0 && <text x="55" y="80" textAnchor="middle" fill="hsl(var(--muted-foreground))" fontSize="11">= igual</text>}
+                            {trendDiff > 0 && <text x="60" y="90" textAnchor="middle" fill="#22c55e" fontSize="11">▲ +{trendDiff}</text>}
+                            {trendDiff < 0 && <text x="60" y="90" textAnchor="middle" fill="#ef4444" fontSize="11">▼ {trendDiff}</text>}
+                            {trendDiff === 0 && <text x="60" y="90" textAnchor="middle" fill="hsl(var(--muted-foreground))" fontSize="10">= igual</text>}
                           </>
                         )}
                       </svg>
