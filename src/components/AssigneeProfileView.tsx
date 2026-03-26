@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 import { isBefore, addDays, format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import type { TopicWithSubtasks } from '@/hooks/useTopics';
 import type { Assignee } from '@/hooks/useAssignees';
 
