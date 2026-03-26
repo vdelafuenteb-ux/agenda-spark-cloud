@@ -301,28 +301,31 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
                   const previousScore = prevSnapshot ? prevSnapshot.score : null;
                   const trendDiff = previousScore !== null ? score - previousScore : null;
                   return (
-                    <div className="flex flex-col items-center shrink-0">
-                      {scoreSnapshots.length >= 1 && (
-                        <Button variant="ghost" size="sm" className="text-[10px] h-6 px-2 mb-1 gap-1" onClick={() => setShowTrend(true)}>
-                          <BarChart3 className="h-3 w-3" /> Tendencias
-                        </Button>
-                      )}
-                      <svg width="100" height="100" viewBox="0 0 100 100">
-                        <circle cx="50" cy="50" r={radius} fill="none" stroke="hsl(var(--muted))" strokeWidth="8" />
-                        <circle cx="50" cy="50" r={radius} fill="none" stroke={color} strokeWidth="8"
+                    <div className="flex flex-col items-center shrink-0 w-[120px]">
+                      <svg width="110" height="110" viewBox="0 0 110 110">
+                        <circle cx="55" cy="55" r={radius} fill="none" stroke="hsl(var(--muted))" strokeWidth="7" />
+                        <circle cx="55" cy="55" r={radius} fill="none" stroke={color} strokeWidth="7"
                           strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={offset}
-                          transform="rotate(-90 50 50)" className="transition-all duration-700" />
-                        <text x="50" y="42" textAnchor="middle" className="fill-foreground text-2xl font-bold" fontSize="24">{score}</text>
-                        <text x="50" y="54" textAnchor="middle" className="fill-muted-foreground" fontSize="9">pts</text>
+                          transform="rotate(-90 55 55)" className="transition-all duration-700" />
+                        <text x="55" y={trendDiff !== null ? "50" : "55"} textAnchor="middle" dominantBaseline="central" className="fill-foreground font-bold" fontSize="28">{score}</text>
+                        <text x="55" y={trendDiff !== null ? "66" : "70"} textAnchor="middle" className="fill-muted-foreground" fontSize="10">pts</text>
                         {trendDiff !== null && (
                           <>
-                            {trendDiff > 0 && <text x="50" y="68" textAnchor="middle" fill="#22c55e" fontSize="14">↑</text>}
-                            {trendDiff < 0 && <text x="50" y="68" textAnchor="middle" fill="#ef4444" fontSize="14">↓</text>}
-                            {trendDiff === 0 && <text x="50" y="68" textAnchor="middle" fill="hsl(var(--muted-foreground))" fontSize="12">=</text>}
+                            {trendDiff > 0 && <text x="55" y="80" textAnchor="middle" fill="#22c55e" fontSize="13">▲ +{trendDiff}</text>}
+                            {trendDiff < 0 && <text x="55" y="80" textAnchor="middle" fill="#ef4444" fontSize="13">▼ {trendDiff}</text>}
+                            {trendDiff === 0 && <text x="55" y="80" textAnchor="middle" fill="hsl(var(--muted-foreground))" fontSize="11">= igual</text>}
                           </>
                         )}
                       </svg>
-                      <span className="text-[10px] font-semibold mt-0.5" style={{ color }}>{label}</span>
+                      <span className="text-xs font-semibold mt-1" style={{ color }}>{label}</span>
+                      {scoreSnapshots.length >= 1 && (
+                        <button
+                          onClick={() => setShowTrend(true)}
+                          className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors mt-1.5"
+                        >
+                          <BarChart3 className="h-3 w-3" /> Ver tendencia
+                        </button>
+                      )}
                     </div>
                   );
                 })()}
