@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 import { isBefore, addDays, format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import type { TopicWithSubtasks } from '@/hooks/useTopics';
 import type { Assignee } from '@/hooks/useAssignees';
 
@@ -63,6 +64,23 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
         .limit(50);
       if (error) throw error;
       return data || [];
+    },
+  });
+
+  const { data: scoreSnapshots = [] } = useQuery({
+    queryKey: ['score_snapshots', assigneeName],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('score_snapshots')
+        .select('*')
+        .eq('assignee_name', assigneeName)
+        .order('snapshot_date', { ascending: true })
+        .limit(52);
+      if (error) throw error;
+      return (data || []).map((s: any) => ({
+        ...s,
+        label: format(new Date(s.snapshot_date + 'T12:00:00'), 'dd MMM', { locale: es }),
+      }));
     },
   });
 
@@ -394,7 +412,30 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
             </CardContent>
           </Card>
 
-          {/* Overdue + Due Soon - side by side, always */}
+          {/* Trend Chart */}
+          {scoreSnapshots.length >= 2 && (
+            <Card>
+              <CardContent className="p-4">
+                <span className="text-sm font-semibold text-foreground mb-2 block">Tendencia de productividad</span>
+                <div className="h-[180px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={scoreSnapshots}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis dataKey="label" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
+                      <YAxis domain={[0, 100]} tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
+                      <Tooltip
+                        contentStyle={{ fontSize: 12, background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
+                        formatter={(value: number) => [`${value} pts`, 'Score']}
+                      />
+                      <ReferenceLine y={70} stroke="#84cc16" strokeDasharray="3 3" label={{ value: 'Bueno', fontSize: 9, fill: '#84cc16' }} />
+                      <Line type="monotone" dataKey="score" stroke="#22c55e" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
             <Card className={metrics.overdue.length > 0 ? 'border-destructive/30' : ''}>
               <CardHeader className="pb-1 p-3">

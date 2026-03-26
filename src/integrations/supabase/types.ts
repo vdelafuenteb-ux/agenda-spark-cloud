@@ -520,6 +520,36 @@ export type Database = {
         }
         Relationships: []
       }
+      score_snapshots: {
+        Row: {
+          assignee_name: string
+          created_at: string
+          dimensions: Json
+          id: string
+          score: number
+          snapshot_date: string
+          user_id: string
+        }
+        Insert: {
+          assignee_name: string
+          created_at?: string
+          dimensions?: Json
+          id?: string
+          score: number
+          snapshot_date?: string
+          user_id: string
+        }
+        Update: {
+          assignee_name?: string
+          created_at?: string
+          dimensions?: Json
+          id?: string
+          score?: number
+          snapshot_date?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       subtask_contacts: {
         Row: {
           created_at: string
