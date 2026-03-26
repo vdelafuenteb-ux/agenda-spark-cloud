@@ -314,47 +314,48 @@ export function TeamView({ topics, assignees, onUpdateTopic }: TeamViewProps) {
   return (
     <main className="flex-1 overflow-auto p-3 md:p-4">
       <div className="max-w-5xl mx-auto space-y-4">
-        {/* KPIs globales */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Card>
-            <CardContent className="pt-4 pb-3 px-4">
-              <div className="flex items-center gap-2 mb-1">
-                <Users className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">Equipo</span>
-              </div>
-              <p className="text-2xl font-bold">{assignees.length}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4 pb-3 px-4">
-              <div className="flex items-center gap-2 mb-1">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">HH Semanal</span>
-              </div>
-              <p className="text-2xl font-bold">{Math.round(totalWeeklyHours)}h</p>
-              <p className="text-[10px] text-muted-foreground">de {totalCapacity}h capacidad</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4 pb-3 px-4">
-              <div className="flex items-center gap-2 mb-1">
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">Carga Global</span>
-              </div>
-              <p className={cn('text-2xl font-bold', getLoadColor(globalLoadPct))}>{globalLoadPct}%</p>
-              <Progress value={Math.min(globalLoadPct, 100)} className={cn('h-1.5 mt-1', getBarColor(globalLoadPct))} />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4 pb-3 px-4">
-              <div className="flex items-center gap-2 mb-1">
-                <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">Sobrecargados</span>
-              </div>
-              <p className={cn('text-2xl font-bold', overloadedCount > 0 ? 'text-destructive' : 'text-emerald-600')}>{overloadedCount}</p>
-            </CardContent>
-          </Card>
-        </div>
+        {/* KPIs por departamento */}
+        {deptMetrics.length > 0 ? (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {deptMetrics.map(d => (
+              <Card key={d.dept.id}>
+                <CardContent className="pt-4 pb-3 px-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground truncate">{d.dept.name}</span>
+                  </div>
+                  <div className="flex items-baseline gap-2">
+                    <p className="text-2xl font-bold">{d.activeCount}</p>
+                    <span className="text-[10px] text-muted-foreground">temas</span>
+                  </div>
+                  <div className="flex items-center justify-between mt-1">
+                    <span className="text-[10px] text-muted-foreground">{d.assigneeCount} persona{d.assigneeCount !== 1 ? 's' : ''}</span>
+                    {d.avgScore !== null ? (
+                      <span className={cn('text-xs font-semibold', getScoreColor(d.avgScore))}>
+                        Score: {d.avgScore}
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-muted-foreground/50">Score: n/a</span>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <Card>
+              <CardContent className="pt-4 pb-3 px-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">Equipo</span>
+                </div>
+                <p className="text-2xl font-bold">{assignees.length}</p>
+                <p className="text-[10px] text-muted-foreground">Sin departamentos configurados</p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Ranking */}
         <div className="space-y-2">
