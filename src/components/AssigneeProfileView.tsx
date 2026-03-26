@@ -92,6 +92,20 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
       ? Math.round((completedSubtasks.length / allSubtasks.length) * 100)
       : 0;
 
+    // Subtask timeliness: completed with due_date → on time or late
+    const completedWithDue = completedSubtasks.filter(s => s.due_date && s.completed_at);
+    const subtasksOnTime = completedWithDue.filter(s => {
+      const dueDate = new Date(s.due_date! + 'T23:59:59');
+      const completedDate = new Date(s.completed_at!);
+      return completedDate.getTime() <= dueDate.getTime();
+    });
+    const subtasksLate = completedWithDue.length - subtasksOnTime.length;
+    const subtaskTimelinessRate = completedWithDue.length > 0
+      ? Math.round((subtasksOnTime.length / completedWithDue.length) * 100)
+      : null;
+    // Pending overdue subtasks (not completed, past due)
+    const pendingOverdueSubtasks = allSubtasks.filter(s => !s.completed && s.due_date && isStoredDateOverdue(s.due_date));
+
     const alta = assigneeTopics.filter(t => t.priority === 'alta' && t.status !== 'completado');
     const media = assigneeTopics.filter(t => t.priority === 'media' && t.status !== 'completado');
     const baja = assigneeTopics.filter(t => t.priority === 'baja' && t.status !== 'completado');
