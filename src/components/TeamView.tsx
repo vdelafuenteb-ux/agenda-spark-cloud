@@ -398,33 +398,33 @@ export function TeamView({ topics, assignees, onUpdateTopic }: TeamViewProps) {
                             <span className="text-muted-foreground/40">·</span>
                             <span className={getLoadColor(m.loadPct)}>Carga {m.loadPct}%</span>
                           </div>
-                          {/* Metrics row */}
+                          {/* Metrics row - always show all 5 */}
                           <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-                            {m.closureRate !== null && (
-                              <span className="text-[10px] text-muted-foreground">
-                                Cierre: <span className={cn('font-medium', m.closureRate >= 80 ? 'text-emerald-600 dark:text-emerald-400' : m.closureRate >= 60 ? 'text-yellow-600 dark:text-yellow-400' : 'text-destructive')}>{m.closureRate}%</span>
-                              </span>
-                            )}
-                            {m.subtaskRate !== null && (
-                              <span className="text-[10px] text-muted-foreground">
-                                Subtareas: <span className={cn('font-medium', m.subtaskRate >= 80 ? 'text-emerald-600 dark:text-emerald-400' : m.subtaskRate >= 60 ? 'text-yellow-600 dark:text-yellow-400' : 'text-destructive')}>{m.subtaskRate}%</span>
-                              </span>
-                            )}
-                            {m.velocityScore !== null && (
-                              <span className="text-[10px] text-muted-foreground">
-                                Velocidad: <span className={cn('font-medium', m.velocityScore >= 80 ? 'text-emerald-600 dark:text-emerald-400' : m.velocityScore >= 60 ? 'text-yellow-600 dark:text-yellow-400' : 'text-destructive')}>{m.avgPctUsed}%</span>
-                              </span>
-                            )}
-                            {m.emailRate !== null && (
-                              <span className="text-[10px] text-muted-foreground">
-                                Correos: <span className={cn('font-medium', m.emailRate >= 80 ? 'text-emerald-600 dark:text-emerald-400' : m.emailRate >= 60 ? 'text-yellow-600 dark:text-yellow-400' : 'text-destructive')}>{m.emailRate}%</span>
-                              </span>
-                            )}
-                            {m.deadlineCompliance !== null && (
-                              <span className="text-[10px] text-muted-foreground">
-                                Plazos: <span className={cn('font-medium', m.deadlineCompliance >= 80 ? 'text-emerald-600 dark:text-emerald-400' : m.deadlineCompliance >= 60 ? 'text-yellow-600 dark:text-yellow-400' : 'text-destructive')}>{m.deadlineCompliance}%</span>
-                              </span>
-                            )}
+                            <span className="text-[10px] text-muted-foreground">
+                              Cierre: {m.closureRate !== null
+                                ? <span className={cn('font-medium', m.closureRate >= 80 ? 'text-emerald-600 dark:text-emerald-400' : m.closureRate >= 60 ? 'text-yellow-600 dark:text-yellow-400' : 'text-destructive')}>{m.closureRate}%</span>
+                                : <span className="font-medium text-muted-foreground/50">n/a</span>}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground">
+                              Subtareas: {m.subtaskRate !== null
+                                ? <span className={cn('font-medium', m.subtaskRate >= 80 ? 'text-emerald-600 dark:text-emerald-400' : m.subtaskRate >= 60 ? 'text-yellow-600 dark:text-yellow-400' : 'text-destructive')}>{m.subtaskRate}%</span>
+                                : <span className="font-medium text-muted-foreground/50">n/a</span>}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground">
+                              Velocidad: {m.velocityScore !== null
+                                ? <span className={cn('font-medium', m.velocityScore >= 80 ? 'text-emerald-600 dark:text-emerald-400' : m.velocityScore >= 60 ? 'text-yellow-600 dark:text-yellow-400' : 'text-destructive')}>{m.avgPctUsed}%</span>
+                                : <span className="font-medium text-muted-foreground/50">n/a</span>}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground">
+                              Correos: {m.emailRate !== null
+                                ? <span className={cn('font-medium', m.emailRate >= 80 ? 'text-emerald-600 dark:text-emerald-400' : m.emailRate >= 60 ? 'text-yellow-600 dark:text-yellow-400' : 'text-destructive')}>{m.emailRate}%</span>
+                                : <span className="font-medium text-muted-foreground/50">n/a</span>}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground">
+                              Plazos: {m.deadlineCompliance !== null
+                                ? <span className={cn('font-medium', m.deadlineCompliance >= 80 ? 'text-emerald-600 dark:text-emerald-400' : m.deadlineCompliance >= 60 ? 'text-yellow-600 dark:text-yellow-400' : 'text-destructive')}>{m.deadlineCompliance}%</span>
+                                : <span className="font-medium text-muted-foreground/50">n/a</span>}
+                            </span>
                           </div>
                         </div>
 
