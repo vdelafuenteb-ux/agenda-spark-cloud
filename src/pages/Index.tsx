@@ -284,6 +284,7 @@ const Index = () => {
                 email_type: 'new_topic',
               } as any);
               queryClient.invalidateQueries({ queryKey: ['notification_emails'] });
+              queryClient.invalidateQueries({ queryKey: ['notification_emails_all'] });
               toast.success(`Se notificó a ${assignee.name} del nuevo tema`);
             } else {
               console.error('Error sending new topic notification:', emailError);
