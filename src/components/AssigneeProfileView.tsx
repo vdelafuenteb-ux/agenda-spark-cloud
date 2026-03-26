@@ -305,52 +305,17 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
                   );
                 })()}
 
-                {/* Progress bars */}
+                {/* Progress bars — ordered by weight: 50%, 20%, 10%, 10%, then info */}
                 <div className="flex-1 space-y-3 min-w-0">
                   <span className="text-sm font-semibold text-foreground">Rendimiento</span>
 
-                  {/* Subtareas completadas */}
-                  {metrics.allSubtasks.length > 0 && (
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground">Subtareas completadas</span>
-                        <span className="text-xs font-bold">{metrics.subtaskProgress}%</span>
-                      </div>
-                      <Progress value={metrics.subtaskProgress} className="h-1.5" />
-                      <div className="flex gap-3 text-[10px] text-muted-foreground flex-wrap">
-                        <span>{metrics.completedSubtasks.length}/{metrics.allSubtasks.length} completadas</span>
-                        {metrics.pendingOverdueSubtasks > 0 && <span>Atrasadas: <strong className="text-destructive">{metrics.pendingOverdueSubtasks}</strong></span>}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Puntualidad de subtareas */}
-                  {metrics.subtaskTimelinessRate !== null && (
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground flex items-center gap-1.5">
-                          <ListChecks className="h-3 w-3" /> Puntualidad de subtareas
-                        </span>
-                        <span className={cn(
-                          "text-xs font-bold",
-                          metrics.subtaskTimelinessRate >= 80 ? "text-green-600" : metrics.subtaskTimelinessRate >= 50 ? "text-yellow-600" : "text-destructive"
-                        )}>{metrics.subtaskTimelinessRate}%</span>
-                      </div>
-                      <Progress value={metrics.subtaskTimelinessRate} className="h-1.5" />
-                      <div className="flex gap-3 text-[10px] text-muted-foreground">
-                        <span>A tiempo: <strong className="text-green-600">{metrics.subtasksOnTime}</strong></span>
-                        <span>Con atraso: <strong className="text-destructive">{metrics.subtasksLate}</strong></span>
-                        <span>Total: <strong className="text-foreground">{metrics.completedWithDueTotal}</strong></span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Eficiencia de cierre de temas */}
+                  {/* 1. Eficiencia de cierre de temas — 50% */}
                   {metrics.closureComplianceRate !== null && (
                     <div className="space-y-1">
                       <div className="flex items-center justify-between">
                         <span className="text-xs text-muted-foreground flex items-center gap-1.5">
-                          <CheckCircle2 className="h-3 w-3" /> Eficiencia de cierre de temas
+                          <CheckCircle2 className="h-3 w-3" /> Cierre de temas a tiempo
+                          <Badge variant="outline" className="text-[8px] h-4 px-1 border-muted-foreground/30">50%</Badge>
                         </span>
                         <span className={cn(
                           "text-xs font-bold",
@@ -368,12 +333,35 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
                     </div>
                   )}
 
-                  {/* Cumplimiento de correos */}
+                  {/* 2. Puntualidad de subtareas — 20% */}
+                  {metrics.subtaskTimelinessRate !== null && (
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+                          <ListChecks className="h-3 w-3" /> Puntualidad de subtareas
+                          <Badge variant="outline" className="text-[8px] h-4 px-1 border-muted-foreground/30">20%</Badge>
+                        </span>
+                        <span className={cn(
+                          "text-xs font-bold",
+                          metrics.subtaskTimelinessRate >= 80 ? "text-green-600" : metrics.subtaskTimelinessRate >= 50 ? "text-yellow-600" : "text-destructive"
+                        )}>{metrics.subtaskTimelinessRate}%</span>
+                      </div>
+                      <Progress value={metrics.subtaskTimelinessRate} className="h-1.5" />
+                      <div className="flex gap-3 text-[10px] text-muted-foreground">
+                        <span>A tiempo: <strong className="text-green-600">{metrics.subtasksOnTime}</strong></span>
+                        <span>Con atraso: <strong className="text-destructive">{metrics.subtasksLate}</strong></span>
+                        <span>Total: <strong className="text-foreground">{metrics.completedWithDueTotal}</strong></span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 3. Respuesta de correos — 10% */}
                   {metrics.confirmedTotal > 0 && (
                     <div className="space-y-1">
                       <div className="flex items-center justify-between">
                         <span className="text-xs text-muted-foreground flex items-center gap-1.5">
                           <Mail className="h-3 w-3" /> Respuesta de correos
+                          <Badge variant="outline" className="text-[8px] h-4 px-1 border-muted-foreground/30">10%</Badge>
                         </span>
                         <span className={cn(
                           "text-xs font-bold",
@@ -389,23 +377,44 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
                     </div>
                   )}
 
-                  {/* Velocidad de ejecución */}
+                  {/* 4. Velocidad de ejecución — 10% */}
                   {metrics.velocityScore !== null && metrics.avgPctUsed !== null && (
                     <div className="space-y-1">
                       <div className="flex items-center justify-between">
                         <span className="text-xs text-muted-foreground flex items-center gap-1.5">
                           <TrendingUp className="h-3 w-3" /> Velocidad de ejecución
+                          <Badge variant="outline" className="text-[8px] h-4 px-1 border-muted-foreground/30">10%</Badge>
                         </span>
                         <span className={cn(
                           "text-xs font-bold",
-                          metrics.velocityScore >= 80 ? "text-green-600" : metrics.velocityScore >= 50 ? "text-yellow-600" : "text-destructive"
-                        )}>{metrics.velocityScore}pts</span>
+                          metrics.avgPctUsed <= 70 ? "text-green-600" : metrics.avgPctUsed <= 100 ? "text-yellow-600" : "text-destructive"
+                        )}>{metrics.avgPctUsed}%</span>
                       </div>
-                      <Progress value={metrics.velocityScore} className="h-1.5" />
+                      <Progress value={Math.max(0, 100 - metrics.avgPctUsed + 50)} className="h-1.5" />
                       <div className="flex gap-3 text-[10px] text-muted-foreground">
-                        <span>Usa en prom. <strong className={metrics.avgPctUsed <= 80 ? "text-green-600" : metrics.avgPctUsed <= 100 ? "text-yellow-600" : "text-destructive"}>{metrics.avgPctUsed}%</strong> del plazo</span>
+                        <span>Usa en promedio el <strong className={metrics.avgPctUsed <= 70 ? "text-green-600" : metrics.avgPctUsed <= 100 ? "text-yellow-600" : "text-destructive"}>{metrics.avgPctUsed}%</strong> del plazo asignado</span>
                       </div>
                     </div>
+                  )}
+
+                  {/* Separador visual */}
+                  {metrics.allSubtasks.length > 0 && (
+                    <>
+                      <div className="border-t border-border pt-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">Subtareas completadas</span>
+                          <span className={cn(
+                            "text-xs font-bold",
+                            metrics.subtaskProgress >= 80 ? "text-green-600" : metrics.subtaskProgress >= 50 ? "text-yellow-600" : "text-destructive"
+                          )}>{metrics.subtaskProgress}%</span>
+                        </div>
+                        <Progress value={metrics.subtaskProgress} className="h-1.5 mt-1" />
+                        <div className="flex gap-3 text-[10px] text-muted-foreground mt-1">
+                          <span>{metrics.completedSubtasks.length}/{metrics.allSubtasks.length} completadas</span>
+                          {metrics.pendingOverdueSubtasks > 0 && <span>Atrasadas: <strong className="text-destructive">{metrics.pendingOverdueSubtasks}</strong></span>}
+                        </div>
+                      </div>
+                    </>
                   )}
                 </div>
               </div>
