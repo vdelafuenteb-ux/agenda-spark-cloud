@@ -227,7 +227,7 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
           {/* Rendimiento consolidado */}
           <Card>
             <CardContent className="p-4">
-              <div className="flex items-start gap-5">
+              <div className="flex items-center gap-5">
                 {/* Circular Score */}
                 {metrics.productivityScore !== null && (() => {
                   const score = metrics.productivityScore;
