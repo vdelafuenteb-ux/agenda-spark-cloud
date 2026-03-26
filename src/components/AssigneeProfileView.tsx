@@ -370,6 +370,25 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
                       </div>
                     </div>
                   )}
+
+                  {/* Velocidad de ejecución */}
+                  {metrics.velocityScore !== null && metrics.avgPctUsed !== null && (
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+                          <TrendingUp className="h-3 w-3" /> Velocidad de ejecución
+                        </span>
+                        <span className={cn(
+                          "text-xs font-bold",
+                          metrics.velocityScore >= 80 ? "text-green-600" : metrics.velocityScore >= 50 ? "text-yellow-600" : "text-destructive"
+                        )}>{metrics.velocityScore}pts</span>
+                      </div>
+                      <Progress value={metrics.velocityScore} className="h-1.5" />
+                      <div className="flex gap-3 text-[10px] text-muted-foreground">
+                        <span>Usa en prom. <strong className={metrics.avgPctUsed <= 80 ? "text-green-600" : metrics.avgPctUsed <= 100 ? "text-yellow-600" : "text-destructive"}>{metrics.avgPctUsed}%</strong> del plazo</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </CardContent>
