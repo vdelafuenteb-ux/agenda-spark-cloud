@@ -54,12 +54,6 @@ function getLoadColor(pct: number): string {
   return 'text-destructive';
 }
 
-function getBarColor(pct: number): string {
-  if (pct < 70) return '[&>div]:bg-emerald-500';
-  if (pct < 90) return '[&>div]:bg-yellow-500';
-  return '[&>div]:bg-destructive';
-}
-
 function MiniScoreCircle({ score }: { score: number }) {
   const radius = 16;
   const circumference = 2 * Math.PI * radius;
