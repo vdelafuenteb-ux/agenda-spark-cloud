@@ -390,6 +390,34 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
             </Card>
           </CollapsibleSection>
 
+          {/* Closure compliance card */}
+          {metrics.closureComplianceRate !== null && (
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">Eficiencia de cierre</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 space-y-1">
+                    <Progress value={metrics.closureComplianceRate} className="h-2" />
+                  </div>
+                  <span className={cn(
+                    "text-sm font-bold",
+                    metrics.closureComplianceRate >= 80 ? "text-green-600" : metrics.closureComplianceRate >= 50 ? "text-yellow-600" : "text-destructive"
+                  )}>{metrics.closureComplianceRate}%</span>
+                </div>
+                <div className="flex gap-4 mt-1.5 text-[10px] text-muted-foreground flex-wrap">
+                  <span>A tiempo: <strong className="text-green-600">{metrics.closureOnTime}</strong></span>
+                  <span>Con atraso: <strong className="text-destructive">{metrics.closureLate}</strong></span>
+                  <span>Total: <strong className="text-foreground">{metrics.closedWithDatesTotal}</strong></span>
+                  {metrics.avgDelayDays > 0 && <span>Prom. atraso: <strong className="text-destructive">{metrics.avgDelayDays}d</strong></span>}
+                  {metrics.avgEarlyDays > 0 && <span>Prom. anticipación: <strong className="text-green-600">{metrics.avgEarlyDays}d</strong></span>}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Email compliance card */}
           {metrics.confirmedTotal > 0 && (
             <Card>
