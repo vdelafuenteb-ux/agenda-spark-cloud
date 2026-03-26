@@ -187,6 +187,7 @@ function calculateAssigneeScore(
 
 export function TeamView({ topics, assignees, onUpdateTopic }: TeamViewProps) {
   const [selectedAssignee, setSelectedAssignee] = useState<string | null>(null);
+  const { departments } = useDepartments();
 
   // Fetch all notification emails for score calculation
   const { data: allEmails = [] } = useQuery({
@@ -205,6 +206,23 @@ export function TeamView({ topics, assignees, onUpdateTopic }: TeamViewProps) {
     topics.filter(t => t.status === 'activo' || t.status === 'seguimiento'),
     [topics]
   );
+
+  // Department KPIs
+  const deptMetrics = useMemo(() => {
+    return departments.map(dept => {
+      const deptTopics = activeTopics.filter(t => t.department_id === dept.id);
+      const deptAssignees = new Set(deptTopics.map(t => t.assignee).filter(Boolean));
+      // Avg score of assignees in this dept
+      const scores: number[] = [];
+      deptAssignees.forEach(name => {
+        if (!name) return;
+        const s = calculateAssigneeScore(name, topics, allEmails);
+        if (s.score !== null) scores.push(s.score);
+      });
+      const avgScore = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
+      return { dept, activeCount: deptTopics.length, avgScore, assigneeCount: deptAssignees.size };
+    }).filter(d => d.activeCount > 0 || d.assigneeCount > 0);
+  }, [departments, activeTopics, topics, allEmails]);
 
   const rankedAssignees = useMemo(() => {
     const results: AssigneeScore[] = assignees.map(a => {
