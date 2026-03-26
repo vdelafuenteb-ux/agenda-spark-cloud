@@ -281,9 +281,6 @@ export function TeamView({ topics, assignees, onUpdateTopic }: TeamViewProps) {
 
   // Global KPIs
   const totalWeeklyHours = rankedAssignees.reduce((s, m) => s + m.weeklyHours, 0);
-  const totalCapacity = rankedAssignees.reduce((s, m) => s + m.capacity, 0);
-  const globalLoadPct = totalCapacity > 0 ? Math.round((totalWeeklyHours / totalCapacity) * 100) : 0;
-  const overloadedCount = rankedAssignees.filter(m => m.loadPct >= 90).length;
 
   if (selectedAssignee) {
     const assignee = assignees.find(a => a.name === selectedAssignee);
