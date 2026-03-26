@@ -200,8 +200,15 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
     const redistributedWeights: Record<string, number> = {};
     if (dimensions.length > 0) {
       productivityScore = Math.round(dimensions.reduce((s, d) => s + d.value * (d.weight / totalWeight), 0));
-      for (const d of dimensions) {
-        redistributedWeights[d.key] = Math.round((d.weight / totalWeight) * 100);
+      // Distribute weights so they sum exactly to 100 (largest remainder method)
+      const rawPcts = dimensions.map(d => ({ key: d.key, pct: (d.weight / totalWeight) * 100 }));
+      const floored = rawPcts.map(p => ({ ...p, floor: Math.floor(p.pct), remainder: p.pct - Math.floor(p.pct) }));
+      let remaining = 100 - floored.reduce((s, f) => s + f.floor, 0);
+      floored.sort((a, b) => b.remainder - a.remainder);
+      for (const f of floored) {
+        const extra = remaining > 0 ? 1 : 0;
+        redistributedWeights[f.key] = f.floor + extra;
+        remaining -= extra;
       }
     }
 
