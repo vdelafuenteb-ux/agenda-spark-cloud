@@ -109,11 +109,34 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
     const lateEmails = confirmedEmails.length - onTimeEmails.length;
     const complianceRate = confirmedEmails.length > 0 ? Math.round((onTimeEmails.length / confirmedEmails.length) * 100) : 0;
 
+    // Closure compliance (cierre a tiempo vs con atraso)
+    const closedWithDates = completed.filter(t => t.due_date && t.closed_at);
+    let closureOnTime = 0;
+    let closureLate = 0;
+    let totalDelayDays = 0;
+    let totalEarlyDays = 0;
+    for (const t of closedWithDates) {
+      const closedDate = new Date(t.closed_at!);
+      const dueDate = new Date(t.due_date! + 'T23:59:59');
+      const diffDays = Math.round((closedDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+      if (diffDays <= 0) {
+        closureOnTime++;
+        totalEarlyDays += Math.abs(diffDays);
+      } else {
+        closureLate++;
+        totalDelayDays += diffDays;
+      }
+    }
+    const closureComplianceRate = closedWithDates.length > 0 ? Math.round((closureOnTime / closedWithDates.length) * 100) : null;
+    const avgDelayDays = closureLate > 0 ? Math.round(totalDelayDays / closureLate) : 0;
+    const avgEarlyDays = closureOnTime > 0 ? Math.round(totalEarlyDays / closureOnTime) : 0;
+
     return {
       assigneeTopics, active, seguimiento, completed,
       overdue, dueSoon, allSubtasks, completedSubtasks, subtaskProgress,
       alta, media, baja, emailsSent, emailsConfirmed, responseRate,
       onTimeEmails: onTimeEmails.length, lateEmails, complianceRate, confirmedTotal: confirmedEmails.length,
+      closureOnTime, closureLate, closureComplianceRate, avgDelayDays, avgEarlyDays, closedWithDatesTotal: closedWithDates.length,
     };
   }, [topics, assigneeName, emailHistory]);
 
@@ -366,6 +389,34 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
               </CardContent>
             </Card>
           </CollapsibleSection>
+
+          {/* Closure compliance card */}
+          {metrics.closureComplianceRate !== null && (
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">Eficiencia de cierre</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 space-y-1">
+                    <Progress value={metrics.closureComplianceRate} className="h-2" />
+                  </div>
+                  <span className={cn(
+                    "text-sm font-bold",
+                    metrics.closureComplianceRate >= 80 ? "text-green-600" : metrics.closureComplianceRate >= 50 ? "text-yellow-600" : "text-destructive"
+                  )}>{metrics.closureComplianceRate}%</span>
+                </div>
+                <div className="flex gap-4 mt-1.5 text-[10px] text-muted-foreground flex-wrap">
+                  <span>A tiempo: <strong className="text-green-600">{metrics.closureOnTime}</strong></span>
+                  <span>Con atraso: <strong className="text-destructive">{metrics.closureLate}</strong></span>
+                  <span>Total: <strong className="text-foreground">{metrics.closedWithDatesTotal}</strong></span>
+                  {metrics.avgDelayDays > 0 && <span>Prom. atraso: <strong className="text-destructive">{metrics.avgDelayDays}d</strong></span>}
+                  {metrics.avgEarlyDays > 0 && <span>Prom. anticipación: <strong className="text-green-600">{metrics.avgEarlyDays}d</strong></span>}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Email compliance card */}
           {metrics.confirmedTotal > 0 && (
