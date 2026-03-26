@@ -214,6 +214,7 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
       productivityScore, subtasksOnTime: subtasksOnTime.length, subtasksLate, subtaskTimelinessRate,
       completedWithDueTotal: completedWithDue.length, pendingOverdueSubtasks: pendingOverdueSubtasks.length,
       velocityScore, avgPctUsed, redistributedWeights,
+      deadlineCompliance, activeWithDueTotal: activeWithDue.length, activeOnTimeTotal: activeOnTime.length,
     };
   }, [topics, assigneeName, emailHistory]);
 
