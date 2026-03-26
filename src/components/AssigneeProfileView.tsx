@@ -439,12 +439,14 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
             </CardContent>
           </Card>
 
-          {/* Trend Chart */}
-          {scoreSnapshots.length >= 2 && (
-            <Card>
-              <CardContent className="p-4">
-                <span className="text-sm font-semibold text-foreground mb-2 block">Tendencia de productividad</span>
-                <div className="h-[180px]">
+          {/* Trend Dialog */}
+          <Dialog open={showTrend} onOpenChange={setShowTrend}>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Tendencia de productividad — {assigneeName}</DialogTitle>
+              </DialogHeader>
+              {scoreSnapshots.length >= 2 ? (
+                <div className="h-[220px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={scoreSnapshots}>
                       <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
@@ -459,9 +461,11 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
-              </CardContent>
-            </Card>
-          )}
+              ) : (
+                <p className="text-sm text-muted-foreground py-4 text-center">Se necesitan al menos 2 semanas de datos para mostrar la tendencia.</p>
+              )}
+            </DialogContent>
+          </Dialog>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
             <Card className={metrics.overdue.length > 0 ? 'border-destructive/30' : ''}>
