@@ -185,20 +185,24 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
     }
 
     // Productivity Score calculation (5 dimensions)
-    const dimensions: { value: number; weight: number }[] = [];
-    if (closedWithDates.length > 0) dimensions.push({ value: closureComplianceRate ?? 0, weight: 0.50 });
-    if (confirmedEmails.length > 0) dimensions.push({ value: complianceRate, weight: 0.10 });
-    if (completedWithDue.length > 0) dimensions.push({ value: subtaskTimelinessRate ?? 0, weight: 0.20 });
+    const dimensions: { key: string; value: number; weight: number }[] = [];
+    if (closedWithDates.length > 0) dimensions.push({ key: 'closure', value: closureComplianceRate ?? 0, weight: 0.50 });
+    if (confirmedEmails.length > 0) dimensions.push({ key: 'email', value: complianceRate, weight: 0.10 });
+    if (completedWithDue.length > 0) dimensions.push({ key: 'subtask', value: subtaskTimelinessRate ?? 0, weight: 0.20 });
     const activeWithDue = activeAndTracking.filter(t => t.due_date && !t.is_ongoing);
     const activeOnTime = activeWithDue.filter(t => !isStoredDateOverdue(t.due_date));
     const deadlineCompliance = activeWithDue.length > 0 ? Math.round((activeOnTime.length / activeWithDue.length) * 100) : null;
-    if (deadlineCompliance !== null) dimensions.push({ value: deadlineCompliance, weight: 0.15 });
-    if (velocityScore !== null) dimensions.push({ value: velocityScore, weight: 0.10 });
+    if (deadlineCompliance !== null) dimensions.push({ key: 'deadline', value: deadlineCompliance, weight: 0.15 });
+    if (velocityScore !== null) dimensions.push({ key: 'velocity', value: velocityScore, weight: 0.10 });
 
     let productivityScore: number | null = null;
+    const totalWeight = dimensions.reduce((s, d) => s + d.weight, 0);
+    const redistributedWeights: Record<string, number> = {};
     if (dimensions.length > 0) {
-      const totalWeight = dimensions.reduce((s, d) => s + d.weight, 0);
       productivityScore = Math.round(dimensions.reduce((s, d) => s + d.value * (d.weight / totalWeight), 0));
+      for (const d of dimensions) {
+        redistributedWeights[d.key] = Math.round((d.weight / totalWeight) * 100);
+      }
     }
 
     return {
@@ -209,7 +213,7 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
       closureOnTime, closureLate, closureComplianceRate, avgDelayDays, avgEarlyDays, closedWithDatesTotal: closedWithDates.length,
       productivityScore, subtasksOnTime: subtasksOnTime.length, subtasksLate, subtaskTimelinessRate,
       completedWithDueTotal: completedWithDue.length, pendingOverdueSubtasks: pendingOverdueSubtasks.length,
-      velocityScore, avgPctUsed,
+      velocityScore, avgPctUsed, redistributedWeights,
     };
   }, [topics, assigneeName, emailHistory]);
 
