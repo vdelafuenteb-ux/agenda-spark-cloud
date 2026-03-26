@@ -1,29 +1,45 @@
 
 
-## Plan: Reestructurar la ficha del responsable — orden por impacto
+## Plan: Score de productividad circular + clarificar etiquetas
 
-### Problema
-La información está desordenada: las estadísticas de rendimiento (eficiencia de cierre, cumplimiento de correos) están al final de la página cuando son datos de alto impacto que deberían verse primero.
+### Cambios
 
-### Nueva estructura (de arriba a abajo)
+**1. Clarificar etiquetas**
+- "Eficiencia de cierre" → "Eficiencia de cierre de temas"
 
-1. **Header** (sin cambios) — Nombre, email, botón volver
-2. **KPIs numéricos** (sin cambios) — 6 tarjetas en fila
-3. **Barra de avance** (sin cambios) — Progreso subtareas
-4. **Eficiencia de cierre** ← SUBE (antes estaba después de "Todos los temas")
-5. **Cumplimiento de respuesta de correos** ← SUBE
-6. **Atrasados + Por Vencer** (sin cambios) — Side by side
-7. **Prioridades** (collapsible, sin cambios)
-8. **Todos los temas** (collapsible, sin cambios)
-9. **Historial de correos** (collapsible, sin cambios)
+**2. Score circular de productividad (0-100)**
 
-### Cambio técnico
+Agregar un círculo SVG prominente al inicio de la tarjeta de Rendimiento que muestre una puntuación global calculada objetivamente.
 
-Mover los bloques de código de "Eficiencia de cierre" (líneas 393-419) y "Cumplimiento de respuesta de correos" (líneas 421-445) para que aparezcan justo después de la barra de avance (después de línea 217), antes del bloque de Atrasados/Por Vencer.
+**Metodología de cálculo — Score de Productividad (0-100):**
+
+| Dimensión | Peso | Qué mide | Cálculo |
+|---|---|---|---|
+| Cierre a tiempo | 40% | % de temas cerrados dentro del plazo | `(cierres a tiempo / total cierres) × 100` |
+| Respuesta de correos | 25% | % de correos respondidos dentro de 48h | `(respuestas a tiempo / total confirmados) × 100` |
+| Avance de subtareas | 20% | % de subtareas completadas | `(completadas / total) × 100` |
+| Cumplimiento de plazos | 15% | % de temas activos que NO están atrasados | `(activos al día / total activos) × 100` |
+
+**Score = (cierre×0.40) + (correos×0.25) + (subtareas×0.20) + (plazos×0.15)**
+
+- Si no hay datos para una dimensión (ej: 0 temas cerrados), su peso se redistribuye proporcionalmente entre las otras.
+
+**Escala visual:**
+- 90-100: Verde — Excelente
+- 70-89: Verde claro — Bueno
+- 50-69: Amarillo — Regular
+- 30-49: Naranja — Bajo
+- 0-29: Rojo — Crítico
+
+**Diseño UI:**
+- Círculo SVG con el score en el centro (número grande + texto "pts" pequeño)
+- Color del arco según la escala
+- Etiqueta debajo: "Excelente", "Bueno", etc.
+- Posición: lado izquierdo de la tarjeta Rendimiento, con las 3 barras de progreso a la derecha
 
 ### Archivo afectado
 
 | Archivo | Cambio |
 |---|---|
-| `src/components/AssigneeProfileView.tsx` | Reordenar secciones: subir eficiencia de cierre y cumplimiento de correos después de la barra de avance |
+| `src/components/AssigneeProfileView.tsx` | Agregar cálculo de score, círculo SVG, renombrar etiqueta, reestructurar layout de la tarjeta Rendimiento |
 
