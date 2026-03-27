@@ -412,18 +412,21 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          source: string
           topic_id: string
         }
         Insert: {
           content: string
           created_at?: string
           id?: string
+          source?: string
           topic_id: string
         }
         Update: {
           content?: string
           created_at?: string
           id?: string
+          source?: string
           topic_id?: string
         }
         Relationships: [
@@ -855,6 +858,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      update_tokens: {
+        Row: {
+          assignee_name: string
+          created_at: string
+          expires_at: string
+          id: string
+          token: string
+          user_id: string
+        }
+        Insert: {
+          assignee_name: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          token?: string
+          user_id: string
+        }
+        Update: {
+          assignee_name?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          token?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       worker_incidents: {
         Row: {
