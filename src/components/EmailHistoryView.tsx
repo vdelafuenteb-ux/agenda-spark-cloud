@@ -405,6 +405,8 @@ export function EmailHistoryView() {
               <SelectItem value="pending">Pendientes</SelectItem>
               <SelectItem value="confirmed">Confirmados</SelectItem>
               <SelectItem value="overdue">Fuera de plazo</SelectItem>
+              <SelectItem value="reviewed">Revisados</SelectItem>
+              <SelectItem value="not_reviewed">No revisados</SelectItem>
             </SelectContent>
           </Select>
           )}
