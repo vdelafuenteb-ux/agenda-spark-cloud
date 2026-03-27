@@ -210,6 +210,11 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, reschedule
         },
       });
       if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['notification_emails'] });
+      queryClient.invalidateQueries({ queryKey: ['notification_emails_all'] });
+      queryClient.invalidateQueries({ queryKey: ['notification_emails_all_dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['notification_emails_team'] });
+      queryClient.invalidateQueries({ queryKey: ['notification_emails_assignee'] });
       toast.success(`Recordatorio enviado a ${assigneeName}`);
     } catch (err: any) {
       toast.error(`Error: ${err.message}`);
