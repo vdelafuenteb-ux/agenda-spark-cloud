@@ -29,12 +29,16 @@ export function useAssignees() {
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['assignees'] });
 
   const createAssignee = useMutation({
-    mutationFn: async (name: string) => {
+    mutationFn: async (input: string | { name: string; email?: string; department_id?: string }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
+      const params = typeof input === 'string' ? { name: input } : input;
+      const insertData: Record<string, any> = { user_id: user.id, name: params.name.trim() };
+      if (params.email) insertData.email = params.email;
+      if (params.department_id) insertData.department_id = params.department_id;
       const { data, error } = await supabase
         .from('assignees')
-        .insert({ user_id: user.id, name: name.trim() })
+        .insert(insertData)
         .select()
         .single();
       if (error) throw error;

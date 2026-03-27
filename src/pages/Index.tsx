@@ -340,7 +340,7 @@ const Index = () => {
               onCreateTag={(data) => createTag.mutateAsync(data)}
               onUpdateTag={(id, name) => updateTag.mutate({ id, name })}
               onDeleteAssignee={(id) => deleteAssignee.mutate(id)}
-              onCreateAssignee={(name) => createAssignee.mutateAsync(name)}
+              onCreateAssignee={(name) => createAssignee.mutateAsync({ name })}
               onUpdateAssignee={(id, data) => updateAssignee.mutate({ id, ...data })}
               onCreateDepartment={(name) => createDepartment.mutateAsync(name)}
               onUpdateDepartment={(id, name) => updateDepartment.mutate({ id, name })}
