@@ -8,6 +8,7 @@ import { useDepartments } from '@/hooks/useDepartments';
 import { supabase } from '@/integrations/supabase/client';
 import { isStoredDateOverdue } from '@/lib/date';
 import { AssigneeProfileView } from '@/components/AssigneeProfileView';
+import { computeProductivityScore } from '@/lib/productivityScore';
 import type { TopicWithSubtasks } from '@/hooks/useTopics';
 import type { Assignee } from '@/hooks/useAssignees';
 
