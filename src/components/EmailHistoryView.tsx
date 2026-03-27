@@ -411,6 +411,7 @@ export function EmailHistoryView() {
               <SelectItem value="not_reviewed">No revisados</SelectItem>
             </SelectContent>
           </Select>
+          )}
           <div className="flex gap-2 w-full sm:w-auto">
             <Popover>
               <PopoverTrigger asChild>
