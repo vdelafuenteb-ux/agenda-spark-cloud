@@ -8,6 +8,7 @@ export interface Assignee {
   email: string | null;
   created_at: string;
   weekly_capacity: number;
+  department_id: string | null;
 }
 
 export function useAssignees() {
