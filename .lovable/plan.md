@@ -1,63 +1,29 @@
 
 
-## Plan: Sistema de Registro de Incidencias por Trabajador
+## Plan: Corregir lógica del resumen diario para excluir tareas completadas
 
-### Resumen
-Crear un sistema de registro de incidencias/faltas laborales dentro de la ficha de cada trabajador, con categorización por severidad, historial cronológico, y envío de correo formal al trabajador cuando la falta es grave. Esto sirve como respaldo documentado para gestión de personas.
+### Problema
+La función `send-daily-summary` muestra subtareas ya completadas (como "Cierre Stand", completada el 25 mar) en la sección "Hoy" porque usa `includeCompleted: true` al construir los ítems de hoy. Esto filtra por `due_date == today` sin importar si ya está terminada.
 
-### 1. Nueva tabla `worker_incidents`
+### Solución
+En `supabase/functions/send-daily-summary/index.ts`:
 
-| Columna | Tipo | Descripción |
-|---|---|---|
-| `id` | uuid PK | |
-| `user_id` | uuid | Dueño del registro (jefe) |
-| `assignee_name` | text | Nombre del trabajador |
-| `assignee_email` | text | Email del trabajador (para correo formal) |
-| `category` | enum | `leve`, `moderada`, `grave` |
-| `title` | text | Título breve del incidente |
-| `description` | text | Detalle de lo ocurrido |
-| `incident_date` | date | Fecha del incidente |
-| `email_sent` | boolean | Si se envió correo formal |
-| `email_sent_at` | timestamptz | Cuándo se envió |
-| `created_at` | timestamptz | |
+1. **Cambiar `todayItems`** de `includeCompleted: true` a `includeCompleted: false` — las tareas completadas no deben aparecer como pendientes
+2. **Igualmente para checklist**: ya filtra `completed: false` en la query, así que está bien
+3. **Para temas (topics)**: agregar filtro en `buildItems` para que también excluya temas con `status: 'completado'` o `status: 'pausado'` cuando no se quieren completados
 
-RLS: solo el `user_id` autenticado puede CRUD sus propios registros.
+Cambio principal — una sola línea:
+```typescript
+// ANTES
+const todayItems = buildItems(topics, (d) => isToday(d, today), true);
 
-### 2. Nueva pestaña en `AssigneeProfileView`
+// DESPUÉS  
+const todayItems = buildItems(topics, (d) => isToday(d, today), false);
+```
 
-Agregar una sección colapsable "Registro de Incidencias" con:
-- **Botón "Registrar incidencia"** que abre un formulario (modal/dialog)
-- **Formulario**: fecha, título, descripción, categoría (Leve/Moderada/Grave)
-- **Lista cronológica** de incidencias con badge de color por severidad:
-  - 🟡 Leve (amarillo) — observación menor
-  - 🟠 Moderada (naranja) — falta que requiere atención
-  - 🔴 Grave (rojo) — incumplimiento serio, con opción de enviar correo formal
-- **Contador** visible en el título de la sección
-- **Botón "Enviar notificación formal"** solo en incidencias graves, que dispara un correo profesional
-
-### 3. Edge Function `send-incident-notification`
-
-Nuevo edge function que envía un correo formal al trabajador (vía la misma API de Firebase) con:
-- Tono profesional y respetuoso
-- Fecha y descripción del incidente
-- Referencia a las obligaciones contractuales
-- CC a gerencia (mismos emails que ya se usan)
-- Marca `email_sent = true` en el registro
-
-Ejemplo de asunto: *"Notificación formal — Registro de incidencia laboral | [Fecha]"*
-
-### 4. Hook `useIncidents`
-
-Nuevo hook con React Query para CRUD de incidencias:
-- `queryKey: ['worker_incidents', assigneeName]`
-- Mutations: `createIncident`, `deleteIncident`, `updateIncident`
-
-### Archivos afectados
+### Archivo afectado
 
 | Archivo | Cambio |
 |---|---|
-| Nueva migración | Crear tabla `worker_incidents` con RLS |
-| `src/hooks/useIncidents.tsx` | Nuevo hook CRUD |
-| `src/components/AssigneeProfileView.tsx` | Nueva sección colapsable con formulario y lista |
-| `supabase/functions/send-incident-notification/index.ts` | Nuevo edge function para correo formal |
+| `supabase/functions/send-daily-summary/index.ts` | Cambiar `includeCompleted` de `true` a `false` en la construcción de `todayItems` |
 
