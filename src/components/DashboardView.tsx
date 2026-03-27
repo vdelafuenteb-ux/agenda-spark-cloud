@@ -24,9 +24,12 @@ import { es } from 'date-fns/locale';
 import { AssigneeProfileView } from './AssigneeProfileView';
 import type { Reschedule } from '@/hooks/useReschedules';
 
+import type { Department } from '@/hooks/useDepartments';
+
 interface DashboardViewProps {
   topics: TopicWithSubtasks[];
   assignees: Assignee[];
+  departments?: Department[];
   reschedules: Reschedule[];
   onUpdateTopic?: (id: string, data: any) => void;
   onNavigateToTopic?: (topicId: string, status: string) => void;
