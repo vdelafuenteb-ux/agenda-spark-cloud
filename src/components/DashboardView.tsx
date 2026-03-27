@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 
-import { TrendingUp, Users, Target, CalendarClock, AlertTriangle, Bell, Loader2, ListChecks, CheckCircle2 } from 'lucide-react';
+import { TrendingUp, Users, Target, CalendarClock, AlertTriangle, Bell, Loader2, ListChecks, CheckCircle2, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { Assignee } from '@/hooks/useAssignees';
