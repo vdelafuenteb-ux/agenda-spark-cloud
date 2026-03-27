@@ -101,7 +101,11 @@ function calculateAssigneeScore(
   const completed = assigneeTopics.filter(t => t.status === 'completado');
   const activeAndTracking = [...active, ...seguimiento];
 
-  // Closure compliance
+  // Use shared utility for score
+  const assigneeEmails = emailHistory.filter((e: any) => e.assignee_name === assigneeName);
+  const result = computeProductivityScore(assigneeName, allTopics, assigneeEmails);
+
+  // Extract individual rates for display
   const closedWithDates = completed.filter(t => t.due_date && t.closed_at);
   let closureOnTime = 0;
   for (const t of closedWithDates) {
@@ -111,7 +115,6 @@ function calculateAssigneeScore(
   }
   const closureRate = closedWithDates.length > 0 ? Math.round((closureOnTime / closedWithDates.length) * 100) : null;
 
-  // Subtask timeliness
   const allSubtasks = assigneeTopics.flatMap(t => t.subtasks);
   const completedWithDue = allSubtasks.filter(s => s.completed && s.due_date && s.completed_at);
   const subtasksOnTime = completedWithDue.filter(s => {
@@ -121,8 +124,6 @@ function calculateAssigneeScore(
   });
   const subtaskRate = completedWithDue.length > 0 ? Math.round((subtasksOnTime.length / completedWithDue.length) * 100) : null;
 
-  // Email compliance
-  const assigneeEmails = emailHistory.filter((e: any) => e.assignee_name === assigneeName);
   const confirmedEmails = assigneeEmails.filter((e: any) => e.confirmed && e.confirmed_at);
   const onTimeEmails = confirmedEmails.filter((e: any) => {
     const deadlineTime = new Date(e.sent_at).getTime() + DEADLINE_HOURS * 60 * 60 * 1000;
@@ -130,7 +131,6 @@ function calculateAssigneeScore(
   });
   const emailRate = confirmedEmails.length > 0 ? Math.round((onTimeEmails.length / confirmedEmails.length) * 100) : null;
 
-  // Velocity
   const closedWithStartAndDue = completed.filter(t => t.start_date && t.due_date && t.closed_at);
   let velocityScore: number | null = null;
   let avgPctUsed: number | null = null;
@@ -147,27 +147,12 @@ function calculateAssigneeScore(
     velocityScore = Math.max(0, Math.min(100, Math.round(100 - (avgPctUsed - 50) * (100 / 100))));
   }
 
-  // Deadline compliance
   const activeWithDue = activeAndTracking.filter(t => t.due_date && !t.is_ongoing);
   const activeOnTime = activeWithDue.filter(t => !isStoredDateOverdue(t.due_date));
   const deadlineCompliance = activeWithDue.length > 0 ? Math.round((activeOnTime.length / activeWithDue.length) * 100) : null;
 
-  // Weighted score
-  const dimensions: { value: number; weight: number }[] = [];
-  if (closedWithDates.length > 0) dimensions.push({ value: closureRate ?? 0, weight: 0.50 });
-  if (completedWithDue.length > 0) dimensions.push({ value: subtaskRate ?? 0, weight: 0.20 });
-  if (confirmedEmails.length > 0) dimensions.push({ value: emailRate ?? 0, weight: 0.10 });
-  if (deadlineCompliance !== null) dimensions.push({ value: deadlineCompliance, weight: 0.10 });
-  if (velocityScore !== null) dimensions.push({ value: velocityScore, weight: 0.10 });
-
-  let score: number | null = null;
-  if (dimensions.length > 0) {
-    const totalWeight = dimensions.reduce((s, d) => s + d.weight, 0);
-    score = Math.round(dimensions.reduce((s, d) => s + d.value * (d.weight / totalWeight), 0));
-  }
-
   return {
-    score,
+    score: result.score,
     closureRate,
     subtaskRate,
     emailRate,

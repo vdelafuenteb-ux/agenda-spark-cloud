@@ -168,31 +168,14 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, reschedule
       velocityScore = Math.max(0, Math.min(100, Math.round(100 - (avgPctUsed - 50) * (100 / 100))));
     }
 
-    const dimensions: { key: string; value: number; weight: number }[] = [];
-    if (closedWithDates.length > 0) dimensions.push({ key: 'closure', value: closureComplianceRate ?? 0, weight: 0.50 });
-    if (confirmedEmails.length > 0) dimensions.push({ key: 'email', value: complianceRate, weight: 0.10 });
-    if (completedWithDue.length > 0) dimensions.push({ key: 'subtask', value: subtaskTimelinessRate ?? 0, weight: 0.20 });
     const activeWithDue = activeAndTracking.filter(t => t.due_date && !t.is_ongoing);
     const activeOnTime = activeWithDue.filter(t => !isStoredDateOverdue(t.due_date));
     const deadlineCompliance = activeWithDue.length > 0 ? Math.round((activeOnTime.length / activeWithDue.length) * 100) : null;
-    if (deadlineCompliance !== null) dimensions.push({ key: 'deadline', value: deadlineCompliance, weight: 0.10 });
-    if (velocityScore !== null) dimensions.push({ key: 'velocity', value: velocityScore, weight: 0.10 });
 
-    let productivityScore: number | null = null;
-    const totalWeight = dimensions.reduce((s, d) => s + d.weight, 0);
-    const redistributedWeights: Record<string, number> = {};
-    if (dimensions.length > 0) {
-      productivityScore = Math.round(dimensions.reduce((s, d) => s + d.value * (d.weight / totalWeight), 0));
-      const rawPcts = dimensions.map(d => ({ key: d.key, pct: (d.weight / totalWeight) * 100 }));
-      const floored = rawPcts.map(p => ({ ...p, floor: Math.floor(p.pct), remainder: p.pct - Math.floor(p.pct) }));
-      let remaining = 100 - floored.reduce((s, f) => s + f.floor, 0);
-      floored.sort((a, b) => b.remainder - a.remainder);
-      for (const f of floored) {
-        const extra = remaining > 0 ? 1 : 0;
-        redistributedWeights[f.key] = f.floor + extra;
-        remaining -= extra;
-      }
-    }
+    // Use shared utility for the main score
+    const scoreResult = computeProductivityScore(assigneeName, topics, emailHistory);
+    const productivityScore = scoreResult.score;
+    const redistributedWeights = scoreResult.redistributedWeights;
 
     return {
       assigneeTopics, active, seguimiento, completed,

@@ -52,15 +52,29 @@ export function DashboardView({ topics, assignees, departments = [], reschedules
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [selectedAssignee, setSelectedAssignee] = useState<string | null>(null);
 
-  // Compute real-time scores for all assignees
+  // Fetch all notification emails for score calculation
+  const { data: allEmails = [] } = useQuery({
+    queryKey: ['notification_emails_all_dashboard'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('notification_emails')
+        .select('assignee_name, sent_at, confirmed, confirmed_at')
+        .order('sent_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Compute real-time scores for all assignees (with email data)
   const liveScores = useMemo(() => {
     const map = new Map<string, number>();
     for (const a of assignees) {
-      const result = computeProductivityScore(a.name, topics);
+      const assigneeEmails = allEmails.filter((e: any) => e.assignee_name === a.name);
+      const result = computeProductivityScore(a.name, topics, assigneeEmails);
       if (result.score !== null) map.set(a.name, result.score);
     }
     return map;
-  }, [topics, assignees]);
+  }, [topics, assignees, allEmails]);
 
   const handleSendReminder = async (topic: TopicWithSubtasks) => {
     if (!topic.assignee) {
