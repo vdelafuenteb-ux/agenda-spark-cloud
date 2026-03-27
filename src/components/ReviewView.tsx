@@ -216,7 +216,6 @@ export function ReviewView({ topics, onToggleSubtask, onUpdateTopic }: ReviewVie
         <button
           onClick={item.onToggle}
           className="shrink-0 hover:scale-110 transition-transform"
-          disabled={item.type === 'topic'}
         >
           {item.completed ? (
             <CheckCircle2 className="h-4 w-4 text-emerald-500" />
