@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { CheckCircle2, AlertCircle, Clock, Loader2, Send, ChevronDown, ChevronUp } from "lucide-react";
+import { CheckCircle2, AlertCircle, Clock, Loader2, Send, ChevronDown, ChevronUp, Save, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -56,6 +56,7 @@ export default function UpdateTopics() {
   const [expandedTopics, setExpandedTopics] = useState<Set<string>>(new Set());
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [savedTopics, setSavedTopics] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!token) return;
@@ -181,8 +182,17 @@ export default function UpdateTopics() {
       {/* Header */}
       <div className="bg-white border-b border-slate-200 sticky top-0 z-10">
         <div className="max-w-2xl mx-auto px-4 py-4">
-          <h1 className="text-lg font-bold text-slate-800">Actualizar mis temas</h1>
-          <p className="text-sm text-slate-500">Hola {assigneeName} — actualiza el estado de tus temas pendientes</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-lg font-bold text-slate-800">Actualizar mis temas</h1>
+              <p className="text-sm text-slate-500">Hola {assigneeName} — actualiza el estado de tus temas pendientes</p>
+            </div>
+            {topics.length > 0 && (
+              <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">
+                {savedTopics.size} de {topics.length} actualizados
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -204,25 +214,43 @@ export default function UpdateTopics() {
             const isOverdue = overdueDays > 0 && !topic.is_ongoing;
             const isExpanded = expandedTopics.has(topic.id);
             const pendingSubtasks = topic.subtasks.filter((s) => !s.completed);
+            const isSaved = savedTopics.has(topic.id);
+            const hasChanges = !!(comments[topic.id]?.trim()) || topic.subtasks.some((s) => toggles[s.id] !== s.completed);
 
             return (
               <div
                 key={topic.id}
-                className={`bg-white rounded-xl shadow-sm overflow-hidden ${isOverdue ? "ring-2 ring-red-300" : "ring-1 ring-slate-200"}`}
+                className={`rounded-xl shadow-sm overflow-hidden transition-all ${
+                  isSaved
+                    ? "ring-2 ring-emerald-400 bg-emerald-50/40"
+                    : isOverdue
+                    ? "ring-2 ring-red-300 bg-white"
+                    : "ring-1 ring-slate-200 bg-white"
+                }`}
               >
                 {/* Topic header */}
                 <button
                   onClick={() => toggleExpanded(topic.id)}
-                  className="w-full text-left px-4 py-3 flex items-center justify-between hover:bg-slate-50 transition-colors"
+                  className={`w-full text-left px-4 py-3 flex items-center justify-between transition-colors ${
+                    isSaved ? "hover:bg-emerald-50/60" : "hover:bg-slate-50"
+                  }`}
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h2 className={`font-semibold text-sm ${isOverdue ? "text-red-600" : "text-slate-800"}`}>
+                      {isSaved && <Check className="h-4 w-4 text-emerald-500 shrink-0" />}
+                      <h2 className={`font-semibold text-sm ${
+                        isSaved ? "text-emerald-700" : isOverdue ? "text-red-600" : "text-slate-800"
+                      }`}>
                         {topic.title}
                       </h2>
                       {isOverdue && (
                         <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
                           {overdueDays}d atraso
+                        </Badge>
+                      )}
+                      {isSaved && (
+                        <Badge className="text-[10px] px-1.5 py-0 bg-emerald-100 text-emerald-700 border-emerald-200">
+                          ✓ Guardado
                         </Badge>
                       )}
                     </div>
@@ -306,6 +334,29 @@ export default function UpdateTopics() {
                         className="min-h-[80px] text-sm resize-none bg-slate-50 border-slate-200 focus:bg-white"
                       />
                     </div>
+
+                    {/* Save button */}
+                    <Button
+                      onClick={() => {
+                        setSavedTopics((prev) => {
+                          const next = new Set(prev);
+                          next.add(topic.id);
+                          return next;
+                        });
+                        setExpandedTopics((prev) => {
+                          const next = new Set(prev);
+                          next.delete(topic.id);
+                          return next;
+                        });
+                      }}
+                      disabled={!hasChanges}
+                      variant="outline"
+                      className={`w-full ${hasChanges ? "border-emerald-300 text-emerald-700 hover:bg-emerald-50" : ""}`}
+                      size="sm"
+                    >
+                      <Save className="h-4 w-4 mr-2" />
+                      {isSaved ? "Actualizar comentario" : "Guardar comentario"}
+                    </Button>
                   </div>
                 )}
               </div>
