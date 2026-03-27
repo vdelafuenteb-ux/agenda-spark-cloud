@@ -999,6 +999,38 @@ export function TopicCard({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Reschedule reason dialog */}
+      <Dialog open={showRescheduleDialog} onOpenChange={setShowRescheduleDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Motivo de reprogramación</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Estás cambiando la fecha de <strong>{topic.due_date ? formatStoredDate(topic.due_date, 'dd MMM yyyy', { locale: es }) : '—'}</strong> a <strong>{rescheduleNewDate ? formatStoredDate(toStoredDate(rescheduleNewDate) || '', 'dd MMM yyyy', { locale: es }) : '—'}</strong>.
+          </p>
+          <Textarea
+            placeholder="¿Por qué se reprograma? (opcional)"
+            value={rescheduleReason}
+            onChange={(e) => setRescheduleReason(e.target.value)}
+            className="min-h-[60px]"
+          />
+          <label className="flex items-center gap-2 cursor-pointer">
+            <Switch
+              checked={rescheduleIsExternal}
+              onCheckedChange={setRescheduleIsExternal}
+              className="scale-90"
+            />
+            <span className="text-sm text-muted-foreground">Causa externa (fuera de nuestro control)</span>
+          </label>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setShowRescheduleDialog(false)}>Cancelar</Button>
+            <Button onClick={handleConfirmReschedule}>
+              <RefreshCw className="h-3.5 w-3.5 mr-1" /> Confirmar cambio
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
