@@ -1,54 +1,40 @@
 
 
-## Plan: Dividir tarjeta de Cumplimiento de Cierre + agregar Score por Departamento
+## Plan: Corregir "Score por Departamento" en Dashboard — usar department_id de topics, no de assignees
 
-### Cambio
+### Problema
+En `DashboardView.tsx`, `deptScores` filtra assignees por `a.department_id === dept.id`, pero **todos los assignees tienen `department_id = null`** en la BD. Los departamentos están asignados a los **topics**, no a los assignees. Por eso muestra "Sin datos de departamentos".
 
-En `src/components/DashboardView.tsx`, la tarjeta "Cumplimiento de Cierre" (líneas 393-446) actualmente usa un grid de 4 columnas. Se va a:
+La vista de **Equipo (TeamView)** funciona porque usa `topics.department_id`, no `assignees.department_id`.
 
-1. **Eliminar la 4ta columna** (el gráfico de barra verde/rojo de la derecha, líneas 433-442)
-2. **Convertir la tarjeta en 2 mitades** usando un grid de 2 columnas (`grid-cols-2`):
-   - **Mitad izquierda**: Cumplimiento de Cierre actual (tasa %, a tiempo, con atraso) en un sub-grid de 3 columnas
-   - **Mitad derecha**: "Score por Departamento" — lista de departamentos con su puntaje promedio de productividad, ordenados de mayor a menor
+### Solución
 
-3. **Calcular score por departamento**: Usando `liveScores` (ya disponible) y `assignees` + `departments`, agrupar responsables por departamento, promediar sus scores, y mostrar:
-   - Nombre del departamento
-   - Score promedio (con color verde/amarillo/rojo)
-   - Cantidad de integrantes
-   - Barra de progreso pequeña
+**En `src/components/DashboardView.tsx`** (líneas 80-91), cambiar la lógica de `deptScores` para:
 
-### Lógica del score por departamento
+1. Obtener los responsables de cada departamento a través de los **topics** (misma lógica que TeamView):
+   - Filtrar topics por `t.department_id === dept.id`
+   - Extraer los nombres de assignees únicos de esos topics
+   - Buscar sus scores en `liveScores`
 
 ```typescript
 const deptScores = useMemo(() => {
   return departments.map(dept => {
-    const deptAssignees = assignees.filter(a => a.department === dept.name);
-    const scores = deptAssignees
-      .map(a => liveScores.get(a.name))
+    const deptTopics = topics.filter(t => t.department_id === dept.id);
+    const uniqueAssignees = [...new Set(deptTopics.map(t => t.assignee).filter(Boolean))];
+    const scores = uniqueAssignees
+      .map(name => liveScores.get(name!))
       .filter((s): s is number => s !== undefined);
     const avg = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
-    return { name: dept.name, avg, count: deptAssignees.length, withScore: scores.length };
+    return { name: dept.name, avg, count: uniqueAssignees.length };
   })
   .filter(d => d.count > 0)
   .sort((a, b) => (b.avg ?? 0) - (a.avg ?? 0));
-}, [departments, assignees, liveScores]);
-```
-
-### Layout visual
-
-```text
-┌──────────────────────────────────────────────────────────┐
-│  Cumplimiento de Cierre          │  Score por Departamento│
-│                                  │                        │
-│  73%   ● 8 A tiempo  ● 3 Atraso │  1. Depto A  — 85 pts │
-│  Tasa  Prom 3d antes  Prom 2d   │  2. Depto B  — 72 pts │
-│  ████████░░            atraso    │  3. Depto C  — 61 pts │
-└──────────────────────────────────────────────────────────┘
+}, [departments, topics, liveScores]);
 ```
 
 ### Archivo afectado
 
 | Archivo | Cambio |
 |---|---|
-| `src/components/DashboardView.tsx` | Calcular `deptScores`, eliminar barra gráfica, dividir tarjeta en 2 mitades con score por departamento |
+| `src/components/DashboardView.tsx` | Cambiar `deptScores` para derivar assignees desde topics por department_id en vez de assignees.department_id |
 
