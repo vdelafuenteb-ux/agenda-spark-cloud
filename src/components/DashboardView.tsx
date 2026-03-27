@@ -422,7 +422,7 @@ export function DashboardView({ topics, assignees, departments = [], reschedules
                       {metrics.closedWithDates} temas analizados
                     </Badge>
                   </div>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <div className="flex flex-col lg:flex-row gap-3">
                     {/* Left half: Cumplimiento de Cierre */}
                     <div className="grid grid-cols-3 gap-3">
                       <div className="space-y-1.5">
