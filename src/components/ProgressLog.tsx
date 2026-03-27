@@ -323,6 +323,7 @@ export function ProgressLog({ entries, onAdd, onUpdate, onDelete, onUploadFiles,
                       )}
                     </div>
                     <p className="text-[10px] text-muted-foreground mt-1" title={format(new Date(entry.created_at), "dd MMM yyyy HH:mm", { locale: es })}>
+                      {isAssignee && <span className="text-blue-600 dark:text-blue-400 font-medium mr-1">Responsable ·</span>}
                       {formatDistanceToNow(new Date(entry.created_at), { addSuffix: true, locale: es })}
                     </p>
                   </>
