@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
+import { isStoredDateOverdue } from '@/lib/date';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
@@ -124,6 +125,10 @@ const Index = () => {
     return filtered.sort((a, b) => {
       const pinDiff = (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0);
       if (pinDiff !== 0) return pinDiff;
+
+      const aOverdue = a.due_date && !a.is_ongoing && a.status !== 'completado' && isStoredDateOverdue(a.due_date) ? 1 : 0;
+      const bOverdue = b.due_date && !b.is_ongoing && b.status !== 'completado' && isStoredDateOverdue(b.due_date) ? 1 : 0;
+      if (aOverdue !== bOverdue) return bOverdue - aOverdue;
 
       if (sortBy === 'order') {
         const orderA = (a as any).execution_order ?? Infinity;
