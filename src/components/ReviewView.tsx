@@ -40,12 +40,16 @@ const priorityConfig: Record<string, { label: string; className: string }> = {
 interface ReviewViewProps {
   topics: TopicWithSubtasks[];
   onToggleSubtask: (id: string, completed: boolean) => void;
+  onUpdateTopic: (id: string, data: Record<string, unknown>) => void;
 }
 
-export function ReviewView({ topics, onToggleSubtask }: ReviewViewProps) {
+export function ReviewView({ topics, onToggleSubtask, onUpdateTopic }: ReviewViewProps) {
   const [tab, setTab] = useState<ReviewTab>('hoy');
   const [selectedAssignee, setSelectedAssignee] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('todos');
+  const [showCloseDialog, setShowCloseDialog] = useState(false);
+  const [closeTopicId, setCloseTopicId] = useState<string | null>(null);
+  const [closeDateDraft, setCloseDateDraft] = useState('');
   const { reminders } = useReminders();
   const { isCompleted, toggleCompletion } = useReminderCompletions();
   const { items: checklistItems, toggleItem } = useChecklist();
