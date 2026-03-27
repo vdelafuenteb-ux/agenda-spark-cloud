@@ -8,9 +8,10 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 import { TrendingUp, Users, Target, CalendarClock, AlertTriangle, Bell, Loader2, ListChecks, CheckCircle2, RefreshCw } from 'lucide-react';
+import { computeProductivityScore } from '@/lib/productivityScore';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useQuery } from '@tanstack/react-query';
+
 import type { Assignee } from '@/hooks/useAssignees';
 
 
@@ -52,23 +53,15 @@ export function DashboardView({ topics, assignees, departments = [], reschedules
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [selectedAssignee, setSelectedAssignee] = useState<string | null>(null);
 
-  // Fetch latest score snapshots
-  const { data: scoreSnapshots } = useQuery({
-    queryKey: ['score_snapshots_latest'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('score_snapshots')
-        .select('assignee_name, score, snapshot_date')
-        .order('snapshot_date', { ascending: false });
-      if (error) throw error;
-      // Group by assignee, keep latest
-      const map = new Map<string, number>();
-      for (const s of data || []) {
-        if (!map.has(s.assignee_name)) map.set(s.assignee_name, s.score);
-      }
-      return map;
-    },
-  });
+  // Compute real-time scores for all assignees
+  const liveScores = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const a of assignees) {
+      const result = computeProductivityScore(a.name, topics);
+      if (result.score !== null) map.set(a.name, result.score);
+    }
+    return map;
+  }, [topics, assignees]);
 
   const handleSendReminder = async (topic: TopicWithSubtasks) => {
     if (!topic.assignee) {
@@ -241,8 +234,8 @@ export function DashboardView({ topics, assignees, departments = [], reschedules
         progress: data.subtasksTotal > 0 ? Math.round((data.subtasksDone / data.subtasksTotal) * 100) : 0,
       }))
       .sort((a, b) => {
-        const scoreA = scoreSnapshots?.get(a.name) ?? -1;
-        const scoreB = scoreSnapshots?.get(b.name) ?? -1;
+        const scoreA = liveScores?.get(a.name) ?? -1;
+        const scoreB = liveScores?.get(b.name) ?? -1;
         return scoreB - scoreA;
       });
 
@@ -269,7 +262,7 @@ export function DashboardView({ topics, assignees, departments = [], reschedules
       avgCreatedWeekly,
       avgCreatedMonthly,
     };
-  }, [topics, scoreSnapshots]);
+  }, [topics, liveScores]);
 
   const totalOpen = metrics.byStatus.activo.length + metrics.byStatus.seguimiento.length + metrics.byStatus.pausado.length;
   const totalActivos = metrics.byStatus.activo.length + metrics.byStatus.seguimiento.length;
@@ -621,7 +614,7 @@ export function DashboardView({ topics, assignees, departments = [], reschedules
                         </TableHeader>
                         <TableBody>
                           {metrics.assigneeRanking.map((a) => {
-                            const score = scoreSnapshots?.get(a.name);
+                            const score = liveScores?.get(a.name);
                             const scoreColor = score !== undefined
                               ? score >= 90 ? 'text-emerald-600' : score >= 70 ? 'text-lime-600' : score >= 50 ? 'text-yellow-600' : score >= 30 ? 'text-orange-500' : 'text-destructive'
                               : 'text-muted-foreground';
@@ -677,7 +670,7 @@ export function DashboardView({ topics, assignees, departments = [], reschedules
                     {/* Mobile cards */}
                     <div className="sm:hidden space-y-2">
                       {metrics.assigneeRanking.map((a) => {
-                        const score = scoreSnapshots?.get(a.name);
+                        const score = liveScores?.get(a.name);
                         const scoreColor = score !== undefined
                           ? score >= 90 ? 'text-emerald-600' : score >= 70 ? 'text-lime-600' : score >= 50 ? 'text-yellow-600' : score >= 30 ? 'text-orange-500' : 'text-destructive'
                           : 'text-muted-foreground';
