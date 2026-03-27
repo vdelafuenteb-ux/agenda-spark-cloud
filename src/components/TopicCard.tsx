@@ -877,6 +877,45 @@ export function TopicCard({
                 <NotificationSection topic={topic} assignees={assignees} />
               )}
 
+              {/* Reschedule History */}
+              {reschedules.length > 0 && (
+                <div className="space-y-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setShowRescheduleHistory(!showRescheduleHistory)}
+                    className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors"
+                  >
+                    {showRescheduleHistory ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                    <RefreshCw className="h-3 w-3" />
+                    Reprogramaciones ({reschedules.length})
+                  </button>
+                  {showRescheduleHistory && (
+                    <div className="space-y-1.5 pl-4 border-l-2 border-amber-500/30">
+                      {reschedules.map((r) => (
+                        <div key={r.id} className="text-xs space-y-0.5 py-1.5 border-b border-border last:border-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-muted-foreground font-mono">
+                              {r.previous_date ? formatStoredDate(r.previous_date, 'dd MMM', { locale: es }) : 'Sin fecha'}
+                            </span>
+                            <span className="text-muted-foreground">→</span>
+                            <span className="font-mono font-medium text-foreground">
+                              {r.new_date ? formatStoredDate(r.new_date, 'dd MMM', { locale: es }) : 'Sin fecha'}
+                            </span>
+                            {r.is_external && (
+                              <Badge variant="outline" className="text-[8px] px-1.5 py-0 border-blue-500/50 text-blue-600">Externa</Badge>
+                            )}
+                            <span className="text-[10px] text-muted-foreground ml-auto">
+                              {formatStoredDate(r.created_at.split('T')[0], 'dd MMM yy', { locale: es })}
+                            </span>
+                          </div>
+                          {r.reason && <p className="text-muted-foreground italic">{r.reason}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
               <ProgressLog
                 entries={topic.progress_entries}
                 onAdd={async (content) => {
