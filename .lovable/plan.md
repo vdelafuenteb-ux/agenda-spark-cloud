@@ -1,46 +1,48 @@
 
 
-## Plan: Reordenar filtros + agregar Departamento + fusionar Continuos/Sin fecha
+## Plan: Sub-pestañas en Dashboard + Score en tabla de Responsables
 
-### Cambios en `FilterBar.tsx`
+### Problema
+La tabla de Responsables está al final del Dashboard, obligando a hacer scroll. El usuario quiere que el Dashboard tenga 2 sub-pestañas: una para los KPIs/gráficos actuales y otra dedicada a Responsables con su tabla completa + puntaje de productividad.
 
-**1. Nuevo filtro "Departamento"** — dropdown con buscador (Popover + Command), igual que Responsable y Etiquetas.
+### Solución
 
-**2. Fusionar "Continuos" + "Sin fecha fin"** en un solo dropdown llamado "Fecha" con 3 checkboxes:
-- ✓ Continuos
-- ✓ No continuos  
-- ✓ Sin fecha fin
+**En `src/components/DashboardView.tsx`:**
 
-Esto reemplaza el botón separado "Sin fecha fin" y el dropdown "Continuos".
+1. **Agregar Tabs** debajo del título "Dashboard" con 2 pestañas:
+   - **Resumen** — contiene todo el contenido actual (KPIs, Cumplimiento, Reprogramaciones, Atrasados, Tendencia) SIN la tabla de Responsables
+   - **Responsables** — contiene solo la tabla de responsables mejorada
 
-**3. Reordenar los filtros** después del buscador:
-1. Responsable
-2. Departamento (nuevo)
-3. Etiquetas
-4. Fecha (fusionado)
-5. Expandir/Contraer
-6. Orden
-7. Correo masivo (condicional)
+2. **Mover la tabla de Responsables** (líneas 570-657) a la pestaña "Responsables"
 
-### Cambios en `Index.tsx`
+3. **Agregar columna "Score"** a la tabla de responsables:
+   - Consultar `score_snapshots` (último snapshot por assignee) vía React Query
+   - Mostrar el score como número con color (verde ≥80, amarillo ≥50, rojo <50)
+   - Posicionar la columna Score después del Nombre
 
-- Agregar estado `selectedDepartment` (string, nombre del departamento)
-- Pasar `departments`, `selectedDepartment`, `onDepartmentChange` al FilterBar
-- Agregar filtro en `filteredTopics`: buscar el `department_id` del assignee del topic y comparar con el departamento seleccionado
-- Resetear `selectedDepartment` al cambiar de pestaña
+4. **Mantener funcionalidad existente**: click en nombre → abre ficha del trabajador (AssigneeProfileView)
 
-### Props nuevas en FilterBar
-
-```typescript
-departments?: string[];           // nombres de departamentos
-selectedDepartment?: string;
-onDepartmentChange?: (dept: string) => void;
+### Layout resultante
+```text
+┌─ Dashboard ──────────────────────────────┐
+│  [Resumen]  [Responsables (8)]           │
+├──────────────────────────────────────────┤
+│  Tab Resumen: KPIs + Cierre + Reprog +   │
+│               Atrasados + Tendencia      │
+│                                          │
+│  Tab Responsables: Tabla con Score +     │
+│                    Total/Activos/etc     │
+└──────────────────────────────────────────┘
 ```
 
-### Archivos afectados
+### Detalle técnico
+- Importar `Tabs, TabsList, TabsTrigger, TabsContent` de `@/components/ui/tabs`
+- Usar `useQuery` para cargar últimos `score_snapshots` (agrupar por `assignee_name`, tomar el más reciente)
+- Columna Score: círculo pequeño con número coloreado, similar al estilo del perfil del trabajador
+
+### Archivo afectado
 
 | Archivo | Cambio |
 |---|---|
-| `src/components/FilterBar.tsx` | Reordenar filtros, agregar Departamento dropdown, fusionar Continuos+Sin fecha en "Fecha" |
-| `src/pages/Index.tsx` | Estado `selectedDepartment`, lógica de filtrado por departamento, pasar props al FilterBar |
+| `src/components/DashboardView.tsx` | Agregar Tabs (Resumen / Responsables), mover tabla a su pestaña, agregar columna Score con datos de score_snapshots |
 
