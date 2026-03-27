@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { CalendarIcon, Plus, X, User } from 'lucide-react';
+import { CalendarIcon, Plus, X, User, ChevronsUpDown, Check } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { toStoredDate } from '@/lib/date';
 import { cn } from '@/lib/utils';
 import type { Tag as TagType } from '@/hooks/useTags';
@@ -30,7 +31,7 @@ interface CreateTopicModalProps {
   allTags: TagType[];
   assignees: Assignee[];
   departments: Department[];
-  onCreateAssignee: (name: string) => Promise<Assignee>;
+  onCreateAssignee: (data: { name: string; email?: string; department_id?: string }) => Promise<Assignee>;
   onSubmit: (data: {
     title: string;
     priority: Priority;
@@ -57,7 +58,11 @@ export function CreateTopicModal({ open, onOpenChange, allTags, assignees, depar
   const [priority, setPriority] = useState<Priority>('media');
   const [status, setStatus] = useState<Status>('activo');
   const [assignee, setAssignee] = useState('');
+  const [assigneePopoverOpen, setAssigneePopoverOpen] = useState(false);
+  const [showNewAssigneeForm, setShowNewAssigneeForm] = useState(false);
   const [newAssigneeName, setNewAssigneeName] = useState('');
+  const [newAssigneeEmail, setNewAssigneeEmail] = useState('');
+  const [newAssigneeDeptId, setNewAssigneeDeptId] = useState('');
   const [dueDate, setDueDate] = useState<Date>();
   const [startDate, setStartDate] = useState<Date>(new Date());
   const [subtasks, setSubtasks] = useState<string[]>([]);
@@ -78,7 +83,10 @@ export function CreateTopicModal({ open, onOpenChange, allTags, assignees, depar
     setStatus('activo');
     setAssignee('');
     setDepartmentId('');
+    setShowNewAssigneeForm(false);
     setNewAssigneeName('');
+    setNewAssigneeEmail('');
+    setNewAssigneeDeptId('');
     setDueDate(undefined);
     setStartDate(new Date());
     setSubtasks([]);
@@ -108,7 +116,7 @@ export function CreateTopicModal({ open, onOpenChange, allTags, assignees, depar
 
   const handleSubmit = async () => {
     if (!title.trim()) return;
-    if (status === 'seguimiento' && !assignee.trim()) return; // required only for seguimiento
+    if (status === 'seguimiento' && !assignee.trim()) return;
     await onSubmit({
       title: title.trim(),
       priority,
@@ -133,6 +141,31 @@ export function CreateTopicModal({ open, onOpenChange, allTags, assignees, depar
     setSelectedTagIds((prev) => (prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]));
   };
 
+  const handleSelectAssignee = (a: Assignee) => {
+    setAssignee(a.name);
+    if (a.department_id) {
+      setDepartmentId(a.department_id);
+    }
+    setAssigneePopoverOpen(false);
+  };
+
+  const handleCreateNewAssignee = async () => {
+    if (!newAssigneeName.trim()) return;
+    const created = await onCreateAssignee({
+      name: newAssigneeName.trim(),
+      email: newAssigneeEmail.trim() || undefined,
+      department_id: newAssigneeDeptId && newAssigneeDeptId !== 'none' ? newAssigneeDeptId : undefined,
+    });
+    setAssignee(created.name);
+    if (created.department_id) {
+      setDepartmentId(created.department_id);
+    }
+    setNewAssigneeName('');
+    setNewAssigneeEmail('');
+    setNewAssigneeDeptId('');
+    setShowNewAssigneeForm(false);
+  };
+
   return (
     <Dialog open={open} onOpenChange={(value) => { if (!value) reset(); onOpenChange(value); }}>
       <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
@@ -146,6 +179,102 @@ export function CreateTopicModal({ open, onOpenChange, allTags, assignees, depar
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Título</label>
             <Input placeholder="Nombre del tema..." value={title} onChange={(event) => setTitle(event.target.value)} className="h-9 text-sm" autoFocus />
+          </div>
+
+          {/* Responsable — dropdown con buscador */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Responsable {status === 'seguimiento' ? '*' : ''}</label>
+            <Popover open={assigneePopoverOpen} onOpenChange={setAssigneePopoverOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={assigneePopoverOpen}
+                  className="w-full justify-between h-9 text-sm font-normal"
+                >
+                  {assignee ? (
+                    <span className="flex items-center gap-1.5">
+                      <User className="h-3.5 w-3.5 text-muted-foreground" />
+                      {assignee}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">Seleccionar responsable...</span>
+                  )}
+                  <ChevronsUpDown className="ml-2 h-3.5 w-3.5 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="Buscar responsable..." />
+                  <CommandList>
+                    <CommandEmpty>No se encontró responsable.</CommandEmpty>
+                    <CommandGroup>
+                      {assignees.map((a) => {
+                        const dept = departments.find((d) => d.id === a.department_id);
+                        return (
+                          <CommandItem
+                            key={a.id}
+                            value={a.name}
+                            onSelect={() => handleSelectAssignee(a)}
+                          >
+                            <Check className={cn("mr-2 h-3.5 w-3.5", assignee === a.name ? "opacity-100" : "opacity-0")} />
+                            <span className="flex-1">{a.name}</span>
+                            {dept && <span className="text-[10px] text-muted-foreground ml-2">{dept.name}</span>}
+                          </CommandItem>
+                        );
+                      })}
+                    </CommandGroup>
+                    <CommandGroup>
+                      <CommandItem
+                        onSelect={() => { setShowNewAssigneeForm(true); setAssigneePopoverOpen(false); }}
+                        className="text-primary"
+                      >
+                        <Plus className="mr-2 h-3.5 w-3.5" />
+                        Crear nuevo responsable
+                      </CommandItem>
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+
+            {/* Mini-formulario para crear responsable */}
+            {showNewAssigneeForm && (
+              <div className="rounded-md border border-border bg-muted/30 p-3 space-y-2 mt-2">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Nuevo responsable</p>
+                <Input
+                  placeholder="Nombre *"
+                  value={newAssigneeName}
+                  onChange={(e) => setNewAssigneeName(e.target.value)}
+                  className="h-8 text-sm"
+                  autoFocus
+                />
+                <Input
+                  placeholder="Email (opcional)"
+                  type="email"
+                  value={newAssigneeEmail}
+                  onChange={(e) => setNewAssigneeEmail(e.target.value)}
+                  className="h-8 text-sm"
+                />
+                <Select value={newAssigneeDeptId || 'none'} onValueChange={setNewAssigneeDeptId}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Departamento" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Sin departamento</SelectItem>
+                    {departments.map((d) => (
+                      <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="flex gap-2">
+                  <Button size="sm" className="h-7 text-xs flex-1" disabled={!newAssigneeName.trim()} onClick={handleCreateNewAssignee}>
+                    <Plus className="h-3 w-3 mr-1" /> Crear
+                  </Button>
+                  <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => { setShowNewAssigneeForm(false); setNewAssigneeName(''); setNewAssigneeEmail(''); setNewAssigneeDeptId(''); }}>
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Row: Prioridad + Estado + Departamento + Orden */}
@@ -273,73 +402,6 @@ export function CreateTopicModal({ open, onOpenChange, allTags, assignees, depar
               )}
             </div>
           </div>
-
-          {/* Responsable */}
-          {(
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Responsable {status === 'seguimiento' ? '*' : ''}</label>
-              {assignees.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                  {assignees.map((a) => (
-                    <button
-                      key={a.id}
-                      type="button"
-                      onClick={() => {
-                        setAssignee(a.name);
-                        if (a.department_id) {
-                          setDepartmentId(a.department_id);
-                        }
-                      }}
-                      className={cn(
-                        'inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium border transition-all',
-                        assignee === a.name
-                          ? 'bg-primary text-primary-foreground border-primary'
-                          : 'bg-transparent text-foreground border-border hover:border-primary/50'
-                      )}
-                    >
-                      <User className="h-2.5 w-2.5 mr-1" />
-                      {a.name}
-                    </button>
-                  ))}
-                </div>
-              )}
-              <div className="flex items-center gap-2">
-                <Input
-                  placeholder="Nuevo responsable..."
-                  value={newAssigneeName}
-                  onChange={(e) => setNewAssigneeName(e.target.value)}
-                  onKeyDown={async (e) => {
-                    if (e.key === 'Enter' && newAssigneeName.trim()) {
-                      e.preventDefault();
-                      const created = await onCreateAssignee(newAssigneeName.trim());
-                      setAssignee(created.name);
-                      setNewAssigneeName('');
-                    }
-                  }}
-                  className="h-8 text-sm"
-                />
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-8 shrink-0"
-                  disabled={!newAssigneeName.trim()}
-                  onClick={async () => {
-                    if (!newAssigneeName.trim()) return;
-                    const created = await onCreateAssignee(newAssigneeName.trim());
-                    setAssignee(created.name);
-                    setNewAssigneeName('');
-                  }}
-                >
-                  <Plus className="h-3 w-3" />
-                </Button>
-              </div>
-              {assignee && (
-                <p className="text-xs text-muted-foreground">
-                  Seleccionado: <span className="font-medium text-foreground">{assignee}</span>
-                </p>
-              )}
-            </div>
-          )}
 
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Etiquetas</label>

@@ -340,7 +340,7 @@ const Index = () => {
               onCreateTag={(data) => createTag.mutateAsync(data)}
               onUpdateTag={(id, name) => updateTag.mutate({ id, name })}
               onDeleteAssignee={(id) => deleteAssignee.mutate(id)}
-              onCreateAssignee={(name) => createAssignee.mutateAsync(name)}
+              onCreateAssignee={(name) => createAssignee.mutateAsync({ name })}
               onUpdateAssignee={(id, data) => updateAssignee.mutate({ id, ...data })}
               onCreateDepartment={(name) => createDepartment.mutateAsync(name)}
               onUpdateDepartment={(id, name) => updateDepartment.mutate({ id, name })}
@@ -441,7 +441,7 @@ const Index = () => {
                           reschedules={reschedulesByTopic.get(topic.id) || []}
                           onCreateReschedule={createReschedule}
                           userId={user!.id}
-                          onCreateAssignee={(name) => createAssignee.mutateAsync(name)}
+                          onCreateAssignee={(name) => createAssignee.mutateAsync({ name })}
                           forceExpand={expandedTopicId === topic.id ? true : forceExpand}
                           onUpdate={(id, data) => {
                             updateTopic.mutate({ id, ...data });
@@ -490,7 +490,7 @@ const Index = () => {
           allTags={tags}
           assignees={assignees}
           departments={departments}
-          onCreateAssignee={(name) => createAssignee.mutateAsync(name)}
+          onCreateAssignee={(data) => createAssignee.mutateAsync(data)}
           onSubmit={handleCreateTopic}
           isPending={createTopic.isPending}
         />
