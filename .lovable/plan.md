@@ -1,48 +1,63 @@
 
 
-## Plan: Rediseñar vista Equipo como ranking en lista con KPIs de interés
+## Plan: Sistema de Registro de Incidencias por Trabajador
 
 ### Resumen
-Transformar la vista de Equipo de tarjetas (grid 2 columnas) a una **lista vertical tipo ranking**, ordenada por score de productividad (mayor a menor). Cada fila muestra el puesto (#1, #2...), nombre, score, y **KPIs de interés** como "Mejor cerrador", "Más rápido", "Mejor en respuesta de correos", etc.
+Crear un sistema de registro de incidencias/faltas laborales dentro de la ficha de cada trabajador, con categorización por severidad, historial cronológico, y envío de correo formal al trabajador cuando la falta es grave. Esto sirve como respaldo documentado para gestión de personas.
 
-### Cambios en `src/components/TeamView.tsx`
+### 1. Nueva tabla `worker_incidents`
 
-**1. Calcular score de productividad por responsable (misma lógica del perfil)**
-- Reutilizar la lógica de cálculo de las 5 dimensiones (cierre a tiempo, puntualidad subtareas, correos, velocidad, plazos) directamente en TeamView
-- Necesita acceso a `notification_emails` — agregar query con `useQuery` agrupando por assignee
-- Ordenar por score descendente en vez de por carga
+| Columna | Tipo | Descripción |
+|---|---|---|
+| `id` | uuid PK | |
+| `user_id` | uuid | Dueño del registro (jefe) |
+| `assignee_name` | text | Nombre del trabajador |
+| `assignee_email` | text | Email del trabajador (para correo formal) |
+| `category` | enum | `leve`, `moderada`, `grave` |
+| `title` | text | Título breve del incidente |
+| `description` | text | Detalle de lo ocurrido |
+| `incident_date` | date | Fecha del incidente |
+| `email_sent` | boolean | Si se envió correo formal |
+| `email_sent_at` | timestamptz | Cuándo se envió |
+| `created_at` | timestamptz | |
 
-**2. Cambiar layout de grid de tarjetas a lista vertical**
-- Reemplazar `grid md:grid-cols-2` por una lista vertical `space-y-2`
-- Cada fila: posición (#1, #2), nombre, score circular pequeño, barra de progreso, badges de KPIs destacados
-- Fila clickeable para ir al perfil
+RLS: solo el `user_id` autenticado puede CRUD sus propios registros.
 
-**3. Agregar KPIs de interés / distinciones**
-- Calcular y asignar badges como:
-  - "Mejor cerrador" — mayor closureComplianceRate
-  - "Más rápido" — menor avgPctUsed (velocidad)
-  - "Mejor respuesta" — mayor complianceRate de correos
-  - "Más productivo" — mayor score general
-  - "Más temas" — mayor cantidad de temas activos
-- Mostrar badges solo al #1 de cada categoría
+### 2. Nueva pestaña en `AssigneeProfileView`
 
-**4. Mantener KPIs globales arriba**
-- Conservar las 4 tarjetas KPI superiores (Equipo, HH Semanal, Carga Global, Sobrecargados)
-- Cambiar título sección de "Carga por Responsable" a "Ranking de Equipo"
+Agregar una sección colapsable "Registro de Incidencias" con:
+- **Botón "Registrar incidencia"** que abre un formulario (modal/dialog)
+- **Formulario**: fecha, título, descripción, categoría (Leve/Moderada/Grave)
+- **Lista cronológica** de incidencias con badge de color por severidad:
+  - 🟡 Leve (amarillo) — observación menor
+  - 🟠 Moderada (naranja) — falta que requiere atención
+  - 🔴 Grave (rojo) — incumplimiento serio, con opción de enviar correo formal
+- **Contador** visible en el título de la sección
+- **Botón "Enviar notificación formal"** solo en incidencias graves, que dispara un correo profesional
 
-### Detalle técnico
+### 3. Edge Function `send-incident-notification`
 
-| Elemento | Implementación |
-|---|---|
-| Score por responsable | Calcular con misma fórmula de 5 dimensiones del perfil, usando topics + emails |
-| Datos de emails | `useQuery` a `notification_emails` agrupado por `assignee_name` |
-| Layout lista | Filas con flex: `#rank`, avatar/nombre, mini score circle (40px), stats inline, badges |
-| Distinciones | Comparar métricas entre assignees, asignar badge al top 1 de cada categoría |
-| Orden | Por `productivityScore` desc, luego por nombre |
+Nuevo edge function que envía un correo formal al trabajador (vía la misma API de Firebase) con:
+- Tono profesional y respetuoso
+- Fecha y descripción del incidente
+- Referencia a las obligaciones contractuales
+- CC a gerencia (mismos emails que ya se usan)
+- Marca `email_sent = true` en el registro
 
-### Archivo afectado
+Ejemplo de asunto: *"Notificación formal — Registro de incidencia laboral | [Fecha]"*
+
+### 4. Hook `useIncidents`
+
+Nuevo hook con React Query para CRUD de incidencias:
+- `queryKey: ['worker_incidents', assigneeName]`
+- Mutations: `createIncident`, `deleteIncident`, `updateIncident`
+
+### Archivos afectados
 
 | Archivo | Cambio |
 |---|---|
-| `src/components/TeamView.tsx` | Rediseño completo: lista ranking + cálculo score + KPIs + badges de distinción |
+| Nueva migración | Crear tabla `worker_incidents` con RLS |
+| `src/hooks/useIncidents.tsx` | Nuevo hook CRUD |
+| `src/components/AssigneeProfileView.tsx` | Nueva sección colapsable con formulario y lista |
+| `supabase/functions/send-incident-notification/index.ts` | Nuevo edge function para correo formal |
 
