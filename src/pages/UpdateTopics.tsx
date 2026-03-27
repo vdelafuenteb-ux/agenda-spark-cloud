@@ -21,6 +21,7 @@ interface TopicData {
   title: string;
   due_date: string | null;
   start_date: string | null;
+  created_at: string | null;
   status: string;
   is_ongoing: boolean;
   subtasks: SubtaskData[];
