@@ -1,26 +1,34 @@
 
 
-## Plan: Mostrar botón de enviar recordatorio en temas activos (no solo seguimiento)
+## Plan: Mejorar layout de la tarjeta "Cumplimiento de Cierre + Score por Departamento"
+
+### Problema
+La tarjeta tiene mucho espacio vacío, especialmente en la mitad derecha (Score por Departamento) cuando hay pocos departamentos. El grid `lg:grid-cols-2` divide en mitades iguales dejando espacio desperdiciado.
 
 ### Cambio
 
-En `src/components/TopicCard.tsx`, línea 892, cambiar la condición de `isSeguimiento` a `isSeguimiento || topic.status === 'activo'` para que la sección de notificaciones (con el botón de enviar recordatorio y el link de actualización) también aparezca en los temas activos.
+**En `src/components/DashboardView.tsx`** (líneas 425-492):
 
-```typescript
-// Antes:
-{isSeguimiento && (
-  <NotificationSection topic={topic} assignees={assignees} />
-)}
+1. Cambiar el grid de `grid-cols-1 lg:grid-cols-2` a `flex flex-col lg:flex-row` para que cada mitad ocupe solo lo necesario
+2. La mitad izquierda (Cumplimiento) mantiene su grid de 3 columnas pero con `lg:w-1/2`
+3. La mitad derecha (Departamentos) usa `lg:flex-1` y reduce el espacio vertical entre items
+4. Reducir `gap-4` a `gap-3` y el padding general
 
-// Después:
-{(isSeguimiento || topic.status === 'activo') && (
-  <NotificationSection topic={topic} assignees={assignees} />
-)}
+```text
+┌─────────────────────────────────────────────────────┐
+│ ◎ Cumplimiento de Cierre          12 temas analiz.  │
+│                                                     │
+│  67%    ● A tiempo   ● Con atraso │ Score x Depto   │
+│  Tasa   8            4            │ 1. Depto A — 85 │
+│  ████   Prom 3d ant  Prom 4d atr  │ 2. Depto B — 72 │
+└─────────────────────────────────────────────────────┘
 ```
+
+Resultado: sin espacio vacío, ambas mitades bien proporcionadas.
 
 ### Archivo afectado
 
 | Archivo | Cambio |
 |---|---|
-| `src/components/TopicCard.tsx` | Agregar `topic.status === 'activo'` a la condición de `NotificationSection` |
+| `src/components/DashboardView.tsx` | Ajustar layout flex de la tarjeta de Cumplimiento + Departamentos para eliminar espacio vacío |
 
