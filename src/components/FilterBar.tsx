@@ -1,16 +1,20 @@
-import { Search, X, User, ChevronsDownUp, ChevronsUpDown, Mail, CalendarOff, Infinity as InfinityIcon, ChevronDown, ArrowUpDown } from 'lucide-react';
+import { useState } from 'react';
+import { Search, X, User, ChevronsDownUp, ChevronsUpDown, Mail, CalendarOff, Infinity as InfinityIcon, ChevronDown, ArrowUpDown, Check, Tag } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import type { Tag } from '@/hooks/useTags';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandInput, CommandList, CommandEmpty, CommandItem } from '@/components/ui/command';
+import { Badge } from '@/components/ui/badge';
+import type { Tag as TagType } from '@/hooks/useTags';
 
 export type SortOption = 'order' | 'priority' | 'due_date' | 'created';
 
 interface FilterBarProps {
   searchQuery: string;
   onSearchChange: (q: string) => void;
-  allTags: Tag[];
+  allTags: TagType[];
   selectedTagIds: string[];
   onToggleTag: (tagId: string) => void;
   assignees?: string[];
@@ -33,9 +37,14 @@ export function FilterBar({ searchQuery, onSearchChange, allTags, selectedTagIds
   const hasOngoingFilter = onToggleShowOngoing && onToggleShowNotOngoing;
   const isFiltered = !showOngoing || !showNotOngoing;
   const sortLabels: Record<SortOption, string> = { order: 'Orden', priority: 'Prioridad', due_date: 'Fecha fin', created: 'Creación' };
+  const [tagPopoverOpen, setTagPopoverOpen] = useState(false);
+  const [assigneePopoverOpen, setAssigneePopoverOpen] = useState(false);
+
+  const selectedTags = allTags.filter(t => selectedTagIds.includes(t.id));
+
   return (
     <div className="space-y-2">
-      {/* Search input */}
+      {/* Search input + action buttons */}
       <div className="flex items-center gap-2 flex-wrap">
         <div className="relative flex-1 min-w-[150px]">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
@@ -124,6 +133,89 @@ export function FilterBar({ searchQuery, onSearchChange, allTags, selectedTagIds
           </DropdownMenu>
         )}
 
+        {/* Tag filter dropdown */}
+        {allTags.length > 0 && (
+          <Popover open={tagPopoverOpen} onOpenChange={setTagPopoverOpen}>
+            <PopoverTrigger asChild>
+              <Button size="sm" variant={selectedTagIds.length > 0 ? "default" : "outline"} className="h-9 text-xs gap-1 shrink-0">
+                <Tag className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Etiquetas</span>
+                {selectedTagIds.length > 0 && (
+                  <Badge variant="secondary" className="text-[9px] h-4 px-1 ml-0.5 bg-primary-foreground/20 text-primary-foreground">{selectedTagIds.length}</Badge>
+                )}
+                <ChevronDown className="h-3 w-3" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[220px] p-0" align="start">
+              <Command>
+                <CommandInput placeholder="Buscar etiqueta..." className="h-9" />
+                <CommandList>
+                  <CommandEmpty>No se encontraron etiquetas</CommandEmpty>
+                  {allTags.map(tag => {
+                    const isSelected = selectedTagIds.includes(tag.id);
+                    return (
+                      <CommandItem
+                        key={tag.id}
+                        onSelect={() => onToggleTag(tag.id)}
+                        className="flex items-center gap-2 cursor-pointer"
+                      >
+                        <div className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: tag.color }} />
+                        <span className="flex-1 text-sm truncate">{tag.name}</span>
+                        {isSelected && <Check className="h-3.5 w-3.5 text-primary shrink-0" />}
+                      </CommandItem>
+                    );
+                  })}
+                </CommandList>
+              </Command>
+              {selectedTagIds.length > 0 && (
+                <div className="p-1.5 border-t">
+                  <Button variant="ghost" size="sm" className="w-full text-xs h-7" onClick={() => { selectedTagIds.forEach(id => onToggleTag(id)); }}>
+                    Limpiar filtros
+                  </Button>
+                </div>
+              )}
+            </PopoverContent>
+          </Popover>
+        )}
+
+        {/* Assignee filter dropdown */}
+        {assignees && assignees.length > 0 && onAssigneeChange && (
+          <Popover open={assigneePopoverOpen} onOpenChange={setAssigneePopoverOpen}>
+            <PopoverTrigger asChild>
+              <Button size="sm" variant={selectedAssignee ? "default" : "outline"} className="h-9 text-xs gap-1 shrink-0 max-w-[200px]">
+                <User className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate hidden sm:inline">{selectedAssignee || 'Responsable'}</span>
+                <ChevronDown className="h-3 w-3 shrink-0" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[220px] p-0" align="start">
+              <Command>
+                <CommandInput placeholder="Buscar responsable..." className="h-9" />
+                <CommandList>
+                  <CommandEmpty>No se encontraron responsables</CommandEmpty>
+                  <CommandItem
+                    onSelect={() => { onAssigneeChange(''); setAssigneePopoverOpen(false); }}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
+                    <span className="flex-1 text-sm">Todos</span>
+                    {!selectedAssignee && <Check className="h-3.5 w-3.5 text-primary shrink-0" />}
+                  </CommandItem>
+                  {assignees.map(name => (
+                    <CommandItem
+                      key={name}
+                      onSelect={() => { onAssigneeChange(selectedAssignee === name ? '' : name); setAssigneePopoverOpen(false); }}
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
+                      <span className="flex-1 text-sm truncate">{name}</span>
+                      {selectedAssignee === name && <Check className="h-3.5 w-3.5 text-primary shrink-0" />}
+                    </CommandItem>
+                  ))}
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+        )}
+
         {/* Bulk email button */}
         {onBulkEmail && selectedAssignee && selectedAssignee !== '_all' && selectedAssignee !== '' && (
           <Button size="sm" variant="outline" className="h-9 text-xs gap-1 shrink-0" onClick={onBulkEmail}>
@@ -133,66 +225,30 @@ export function FilterBar({ searchQuery, onSearchChange, allTags, selectedTagIds
         )}
       </div>
 
-      {/* Tag chips */}
-      {allTags.length > 0 && (
+      {/* Active filter badges */}
+      {(selectedTags.length > 0 || selectedAssignee) && (
         <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mr-1">Filtrar por etiqueta:</span>
-          {allTags.map(tag => {
-            const isSelected = selectedTagIds.includes(tag.id);
-            return (
-              <button
-                key={tag.id}
-                onClick={() => onToggleTag(tag.id)}
-                className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium transition-all"
-                style={{
-                  backgroundColor: isSelected ? tag.color : 'transparent',
-                  color: isSelected ? '#fff' : tag.color,
-                  border: `1.5px solid ${tag.color}`,
-                  opacity: isSelected ? 1 : 0.7,
-                }}
-              >
-                {tag.name}
-              </button>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Assignee mosaic chips */}
-      {assignees && assignees.length > 0 && onAssigneeChange && (
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mr-1">
-            <User className="h-3 w-3 inline mr-0.5 -mt-0.5" />
-            Responsable:
-          </span>
-          <button
-            onClick={() => onAssigneeChange('')}
-            className={cn(
-              'inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium border transition-all',
-              !selectedAssignee
-                ? 'bg-primary text-primary-foreground border-primary'
-                : 'bg-transparent text-muted-foreground border-border hover:border-primary/50 hover:text-foreground'
-            )}
-          >
-            Todos
-          </button>
-          {assignees.map((name) => {
-            const isSelected = selectedAssignee === name;
-            return (
-              <button
-                key={name}
-                onClick={() => onAssigneeChange(isSelected ? '' : name)}
-                className={cn(
-                  'inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium border transition-all',
-                  isSelected
-                    ? 'bg-primary text-primary-foreground border-primary'
-                    : 'bg-transparent text-foreground border-border hover:border-primary/50'
-                )}
-              >
-                {name}
-              </button>
-            );
-          })}
+          {selectedTags.map(tag => (
+            <button
+              key={tag.id}
+              onClick={() => onToggleTag(tag.id)}
+              className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-medium text-white"
+              style={{ backgroundColor: tag.color }}
+            >
+              {tag.name}
+              <X className="h-2.5 w-2.5" />
+            </button>
+          ))}
+          {selectedAssignee && onAssigneeChange && (
+            <button
+              onClick={() => onAssigneeChange('')}
+              className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-medium bg-primary text-primary-foreground"
+            >
+              <User className="h-2.5 w-2.5" />
+              {selectedAssignee}
+              <X className="h-2.5 w-2.5" />
+            </button>
+          )}
         </div>
       )}
     </div>
