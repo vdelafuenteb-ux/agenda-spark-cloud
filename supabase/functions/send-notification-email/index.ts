@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { to_email, to_name, topic_title, subtasks, start_date, due_date, progress_entries } = await req.json();
+    const { to_email, to_name, topic_title, subtasks, start_date, due_date, progress_entries, topic_id } = await req.json();
 
     if (!to_email || !topic_title) {
       return new Response(
@@ -61,6 +61,38 @@ Deno.serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    // Create/reuse update token for this assignee
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const { createClient: createServiceClient } = await import("https://esm.sh/@supabase/supabase-js@2.99.2");
+    const serviceSupabase = createServiceClient(supabaseUrl, serviceRoleKey);
+
+    // Get user_id from authenticated user
+    const userId = user.id;
+
+    // Check for existing valid token
+    let updateToken = "";
+    const { data: existingToken } = await serviceSupabase
+      .from("update_tokens")
+      .select("token, expires_at")
+      .eq("user_id", userId)
+      .eq("assignee_name", to_name || "")
+      .gt("expires_at", new Date().toISOString())
+      .limit(1)
+      .single();
+
+    if (existingToken) {
+      updateToken = existingToken.token;
+    } else {
+      const { data: newToken } = await serviceSupabase
+        .from("update_tokens")
+        .insert({ user_id: userId, assignee_name: to_name || "" })
+        .select("token")
+        .single();
+      updateToken = newToken?.token || "";
+    }
+
+    const APP_URL = "https://project-zenflow-66.lovable.app";
 
     const now = new Date();
     now.setHours(0, 0, 0, 0);
@@ -117,6 +149,13 @@ Deno.serve(async (req) => {
     }
 
     mensaje += `<hr style="border:none;border-top:1px solid #ddd;margin:20px 0 12px;"/>`;
+
+    if (updateToken) {
+      mensaje += `<div style="text-align:center;margin:16px 0;">`;
+      mensaje += `<a href="${APP_URL}/update/${updateToken}" style="display:inline-block;background:#2563eb;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px;">📝 Actualizar mis temas</a>`;
+      mensaje += `</div>`;
+    }
+
     mensaje += `<p><strong>⚠️ Responde actualizando CADA tema. Plazo máximo: 48 HORAS.</strong></p>`;
     mensaje += `<p><strong>No olvides responder a todos</strong> para que tu respuesta llegue a todo el equipo.</p>`;
     mensaje += `</div>`;

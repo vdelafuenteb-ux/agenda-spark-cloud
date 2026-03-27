@@ -10,6 +10,7 @@ interface GenericEntry {
   id: string;
   content: string;
   created_at: string;
+  source?: string;
   attachments?: EntryAttachment[];
 }
 
@@ -273,9 +274,11 @@ export function ProgressLog({ entries, onAdd, onUpdate, onDelete, onUploadFiles,
       {entries.length > 0 ? (
         <div ref={scrollContainerRef} className="max-h-[220px] overflow-y-auto pr-1 scrollbar-thin">
           <div className="divide-y divide-border">
-            {entries.map(entry => (
-              <div key={entry.id} className="group px-3 py-2.5 first:pt-0">
-                {editingId === entry.id ? (
+            {entries.map(entry => {
+              const isAssignee = entry.source === 'assignee';
+              return (
+              <div key={entry.id} className={`group px-3 py-2.5 first:pt-0 ${isAssignee ? 'bg-blue-50 dark:bg-blue-950/30 rounded-md my-1' : ''}`}>
+                {editingId === entry.id && !isAssignee ? (
                   <div className="space-y-1">
                     <div className="flex items-center justify-between">
                       <FormatToolbar targetRef={editTextareaRef} value={editText} setValue={setEditText} />
@@ -304,6 +307,7 @@ export function ProgressLog({ entries, onAdd, onUpdate, onDelete, onUploadFiles,
                         <FormattedText content={entry.content} />
                         <AttachmentList attachments={entry.attachments || []} onDelete={onDeleteAttachment} />
                       </div>
+                      {!isAssignee && (
                       <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                         {onUpdate && (
                           <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground" onClick={() => handleStartEdit(entry)}>
@@ -316,14 +320,17 @@ export function ProgressLog({ entries, onAdd, onUpdate, onDelete, onUploadFiles,
                           </Button>
                         )}
                       </div>
+                      )}
                     </div>
                     <p className="text-[10px] text-muted-foreground mt-1" title={format(new Date(entry.created_at), "dd MMM yyyy HH:mm", { locale: es })}>
+                      {isAssignee && <span className="text-blue-600 dark:text-blue-400 font-medium mr-1">Responsable ·</span>}
                       {formatDistanceToNow(new Date(entry.created_at), { addSuffix: true, locale: es })}
                     </p>
                   </>
                 )}
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       ) : (

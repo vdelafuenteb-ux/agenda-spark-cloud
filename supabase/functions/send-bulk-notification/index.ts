@@ -63,6 +63,35 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Create/reuse update token
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const { createClient: createServiceClient } = await import("https://esm.sh/@supabase/supabase-js@2.99.2");
+    const serviceSupabase = createServiceClient(supabaseUrl, serviceRoleKey);
+    const userId = data.claims.sub;
+
+    let updateToken = "";
+    const { data: existingToken } = await serviceSupabase
+      .from("update_tokens")
+      .select("token, expires_at")
+      .eq("user_id", userId)
+      .eq("assignee_name", to_name || "")
+      .gt("expires_at", new Date().toISOString())
+      .limit(1)
+      .single();
+
+    if (existingToken) {
+      updateToken = existingToken.token;
+    } else {
+      const { data: newToken } = await serviceSupabase
+        .from("update_tokens")
+        .insert({ user_id: userId, assignee_name: to_name || "" })
+        .select("token")
+        .single();
+      updateToken = newToken?.token || "";
+    }
+
+    const APP_URL = "https://project-zenflow-66.lovable.app";
+
     // Build executive HTML email body with summary table
     const topicsWithPending = topics.map((topic: any, index: number) => {
       const pending = (topic.subtasks || []).filter((s: any) => !s.completed);
@@ -118,6 +147,13 @@ Deno.serve(async (req) => {
     }
 
     mensaje += `<hr style="border:none;border-top:1px solid #ddd;margin:20px 0 12px;"/>`;
+
+    if (updateToken) {
+      mensaje += `<div style="text-align:center;margin:16px 0;">`;
+      mensaje += `<a href="${APP_URL}/update/${updateToken}" style="display:inline-block;background:#2563eb;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px;">📝 Actualizar mis temas</a>`;
+      mensaje += `</div>`;
+    }
+
     mensaje += `<p><strong>⚠️ Responde actualizando CADA tema. Plazo máximo: 48 HORAS.</strong></p>`;
     mensaje += `<p><strong>No olvides responder a todos</strong> para que tu respuesta llegue a todo el equipo.</p>`;
     mensaje += `</div>`;

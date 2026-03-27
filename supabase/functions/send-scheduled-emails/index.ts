@@ -107,6 +107,30 @@ Deno.serve(async (req) => {
         const assigneeTopics = relevantTopics.filter((t: any) => t.assignee === assignee.name);
         if (assigneeTopics.length === 0) continue;
 
+        // Create/reuse update token for this assignee
+        let updateToken = "";
+        const { data: existingToken } = await supabase
+          .from("update_tokens")
+          .select("token, expires_at")
+          .eq("user_id", schedule.user_id)
+          .eq("assignee_name", assignee.name)
+          .gt("expires_at", new Date().toISOString())
+          .limit(1)
+          .single();
+
+        if (existingToken) {
+          updateToken = existingToken.token;
+        } else {
+          const { data: newToken } = await supabase
+            .from("update_tokens")
+            .insert({ user_id: schedule.user_id, assignee_name: assignee.name })
+            .select("token")
+            .single();
+          updateToken = newToken?.token || "";
+        }
+
+        const APP_URL = "https://project-zenflow-66.lovable.app";
+
         // Sort progress entries desc
         assigneeTopics.forEach((t: any) => {
           if (t.progress_entries) {
@@ -168,6 +192,13 @@ Deno.serve(async (req) => {
         }
 
         mensaje += `<hr style="border:none;border-top:1px solid #ddd;margin:20px 0 12px;"/>`;
+
+        if (updateToken) {
+          mensaje += `<div style="text-align:center;margin:16px 0;">`;
+          mensaje += `<a href="${APP_URL}/update/${updateToken}" style="display:inline-block;background:#2563eb;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px;">📝 Actualizar mis temas</a>`;
+          mensaje += `</div>`;
+        }
+
         mensaje += `<p><strong>⚠️ Responde actualizando CADA tema. Plazo máximo: 48 HORAS.</strong></p>`;
         mensaje += `<p><strong>No olvides responder a todos</strong> para que tu respuesta llegue a todo el equipo.</p>`;
         mensaje += `<p style="font-size:11px;color:#aaa;">📧 Correo automático programado.</p>`;
