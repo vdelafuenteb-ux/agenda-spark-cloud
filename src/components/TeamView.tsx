@@ -287,6 +287,7 @@ export function TeamView({ topics, assignees, onUpdateTopic }: TeamViewProps) {
         assigneeName={selectedAssignee}
         assignee={assignee}
         topics={topics.filter(t => t.assignee === selectedAssignee)}
+        reschedules={[]}
         onBack={() => setSelectedAssignee(null)}
       />
     );
