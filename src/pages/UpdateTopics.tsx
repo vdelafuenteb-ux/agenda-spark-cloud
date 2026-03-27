@@ -21,6 +21,7 @@ interface TopicData {
   title: string;
   due_date: string | null;
   start_date: string | null;
+  created_at: string | null;
   status: string;
   is_ongoing: boolean;
   subtasks: SubtaskData[];
@@ -77,8 +78,8 @@ export default function UpdateTopics() {
           }
         }
         setToggles(initToggles);
-        // Expand all by default
-        setExpandedTopics(new Set(data.topics.map((t: TopicData) => t.id)));
+        // Start all collapsed
+        setExpandedTopics(new Set());
       } catch (err: any) {
         setError(err.message || "Error desconocido");
       } finally {
@@ -213,10 +214,13 @@ export default function UpdateTopics() {
                         </Badge>
                       )}
                     </div>
-                    <div className="flex items-center gap-3 mt-1 text-xs text-slate-400">
+                    <div className="flex items-center gap-3 mt-1 text-xs text-slate-400 flex-wrap">
+                      {topic.created_at && (
+                        <span>Creado: {formatDate(topic.created_at.slice(0, 10))}</span>
+                      )}
                       <span className="flex items-center gap-1">
                         <Clock className="h-3 w-3" />
-                        {formatDate(topic.due_date)}
+                        Vence: {formatDate(topic.due_date)}
                       </span>
                       {pendingSubtasks.length > 0 && (
                         <span className="text-amber-600">{pendingSubtasks.length} pendiente{pendingSubtasks.length > 1 ? "s" : ""}</span>
