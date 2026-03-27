@@ -115,6 +115,12 @@ export function TopicCard({
   const [pauseReasonDraft, setPauseReasonDraft] = useState(topic.pause_reason || '');
   const [showCloseDialog, setShowCloseDialog] = useState(false);
   const [closeDateDraft, setCloseDateDraft] = useState('');
+  const [showRescheduleDialog, setShowRescheduleDialog] = useState(false);
+  const [rescheduleNewDate, setRescheduleNewDate] = useState<Date | undefined>(undefined);
+  const [rescheduleReason, setRescheduleReason] = useState('');
+  const [rescheduleIsExternal, setRescheduleIsExternal] = useState(false);
+  const [rescheduleSource, setRescheduleSource] = useState<'header' | 'body'>('header');
+  const [showRescheduleHistory, setShowRescheduleHistory] = useState(false);
 
   useEffect(() => {
     if (forceExpand !== null) {
