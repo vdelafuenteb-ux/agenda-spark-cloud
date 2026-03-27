@@ -252,6 +252,7 @@ export function EmailHistoryView() {
       if (existing) {
         existing.emails.push(email);
         existing.allConfirmed = existing.emails.every(e => e.confirmed);
+        existing.allReviewed = existing.emails.every(e => e.reviewed);
         existing.topicCount = existing.emails.length;
       } else {
         groups.push({
@@ -261,6 +262,7 @@ export function EmailHistoryView() {
           sent_at: email.sent_at,
           emails: [email],
           allConfirmed: email.confirmed,
+          allReviewed: email.reviewed,
           topicCount: 1,
         });
       }
