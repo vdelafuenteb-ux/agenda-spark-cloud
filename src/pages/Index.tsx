@@ -438,6 +438,9 @@ const Index = () => {
                           topicTags={getTagsForTopic(topic.id)}
                           assignees={assignees}
                           departments={departments}
+                          reschedules={reschedulesByTopic.get(topic.id) || []}
+                          onCreateReschedule={createReschedule}
+                          userId={user!.id}
                           onCreateAssignee={(name) => createAssignee.mutateAsync(name)}
                           forceExpand={expandedTopicId === topic.id ? true : forceExpand}
                           onUpdate={(id, data) => {
