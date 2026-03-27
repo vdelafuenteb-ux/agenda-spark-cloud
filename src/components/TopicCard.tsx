@@ -889,7 +889,7 @@ export function TopicCard({
                 </AnimatePresence>
               </div>
 
-              {isSeguimiento && (
+{(isSeguimiento || topic.status === 'activo') && (
                 <NotificationSection topic={topic} assignees={assignees} />
               )}
 
