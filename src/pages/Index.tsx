@@ -466,6 +466,10 @@ const Index = () => {
                           onCreateAssignee={(name) => createAssignee.mutateAsync({ name })}
                           forceExpand={expandedTopicId === topic.id ? true : forceExpand}
                           onUpdate={(id, data) => {
+                            // Clear assignee filter if changing assignee while filter is active
+                            if ((data as Record<string, unknown>).assignee && selectedAssignee && (data as Record<string, unknown>).assignee !== selectedAssignee) {
+                              setSelectedAssignee('');
+                            }
                             updateTopic.mutate({ id, ...data });
                             if ((data as Record<string, unknown>).status === 'completado') {
                               const topic = topics.find(t => t.id === id);
