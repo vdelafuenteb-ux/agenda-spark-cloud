@@ -1,35 +1,31 @@
 
 
-## Plan: Asignar departamento a responsables + auto-selección en creación de temas
+## Plan: Responsable como dropdown con buscador + formulario de creación rápida
 
-### Resumen
-Agregar un campo `department_id` a la tabla `assignees` para que cada responsable tenga un departamento asignado. Al crear un tema y seleccionar un responsable, el departamento se auto-completa.
+### Cambios en `src/components/CreateTopicModal.tsx`
 
-### Cambios
+**1. Mover "Responsable" justo debajo del Título** (antes de Orden/Prioridad/Estado/Departamento)
 
-**1. Migración: agregar `department_id` a `assignees`**
-```sql
-ALTER TABLE public.assignees ADD COLUMN department_id uuid DEFAULT NULL;
-```
+**2. Reemplazar los botones de responsables** por un dropdown con buscador usando `Popover` + `Command` (igual que los filtros del FilterBar):
+- Input que muestra el nombre seleccionado o placeholder "Seleccionar responsable..."
+- Lista buscable con lupa
+- Al seleccionar, auto-completa departamento como ya funciona
 
-**2. Hook `useAssignees.tsx`**
-- Agregar `department_id: string | null` a la interfaz `Assignee`
-- Incluir `department_id` en `updateAssignee` mutation
+**3. Agregar opción "Crear nuevo responsable"** al final del dropdown:
+- Al hacer clic, abre un mini-formulario inline (dentro del modal) con 3 campos: Nombre, Email, Departamento (Select)
+- Al confirmar, llama a `onCreateAssignee` con el nombre, y luego actualiza el assignee con email y departamento
+- Requiere ampliar `onCreateAssignee` para aceptar `{ name, email?, department_id? }` en vez de solo `string`
 
-**3. SettingsView — sección Responsables**
-- En modo edición de cada responsable, agregar un `Select` de departamento (usando la lista de `departments` que ya recibe como prop)
-- En modo vista, mostrar el nombre del departamento junto al nombre/email
+**4. Actualizar el hook y la prop:**
+- `onCreateAssignee` pasa de `(name: string) => Promise<Assignee>` a `(data: { name: string; email?: string; department_id?: string }) => Promise<Assignee>`
+- En `useAssignees.tsx`, el mutation `createAssignee` inserta con `{ name, email, department_id }` 
+- En `src/pages/Index.tsx`, actualizar las llamadas a `createAssignee.mutateAsync`
 
-**4. CreateTopicModal — auto-selección de departamento**
-- Cuando el usuario selecciona un responsable (`setAssignee(a.name)`), buscar su `department_id` en la lista de assignees y hacer `setDepartmentId(a.department_id)` automáticamente
-- El usuario puede cambiar el departamento manualmente si quiere
-
-### Detalle técnico
+### Archivos afectados
 
 | Archivo | Cambio |
 |---|---|
-| Nueva migración | `ALTER TABLE assignees ADD COLUMN department_id uuid DEFAULT NULL` |
-| `src/hooks/useAssignees.tsx` | Agregar `department_id` a interfaz y a `updateAssignee` |
-| `src/components/SettingsView.tsx` | Select de departamento en edición de responsable + mostrar depto en vista |
-| `src/components/CreateTopicModal.tsx` | Auto-setear `departmentId` al seleccionar responsable |
+| `src/components/CreateTopicModal.tsx` | Mover responsable arriba, dropdown con buscador, mini-form de creación |
+| `src/hooks/useAssignees.tsx` | `createAssignee` acepta `{ name, email?, department_id? }` |
+| `src/pages/Index.tsx` | Actualizar llamadas a `createAssignee.mutateAsync` |
 
