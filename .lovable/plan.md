@@ -1,34 +1,35 @@
 
 
-## Plan: Mostrar departamento en ficha de persona + corregir conteo y scores por departamento
+## Plan: Agregar columna "Revisado" (checkbox) a correos — sincronizada entre historial y tarjetas
 
-### Problemas
+### Cambio
 
-1. **Ficha del responsable** no muestra a qué departamento está asignado
-2. **Tarjetas de departamento** en TeamView derivan las personas desde los topics (`topics.department_id`), no desde la asignación real en configuración (`assignees.department_id`). Esto causa conteos incorrectos de personas
-3. **Scores por departamento** deben ser el promedio de scores de las personas asignadas al departamento vía `assignees.department_id`, no de quienes tienen topics en ese departamento
+Agregar campo `reviewed` (boolean) a `notification_emails` para que el admin pueda marcar cada correo como revisado después de que el responsable envió su actualización.
 
-### Cambios
+### 1. Migración BD
+- `ALTER TABLE notification_emails ADD COLUMN reviewed boolean NOT NULL DEFAULT false`
+- `ALTER TABLE notification_emails ADD COLUMN reviewed_at timestamptz DEFAULT NULL`
 
-**1. `src/components/AssigneeProfileView.tsx` — Mostrar departamento**
-- Importar `useDepartments`
-- En el header (línea 341-344), debajo del email, mostrar el nombre del departamento si `assignee?.department_id` coincide con algún departamento, o "Sin departamento" si no tiene asignado
+### 2. `src/hooks/useNotificationEmails.tsx`
+- Agregar `reviewed`, `reviewed_at` al interface `NotificationEmail`
+- Agregar mutación `toggleReviewed({ id, reviewed })` que actualiza `reviewed` y `reviewed_at`
 
-**2. `src/components/TeamView.tsx` — Corregir `deptMetrics`**
-- Cambiar la lógica para derivar personas desde `assignees.department_id === dept.id` en vez de extraerlas de los topics
-- El conteo de personas será exactamente las que están configuradas en ese departamento
-- El score será el promedio de productivity scores de esas personas asignadas
-- Los temas activos y cerrados se mantienen contando por `topics.department_id`
-- Si un departamento no tiene personas asignadas, mostrar "Sin personas" y no mostrar score
+### 3. `src/components/EmailHistoryView.tsx`
+- Agregar `reviewed` al `EmailRecord` interface
+- En ambas sub-pestañas (masivos y nuevos temas), agregar columna "Revisado" con checkbox
+- Al marcar/desmarcar, llamar mutación `toggleReviewed`
+- Agregar filtro de estado "Revisado / No revisado" en los filtros existentes
 
-**3. `src/components/DashboardView.tsx` — Misma corrección en `deptScores`**
-- Aplicar la misma lógica: derivar assignees desde `assignees.department_id` para calcular el score promedio por departamento
+### 4. `src/components/NotificationSection.tsx`
+- Agregar checkbox de "Revisado" en cada fila de correo enviado (junto al estado actual)
+- Al cambiar, llamar `toggleReviewed` que invalida todas las query keys para sincronizar con historial
 
 ### Archivos afectados
 
 | Archivo | Cambio |
 |---|---|
-| `src/components/AssigneeProfileView.tsx` | Agregar departamento en header de la ficha |
-| `src/components/TeamView.tsx` | Corregir `deptMetrics` para usar `assignees.department_id` |
-| `src/components/DashboardView.tsx` | Corregir `deptScores` para usar `assignees.department_id` |
+| Migración BD | Agregar `reviewed` y `reviewed_at` a `notification_emails` |
+| `src/hooks/useNotificationEmails.tsx` | Interface + mutación `toggleReviewed` |
+| `src/components/EmailHistoryView.tsx` | Columna "Revisado" con checkbox en ambas pestañas |
+| `src/components/NotificationSection.tsx` | Checkbox "Revisado" en cada correo de la tarjeta del tema |
 
