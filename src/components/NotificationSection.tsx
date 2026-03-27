@@ -86,7 +86,7 @@ function ConfirmPopover({
 export function NotificationSection({ topic, assignees }: NotificationSectionProps) {
   const [sending, setSending] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const { emails, logEmail, toggleConfirmed, deleteEmail } = useNotificationEmails(topic.id);
+  const { emails, logEmail, toggleConfirmed, toggleReviewed, deleteEmail } = useNotificationEmails(topic.id);
 
   const assignee = assignees.find(a => a.name === topic.assignee);
   const hasEmail = assignee?.email;
@@ -271,6 +271,12 @@ export function NotificationSection({ topic, assignees }: NotificationSectionPro
                 <span className="text-[10px] ml-auto shrink-0 font-mono">
                   {format(new Date(email.sent_at), "dd MMM yy HH:mm", { locale: es })}
                 </span>
+                <Checkbox
+                  checked={!!(email as any).reviewed}
+                  onCheckedChange={(checked) => toggleReviewed.mutate({ id: email.id, reviewed: !!checked })}
+                  className="h-3.5 w-3.5 shrink-0"
+                  title={`${(email as any).reviewed ? 'Desmarcar' : 'Marcar'} como revisado`}
+                />
                 <button
                   onClick={() => deleteEmail.mutate(email.id)}
                   className="shrink-0 text-muted-foreground hover:text-destructive transition-colors"

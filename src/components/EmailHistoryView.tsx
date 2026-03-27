@@ -26,6 +26,8 @@ interface EmailRecord {
   confirmed_at: string | null;
   topic_title?: string;
   email_type?: string;
+  reviewed: boolean;
+  reviewed_at: string | null;
 }
 
 interface EmailBatch {
@@ -35,6 +37,7 @@ interface EmailBatch {
   sent_at: string;
   emails: EmailRecord[];
   allConfirmed: boolean;
+  allReviewed: boolean;
   topicCount: number;
 }
 
@@ -203,6 +206,20 @@ export function EmailHistoryView() {
     },
   });
 
+  const toggleReviewed = useMutation({
+    mutationFn: async ({ id, reviewed }: { id: string; reviewed: boolean }) => {
+      const { error } = await supabase
+        .from('notification_emails')
+        .update({
+          reviewed,
+          reviewed_at: reviewed ? new Date().toISOString() : null,
+        } as any)
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: invalidateAll,
+  });
+
   const deleteBatch = useMutation({
     mutationFn: async (ids: string[]) => {
       const { error } = await supabase.from('notification_emails').delete().in('id', ids);
@@ -235,6 +252,7 @@ export function EmailHistoryView() {
       if (existing) {
         existing.emails.push(email);
         existing.allConfirmed = existing.emails.every(e => e.confirmed);
+        existing.allReviewed = existing.emails.every(e => e.reviewed);
         existing.topicCount = existing.emails.length;
       } else {
         groups.push({
@@ -244,6 +262,7 @@ export function EmailHistoryView() {
           sent_at: email.sent_at,
           emails: [email],
           allConfirmed: email.confirmed,
+          allReviewed: email.reviewed,
           topicCount: 1,
         });
       }
@@ -265,6 +284,8 @@ export function EmailHistoryView() {
         const info = getDeadlineInfo(b.sent_at, b.allConfirmed);
         if (!info.isOverdue) return false;
       }
+      if (statusFilter === 'reviewed' && !b.allReviewed) return false;
+      if (statusFilter === 'not_reviewed' && b.allReviewed) return false;
       if (dateFrom && new Date(b.sent_at) < dateFrom) return false;
       if (dateTo) {
         const endOfDay = new Date(dateTo);
@@ -376,20 +397,19 @@ export function EmailHistoryView() {
             </SelectContent>
           </Select>
 
-          {isWeekly && (
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-full sm:w-[140px] h-8 text-xs">
               <SelectValue placeholder="Estado" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos</SelectItem>
-              <SelectItem value="pending">Pendientes</SelectItem>
-              <SelectItem value="confirmed">Confirmados</SelectItem>
-              <SelectItem value="overdue">Fuera de plazo</SelectItem>
+              {isWeekly && <SelectItem value="pending">Pendientes</SelectItem>}
+              {isWeekly && <SelectItem value="confirmed">Confirmados</SelectItem>}
+              {isWeekly && <SelectItem value="overdue">Fuera de plazo</SelectItem>}
+              <SelectItem value="reviewed">Revisados</SelectItem>
+              <SelectItem value="not_reviewed">No revisados</SelectItem>
             </SelectContent>
           </Select>
-          )}
-
           <div className="flex gap-2 w-full sm:w-auto">
             <Popover>
               <PopoverTrigger asChild>
@@ -450,6 +470,7 @@ export function EmailHistoryView() {
                     <th className="text-left px-3 py-2 font-medium text-muted-foreground">Temas</th>
                     <th className="text-left px-3 py-2 font-medium text-muted-foreground">Enviado</th>
                     {isWeekly && <th className="text-left px-3 py-2 font-medium text-muted-foreground">Plazo 48h</th>}
+                    <th className="text-left px-3 py-2 font-medium text-muted-foreground">Revisado</th>
                     <th className="text-right px-3 py-2 font-medium text-muted-foreground"></th>
                   </tr>
                 </thead>
@@ -537,6 +558,15 @@ export function EmailHistoryView() {
                             </span>
                           </td>
                           )}
+                          <td className="px-3 py-2.5" onClick={e => e.stopPropagation()}>
+                            <Checkbox
+                              checked={batch.allReviewed}
+                              onCheckedChange={(checked) => {
+                                batchIds.forEach(id => toggleReviewed.mutate({ id, reviewed: !!checked }));
+                              }}
+                              className="h-4 w-4"
+                            />
+                          </td>
                           <td className="px-3 py-2.5 text-right" onClick={e => e.stopPropagation()}>
                             <button
                               onClick={() => deleteBatch.mutate(batchIds)}
@@ -548,7 +578,7 @@ export function EmailHistoryView() {
                         </tr>
                         {isExpanded && (
                           <tr>
-                            <td colSpan={isWeekly ? 9 : 6} className="bg-muted/20 px-0 py-0">
+                            <td colSpan={isWeekly ? 10 : 8} className="bg-muted/20 px-0 py-0">
                               <div className="px-8 py-2 space-y-1">
                                 <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-1.5">
                                   Temas incluidos en este envío
@@ -686,6 +716,16 @@ export function EmailHistoryView() {
                             )}
                           </div>
                           )}
+                          <div onClick={e => e.stopPropagation()}>
+                            <Checkbox
+                              checked={batch.allReviewed}
+                              onCheckedChange={(checked) => {
+                                batchIds.forEach(id => toggleReviewed.mutate({ id, reviewed: !!checked }));
+                              }}
+                              className="h-4 w-4"
+                              title="Revisado"
+                            />
+                          </div>
                           <button
                             onClick={(e) => { e.stopPropagation(); deleteBatch.mutate(batchIds); }}
                             className="text-muted-foreground hover:text-destructive transition-colors"
