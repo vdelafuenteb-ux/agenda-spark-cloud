@@ -274,7 +274,12 @@ export function TopicCard({
                 if (diffDays <= 0) return <Badge variant="outline" className="text-[9px] border-emerald-500/50 text-emerald-600 px-1.5 py-0">A tiempo</Badge>;
                 return <Badge variant="destructive" className="text-[9px] px-1.5 py-0">{diffDays}d atraso</Badge>;
               })()}
-              {!isCompleted && (
+              {!isCompleted && (() => {
+                const isOverdue = isStoredDateOverdue(topic.due_date);
+                const overdueDays = isOverdue && topic.due_date
+                  ? Math.ceil((Date.now() - parseStoredDate(topic.due_date)!.getTime()) / 86400000)
+                  : 0;
+                return (
                 <Popover>
                   <PopoverTrigger asChild>
                     <button
@@ -282,16 +287,20 @@ export function TopicCard({
                       className={cn(
                         "flex items-center gap-1 hover:bg-accent rounded px-1 py-0.5 transition-colors",
                         !topic.due_date && !topic.is_ongoing && "text-destructive",
+                        isOverdue && "text-destructive",
                       )}
                     >
-                      <CalendarIcon className="h-3 w-3" />
+                      <CalendarIcon className={cn("h-3 w-3", isOverdue && "text-destructive")} />
                       {topic.due_date ? (
-                        <span className="text-[11px] text-muted-foreground font-mono">
+                        <span className={cn("text-[11px] font-mono", isOverdue ? "text-destructive font-medium" : "text-muted-foreground")}>
                           {formatStoredDate(topic.due_date, 'dd MMM', { locale: es })}
                         </span>
                       ) : !topic.is_ongoing ? (
                         <span className="text-[10px] font-medium">Sin fecha</span>
                       ) : null}
+                      {isOverdue && overdueDays > 0 && (
+                        <Badge variant="destructive" className="text-[9px] px-1.5 py-0">{overdueDays}d</Badge>
+                      )}
                     </button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="end" onClick={(e) => e.stopPropagation()}>
@@ -309,7 +318,8 @@ export function TopicCard({
                     )}
                   </PopoverContent>
                 </Popover>
-              )}
+                );
+              })()}
               {/* Reschedule badge */}
               {reschedules.length > 0 && (
                 <TooltipProvider delayDuration={200}>
