@@ -457,7 +457,7 @@ export function DashboardView({ topics, assignees, departments = [], reschedules
                     </div>
 
                     {/* Right half: Score por Departamento */}
-                    <div className="border-l border-border pl-4">
+                    <div className="border-l border-border pl-4 lg:flex-1">
                       <div className="flex items-center gap-1.5 mb-2">
                         <Users className="h-3.5 w-3.5 text-primary" />
                         <span className="text-xs font-medium text-foreground">Score por Departamento</span>
