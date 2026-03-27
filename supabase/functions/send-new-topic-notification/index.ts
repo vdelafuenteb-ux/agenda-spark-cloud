@@ -32,6 +32,7 @@ Deno.serve(async (req) => {
 
     const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.99.2");
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_PUBLISHABLE_KEY");
 
     if (!supabaseAnonKey) {
@@ -41,11 +42,12 @@ Deno.serve(async (req) => {
       );
     }
 
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    // Auth client to get user
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
     });
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
     if (authError || !user) {
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
@@ -53,7 +55,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { to_email, to_name, topic_title, start_date, due_date, subtasks, is_urgent, days_until_due, initial_note } = await req.json();
+    // Service role client for update_tokens
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+    const { to_email, to_name, topic_title, topic_id, start_date, due_date, subtasks, is_urgent, days_until_due, initial_note } = await req.json();
 
     if (!to_email || !topic_title) {
       return new Response(
@@ -61,6 +66,23 @@ Deno.serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    // Create update token with topic_id for this specific topic
+    let updateToken: string | null = null;
+    if (topic_id && to_name) {
+      const { data: tokenRow } = await supabase
+        .from("update_tokens")
+        .insert({
+          user_id: user.id,
+          assignee_name: to_name,
+          topic_id: topic_id,
+        })
+        .select("token")
+        .single();
+      if (tokenRow) updateToken = tokenRow.token;
+    }
+
+    const APP_URL = "https://project-zenflow-66.lovable.app";
 
     const pendingSubtasks = (subtasks || []).filter((s: any) => !s.completed);
     const pendingCount = pendingSubtasks.length;
@@ -114,6 +136,14 @@ Deno.serve(async (req) => {
       mensaje += `<p style="margin:0 0 6px;font-size:12px;font-weight:600;color:#555;text-transform:uppercase;">📝 Detalle / Instrucciones</p>`;
       mensaje += `<p style="margin:0;font-size:14px;color:#333;line-height:1.6;white-space:pre-wrap;word-wrap:break-word;">${formattedNote}</p>`;
       mensaje += `</div>`;
+    }
+
+    // Update link button
+    if (updateToken) {
+      mensaje += `<div style="margin:20px 0;text-align:center;">`;
+      mensaje += `<a href="${APP_URL}/update/${updateToken}" style="display:inline-block;padding:12px 28px;background:#2563eb;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600;font-size:14px;">📝 Actualizar este tema</a>`;
+      mensaje += `</div>`;
+      mensaje += `<p style="font-size:12px;color:#999;text-align:center;">Este link es de uso único. Una vez envíes tu actualización, expirará automáticamente.</p>`;
     }
 
     mensaje += `<hr style="border:none;border-top:1px solid #ddd;margin:20px 0 12px;"/>`;

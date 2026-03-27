@@ -37,6 +37,14 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Check if already used
+    if (tokenData.used) {
+      return new Response(
+        JSON.stringify({ error: "Ya enviaste tu actualización. Recibirás un nuevo link en el próximo correo." }),
+        { status: 410, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Check expiration
     if (new Date(tokenData.expires_at) < new Date()) {
       return new Response(
@@ -45,14 +53,19 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Fetch topics for this assignee (not completed)
-    const { data: topics, error: topicsError } = await supabase
+    // Fetch topics — if topic_id is set, only that topic; otherwise all active
+    let topicsQuery = supabase
       .from("topics")
       .select("id, title, due_date, start_date, created_at, status, is_ongoing, assignee")
       .eq("user_id", tokenData.user_id)
       .eq("assignee", tokenData.assignee_name)
       .in("status", ["activo", "seguimiento"]);
 
+    if (tokenData.topic_id) {
+      topicsQuery = topicsQuery.eq("id", tokenData.topic_id);
+    }
+
+    const { data: topics, error: topicsError } = await topicsQuery;
     if (topicsError) throw topicsError;
 
     // Fetch subtasks for those topics

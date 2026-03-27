@@ -45,6 +45,13 @@ Deno.serve(async (req) => {
       );
     }
 
+    if (tokenData.used) {
+      return new Response(
+        JSON.stringify({ error: "Ya enviaste tu actualización. Recibirás un nuevo link en el próximo correo." }),
+        { status: 410, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     if (new Date(tokenData.expires_at) < new Date()) {
       return new Response(
         JSON.stringify({ error: "Token expirado" }),
@@ -123,6 +130,12 @@ Deno.serve(async (req) => {
         .eq("assignee_name", tokenData.assignee_name)
         .eq("responded", false);
     }
+
+    // Mark token as used so it can't be reused
+    await supabase
+      .from("update_tokens")
+      .update({ used: true })
+      .eq("token", token);
 
     return new Response(
       JSON.stringify({

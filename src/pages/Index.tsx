@@ -284,6 +284,7 @@ const Index = () => {
                 to_email: assignee.email,
                 to_name: assignee.name,
                 topic_title: data.title,
+                topic_id: created.id,
                 start_date: data.start_date,
                 due_date: data.due_date,
                 subtasks: data.subtasks.map(t => ({ title: t, completed: false })),

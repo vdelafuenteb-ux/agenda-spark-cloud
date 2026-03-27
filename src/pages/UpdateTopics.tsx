@@ -152,13 +152,25 @@ export default function UpdateTopics() {
     );
   }
 
+  const isUsedToken = error?.includes("Ya enviaste");
+
   if (error && topics.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
         <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8 text-center space-y-4">
-          <AlertCircle className="h-16 w-16 text-red-400 mx-auto" />
-          <h1 className="text-xl font-bold text-slate-800">Error</h1>
-          <p className="text-slate-500">{error}</p>
+          {isUsedToken ? (
+            <>
+              <CheckCircle2 className="h-16 w-16 text-amber-500 mx-auto" />
+              <h1 className="text-xl font-bold text-slate-800">Link ya utilizado</h1>
+              <p className="text-slate-500">Ya enviaste tu actualización con este link. Recibirás un nuevo link en el próximo correo de seguimiento o cuando se te asigne un nuevo tema.</p>
+            </>
+          ) : (
+            <>
+              <AlertCircle className="h-16 w-16 text-red-400 mx-auto" />
+              <h1 className="text-xl font-bold text-slate-800">Error</h1>
+              <p className="text-slate-500">{error}</p>
+            </>
+          )}
         </div>
       </div>
     );
