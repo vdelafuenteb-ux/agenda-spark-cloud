@@ -109,7 +109,7 @@ export function CalendarView({ topics }: CalendarViewProps) {
       if (events.length > 0) map.set(key, events);
     }
     return map;
-  }, [calendarDays, reminders, activeTopics, holidayMap, showPeriodicEvents]);
+  }, [calendarDays, reminders, activeTopics, holidayMap, showPeriodicEvents, isCompleted]);
 
   const weekDays = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
