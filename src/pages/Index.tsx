@@ -66,6 +66,27 @@ const Index = () => {
     setSelectedTagIds((prev) => (prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]));
   }, []);
 
+  // Build a map: assignee name -> department name for filtering
+  const assigneeDeptMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const a of assignees) {
+      if (a.department_id) {
+        const dept = departments.find(d => d.id === a.department_id);
+        if (dept) map.set(a.name, dept.name);
+      }
+    }
+    return map;
+  }, [assignees, departments]);
+
+  const uniqueDepartments = useMemo(() => {
+    const deptNames = new Set<string>();
+    topics.filter(t => t.status === statusTab && t.assignee).forEach(t => {
+      const deptName = assigneeDeptMap.get(t.assignee!);
+      if (deptName) deptNames.add(deptName);
+    });
+    return [...deptNames].sort();
+  }, [topics, statusTab, assigneeDeptMap]);
+
   const filteredTopics = useMemo(() => {
     const filtered = topics.filter((topic) => {
       if (topic.status !== statusTab) return false;
@@ -80,6 +101,10 @@ const Index = () => {
         if (!selectedTagIds.some((id) => topicTagIds.includes(id))) return false;
       }
       if (selectedAssignee && topic.assignee !== selectedAssignee) return false;
+      if (selectedDepartment) {
+        const topicDept = topic.assignee ? assigneeDeptMap.get(topic.assignee) : undefined;
+        if (topicDept !== selectedDepartment) return false;
+      }
       if (filterNoDueDate && topic.due_date) return false;
       if (!showOngoing && topic.is_ongoing) return false;
       if (!showNotOngoing && !topic.is_ongoing) return false;
