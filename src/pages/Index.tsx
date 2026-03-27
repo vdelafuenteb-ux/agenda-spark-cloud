@@ -441,7 +441,7 @@ const Index = () => {
                           reschedules={reschedulesByTopic.get(topic.id) || []}
                           onCreateReschedule={createReschedule}
                           userId={user!.id}
-                          onCreateAssignee={(name) => createAssignee.mutateAsync(name)}
+                          onCreateAssignee={(name) => createAssignee.mutateAsync({ name })}
                           forceExpand={expandedTopicId === topic.id ? true : forceExpand}
                           onUpdate={(id, data) => {
                             updateTopic.mutate({ id, ...data });
