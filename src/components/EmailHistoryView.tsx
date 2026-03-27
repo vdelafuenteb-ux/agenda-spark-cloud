@@ -411,17 +411,6 @@ export function EmailHistoryView() {
               <SelectItem value="not_reviewed">No revisados</SelectItem>
             </SelectContent>
           </Select>
-                          )}
-                          <div onClick={e => e.stopPropagation()}>
-                            <Checkbox
-                              checked={batch.allReviewed}
-                              onCheckedChange={(checked) => {
-                                batchIds.forEach(id => toggleReviewed.mutate({ id, reviewed: !!checked }));
-                              }}
-                              className="h-4 w-4"
-                              title="Revisado"
-                            />
-                          </div>
           <div className="flex gap-2 w-full sm:w-auto">
             <Popover>
               <PopoverTrigger asChild>
