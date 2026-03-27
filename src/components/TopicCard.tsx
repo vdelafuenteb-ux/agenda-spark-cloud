@@ -508,7 +508,7 @@ export function TopicCard({
                     <Calendar
                       mode="single"
                       selected={parseStoredDate(topic.due_date)}
-                      onSelect={(date) => onUpdate(topic.id, { due_date: toStoredDate(date) })}
+                      onSelect={(date) => handleDateChange(date)}
                       initialFocus
                     />
                   </PopoverContent>
