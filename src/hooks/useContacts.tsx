@@ -10,6 +10,7 @@ export interface Contact {
   phone: string;
   position: string;
   company: string;
+  country: string;
   created_at: string;
 }
 
