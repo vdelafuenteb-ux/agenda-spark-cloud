@@ -26,6 +26,8 @@ interface EmailRecord {
   confirmed_at: string | null;
   topic_title?: string;
   email_type?: string;
+  reviewed: boolean;
+  reviewed_at: string | null;
 }
 
 interface EmailBatch {
