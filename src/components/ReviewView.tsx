@@ -341,6 +341,38 @@ export function ReviewView({ topics, onToggleSubtask, onUpdateTopic }: ReviewVie
           )}
         </div>
       )}
+      {/* Diálogo de confirmación de cierre */}
+      <Dialog open={showCloseDialog} onOpenChange={setShowCloseDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>¿Cerrar este tema?</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="close-date-review">Fecha y hora real de cierre</Label>
+            <Input
+              id="close-date-review"
+              type="datetime-local"
+              value={closeDateDraft}
+              onChange={e => setCloseDateDraft(e.target.value)}
+            />
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setShowCloseDialog(false)}>Cancelar</Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (!closeTopicId) return;
+                const closedAt = closeDateDraft ? new Date(closeDateDraft).toISOString() : new Date().toISOString();
+                onUpdateTopic(closeTopicId, { status: 'completado', closed_at: closedAt, pause_reason: '', paused_at: null });
+                setShowCloseDialog(false);
+                setCloseTopicId(null);
+              }}
+            >
+              Confirmar cierre
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
