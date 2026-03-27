@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Mail, CheckCircle2, Search, X, CalendarIcon, Trash2, Clock, ChevronDown, ChevronRight, FileText, AlertTriangle } from 'lucide-react';
+import { Mail, CheckCircle2, Search, X, CalendarIcon, Trash2, Clock, ChevronDown, ChevronRight, FileText, AlertTriangle, Eye } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
