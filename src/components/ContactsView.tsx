@@ -17,22 +17,32 @@ export function ContactsView() {
   const { contacts, isLoading, createContact, updateContact, deleteContact } = useContacts();
   const isMobile = useIsMobile();
   const [search, setSearch] = useState('');
+  const [selectedCompany, setSelectedCompany] = useState<string>('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
+  const companies = useMemo(() => {
+    const set = new Set(contacts.map(c => c.company).filter(Boolean));
+    return Array.from(set).sort();
+  }, [contacts]);
+
   const filtered = useMemo(() => {
-    if (!search) return contacts;
+    let result = contacts;
+    if (selectedCompany) {
+      result = result.filter(c => c.company === selectedCompany);
+    }
+    if (!search) return result;
     const q = search.toLowerCase();
-    return contacts.filter(c =>
+    return result.filter(c =>
       c.name.toLowerCase().includes(q) ||
       c.email.toLowerCase().includes(q) ||
       c.company.toLowerCase().includes(q) ||
       c.position.toLowerCase().includes(q) ||
       c.phone.includes(q)
     );
-  }, [contacts, search]);
+  }, [contacts, search, selectedCompany]);
 
   const openNew = () => {
     setEditingContact(null);
