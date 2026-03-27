@@ -1,32 +1,54 @@
 
 
-## Plan: Permitir cerrar temas desde ReviewView con diálogo de confirmación
+## Plan: Dividir tarjeta de Cumplimiento de Cierre + agregar Score por Departamento
 
-### Problema
-En `ReviewView.tsx`, los items de tipo `'topic'` tienen `onToggle: () => {}` (vacío) y el botón está `disabled={item.type === 'topic'}`. No se puede cerrar un tema desde la vista de Revisión.
+### Cambio
 
-### Solución
+En `src/components/DashboardView.tsx`, la tarjeta "Cumplimiento de Cierre" (líneas 393-446) actualmente usa un grid de 4 columnas. Se va a:
 
-**En `src/components/ReviewView.tsx`:**
+1. **Eliminar la 4ta columna** (el gráfico de barra verde/rojo de la derecha, líneas 433-442)
+2. **Convertir la tarjeta en 2 mitades** usando un grid de 2 columnas (`grid-cols-2`):
+   - **Mitad izquierda**: Cumplimiento de Cierre actual (tasa %, a tiempo, con atraso) en un sub-grid de 3 columnas
+   - **Mitad derecha**: "Score por Departamento" — lista de departamentos con su puntaje promedio de productividad, ordenados de mayor a menor
 
-1. **Agregar prop `onUpdateTopic`** para recibir la función de actualización de temas (ya existe en `Index.tsx`).
+3. **Calcular score por departamento**: Usando `liveScores` (ya disponible) y `assignees` + `departments`, agrupar responsables por departamento, promediar sus scores, y mostrar:
+   - Nombre del departamento
+   - Score promedio (con color verde/amarillo/rojo)
+   - Cantidad de integrantes
+   - Barra de progreso pequeña
 
-2. **Agregar estado para diálogo de cierre**: `showCloseDialog`, `closeTopicId`, `closeDateDraft` — idéntico al de `TopicCard.tsx`.
+### Lógica del score por departamento
 
-3. **Conectar el toggle de topics**: En vez de `onToggle: () => {}`, asignar una función que abra el diálogo de confirmación con el `topic.id`.
+```typescript
+const deptScores = useMemo(() => {
+  return departments.map(dept => {
+    const deptAssignees = assignees.filter(a => a.department === dept.name);
+    const scores = deptAssignees
+      .map(a => liveScores.get(a.name))
+      .filter((s): s is number => s !== undefined);
+    const avg = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
+    return { name: dept.name, avg, count: deptAssignees.length, withScore: scores.length };
+  })
+  .filter(d => d.count > 0)
+  .sort((a, b) => (b.avg ?? 0) - (a.avg ?? 0));
+}, [departments, assignees, liveScores]);
+```
 
-4. **Quitar `disabled={item.type === 'topic'}`** del botón para permitir click.
+### Layout visual
 
-5. **Agregar el Dialog de confirmación** (mismo diseño que TopicCard): input `datetime-local`, botones Cancelar/Confirmar. Al confirmar, llama `onUpdateTopic(id, { status: 'completado', closed_at, pause_reason: '', paused_at: null })`.
+```text
+┌──────────────────────────────────────────────────────────┐
+│  Cumplimiento de Cierre          │  Score por Departamento│
+│                                  │                        │
+│  73%   ● 8 A tiempo  ● 3 Atraso │  1. Depto A  — 85 pts │
+│  Tasa  Prom 3d antes  Prom 2d   │  2. Depto B  — 72 pts │
+│  ████████░░            atraso    │  3. Depto C  — 61 pts │
+└──────────────────────────────────────────────────────────┘
+```
 
-**En `src/pages/Index.tsx`:**
-
-6. **Pasar `onUpdateTopic`** como prop a `ReviewView`, usando la función `handleUpdateTopic` existente.
-
-### Archivos afectados
+### Archivo afectado
 
 | Archivo | Cambio |
 |---|---|
-| `src/components/ReviewView.tsx` | Agregar prop `onUpdateTopic`, estado del diálogo, lógica de cierre con confirmación fecha/hora, quitar disabled en topics |
-| `src/pages/Index.tsx` | Pasar `onUpdateTopic` a `ReviewView` |
+| `src/components/DashboardView.tsx` | Calcular `deptScores`, eliminar barra gráfica, dividir tarjeta en 2 mitades con score por departamento |
 
