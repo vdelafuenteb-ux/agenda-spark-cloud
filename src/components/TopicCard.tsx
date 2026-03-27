@@ -297,7 +297,7 @@ export function TopicCard({
                     <Calendar
                       mode="single"
                       selected={parseStoredDate(topic.due_date)}
-                      onSelect={(d) => onUpdate(topic.id, { due_date: toStoredDate(d) })}
+                      onSelect={(d) => handleDateChange(d)}
                     />
                     {topic.due_date && (
                       <div className="p-2 border-t">
@@ -308,6 +308,21 @@ export function TopicCard({
                     )}
                   </PopoverContent>
                 </Popover>
+              )}
+              {/* Reschedule badge */}
+              {reschedules.length > 0 && (
+                <TooltipProvider delayDuration={200}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="inline-flex items-center gap-0.5 text-[10px] text-amber-600 dark:text-amber-400 font-medium">
+                        <RefreshCw className="h-2.5 w-2.5" />{reschedules.length}
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="text-xs">
+                      {reschedules.length} reprogramación{reschedules.length !== 1 ? 'es' : ''}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
             </div>
           </div>
