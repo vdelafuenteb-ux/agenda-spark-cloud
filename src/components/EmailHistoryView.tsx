@@ -397,21 +397,19 @@ export function EmailHistoryView() {
             </SelectContent>
           </Select>
 
-          {isWeekly && (
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-full sm:w-[140px] h-8 text-xs">
               <SelectValue placeholder="Estado" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos</SelectItem>
-              <SelectItem value="pending">Pendientes</SelectItem>
-              <SelectItem value="confirmed">Confirmados</SelectItem>
-              <SelectItem value="overdue">Fuera de plazo</SelectItem>
+              {isWeekly && <SelectItem value="pending">Pendientes</SelectItem>}
+              {isWeekly && <SelectItem value="confirmed">Confirmados</SelectItem>}
+              {isWeekly && <SelectItem value="overdue">Fuera de plazo</SelectItem>}
               <SelectItem value="reviewed">Revisados</SelectItem>
               <SelectItem value="not_reviewed">No revisados</SelectItem>
             </SelectContent>
           </Select>
-          )}
           <div className="flex gap-2 w-full sm:w-auto">
             <Popover>
               <PopoverTrigger asChild>
