@@ -866,6 +866,8 @@ export type Database = {
           expires_at: string
           id: string
           token: string
+          topic_id: string | null
+          used: boolean
           user_id: string
         }
         Insert: {
@@ -874,6 +876,8 @@ export type Database = {
           expires_at?: string
           id?: string
           token?: string
+          topic_id?: string | null
+          used?: boolean
           user_id: string
         }
         Update: {
@@ -882,6 +886,8 @@ export type Database = {
           expires_at?: string
           id?: string
           token?: string
+          topic_id?: string | null
+          used?: boolean
           user_id?: string
         }
         Relationships: []
