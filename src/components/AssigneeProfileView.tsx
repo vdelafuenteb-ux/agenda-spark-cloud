@@ -5,8 +5,8 @@ import { Progress } from '@/components/ui/progress';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { ArrowLeft, Mail, CheckCircle2, AlertTriangle, Target, ListChecks, TrendingUp, CalendarClock, Bell, Loader2, ChevronDown, ChevronRight, BarChart3, Plus, Send, Trash2, RefreshCw } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ArrowLeft, Mail, CheckCircle2, AlertTriangle, Target, ListChecks, TrendingUp, CalendarClock, Bell, Loader2, BarChart3, Plus, Send, Trash2, RefreshCw } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -32,30 +32,6 @@ interface AssigneeProfileViewProps {
   reschedules: Reschedule[];
   onBack: () => void;
   onNavigateToTopic?: (topicId: string, status: string) => void;
-}
-
-function CollapsibleSection({ title, icon: Icon, count, defaultOpen = false, children, badge }: {
-  title: string; icon: any; count?: number; defaultOpen?: boolean; children: React.ReactNode; badge?: React.ReactNode;
-}) {
-  const [open, setOpen] = useState(defaultOpen);
-  return (
-    <Collapsible open={open} onOpenChange={setOpen}>
-      <CollapsibleTrigger asChild>
-        <button className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
-          <div className="flex items-center gap-2">
-            <Icon className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium">{title}</span>
-            {count !== undefined && <Badge variant="secondary" className="text-[10px] h-5">{count}</Badge>}
-            {badge}
-          </div>
-          {open ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
-        </button>
-      </CollapsibleTrigger>
-      <CollapsibleContent className="mt-2">
-        {children}
-      </CollapsibleContent>
-    </Collapsible>
-  );
 }
 
 export function AssigneeProfileView({ assigneeName, assignee, topics, reschedules: assigneeReschedules, onBack, onNavigateToTopic }: AssigneeProfileViewProps) {
@@ -124,7 +100,6 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, reschedule
       ? Math.round((completedSubtasks.length / allSubtasks.length) * 100)
       : 0;
 
-    // Subtask timeliness: completed with due_date → on time or late
     const completedWithDue = completedSubtasks.filter(s => s.due_date && s.completed_at);
     const subtasksOnTime = completedWithDue.filter(s => {
       const dueDate = new Date(s.due_date! + 'T23:59:59');
@@ -135,7 +110,6 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, reschedule
     const subtaskTimelinessRate = completedWithDue.length > 0
       ? Math.round((subtasksOnTime.length / completedWithDue.length) * 100)
       : null;
-    // Pending overdue subtasks (not completed, past due)
     const pendingOverdueSubtasks = allSubtasks.filter(s => !s.completed && s.due_date && isStoredDateOverdue(s.due_date));
 
     const alta = assigneeTopics.filter(t => t.priority === 'alta' && t.status !== 'completado');
@@ -146,7 +120,6 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, reschedule
     const emailsConfirmed = emailHistory.filter((e: any) => e.confirmed).length;
     const responseRate = emailsSent > 0 ? Math.round((emailsConfirmed / emailsSent) * 100) : 0;
 
-    // Email response compliance (a tiempo vs fuera de plazo)
     const confirmedEmails = emailHistory.filter((e: any) => e.confirmed && e.confirmed_at);
     const onTimeEmails = confirmedEmails.filter((e: any) => {
       const deadlineTime = new Date(e.sent_at).getTime() + DEADLINE_HOURS * 60 * 60 * 1000;
@@ -155,7 +128,6 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, reschedule
     const lateEmails = confirmedEmails.length - onTimeEmails.length;
     const complianceRate = confirmedEmails.length > 0 ? Math.round((onTimeEmails.length / confirmedEmails.length) * 100) : 0;
 
-    // Closure compliance (cierre a tiempo vs con atraso)
     const closedWithDates = completed.filter(t => t.due_date && t.closed_at);
     let closureOnTime = 0;
     let closureLate = 0;
@@ -177,7 +149,6 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, reschedule
     const avgDelayDays = closureLate > 0 ? Math.round(totalDelayDays / closureLate) : 0;
     const avgEarlyDays = closureOnTime > 0 ? Math.round(totalEarlyDays / closureOnTime) : 0;
 
-    // Velocity: % of allotted time used (lower = faster, score = 100 - avgPctUsed capped at 0)
     const closedWithStartAndDue = completed.filter(t => t.start_date && t.due_date && t.closed_at);
     let velocityScore: number | null = null;
     let avgPctUsed: number | null = null;
@@ -189,14 +160,12 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, reschedule
         const totalTime = due - start;
         if (totalTime <= 0) return 100;
         const usedTime = closed - start;
-        return Math.min(Math.round((usedTime / totalTime) * 100), 150); // cap at 150% for late closures
+        return Math.min(Math.round((usedTime / totalTime) * 100), 150);
       });
       avgPctUsed = Math.round(pcts.reduce((a, b) => a + b, 0) / pcts.length);
-      // Score: 100% used = 50pts, 50% used = 100pts, 150% used = 0pts
       velocityScore = Math.max(0, Math.min(100, Math.round(100 - (avgPctUsed - 50) * (100 / 100))));
     }
 
-    // Productivity Score calculation (5 dimensions)
     const dimensions: { key: string; value: number; weight: number }[] = [];
     if (closedWithDates.length > 0) dimensions.push({ key: 'closure', value: closureComplianceRate ?? 0, weight: 0.50 });
     if (confirmedEmails.length > 0) dimensions.push({ key: 'email', value: complianceRate, weight: 0.10 });
@@ -212,7 +181,6 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, reschedule
     const redistributedWeights: Record<string, number> = {};
     if (dimensions.length > 0) {
       productivityScore = Math.round(dimensions.reduce((s, d) => s + d.value * (d.weight / totalWeight), 0));
-      // Distribute weights so they sum exactly to 100 (largest remainder method)
       const rawPcts = dimensions.map(d => ({ key: d.key, pct: (d.weight / totalWeight) * 100 }));
       const floored = rawPcts.map(p => ({ ...p, floor: Math.floor(p.pct), remainder: p.pct - Math.floor(p.pct) }));
       let remaining = 100 - floored.reduce((s, f) => s + f.floor, 0);
@@ -264,6 +232,113 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, reschedule
     }
   };
 
+  // Render metric items for performance card
+  const renderMetricItems = () => {
+    const metricItems: { key: string; weight: number; node: React.ReactNode }[] = [];
+
+    if (metrics.closureComplianceRate !== null) {
+      metricItems.push({ key: 'closure', weight: metrics.redistributedWeights.closure ?? 0, node: (
+        <div className="space-y-1">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+              <CheckCircle2 className="h-3 w-3" /> Cierre de temas a tiempo
+              <Badge variant="outline" className="text-[8px] h-4 px-1 border-muted-foreground/30">{metrics.redistributedWeights.closure ?? 0}%</Badge>
+            </span>
+            <span className={cn("text-xs font-bold", metrics.closureComplianceRate >= 80 ? "text-green-600" : metrics.closureComplianceRate >= 50 ? "text-yellow-600" : "text-destructive")}>{metrics.closureComplianceRate}%</span>
+          </div>
+          <Progress value={metrics.closureComplianceRate} className="h-1.5" />
+          <div className="flex gap-3 text-[10px] text-muted-foreground flex-wrap">
+            <span>A tiempo: <strong className="text-green-600">{metrics.closureOnTime}</strong></span>
+            <span>Con atraso: <strong className="text-destructive">{metrics.closureLate}</strong></span>
+            <span>Total: <strong className="text-foreground">{metrics.closedWithDatesTotal}</strong></span>
+            {metrics.avgDelayDays > 0 && <span>Prom. atraso: <strong className="text-destructive">{metrics.avgDelayDays}d</strong></span>}
+            {metrics.avgEarlyDays > 0 && <span>Prom. anticipación: <strong className="text-green-600">{metrics.avgEarlyDays}d</strong></span>}
+          </div>
+        </div>
+      )});
+    }
+
+    if (metrics.subtaskTimelinessRate !== null) {
+      metricItems.push({ key: 'subtask', weight: metrics.redistributedWeights.subtask ?? 0, node: (
+        <div className="space-y-1">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+              <ListChecks className="h-3 w-3" /> Puntualidad de subtareas
+              <Badge variant="outline" className="text-[8px] h-4 px-1 border-muted-foreground/30">{metrics.redistributedWeights.subtask ?? 0}%</Badge>
+            </span>
+            <span className={cn("text-xs font-bold", metrics.subtaskTimelinessRate >= 80 ? "text-green-600" : metrics.subtaskTimelinessRate >= 50 ? "text-yellow-600" : "text-destructive")}>{metrics.subtaskTimelinessRate}%</span>
+          </div>
+          <Progress value={metrics.subtaskTimelinessRate} className="h-1.5" />
+          <div className="flex gap-3 text-[10px] text-muted-foreground">
+            <span>A tiempo: <strong className="text-green-600">{metrics.subtasksOnTime}</strong></span>
+            <span>Con atraso: <strong className="text-destructive">{metrics.subtasksLate}</strong></span>
+            <span>Total: <strong className="text-foreground">{metrics.completedWithDueTotal}</strong></span>
+          </div>
+        </div>
+      )});
+    }
+
+    if (metrics.confirmedTotal > 0) {
+      metricItems.push({ key: 'email', weight: metrics.redistributedWeights.email ?? 0, node: (
+        <div className="space-y-1">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+              <Mail className="h-3 w-3" /> Respuesta de correos
+              <Badge variant="outline" className="text-[8px] h-4 px-1 border-muted-foreground/30">{metrics.redistributedWeights.email ?? 0}%</Badge>
+            </span>
+            <span className={cn("text-xs font-bold", metrics.complianceRate >= 80 ? "text-green-600" : metrics.complianceRate >= 50 ? "text-yellow-600" : "text-destructive")}>{metrics.complianceRate}%</span>
+          </div>
+          <Progress value={metrics.complianceRate} className="h-1.5" />
+          <div className="flex gap-3 text-[10px] text-muted-foreground">
+            <span>A tiempo: <strong className="text-green-600">{metrics.onTimeEmails}</strong></span>
+            <span>Fuera de plazo: <strong className="text-destructive">{metrics.lateEmails}</strong></span>
+            <span>Total: <strong className="text-foreground">{metrics.confirmedTotal}</strong></span>
+          </div>
+        </div>
+      )});
+    }
+
+    if (metrics.velocityScore !== null && metrics.avgPctUsed !== null) {
+      metricItems.push({ key: 'velocity', weight: metrics.redistributedWeights.velocity ?? 0, node: (
+        <div className="space-y-1">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+              <TrendingUp className="h-3 w-3" /> Velocidad de ejecución
+              <Badge variant="outline" className="text-[8px] h-4 px-1 border-muted-foreground/30">{metrics.redistributedWeights.velocity ?? 0}%</Badge>
+            </span>
+            <span className={cn("text-xs font-bold", metrics.avgPctUsed <= 70 ? "text-green-600" : metrics.avgPctUsed <= 100 ? "text-yellow-600" : "text-destructive")}>{metrics.avgPctUsed}%</span>
+          </div>
+          <Progress value={Math.max(0, 100 - metrics.avgPctUsed + 50)} className="h-1.5" />
+          <div className="flex gap-3 text-[10px] text-muted-foreground">
+            <span>Usa en promedio el <strong className={metrics.avgPctUsed <= 70 ? "text-green-600" : metrics.avgPctUsed <= 100 ? "text-yellow-600" : "text-destructive"}>{metrics.avgPctUsed}%</strong> del plazo asignado</span>
+          </div>
+        </div>
+      )});
+    }
+
+    if (metrics.deadlineCompliance !== null) {
+      metricItems.push({ key: 'deadline', weight: metrics.redistributedWeights.deadline ?? 0, node: (
+        <div className="space-y-1">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+              <CalendarClock className="h-3 w-3" /> Plazos activos al día
+              <Badge variant="outline" className="text-[8px] h-4 px-1 border-muted-foreground/30">{metrics.redistributedWeights.deadline ?? 0}%</Badge>
+            </span>
+            <span className={cn("text-xs font-bold", metrics.deadlineCompliance >= 80 ? "text-green-600" : metrics.deadlineCompliance >= 50 ? "text-yellow-600" : "text-destructive")}>{metrics.deadlineCompliance}%</span>
+          </div>
+          <Progress value={metrics.deadlineCompliance} className="h-1.5" />
+          <div className="flex gap-3 text-[10px] text-muted-foreground">
+            <span>Al día: <strong className="text-green-600">{metrics.activeOnTimeTotal}</strong></span>
+            <span>Atrasados: <strong className="text-destructive">{metrics.activeWithDueTotal - metrics.activeOnTimeTotal}</strong></span>
+            <span>Total: <strong className="text-foreground">{metrics.activeWithDueTotal}</strong></span>
+          </div>
+        </div>
+      )});
+    }
+
+    return metricItems.sort((a, b) => b.weight - a.weight).map(m => <div key={m.key}>{m.node}</div>);
+  };
+
   return (
     <div className="flex-1 flex flex-col h-[calc(100vh-48px)] overflow-hidden">
       {/* Fixed header */}
@@ -282,7 +357,7 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, reschedule
       {/* Scrollable content */}
       <ScrollArea className="flex-1">
         <div className="max-w-6xl mx-auto p-3 md:p-4 space-y-4">
-          {/* KPIs row - includes subtask progress */}
+          {/* KPIs row */}
           <div className="grid grid-cols-3 lg:grid-cols-6 gap-2">
             {[
               { title: 'Temas', value: metrics.assigneeTopics.length, icon: Target, color: 'text-blue-500' },
@@ -304,485 +379,337 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, reschedule
             ))}
           </div>
 
-          {/* Rendimiento consolidado */}
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-5">
-                {/* Circular Score */}
-                {metrics.productivityScore !== null && (() => {
-                  const score = metrics.productivityScore;
-                  const label = score >= 90 ? 'Excelente' : score >= 70 ? 'Bueno' : score >= 50 ? 'Regular' : score >= 30 ? 'Bajo' : 'Crítico';
-                  const color = score >= 90 ? '#22c55e' : score >= 70 ? '#84cc16' : score >= 50 ? '#eab308' : score >= 30 ? '#f97316' : '#ef4444';
-                  const radius = 40;
-                  const circumference = 2 * Math.PI * radius;
-                  const offset = circumference - (score / 100) * circumference;
-                  // Trend arrow
-                  const prevSnapshot = scoreSnapshots.length >= 2 ? scoreSnapshots[scoreSnapshots.length - 2] : null;
-                  const previousScore = prevSnapshot ? prevSnapshot.score : null;
-                  const trendDiff = previousScore !== null ? score - previousScore : null;
-                  return (
-                    <div className="flex flex-col items-center shrink-0 w-[130px]">
-                      <svg width="120" height="120" viewBox="0 0 120 120">
-                        <circle cx="60" cy="60" r={radius} fill="none" stroke="hsl(var(--muted))" strokeWidth="7" />
-                        <circle cx="60" cy="60" r={radius} fill="none" stroke={color} strokeWidth="7"
-                          strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={offset}
-                          transform="rotate(-90 60 60)" className="transition-all duration-700" />
-                        <text x="60" y="55" textAnchor="middle" dominantBaseline="central" className="fill-foreground font-bold" fontSize="32">{score}</text>
-                        <text x="60" y="76" textAnchor="middle" className="fill-muted-foreground" fontSize="10">puntos</text>
-                        {trendDiff !== null && (
-                          <>
-                            {trendDiff > 0 && <text x="60" y="90" textAnchor="middle" fill="#22c55e" fontSize="11">▲ +{trendDiff}</text>}
-                            {trendDiff < 0 && <text x="60" y="90" textAnchor="middle" fill="#ef4444" fontSize="11">▼ {trendDiff}</text>}
-                            {trendDiff === 0 && <text x="60" y="90" textAnchor="middle" fill="hsl(var(--muted-foreground))" fontSize="10">= igual</text>}
-                          </>
-                        )}
-                      </svg>
-                      <span className="text-xs font-semibold mt-1" style={{ color }}>{label}</span>
-                      {scoreSnapshots.length >= 1 && (
-                        <button
-                          onClick={() => setShowTrend(true)}
-                          className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors mt-1.5"
-                        >
-                          <BarChart3 className="h-3 w-3" /> Ver tendencia
-                        </button>
+          {/* Tabs */}
+          <Tabs defaultValue="resumen" className="w-full">
+            <TabsList className="w-full grid grid-cols-4 h-10">
+              <TabsTrigger value="resumen" className="text-xs gap-1.5">
+                <BarChart3 className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Resumen</span>
+              </TabsTrigger>
+              <TabsTrigger value="temas" className="text-xs gap-1.5">
+                <ListChecks className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Temas</span>
+                <Badge variant="secondary" className="text-[9px] h-4 px-1 ml-0.5">{metrics.assigneeTopics.length}</Badge>
+              </TabsTrigger>
+              <TabsTrigger value="correos" className="text-xs gap-1.5">
+                <Mail className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Correos</span>
+                <Badge variant="secondary" className="text-[9px] h-4 px-1 ml-0.5">{emailHistory.length}</Badge>
+              </TabsTrigger>
+              <TabsTrigger value="incidencias" className="text-xs gap-1.5">
+                <AlertTriangle className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Incidencias</span>
+                <Badge variant="secondary" className="text-[9px] h-4 px-1 ml-0.5">{incidents.length}</Badge>
+              </TabsTrigger>
+            </TabsList>
+
+            {/* ===== TAB: RESUMEN ===== */}
+            <TabsContent value="resumen" className="space-y-4 mt-4">
+              {/* Rendimiento consolidado */}
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-5">
+                    {/* Circular Score */}
+                    {metrics.productivityScore !== null && (() => {
+                      const score = metrics.productivityScore;
+                      const label = score >= 90 ? 'Excelente' : score >= 70 ? 'Bueno' : score >= 50 ? 'Regular' : score >= 30 ? 'Bajo' : 'Crítico';
+                      const color = score >= 90 ? '#22c55e' : score >= 70 ? '#84cc16' : score >= 50 ? '#eab308' : score >= 30 ? '#f97316' : '#ef4444';
+                      const radius = 40;
+                      const circumference = 2 * Math.PI * radius;
+                      const offset = circumference - (score / 100) * circumference;
+                      const prevSnapshot = scoreSnapshots.length >= 2 ? scoreSnapshots[scoreSnapshots.length - 2] : null;
+                      const previousScore = prevSnapshot ? prevSnapshot.score : null;
+                      const trendDiff = previousScore !== null ? score - previousScore : null;
+                      return (
+                        <div className="flex flex-col items-center shrink-0 w-[130px]">
+                          <svg width="120" height="120" viewBox="0 0 120 120">
+                            <circle cx="60" cy="60" r={radius} fill="none" stroke="hsl(var(--muted))" strokeWidth="7" />
+                            <circle cx="60" cy="60" r={radius} fill="none" stroke={color} strokeWidth="7"
+                              strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={offset}
+                              transform="rotate(-90 60 60)" className="transition-all duration-700" />
+                            <text x="60" y="55" textAnchor="middle" dominantBaseline="central" className="fill-foreground font-bold" fontSize="32">{score}</text>
+                            <text x="60" y="76" textAnchor="middle" className="fill-muted-foreground" fontSize="10">puntos</text>
+                            {trendDiff !== null && (
+                              <>
+                                {trendDiff > 0 && <text x="60" y="90" textAnchor="middle" fill="#22c55e" fontSize="11">▲ +{trendDiff}</text>}
+                                {trendDiff < 0 && <text x="60" y="90" textAnchor="middle" fill="#ef4444" fontSize="11">▼ {trendDiff}</text>}
+                                {trendDiff === 0 && <text x="60" y="90" textAnchor="middle" fill="hsl(var(--muted-foreground))" fontSize="10">= igual</text>}
+                              </>
+                            )}
+                          </svg>
+                          <span className="text-xs font-semibold mt-1" style={{ color }}>{label}</span>
+                          {scoreSnapshots.length >= 1 && (
+                            <button
+                              onClick={() => setShowTrend(true)}
+                              className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors mt-1.5"
+                            >
+                              <BarChart3 className="h-3 w-3" /> Ver tendencia
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })()}
+
+                    {/* Progress bars */}
+                    <div className="flex-1 space-y-3 min-w-0">
+                      <span className="text-sm font-semibold text-foreground">Rendimiento</span>
+                      {renderMetricItems()}
+
+                      {metrics.allSubtasks.length > 0 && (
+                        <div className="border-t border-border pt-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-muted-foreground">Subtareas completadas</span>
+                            <span className={cn(
+                              "text-xs font-bold",
+                              metrics.subtaskProgress >= 80 ? "text-green-600" : metrics.subtaskProgress >= 50 ? "text-yellow-600" : "text-destructive"
+                            )}>{metrics.subtaskProgress}%</span>
+                          </div>
+                          <Progress value={metrics.subtaskProgress} className="h-1.5 mt-1" />
+                          <div className="flex gap-3 text-[10px] text-muted-foreground mt-1">
+                            <span>{metrics.completedSubtasks.length}/{metrics.allSubtasks.length} completadas</span>
+                            {metrics.pendingOverdueSubtasks > 0 && <span>Atrasadas: <strong className="text-destructive">{metrics.pendingOverdueSubtasks}</strong></span>}
+                          </div>
+                        </div>
                       )}
                     </div>
-                  );
-                })()}
+                  </div>
+                </CardContent>
+              </Card>
 
-                {/* Progress bars — ordered by weight: 50%, 20%, 10%, 10%, then info */}
-                <div className="flex-1 space-y-3 min-w-0">
-                  <span className="text-sm font-semibold text-foreground">Rendimiento</span>
-
-                  {/* Metrics sorted by weight descending */}
-                  {(() => {
-                    const metricItems: { key: string; weight: number; node: React.ReactNode }[] = [];
-
-                    if (metrics.closureComplianceRate !== null) {
-                      metricItems.push({ key: 'closure', weight: metrics.redistributedWeights.closure ?? 0, node: (
-                        <div className="space-y-1">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs text-muted-foreground flex items-center gap-1.5">
-                              <CheckCircle2 className="h-3 w-3" /> Cierre de temas a tiempo
-                              <Badge variant="outline" className="text-[8px] h-4 px-1 border-muted-foreground/30">{metrics.redistributedWeights.closure ?? 0}%</Badge>
-                            </span>
-                            <span className={cn("text-xs font-bold", metrics.closureComplianceRate >= 80 ? "text-green-600" : metrics.closureComplianceRate >= 50 ? "text-yellow-600" : "text-destructive")}>{metrics.closureComplianceRate}%</span>
-                          </div>
-                          <Progress value={metrics.closureComplianceRate} className="h-1.5" />
-                          <div className="flex gap-3 text-[10px] text-muted-foreground flex-wrap">
-                            <span>A tiempo: <strong className="text-green-600">{metrics.closureOnTime}</strong></span>
-                            <span>Con atraso: <strong className="text-destructive">{metrics.closureLate}</strong></span>
-                            <span>Total: <strong className="text-foreground">{metrics.closedWithDatesTotal}</strong></span>
-                            {metrics.avgDelayDays > 0 && <span>Prom. atraso: <strong className="text-destructive">{metrics.avgDelayDays}d</strong></span>}
-                            {metrics.avgEarlyDays > 0 && <span>Prom. anticipación: <strong className="text-green-600">{metrics.avgEarlyDays}d</strong></span>}
-                          </div>
-                        </div>
-                      )});
-                    }
-
-                    if (metrics.subtaskTimelinessRate !== null) {
-                      metricItems.push({ key: 'subtask', weight: metrics.redistributedWeights.subtask ?? 0, node: (
-                        <div className="space-y-1">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs text-muted-foreground flex items-center gap-1.5">
-                              <ListChecks className="h-3 w-3" /> Puntualidad de subtareas
-                              <Badge variant="outline" className="text-[8px] h-4 px-1 border-muted-foreground/30">{metrics.redistributedWeights.subtask ?? 0}%</Badge>
-                            </span>
-                            <span className={cn("text-xs font-bold", metrics.subtaskTimelinessRate >= 80 ? "text-green-600" : metrics.subtaskTimelinessRate >= 50 ? "text-yellow-600" : "text-destructive")}>{metrics.subtaskTimelinessRate}%</span>
-                          </div>
-                          <Progress value={metrics.subtaskTimelinessRate} className="h-1.5" />
-                          <div className="flex gap-3 text-[10px] text-muted-foreground">
-                            <span>A tiempo: <strong className="text-green-600">{metrics.subtasksOnTime}</strong></span>
-                            <span>Con atraso: <strong className="text-destructive">{metrics.subtasksLate}</strong></span>
-                            <span>Total: <strong className="text-foreground">{metrics.completedWithDueTotal}</strong></span>
-                          </div>
-                        </div>
-                      )});
-                    }
-
-                    if (metrics.confirmedTotal > 0) {
-                      metricItems.push({ key: 'email', weight: metrics.redistributedWeights.email ?? 0, node: (
-                        <div className="space-y-1">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs text-muted-foreground flex items-center gap-1.5">
-                              <Mail className="h-3 w-3" /> Respuesta de correos
-                              <Badge variant="outline" className="text-[8px] h-4 px-1 border-muted-foreground/30">{metrics.redistributedWeights.email ?? 0}%</Badge>
-                            </span>
-                            <span className={cn("text-xs font-bold", metrics.complianceRate >= 80 ? "text-green-600" : metrics.complianceRate >= 50 ? "text-yellow-600" : "text-destructive")}>{metrics.complianceRate}%</span>
-                          </div>
-                          <Progress value={metrics.complianceRate} className="h-1.5" />
-                          <div className="flex gap-3 text-[10px] text-muted-foreground">
-                            <span>A tiempo: <strong className="text-green-600">{metrics.onTimeEmails}</strong></span>
-                            <span>Fuera de plazo: <strong className="text-destructive">{metrics.lateEmails}</strong></span>
-                            <span>Total: <strong className="text-foreground">{metrics.confirmedTotal}</strong></span>
-                          </div>
-                        </div>
-                      )});
-                    }
-
-                    if (metrics.velocityScore !== null && metrics.avgPctUsed !== null) {
-                      metricItems.push({ key: 'velocity', weight: metrics.redistributedWeights.velocity ?? 0, node: (
-                        <div className="space-y-1">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs text-muted-foreground flex items-center gap-1.5">
-                              <TrendingUp className="h-3 w-3" /> Velocidad de ejecución
-                              <Badge variant="outline" className="text-[8px] h-4 px-1 border-muted-foreground/30">{metrics.redistributedWeights.velocity ?? 0}%</Badge>
-                            </span>
-                            <span className={cn("text-xs font-bold", metrics.avgPctUsed <= 70 ? "text-green-600" : metrics.avgPctUsed <= 100 ? "text-yellow-600" : "text-destructive")}>{metrics.avgPctUsed}%</span>
-                          </div>
-                          <Progress value={Math.max(0, 100 - metrics.avgPctUsed + 50)} className="h-1.5" />
-                          <div className="flex gap-3 text-[10px] text-muted-foreground">
-                            <span>Usa en promedio el <strong className={metrics.avgPctUsed <= 70 ? "text-green-600" : metrics.avgPctUsed <= 100 ? "text-yellow-600" : "text-destructive"}>{metrics.avgPctUsed}%</strong> del plazo asignado</span>
-                          </div>
-                        </div>
-                      )});
-                    }
-
-                    if (metrics.deadlineCompliance !== null) {
-                      metricItems.push({ key: 'deadline', weight: metrics.redistributedWeights.deadline ?? 0, node: (
-                        <div className="space-y-1">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs text-muted-foreground flex items-center gap-1.5">
-                              <CalendarClock className="h-3 w-3" /> Plazos activos al día
-                              <Badge variant="outline" className="text-[8px] h-4 px-1 border-muted-foreground/30">{metrics.redistributedWeights.deadline ?? 0}%</Badge>
-                            </span>
-                            <span className={cn("text-xs font-bold", metrics.deadlineCompliance >= 80 ? "text-green-600" : metrics.deadlineCompliance >= 50 ? "text-yellow-600" : "text-destructive")}>{metrics.deadlineCompliance}%</span>
-                          </div>
-                          <Progress value={metrics.deadlineCompliance} className="h-1.5" />
-                          <div className="flex gap-3 text-[10px] text-muted-foreground">
-                            <span>Al día: <strong className="text-green-600">{metrics.activeOnTimeTotal}</strong></span>
-                            <span>Atrasados: <strong className="text-destructive">{metrics.activeWithDueTotal - metrics.activeOnTimeTotal}</strong></span>
-                            <span>Total: <strong className="text-foreground">{metrics.activeWithDueTotal}</strong></span>
-                          </div>
-                        </div>
-                      )});
-                    }
-
-                    return metricItems.sort((a, b) => b.weight - a.weight).map(m => <div key={m.key}>{m.node}</div>);
-                  })()}
-
-                  {metrics.allSubtasks.length > 0 && (
-                    <>
-                      <div className="border-t border-border pt-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-muted-foreground">Subtareas completadas</span>
-                          <span className={cn(
-                            "text-xs font-bold",
-                            metrics.subtaskProgress >= 80 ? "text-green-600" : metrics.subtaskProgress >= 50 ? "text-yellow-600" : "text-destructive"
-                          )}>{metrics.subtaskProgress}%</span>
-                        </div>
-                        <Progress value={metrics.subtaskProgress} className="h-1.5 mt-1" />
-                        <div className="flex gap-3 text-[10px] text-muted-foreground mt-1">
-                          <span>{metrics.completedSubtasks.length}/{metrics.allSubtasks.length} completadas</span>
-                          {metrics.pendingOverdueSubtasks > 0 && <span>Atrasadas: <strong className="text-destructive">{metrics.pendingOverdueSubtasks}</strong></span>}
-                        </div>
-                      </div>
-                    </>
+              {/* Trend Dialog */}
+              <Dialog open={showTrend} onOpenChange={setShowTrend}>
+                <DialogContent className="max-w-lg">
+                  <DialogHeader>
+                    <DialogTitle>Tendencia de productividad — {assigneeName}</DialogTitle>
+                  </DialogHeader>
+                  {scoreSnapshots.length >= 2 ? (
+                    <div className="h-[220px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={scoreSnapshots}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                          <XAxis dataKey="label" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
+                          <YAxis domain={[0, 100]} tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
+                          <Tooltip
+                            contentStyle={{ fontSize: 12, background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
+                            formatter={(value: number) => [`${value} pts`, 'Score']}
+                          />
+                          <ReferenceLine y={70} stroke="#84cc16" strokeDasharray="3 3" label={{ value: 'Bueno', fontSize: 9, fill: '#84cc16' }} />
+                          <Line type="monotone" dataKey="score" stroke="#22c55e" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground py-4 text-center">Se necesitan al menos 2 semanas de datos para mostrar la tendencia.</p>
                   )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                </DialogContent>
+              </Dialog>
 
-          {/* Trend Dialog */}
-          <Dialog open={showTrend} onOpenChange={setShowTrend}>
-            <DialogContent className="max-w-lg">
-              <DialogHeader>
-                <DialogTitle>Tendencia de productividad — {assigneeName}</DialogTitle>
-              </DialogHeader>
-              {scoreSnapshots.length >= 2 ? (
-                <div className="h-[220px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={scoreSnapshots}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis dataKey="label" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
-                      <YAxis domain={[0, 100]} tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
-                      <Tooltip
-                        contentStyle={{ fontSize: 12, background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
-                        formatter={(value: number) => [`${value} pts`, 'Score']}
-                      />
-                      <ReferenceLine y={70} stroke="#84cc16" strokeDasharray="3 3" label={{ value: 'Bueno', fontSize: 9, fill: '#84cc16' }} />
-                      <Line type="monotone" dataKey="score" stroke="#22c55e" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground py-4 text-center">Se necesitan al menos 2 semanas de datos para mostrar la tendencia.</p>
-              )}
-            </DialogContent>
-          </Dialog>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-            <Card className={metrics.overdue.length > 0 ? 'border-destructive/30' : ''}>
-              <CardHeader className="pb-1 p-3">
-                <CardTitle className="text-xs font-medium flex items-center gap-1.5 text-destructive">
-                  <AlertTriangle className="h-3.5 w-3.5" /> Atrasados ({metrics.overdue.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-3 pt-0">
-                {metrics.overdue.length === 0 ? (
-                  <p className="text-[11px] text-muted-foreground py-1">Sin atrasos 🎉</p>
-                ) : (
-                  <div className="space-y-1.5">
-                    {metrics.overdue.map(t => (
-                      <div key={t.id} className="flex items-center justify-between text-xs gap-1">
-                        <span className="truncate flex-1">{t.title}</span>
-                        <Badge variant="destructive" className="text-[9px] shrink-0">{t.due_date}</Badge>
-                        <button onClick={() => handleSendReminder(t)} disabled={sendingId === t.id || !assignee?.email}
-                          className="shrink-0 p-1 rounded-full hover:bg-destructive/10 text-destructive transition-colors disabled:opacity-30">
-                          {sendingId === t.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Bell className="h-3 w-3" />}
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-            <Card className={metrics.dueSoon.length > 0 ? 'border-yellow-500/30' : ''}>
-              <CardHeader className="pb-1 p-3">
-                <CardTitle className="text-xs font-medium flex items-center gap-1.5 text-yellow-600">
-                  <CalendarClock className="h-3.5 w-3.5" /> Por Vencer ({metrics.dueSoon.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-3 pt-0">
-                {metrics.dueSoon.length === 0 ? (
-                  <p className="text-[11px] text-muted-foreground py-1">Nada próximo a vencer</p>
-                ) : (
-                  <div className="space-y-1.5">
-                    {metrics.dueSoon.map(t => (
-                      <div key={t.id} className="flex items-center justify-between text-xs gap-1">
-                        <span className="truncate flex-1">{t.title}</span>
-                        <Badge variant="outline" className="text-[9px] shrink-0 border-yellow-500/50 text-yellow-600">{t.due_date}</Badge>
-                        <button onClick={() => handleSendReminder(t)} disabled={sendingId === t.id || !assignee?.email}
-                          className="shrink-0 p-1 rounded-full hover:bg-yellow-500/10 text-yellow-600 transition-colors disabled:opacity-30">
-                          {sendingId === t.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Bell className="h-3 w-3" />}
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Collapsible: Priority breakdown */}
-          <CollapsibleSection title="Prioridades" icon={Target} defaultOpen={true}
-            badge={
-              <div className="flex gap-1 ml-1">
-                {metrics.alta.length > 0 && <Badge variant="destructive" className="text-[9px] h-4">{metrics.alta.length} alta</Badge>}
-                {metrics.media.length > 0 && <Badge variant="outline" className="text-[9px] h-4 border-yellow-500/50 text-yellow-600">{metrics.media.length} media</Badge>}
-                {metrics.baja.length > 0 && <Badge variant="outline" className="text-[9px] h-4 border-green-500/50 text-green-600">{metrics.baja.length} baja</Badge>}
-              </div>
-            }>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-              {[
-                { label: 'Alta', items: metrics.alta, color: 'text-destructive', border: 'border-destructive/30' },
-                { label: 'Media', items: metrics.media, color: 'text-yellow-600', border: 'border-yellow-500/30' },
-                { label: 'Baja', items: metrics.baja, color: 'text-green-600', border: 'border-green-500/30' },
-              ].map(group => (
-                <Card key={group.label} className={group.border}>
-                  <CardContent className="p-3">
-                    <p className={`text-xs font-medium mb-2 ${group.color}`}>{group.label} ({group.items.length})</p>
-                    {group.items.length === 0 ? (
-                      <p className="text-[11px] text-muted-foreground">Sin temas</p>
+              {/* Overdue / Due soon cards */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                <Card className={metrics.overdue.length > 0 ? 'border-destructive/30' : ''}>
+                  <CardHeader className="pb-1 p-3">
+                    <CardTitle className="text-xs font-medium flex items-center gap-1.5 text-destructive">
+                      <AlertTriangle className="h-3.5 w-3.5" /> Atrasados ({metrics.overdue.length})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-3 pt-0">
+                    {metrics.overdue.length === 0 ? (
+                      <p className="text-[11px] text-muted-foreground py-1">Sin atrasos 🎉</p>
                     ) : (
-                      <div className="space-y-1">
-                        {group.items.map(t => (
-                          <div key={t.id} className="text-xs flex items-center justify-between">
+                      <div className="space-y-1.5">
+                        {metrics.overdue.map(t => (
+                          <div key={t.id} className="flex items-center justify-between text-xs gap-1">
                             <span className="truncate flex-1">{t.title}</span>
-                            <Badge variant="outline" className={`text-[9px] ml-1 shrink-0 ${
-                              t.status === 'activo' ? 'border-blue-500/50 text-blue-600' : 'border-cyan-500/50 text-cyan-600'
-                            }`}>{t.status}</Badge>
+                            <Badge variant="destructive" className="text-[9px] shrink-0">{t.due_date}</Badge>
+                            <button onClick={() => handleSendReminder(t)} disabled={sendingId === t.id || !assignee?.email}
+                              className="shrink-0 p-1 rounded-full hover:bg-destructive/10 text-destructive transition-colors disabled:opacity-30">
+                              {sendingId === t.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Bell className="h-3 w-3" />}
+                            </button>
                           </div>
                         ))}
                       </div>
                     )}
                   </CardContent>
                 </Card>
-              ))}
-            </div>
-          </CollapsibleSection>
-
-          {/* Collapsible: All topics table */}
-          <CollapsibleSection title="Todos los temas" icon={ListChecks} count={metrics.assigneeTopics.length} defaultOpen={false}>
-            <Card>
-              <CardContent className="p-3">
-                <div className="hidden sm:block max-h-[300px] overflow-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="text-xs">Tema</TableHead>
-                        <TableHead className="text-xs text-center">Prioridad</TableHead>
-                        <TableHead className="text-xs text-center">Estado</TableHead>
-                        <TableHead className="text-xs text-center">Vencimiento</TableHead>
-                        <TableHead className="text-xs text-center">Subtareas</TableHead>
-                        <TableHead className="text-xs text-center w-10">📧</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {metrics.assigneeTopics.map(t => {
-                        const pending = t.subtasks.filter(s => !s.completed).length;
-                        const isOverdue = isStoredDateOverdue(t.due_date);
-                        return (
-                          <TableRow key={t.id} className={`${isOverdue ? 'bg-destructive/5' : ''} ${onNavigateToTopic ? 'cursor-pointer hover:bg-muted/50' : ''}`} onClick={() => onNavigateToTopic?.(t.id, t.status)}>
-                            <TableCell className="text-sm font-medium max-w-[200px] truncate text-primary">{t.title}</TableCell>
-                            <TableCell className="text-center">
-                              <Badge variant={t.priority === 'alta' ? 'destructive' : t.priority === 'media' ? 'outline' : 'secondary'} className="text-[9px]">{t.priority}</Badge>
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <Badge variant="outline" className={`text-[9px] ${
-                                t.status === 'activo' ? 'border-blue-500/50 text-blue-600' :
-                                t.status === 'seguimiento' ? 'border-cyan-500/50 text-cyan-600' :
-                                t.status === 'completado' ? 'border-green-500/50 text-green-600' :
-                                'border-yellow-500/50 text-yellow-600'
-                              }`}>{t.status}</Badge>
-                            </TableCell>
-                            <TableCell className={`text-xs text-center ${isOverdue ? 'text-destructive font-semibold' : 'text-muted-foreground'}`}>
-                              {t.due_date ? formatStoredDate(t.due_date, 'dd MMM yyyy', { locale: es }) : '—'}
-                            </TableCell>
-                            <TableCell className="text-xs text-center">
-                              <span className={pending > 0 ? 'text-destructive' : 'text-muted-foreground'}>
-                                {pending > 0 ? `${pending} pend.` : t.subtasks.length > 0 ? '✓' : '—'}
-                              </span>
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <button onClick={() => handleSendReminder(t)} disabled={sendingId === t.id || !assignee?.email}
-                                className="p-1 rounded-full hover:bg-muted transition-colors disabled:opacity-30">
-                                {sendingId === t.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Bell className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />}
-                              </button>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </div>
-                {/* Mobile */}
-                <div className="sm:hidden space-y-2 max-h-[300px] overflow-auto">
-                  {metrics.assigneeTopics.map(t => {
-                    const pending = t.subtasks.filter(s => !s.completed).length;
-                    const isOverdue = isStoredDateOverdue(t.due_date);
-                    return (
-                      <div key={t.id} className={`rounded-md border p-2.5 space-y-1 ${isOverdue ? 'border-destructive/30 bg-destructive/5' : 'border-border'} ${onNavigateToTopic ? 'cursor-pointer hover:bg-muted/50' : ''}`} onClick={() => onNavigateToTopic?.(t.id, t.status)}>
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-medium truncate flex-1 text-primary">{t.title}</span>
-                          <button onClick={() => handleSendReminder(t)} disabled={sendingId === t.id || !assignee?.email}
-                            className="p-1 rounded-full hover:bg-muted transition-colors disabled:opacity-30">
-                            {sendingId === t.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Bell className="h-3 w-3 text-muted-foreground" />}
-                          </button>
-                        </div>
-                        <div className="flex gap-1 flex-wrap">
-                          <Badge variant={t.priority === 'alta' ? 'destructive' : 'outline'} className="text-[9px]">{t.priority}</Badge>
-                          <Badge variant="outline" className="text-[9px]">{t.status}</Badge>
-                          {t.due_date && <Badge variant={isOverdue ? 'destructive' : 'outline'} className="text-[9px]">{t.due_date}</Badge>}
-                          {pending > 0 && <Badge variant="outline" className="text-[9px] text-destructive">{pending} pend.</Badge>}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          </CollapsibleSection>
-
-
-
-
-          {/* Collapsible: Email History */}
-          <CollapsibleSection title="Historial de correos" icon={Mail} count={emailHistory.length} defaultOpen={false}>
-            <Card>
-              <CardContent className="p-3">
-                {emailHistory.length === 0 ? (
-                  <p className="text-sm text-muted-foreground py-2">No se han enviado correos a {assigneeName}</p>
-                ) : (
-                  <>
-                    <div className="flex items-center gap-4 mb-3 text-xs">
-                      <span className="text-muted-foreground">Enviados: <strong className="text-foreground">{metrics.emailsSent}</strong></span>
-                      <span className="text-muted-foreground">Confirmados: <strong className="text-green-600">{metrics.emailsConfirmed}</strong></span>
-                      <span className="text-muted-foreground">
-                        Tasa: <strong className={metrics.responseRate >= 80 ? 'text-green-600' : metrics.responseRate >= 50 ? 'text-yellow-600' : 'text-destructive'}>{metrics.responseRate}%</strong>
-                      </span>
-                    </div>
-                    <div className="hidden sm:block max-h-[250px] overflow-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="text-xs">Tema</TableHead>
-                            <TableHead className="text-xs text-center">Enviado</TableHead>
-                            <TableHead className="text-xs text-center">Confirmado</TableHead>
-                            <TableHead className="text-xs text-center">Plazo</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {emailHistory.map((e: any) => {
-                            const onTime = e.confirmed && e.confirmed_at
-                              ? new Date(e.confirmed_at).getTime() <= new Date(e.sent_at).getTime() + DEADLINE_HOURS * 60 * 60 * 1000
-                              : null;
-                            return (
-                              <TableRow key={e.id}>
-                                <TableCell className="text-xs">{e.topics?.title || e.topic_id}</TableCell>
-                                <TableCell className="text-xs text-center text-muted-foreground">
-                                  {format(new Date(e.sent_at), 'dd MMM HH:mm', { locale: es })}
-                                </TableCell>
-                                <TableCell className="text-center">
-                                  {e.confirmed ? (
-                                    <CheckCircle2 className="h-3.5 w-3.5 text-green-600 mx-auto" />
-                                  ) : (
-                                    <span className="text-xs text-muted-foreground">—</span>
-                                  )}
-                                </TableCell>
-                                <TableCell className="text-center">
-                                  {onTime !== null ? (
-                                    <Badge variant={onTime ? 'secondary' : 'destructive'} className="text-[9px]">
-                                      {onTime ? 'A tiempo' : 'Fuera de plazo'}
-                                    </Badge>
-                                  ) : (
-                                    <span className="text-xs text-muted-foreground">—</span>
-                                  )}
-                                </TableCell>
-                              </TableRow>
-                            );
-                          })}
-                        </TableBody>
-                      </Table>
-                    </div>
-                    <div className="sm:hidden space-y-1.5 max-h-[250px] overflow-auto">
-                      {emailHistory.map((e: any) => {
-                        const onTime = e.confirmed && e.confirmed_at
-                          ? new Date(e.confirmed_at).getTime() <= new Date(e.sent_at).getTime() + DEADLINE_HOURS * 60 * 60 * 1000
-                          : null;
-                        return (
-                          <div key={e.id} className="flex items-center justify-between py-1.5 border-b border-border last:border-0">
-                            <div className="min-w-0">
-                              <p className="text-xs font-medium truncate">{e.topics?.title || e.topic_id}</p>
-                              <p className="text-[10px] text-muted-foreground">{format(new Date(e.sent_at), 'dd MMM HH:mm', { locale: es })}</p>
-                            </div>
-                            <div className="flex items-center gap-1.5 shrink-0">
-                              {e.confirmed ? <CheckCircle2 className="h-3.5 w-3.5 text-green-600" /> : <span className="text-[10px] text-muted-foreground">—</span>}
-                              {onTime !== null && (
-                                <Badge variant={onTime ? 'secondary' : 'destructive'} className="text-[8px]">
-                                  {onTime ? 'A tiempo' : 'Tarde'}
-                                </Badge>
-                              )}
-                            </div>
+                <Card className={metrics.dueSoon.length > 0 ? 'border-yellow-500/30' : ''}>
+                  <CardHeader className="pb-1 p-3">
+                    <CardTitle className="text-xs font-medium flex items-center gap-1.5 text-yellow-600">
+                      <CalendarClock className="h-3.5 w-3.5" /> Por Vencer ({metrics.dueSoon.length})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-3 pt-0">
+                    {metrics.dueSoon.length === 0 ? (
+                      <p className="text-[11px] text-muted-foreground py-1">Nada próximo a vencer</p>
+                    ) : (
+                      <div className="space-y-1.5">
+                        {metrics.dueSoon.map(t => (
+                          <div key={t.id} className="flex items-center justify-between text-xs gap-1">
+                            <span className="truncate flex-1">{t.title}</span>
+                            <Badge variant="outline" className="text-[9px] shrink-0 border-yellow-500/50 text-yellow-600">{t.due_date}</Badge>
+                            <button onClick={() => handleSendReminder(t)} disabled={sendingId === t.id || !assignee?.email}
+                              className="shrink-0 p-1 rounded-full hover:bg-yellow-500/10 text-yellow-600 transition-colors disabled:opacity-30">
+                              {sendingId === t.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Bell className="h-3 w-3" />}
+                            </button>
                           </div>
-                        );
-                      })}
-                    </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          </CollapsibleSection>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
 
-          {/* Reprogramaciones */}
-          <CollapsibleSection title="Reprogramaciones" icon={RefreshCw} count={assigneeReschedules.length}>
-            <Card>
-              <CardContent className="p-3">
-                {assigneeReschedules.length === 0 ? (
-                  <p className="text-xs text-muted-foreground text-center py-4">Sin reprogramaciones registradas</p>
-                ) : (
-                  <>
+              {/* Priorities */}
+              <Card>
+                <CardHeader className="pb-1 p-3">
+                  <CardTitle className="text-xs font-medium flex items-center gap-2">
+                    <Target className="h-3.5 w-3.5 text-muted-foreground" /> Prioridades
+                    <div className="flex gap-1 ml-1">
+                      {metrics.alta.length > 0 && <Badge variant="destructive" className="text-[9px] h-4">{metrics.alta.length} alta</Badge>}
+                      {metrics.media.length > 0 && <Badge variant="outline" className="text-[9px] h-4 border-yellow-500/50 text-yellow-600">{metrics.media.length} media</Badge>}
+                      {metrics.baja.length > 0 && <Badge variant="outline" className="text-[9px] h-4 border-green-500/50 text-green-600">{metrics.baja.length} baja</Badge>}
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-3 pt-0">
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                    {[
+                      { label: 'Alta', items: metrics.alta, color: 'text-destructive', border: 'border-destructive/30' },
+                      { label: 'Media', items: metrics.media, color: 'text-yellow-600', border: 'border-yellow-500/30' },
+                      { label: 'Baja', items: metrics.baja, color: 'text-green-600', border: 'border-green-500/30' },
+                    ].map(group => (
+                      <Card key={group.label} className={group.border}>
+                        <CardContent className="p-3">
+                          <p className={`text-xs font-medium mb-2 ${group.color}`}>{group.label} ({group.items.length})</p>
+                          {group.items.length === 0 ? (
+                            <p className="text-[11px] text-muted-foreground">Sin temas</p>
+                          ) : (
+                            <div className="space-y-1">
+                              {group.items.map(t => (
+                                <div key={t.id} className="text-xs flex items-center justify-between">
+                                  <span className="truncate flex-1">{t.title}</span>
+                                  <Badge variant="outline" className={`text-[9px] ml-1 shrink-0 ${
+                                    t.status === 'activo' ? 'border-blue-500/50 text-blue-600' : 'border-cyan-500/50 text-cyan-600'
+                                  }`}>{t.status}</Badge>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* ===== TAB: TEMAS ===== */}
+            <TabsContent value="temas" className="space-y-4 mt-4">
+              <Card>
+                <CardHeader className="pb-1 p-3">
+                  <CardTitle className="text-xs font-medium flex items-center gap-1.5">
+                    <ListChecks className="h-3.5 w-3.5 text-muted-foreground" /> Todos los temas ({metrics.assigneeTopics.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-3 pt-0">
+                  <div className="hidden sm:block max-h-[400px] overflow-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="text-xs">Tema</TableHead>
+                          <TableHead className="text-xs text-center">Prioridad</TableHead>
+                          <TableHead className="text-xs text-center">Estado</TableHead>
+                          <TableHead className="text-xs text-center">Vencimiento</TableHead>
+                          <TableHead className="text-xs text-center">Subtareas</TableHead>
+                          <TableHead className="text-xs text-center">🔄</TableHead>
+                          <TableHead className="text-xs text-center w-10">📧</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {metrics.assigneeTopics.map(t => {
+                          const pending = t.subtasks.filter(s => !s.completed).length;
+                          const isOverdue = isStoredDateOverdue(t.due_date);
+                          const topicReschedules = assigneeReschedules.filter(r => r.topic_id === t.id);
+                          return (
+                            <TableRow key={t.id} className={`${isOverdue ? 'bg-destructive/5' : ''} ${onNavigateToTopic ? 'cursor-pointer hover:bg-muted/50' : ''}`} onClick={() => onNavigateToTopic?.(t.id, t.status)}>
+                              <TableCell className="text-sm font-medium max-w-[200px] truncate text-primary">{t.title}</TableCell>
+                              <TableCell className="text-center">
+                                <Badge variant={t.priority === 'alta' ? 'destructive' : t.priority === 'media' ? 'outline' : 'secondary'} className="text-[9px]">{t.priority}</Badge>
+                              </TableCell>
+                              <TableCell className="text-center">
+                                <Badge variant="outline" className={`text-[9px] ${
+                                  t.status === 'activo' ? 'border-blue-500/50 text-blue-600' :
+                                  t.status === 'seguimiento' ? 'border-cyan-500/50 text-cyan-600' :
+                                  t.status === 'completado' ? 'border-green-500/50 text-green-600' :
+                                  'border-yellow-500/50 text-yellow-600'
+                                }`}>{t.status}</Badge>
+                              </TableCell>
+                              <TableCell className={`text-xs text-center ${isOverdue ? 'text-destructive font-semibold' : 'text-muted-foreground'}`}>
+                                {t.due_date ? formatStoredDate(t.due_date, 'dd MMM yyyy', { locale: es }) : '—'}
+                              </TableCell>
+                              <TableCell className="text-xs text-center">
+                                <span className={pending > 0 ? 'text-destructive' : 'text-muted-foreground'}>
+                                  {pending > 0 ? `${pending} pend.` : t.subtasks.length > 0 ? '✓' : '—'}
+                                </span>
+                              </TableCell>
+                              <TableCell className="text-xs text-center">
+                                {topicReschedules.length > 0 ? (
+                                  <Badge variant="outline" className="text-[9px] border-amber-500/50 text-amber-600">
+                                    {topicReschedules.length}
+                                  </Badge>
+                                ) : (
+                                  <span className="text-muted-foreground">—</span>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-center">
+                                <button onClick={(e) => { e.stopPropagation(); handleSendReminder(t); }} disabled={sendingId === t.id || !assignee?.email}
+                                  className="p-1 rounded-full hover:bg-muted transition-colors disabled:opacity-30">
+                                  {sendingId === t.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Bell className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />}
+                                </button>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  {/* Mobile */}
+                  <div className="sm:hidden space-y-2 max-h-[400px] overflow-auto">
+                    {metrics.assigneeTopics.map(t => {
+                      const pending = t.subtasks.filter(s => !s.completed).length;
+                      const isOverdue = isStoredDateOverdue(t.due_date);
+                      const topicReschedules = assigneeReschedules.filter(r => r.topic_id === t.id);
+                      return (
+                        <div key={t.id} className={`rounded-md border p-2.5 space-y-1 ${isOverdue ? 'border-destructive/30 bg-destructive/5' : 'border-border'} ${onNavigateToTopic ? 'cursor-pointer hover:bg-muted/50' : ''}`} onClick={() => onNavigateToTopic?.(t.id, t.status)}>
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium truncate flex-1 text-primary">{t.title}</span>
+                            <button onClick={(e) => { e.stopPropagation(); handleSendReminder(t); }} disabled={sendingId === t.id || !assignee?.email}
+                              className="p-1 rounded-full hover:bg-muted transition-colors disabled:opacity-30">
+                              {sendingId === t.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Bell className="h-3 w-3 text-muted-foreground" />}
+                            </button>
+                          </div>
+                          <div className="flex gap-1 flex-wrap">
+                            <Badge variant={t.priority === 'alta' ? 'destructive' : 'outline'} className="text-[9px]">{t.priority}</Badge>
+                            <Badge variant="outline" className="text-[9px]">{t.status}</Badge>
+                            {t.due_date && <Badge variant={isOverdue ? 'destructive' : 'outline'} className="text-[9px]">{t.due_date}</Badge>}
+                            {pending > 0 && <Badge variant="outline" className="text-[9px] text-destructive">{pending} pend.</Badge>}
+                            {topicReschedules.length > 0 && <Badge variant="outline" className="text-[9px] border-amber-500/50 text-amber-600">🔄 {topicReschedules.length}</Badge>}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Reprogramaciones */}
+              {assigneeReschedules.length > 0 && (
+                <Card>
+                  <CardHeader className="pb-1 p-3">
+                    <CardTitle className="text-xs font-medium flex items-center gap-1.5">
+                      <RefreshCw className="h-3.5 w-3.5 text-muted-foreground" /> Historial de reprogramaciones ({assigneeReschedules.length})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-3 pt-0">
                     <div className="flex items-center gap-4 mb-3 text-xs">
                       <span className="text-muted-foreground">Total: <strong className="text-foreground">{assigneeReschedules.length}</strong></span>
                       <span className="text-muted-foreground">Internas: <strong className="text-amber-600">{assigneeReschedules.filter(r => !r.is_external).length}</strong></span>
@@ -802,162 +729,249 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, reschedule
                         );
                       })}
                     </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          </CollapsibleSection>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
 
-          {/* Registro de Incidencias */}
-          <CollapsibleSection title="Registro de Incidencias" icon={AlertTriangle} count={incidents.length}>
-            <Card>
-              <CardContent className="p-3 space-y-3">
-                <Button size="sm" onClick={() => setShowIncidentForm(true)} className="w-full">
-                  <Plus className="h-3.5 w-3.5 mr-1" /> Registrar incidencia
-                </Button>
-
-                {/* Form Dialog */}
-                <Dialog open={showIncidentForm} onOpenChange={setShowIncidentForm}>
-                  <DialogContent className="max-w-md">
-                    <DialogHeader>
-                      <DialogTitle>Registrar Incidencia — {assigneeName}</DialogTitle>
-                    </DialogHeader>
-                    <form onSubmit={async (e) => {
-                      e.preventDefault();
-                      if (!incidentForm.title.trim()) return;
-                      try {
-                        await createIncident.mutateAsync({
-                          assignee_name: assigneeName,
-                          assignee_email: assignee?.email || '',
-                          category: incidentForm.category,
-                          title: incidentForm.title,
-                          description: incidentForm.description,
-                          incident_date: incidentForm.incident_date,
-                        });
-                        toast.success('Incidencia registrada');
-                        setIncidentForm({ title: '', description: '', category: 'leve', incident_date: new Date().toISOString().split('T')[0] });
-                        setShowIncidentForm(false);
-                      } catch { toast.error('Error al registrar'); }
-                    }} className="space-y-3">
-                      <div>
-                        <label className="text-xs font-medium text-muted-foreground">Fecha</label>
-                        <Input type="date" value={incidentForm.incident_date} onChange={e => setIncidentForm(f => ({ ...f, incident_date: e.target.value }))} className="mt-1" />
+            {/* ===== TAB: CORREOS ===== */}
+            <TabsContent value="correos" className="space-y-4 mt-4">
+              <Card>
+                <CardContent className="p-3">
+                  {emailHistory.length === 0 ? (
+                    <p className="text-sm text-muted-foreground py-4 text-center">No se han enviado correos a {assigneeName}</p>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-4 mb-3 text-xs">
+                        <span className="text-muted-foreground">Enviados: <strong className="text-foreground">{metrics.emailsSent}</strong></span>
+                        <span className="text-muted-foreground">Confirmados: <strong className="text-green-600">{metrics.emailsConfirmed}</strong></span>
+                        <span className="text-muted-foreground">
+                          Tasa: <strong className={metrics.responseRate >= 80 ? 'text-green-600' : metrics.responseRate >= 50 ? 'text-yellow-600' : 'text-destructive'}>{metrics.responseRate}%</strong>
+                        </span>
                       </div>
-                      <div>
-                        <label className="text-xs font-medium text-muted-foreground">Severidad</label>
-                        <Select value={incidentForm.category} onValueChange={(v: 'leve' | 'moderada' | 'grave') => setIncidentForm(f => ({ ...f, category: v }))}>
-                          <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="leve">🟡 Leve — Observación menor</SelectItem>
-                            <SelectItem value="moderada">🟠 Moderada — Requiere atención</SelectItem>
-                            <SelectItem value="grave">🔴 Grave — Incumplimiento serio</SelectItem>
-                          </SelectContent>
-                        </Select>
+                      <div className="hidden sm:block max-h-[500px] overflow-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="text-xs">Tema</TableHead>
+                              <TableHead className="text-xs text-center">Enviado</TableHead>
+                              <TableHead className="text-xs text-center">Confirmado</TableHead>
+                              <TableHead className="text-xs text-center">Plazo</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {emailHistory.map((e: any) => {
+                              const onTime = e.confirmed && e.confirmed_at
+                                ? new Date(e.confirmed_at).getTime() <= new Date(e.sent_at).getTime() + DEADLINE_HOURS * 60 * 60 * 1000
+                                : null;
+                              return (
+                                <TableRow key={e.id}>
+                                  <TableCell className="text-xs">{e.topics?.title || e.topic_id}</TableCell>
+                                  <TableCell className="text-xs text-center text-muted-foreground">
+                                    {format(new Date(e.sent_at), 'dd MMM HH:mm', { locale: es })}
+                                  </TableCell>
+                                  <TableCell className="text-center">
+                                    {e.confirmed ? (
+                                      <CheckCircle2 className="h-3.5 w-3.5 text-green-600 mx-auto" />
+                                    ) : (
+                                      <span className="text-xs text-muted-foreground">—</span>
+                                    )}
+                                  </TableCell>
+                                  <TableCell className="text-center">
+                                    {onTime !== null ? (
+                                      <Badge variant={onTime ? 'secondary' : 'destructive'} className="text-[9px]">
+                                        {onTime ? 'A tiempo' : 'Fuera de plazo'}
+                                      </Badge>
+                                    ) : (
+                                      <span className="text-xs text-muted-foreground">—</span>
+                                    )}
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
                       </div>
-                      <div>
-                        <label className="text-xs font-medium text-muted-foreground">Título</label>
-                        <Input value={incidentForm.title} onChange={e => setIncidentForm(f => ({ ...f, title: e.target.value }))} placeholder="Ej: Atraso reiterado" className="mt-1" />
-                      </div>
-                      <div>
-                        <label className="text-xs font-medium text-muted-foreground">Descripción</label>
-                        <Textarea value={incidentForm.description} onChange={e => setIncidentForm(f => ({ ...f, description: e.target.value }))} placeholder="Detalle de lo ocurrido..." rows={3} className="mt-1" />
-                      </div>
-                      <Button type="submit" className="w-full" disabled={createIncident.isPending}>
-                        {createIncident.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Registrar'}
-                      </Button>
-                    </form>
-                  </DialogContent>
-                </Dialog>
-
-                {/* Incidents list */}
-                {incidents.length === 0 ? (
-                  <p className="text-xs text-muted-foreground text-center py-4">Sin incidencias registradas</p>
-                ) : (
-                  <div className="space-y-2 max-h-[400px] overflow-auto">
-                    {incidents.map((inc) => {
-                      const categoryConfig = {
-                        leve: { color: 'border-l-yellow-500 bg-yellow-50 dark:bg-yellow-950/20', label: 'Leve', emoji: '🟡' },
-                        moderada: { color: 'border-l-orange-500 bg-orange-50 dark:bg-orange-950/20', label: 'Moderada', emoji: '🟠' },
-                        grave: { color: 'border-l-red-500 bg-red-50 dark:bg-red-950/20', label: 'Grave', emoji: '🔴' },
-                      };
-                      const cfg = categoryConfig[inc.category] || categoryConfig.leve;
-                      return (
-                        <div key={inc.id} className={cn("border-l-4 rounded-md p-3 space-y-1.5", cfg.color)}>
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-xs">{cfg.emoji}</span>
-                                <span className="text-xs font-semibold">{inc.title}</span>
+                      <div className="sm:hidden space-y-1.5 max-h-[500px] overflow-auto">
+                        {emailHistory.map((e: any) => {
+                          const onTime = e.confirmed && e.confirmed_at
+                            ? new Date(e.confirmed_at).getTime() <= new Date(e.sent_at).getTime() + DEADLINE_HOURS * 60 * 60 * 1000
+                            : null;
+                          return (
+                            <div key={e.id} className="flex items-center justify-between py-1.5 border-b border-border last:border-0">
+                              <div className="min-w-0">
+                                <p className="text-xs font-medium truncate">{e.topics?.title || e.topic_id}</p>
+                                <p className="text-[10px] text-muted-foreground">{format(new Date(e.sent_at), 'dd MMM HH:mm', { locale: es })}</p>
                               </div>
-                              <p className="text-[10px] text-muted-foreground mt-0.5">
-                                {format(new Date(inc.incident_date + 'T12:00:00'), 'dd MMM yyyy', { locale: es })}
-                              </p>
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                {e.confirmed ? <CheckCircle2 className="h-3.5 w-3.5 text-green-600" /> : <span className="text-[10px] text-muted-foreground">—</span>}
+                                {onTime !== null && (
+                                  <Badge variant={onTime ? 'secondary' : 'destructive'} className="text-[8px]">
+                                    {onTime ? 'A tiempo' : 'Tarde'}
+                                  </Badge>
+                                )}
+                              </div>
                             </div>
-                            <div className="flex items-center gap-1 shrink-0">
-                              {inc.category === 'grave' && !inc.email_sent && assignee?.email && (
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  className="h-6 text-[10px] px-2"
-                                  disabled={sendingIncidentEmail === inc.id}
-                                  onClick={async () => {
-                                    setSendingIncidentEmail(inc.id);
-                                    try {
-                                      const { error } = await supabase.functions.invoke('send-incident-notification', {
-                                        body: {
-                                          to_email: assignee.email,
-                                          to_name: assigneeName,
-                                          incident_title: inc.title,
-                                          incident_description: inc.description,
-                                          incident_date: inc.incident_date,
-                                          category: inc.category,
-                                        },
-                                      });
-                                      if (error) throw error;
-                                      await markEmailSent.mutateAsync(inc.id);
-                                      toast.success('Notificación formal enviada');
-                                    } catch { toast.error('Error al enviar correo'); }
-                                    setSendingIncidentEmail(null);
-                                  }}
-                                >
-                                  {sendingIncidentEmail === inc.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <><Send className="h-3 w-3 mr-0.5" /> Notificar</>}
-                                </Button>
-                              )}
-                              {inc.email_sent && (
-                                <Badge variant="secondary" className="text-[9px] h-5">
-                                  <Mail className="h-3 w-3 mr-0.5" /> Notificado
-                                </Badge>
-                              )}
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button size="sm" variant="ghost" className="h-6 w-6 p-0">
-                                    <Trash2 className="h-3 w-3 text-muted-foreground" />
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>¿Eliminar incidencia?</AlertDialogTitle>
-                                    <AlertDialogDescription>Esta acción no se puede deshacer.</AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => deleteIncident.mutate(inc.id)}>Eliminar</AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            </div>
-                          </div>
-                          {inc.description && (
-                            <p className="text-xs text-muted-foreground">{inc.description}</p>
-                          )}
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* ===== TAB: INCIDENCIAS ===== */}
+            <TabsContent value="incidencias" className="space-y-4 mt-4">
+              <Card>
+                <CardContent className="p-3 space-y-3">
+                  <Button size="sm" onClick={() => setShowIncidentForm(true)} className="w-full">
+                    <Plus className="h-3.5 w-3.5 mr-1" /> Registrar incidencia
+                  </Button>
+
+                  {/* Form Dialog */}
+                  <Dialog open={showIncidentForm} onOpenChange={setShowIncidentForm}>
+                    <DialogContent className="max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>Registrar Incidencia — {assigneeName}</DialogTitle>
+                      </DialogHeader>
+                      <form onSubmit={async (e) => {
+                        e.preventDefault();
+                        if (!incidentForm.title.trim()) return;
+                        try {
+                          await createIncident.mutateAsync({
+                            assignee_name: assigneeName,
+                            assignee_email: assignee?.email || '',
+                            category: incidentForm.category,
+                            title: incidentForm.title,
+                            description: incidentForm.description,
+                            incident_date: incidentForm.incident_date,
+                          });
+                          toast.success('Incidencia registrada');
+                          setIncidentForm({ title: '', description: '', category: 'leve', incident_date: new Date().toISOString().split('T')[0] });
+                          setShowIncidentForm(false);
+                        } catch { toast.error('Error al registrar'); }
+                      }} className="space-y-3">
+                        <div>
+                          <label className="text-xs font-medium text-muted-foreground">Fecha</label>
+                          <Input type="date" value={incidentForm.incident_date} onChange={e => setIncidentForm(f => ({ ...f, incident_date: e.target.value }))} className="mt-1" />
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </CollapsibleSection>
+                        <div>
+                          <label className="text-xs font-medium text-muted-foreground">Severidad</label>
+                          <Select value={incidentForm.category} onValueChange={(v: 'leve' | 'moderada' | 'grave') => setIncidentForm(f => ({ ...f, category: v }))}>
+                            <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="leve">🟡 Leve — Observación menor</SelectItem>
+                              <SelectItem value="moderada">🟠 Moderada — Requiere atención</SelectItem>
+                              <SelectItem value="grave">🔴 Grave — Incumplimiento serio</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-muted-foreground">Título</label>
+                          <Input value={incidentForm.title} onChange={e => setIncidentForm(f => ({ ...f, title: e.target.value }))} placeholder="Ej: Atraso reiterado" className="mt-1" />
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-muted-foreground">Descripción</label>
+                          <Textarea value={incidentForm.description} onChange={e => setIncidentForm(f => ({ ...f, description: e.target.value }))} placeholder="Detalle de lo ocurrido..." rows={3} className="mt-1" />
+                        </div>
+                        <Button type="submit" className="w-full" disabled={createIncident.isPending}>
+                          {createIncident.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Registrar'}
+                        </Button>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
+
+                  {/* Incidents list */}
+                  {incidents.length === 0 ? (
+                    <p className="text-xs text-muted-foreground text-center py-4">Sin incidencias registradas</p>
+                  ) : (
+                    <div className="space-y-2 max-h-[500px] overflow-auto">
+                      {incidents.map((inc) => {
+                        const categoryConfig = {
+                          leve: { color: 'border-l-yellow-500 bg-yellow-50 dark:bg-yellow-950/20', label: 'Leve', emoji: '🟡' },
+                          moderada: { color: 'border-l-orange-500 bg-orange-50 dark:bg-orange-950/20', label: 'Moderada', emoji: '🟠' },
+                          grave: { color: 'border-l-red-500 bg-red-50 dark:bg-red-950/20', label: 'Grave', emoji: '🔴' },
+                        };
+                        const cfg = categoryConfig[inc.category] || categoryConfig.leve;
+                        return (
+                          <div key={inc.id} className={cn("border-l-4 rounded-md p-3 space-y-1.5", cfg.color)}>
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-xs">{cfg.emoji}</span>
+                                  <span className="text-xs font-semibold">{inc.title}</span>
+                                </div>
+                                <p className="text-[10px] text-muted-foreground mt-0.5">
+                                  {format(new Date(inc.incident_date + 'T12:00:00'), 'dd MMM yyyy', { locale: es })}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-1 shrink-0">
+                                {inc.category === 'grave' && !inc.email_sent && assignee?.email && (
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    className="h-6 text-[10px] px-2"
+                                    disabled={sendingIncidentEmail === inc.id}
+                                    onClick={async () => {
+                                      setSendingIncidentEmail(inc.id);
+                                      try {
+                                        const { error } = await supabase.functions.invoke('send-incident-notification', {
+                                          body: {
+                                            to_email: assignee.email,
+                                            to_name: assigneeName,
+                                            incident_title: inc.title,
+                                            incident_description: inc.description,
+                                            incident_date: inc.incident_date,
+                                            category: inc.category,
+                                          },
+                                        });
+                                        if (error) throw error;
+                                        await markEmailSent.mutateAsync(inc.id);
+                                        toast.success('Notificación formal enviada');
+                                      } catch { toast.error('Error al enviar correo'); }
+                                      setSendingIncidentEmail(null);
+                                    }}
+                                  >
+                                    {sendingIncidentEmail === inc.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <><Send className="h-3 w-3 mr-0.5" /> Notificar</>}
+                                  </Button>
+                                )}
+                                {inc.email_sent && (
+                                  <Badge variant="secondary" className="text-[9px] h-5">
+                                    <Mail className="h-3 w-3 mr-0.5" /> Notificado
+                                  </Badge>
+                                )}
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button size="sm" variant="ghost" className="h-6 w-6 p-0">
+                                      <Trash2 className="h-3 w-3 text-muted-foreground" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>¿Eliminar incidencia?</AlertDialogTitle>
+                                      <AlertDialogDescription>Esta acción no se puede deshacer.</AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => deleteIncident.mutate(inc.id)}>Eliminar</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </div>
+                            </div>
+                            {inc.description && (
+                              <p className="text-xs text-muted-foreground">{inc.description}</p>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
       </ScrollArea>
     </div>
