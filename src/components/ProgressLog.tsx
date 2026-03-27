@@ -274,9 +274,11 @@ export function ProgressLog({ entries, onAdd, onUpdate, onDelete, onUploadFiles,
       {entries.length > 0 ? (
         <div ref={scrollContainerRef} className="max-h-[220px] overflow-y-auto pr-1 scrollbar-thin">
           <div className="divide-y divide-border">
-            {entries.map(entry => (
-              <div key={entry.id} className="group px-3 py-2.5 first:pt-0">
-                {editingId === entry.id ? (
+            {entries.map(entry => {
+              const isAssignee = entry.source === 'assignee';
+              return (
+              <div key={entry.id} className={`group px-3 py-2.5 first:pt-0 ${isAssignee ? 'bg-blue-50 dark:bg-blue-950/30 rounded-md my-1' : ''}`}>
+                {editingId === entry.id && !isAssignee ? (
                   <div className="space-y-1">
                     <div className="flex items-center justify-between">
                       <FormatToolbar targetRef={editTextareaRef} value={editText} setValue={setEditText} />
