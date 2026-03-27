@@ -318,7 +318,8 @@ export function TopicCard({
                     )}
                   </PopoverContent>
                 </Popover>
-              )}
+                );
+              })()}
               {/* Reschedule badge */}
               {reschedules.length > 0 && (
                 <TooltipProvider delayDuration={200}>
