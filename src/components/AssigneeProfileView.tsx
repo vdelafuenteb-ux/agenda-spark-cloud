@@ -46,6 +46,11 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, reschedule
   const [sendingIncidentEmail, setSendingIncidentEmail] = useState<string | null>(null);
 
   const { incidents, createIncident, deleteIncident, markEmailSent } = useIncidents(assigneeName);
+  const { departments } = useDepartments();
+  const assigneeDeptName = useMemo(() => {
+    if (!assignee?.department_id) return null;
+    return departments.find(d => d.id === assignee.department_id)?.name || null;
+  }, [assignee, departments]);
 
   const { data: emailHistory = [] } = useQuery({
     queryKey: ['notification_emails_assignee', assigneeName],
