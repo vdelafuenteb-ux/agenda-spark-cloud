@@ -17,6 +17,7 @@ export type Database = {
       assignees: {
         Row: {
           created_at: string
+          department_id: string | null
           email: string | null
           id: string
           name: string
@@ -25,6 +26,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          department_id?: string | null
           email?: string | null
           id?: string
           name: string
@@ -33,13 +35,22 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          department_id?: string | null
           email?: string | null
           id?: string
           name?: string
           user_id?: string
           weekly_capacity?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "assignees_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       checklist_items: {
         Row: {

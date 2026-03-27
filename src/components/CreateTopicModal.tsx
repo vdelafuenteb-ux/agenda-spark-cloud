@@ -284,7 +284,12 @@ export function CreateTopicModal({ open, onOpenChange, allTags, assignees, depar
                     <button
                       key={a.id}
                       type="button"
-                      onClick={() => setAssignee(a.name)}
+                      onClick={() => {
+                        setAssignee(a.name);
+                        if (a.department_id) {
+                          setDepartmentId(a.department_id);
+                        }
+                      }}
                       className={cn(
                         'inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium border transition-all',
                         assignee === a.name

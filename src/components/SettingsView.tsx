@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Trash2, Plus, Pencil, Check, X, Mail, Tag, Users, Clock, CalendarCheck, Building2 } from 'lucide-react';
 import {
   AlertDialog,
@@ -44,7 +45,7 @@ interface SettingsViewProps {
   onUpdateTag: (id: string, name: string) => void;
   onDeleteAssignee: (id: string) => void;
   onCreateAssignee: (name: string) => Promise<any>;
-  onUpdateAssignee: (id: string, data: { name?: string; email?: string | null; weekly_capacity?: number }) => void;
+  onUpdateAssignee: (id: string, data: { name?: string; email?: string | null; weekly_capacity?: number; department_id?: string | null }) => void;
   onCreateDepartment: (name: string) => Promise<any>;
   onUpdateDepartment: (id: string, name: string) => void;
   onDeleteDepartment: (id: string) => void;
@@ -62,6 +63,7 @@ export function SettingsView({ tags, assignees, departments, topics, onDeleteTag
   const [editingAssigneeName, setEditingAssigneeName] = useState('');
   const [editingAssigneeEmail, setEditingAssigneeEmail] = useState('');
   const [editingAssigneeCapacity, setEditingAssigneeCapacity] = useState(45);
+  const [editingAssigneeDeptId, setEditingAssigneeDeptId] = useState<string | null>(null);
   const [newDeptName, setNewDeptName] = useState('');
   const [editingDeptId, setEditingDeptId] = useState<string | null>(null);
   const [editingDeptName, setEditingDeptName] = useState('');
@@ -112,7 +114,7 @@ export function SettingsView({ tags, assignees, departments, topics, onDeleteTag
 
   const handleSaveAssignee = (id: string) => {
     if (!editingAssigneeName.trim()) return;
-    onUpdateAssignee(id, { name: editingAssigneeName.trim(), email: editingAssigneeEmail.trim() || null, weekly_capacity: editingAssigneeCapacity });
+    onUpdateAssignee(id, { name: editingAssigneeName.trim(), email: editingAssigneeEmail.trim() || null, weekly_capacity: editingAssigneeCapacity, department_id: editingAssigneeDeptId });
     setEditingAssigneeId(null);
     toast.success('Responsable actualizado');
   };
@@ -321,6 +323,17 @@ export function SettingsView({ tags, assignees, departments, topics, onDeleteTag
                               placeholder="h/sem"
                               title="Capacidad semanal (hrs)"
                             />
+                            <Select value={editingAssigneeDeptId || 'none'} onValueChange={(v) => setEditingAssigneeDeptId(v === 'none' ? null : v)}>
+                              <SelectTrigger className="h-7 text-xs w-36">
+                                <SelectValue placeholder="Departamento" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">Sin departamento</SelectItem>
+                                {departments.map((d) => (
+                                  <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                             <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-emerald-500" onClick={() => handleSaveAssignee(a.id)}>
                               <Check className="h-3.5 w-3.5" />
                             </Button>
@@ -341,6 +354,14 @@ export function SettingsView({ tags, assignees, departments, topics, onDeleteTag
                                 <span className="text-xs text-muted-foreground/50 italic">Sin correo</span>
                               )}
                               <span className="text-[10px] text-muted-foreground ml-1 shrink-0">{a.weekly_capacity || 45}h/sem</span>
+                              {(() => {
+                                const dept = departments.find(d => d.id === a.department_id);
+                                return dept ? (
+                                  <span className="text-[10px] text-muted-foreground flex items-center gap-0.5 ml-1">
+                                    <Building2 className="h-2.5 w-2.5" />{dept.name}
+                                  </span>
+                                ) : null;
+                              })()}
                             </div>
                             <div className="flex items-center gap-0.5">
                               <Button
@@ -352,6 +373,7 @@ export function SettingsView({ tags, assignees, departments, topics, onDeleteTag
                                   setEditingAssigneeName(a.name);
                                   setEditingAssigneeEmail(a.email || '');
                                   setEditingAssigneeCapacity(a.weekly_capacity || 45);
+                                  setEditingAssigneeDeptId(a.department_id || null);
                                 }}
                               >
                                 <Pencil className="h-3.5 w-3.5" />
