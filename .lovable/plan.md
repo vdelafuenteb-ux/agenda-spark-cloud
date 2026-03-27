@@ -1,44 +1,36 @@
 
 
-## Plan: Link en correo de tema nuevo + expiración de token al enviar + filtro por topic_id
+## Plan: Botón "Guardar comentario" por tema + indicador visual verde
 
-### Problema actual
-1. El correo de tema nuevo NO incluye link de actualización
-2. El token NO caduca después de enviar actualización — se puede reusar
-3. La tabla `update_tokens` no tiene campo para filtrar por un solo tema
+### Cambio
 
-### Cambios
+En `src/pages/UpdateTopics.tsx`:
 
-**1. Migración BD — agregar `topic_id` a `update_tokens`**
-- Agregar columna `topic_id uuid nullable` a `update_tokens`
-- Agregar columna `used boolean default false`
-- Tokens con `topic_id = null` → muestran todos los temas activos (correo semanal)
-- Tokens con `topic_id = X` → muestran solo ese tema (correo tema nuevo)
+1. **Nuevo estado `savedTopics`** (`Set<string>`) para rastrear qué temas tienen comentario guardado
+2. **Botón "Guardar comentario"** debajo del textarea de cada tema. Al presionar, agrega el `topic_id` al set `savedTopics`, colapsa el tema, y lo marca visualmente
+3. **Indicador verde** en temas guardados: borde verde (`ring-emerald-400`), fondo suave verde en el header, y un icono de check verde junto al titulo
+4. **Editable**: al expandir un tema guardado, puede modificar el comentario y volver a guardar. El estado se quita solo si borra todo el comentario
+5. **Contador en header**: mostrar "X de Y temas actualizados" para que vea progreso
 
-**2. `supabase/functions/submit-update/index.ts` — marcar token como usado**
-- Después de procesar las actualizaciones exitosamente, hacer `UPDATE update_tokens SET used = true WHERE token = X`
-- En la validación de token, además de verificar expiración, verificar `used = false`
+### Flujo
+```text
+1. Usuario abre tema → escribe comentario → presiona "Guardar comentario"
+2. Tema se colapsa, borde cambia a verde + check ✓ junto al título
+3. Puede re-abrir, editar, y guardar de nuevo
+4. Al final presiona "Enviar actualización" para enviar todo
+```
 
-**3. `supabase/functions/validate-update-token/index.ts` — respetar `topic_id` y `used`**
-- Si `tokenData.used === true` → error "Ya enviaste tu actualización. Espera el próximo correo."
-- Si `tokenData.topic_id` existe → filtrar topics solo por ese `topic_id` en vez de traer todos
-- Si `tokenData.topic_id` es null → comportamiento actual (todos los temas activos)
+### Detalle tecnico
 
-**4. `supabase/functions/send-new-topic-notification/index.ts` — crear token con `topic_id` y agregar botón**
-- Crear service-role client para acceder a `update_tokens`
-- Insertar token con `{ user_id, assignee_name, topic_id: <el topic creado> }`
-- Agregar botón "Actualizar mis temas" con link `/update/:token` en el HTML del correo
+- `savedTopics: Set<string>` — se agrega al hacer click en "Guardar"
+- Al guardar: si hay comentario o subtasks cambiadas, marca como saved y colapsa
+- Card class: si saved → `ring-2 ring-emerald-400 bg-emerald-50/30` en vez del default
+- Check icon verde al lado del titulo cuando está saved
+- Botón "Guardar" solo habilitado si hay comentario escrito o subtasks modificadas
 
-**5. `src/pages/UpdateTopics.tsx` — manejar error de token usado**
-- Si el error del backend es "Token ya utilizado", mostrar mensaje amigable: "Ya enviaste tu actualización. Recibirás un nuevo link en el próximo correo."
-
-### Archivos afectados
+### Archivo afectado
 
 | Archivo | Cambio |
 |---|---|
-| Migración BD | Agregar `topic_id` y `used` a `update_tokens` |
-| `supabase/functions/submit-update/index.ts` | Marcar token `used = true` tras enviar |
-| `supabase/functions/validate-update-token/index.ts` | Verificar `used`, filtrar por `topic_id` si existe |
-| `supabase/functions/send-new-topic-notification/index.ts` | Crear token con `topic_id`, agregar botón link en email |
-| `src/pages/UpdateTopics.tsx` | Mensaje amigable para token ya usado |
+| `src/pages/UpdateTopics.tsx` | Agregar estado `savedTopics`, botón guardar, indicador verde, contador progreso |
 
