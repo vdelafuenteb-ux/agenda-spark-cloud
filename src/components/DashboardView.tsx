@@ -422,9 +422,9 @@ export function DashboardView({ topics, assignees, departments = [], reschedules
                       {metrics.closedWithDates} temas analizados
                     </Badge>
                   </div>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <div className="flex flex-col lg:flex-row gap-3">
                     {/* Left half: Cumplimiento de Cierre */}
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-3 gap-3 lg:w-1/2">
                       <div className="space-y-1.5">
                         <div className="flex items-baseline gap-1">
                           <span className={`text-3xl font-bold ${metrics.closureCompliance !== null && metrics.closureCompliance >= 70 ? 'text-emerald-600' : metrics.closureCompliance !== null && metrics.closureCompliance >= 40 ? 'text-yellow-600' : 'text-destructive'}`}>
@@ -457,7 +457,7 @@ export function DashboardView({ topics, assignees, departments = [], reschedules
                     </div>
 
                     {/* Right half: Score por Departamento */}
-                    <div className="border-l border-border pl-4">
+                    <div className="border-l border-border pl-4 lg:flex-1">
                       <div className="flex items-center gap-1.5 mb-2">
                         <Users className="h-3.5 w-3.5 text-primary" />
                         <span className="text-xs font-medium text-foreground">Score por Departamento</span>
