@@ -16,6 +16,8 @@ import type { Assignee } from '@/hooks/useAssignees';
 import type { TopicWithSubtasks } from '@/hooks/useTopics';
 import { isStoredDateOverdue } from '@/lib/date';
 import { startOfWeek, subWeeks, isAfter, isBefore, addDays, format, differenceInDays } from 'date-fns';
+import { computeGlobalRescheduleStats } from '@/lib/rescheduleMetrics';
+import { cn } from '@/lib/utils';
 import { es } from 'date-fns/locale';
 import { AssigneeProfileView } from './AssigneeProfileView';
 import type { Reschedule } from '@/hooks/useReschedules';
