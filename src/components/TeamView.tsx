@@ -190,8 +190,8 @@ export function TeamView({ topics, assignees, onUpdateTopic }: TeamViewProps) {
   const deptMetrics = useMemo(() => {
     return departments.map(dept => {
       const deptTopics = activeTopics.filter(t => t.department_id === dept.id);
+      const closedCount = topics.filter(t => t.department_id === dept.id && t.status === 'completado').length;
       const deptAssignees = new Set(deptTopics.map(t => t.assignee).filter(Boolean));
-      // Avg score of assignees in this dept
       const scores: number[] = [];
       deptAssignees.forEach(name => {
         if (!name) return;
@@ -199,8 +199,8 @@ export function TeamView({ topics, assignees, onUpdateTopic }: TeamViewProps) {
         if (s.score !== null) scores.push(s.score);
       });
       const avgScore = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
-      return { dept, activeCount: deptTopics.length, avgScore, assigneeCount: deptAssignees.size };
-    }).filter(d => d.activeCount > 0 || d.assigneeCount > 0);
+      return { dept, activeCount: deptTopics.length, closedCount, avgScore, assigneeCount: deptAssignees.size };
+    }).filter(d => d.activeCount > 0 || d.assigneeCount > 0 || d.closedCount > 0);
   }, [departments, activeTopics, topics, allEmails]);
 
   const rankedAssignees = useMemo(() => {
