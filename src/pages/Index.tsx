@@ -67,34 +67,12 @@ const Index = () => {
     setSelectedTagIds((prev) => (prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]));
   }, []);
 
-  // Build a map: assignee name -> department name for filtering
-  const assigneeDeptMap = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const a of assignees) {
-      if (a.department_id) {
-        const dept = departments.find(d => d.id === a.department_id);
-        if (dept) map.set(a.name, dept.name);
-      }
-    }
-    return map;
-  }, [assignees, departments]);
-
   const uniqueDepartments = useMemo(() => {
-    const deptNames = new Set<string>();
-    topics.filter(t => t.status === statusTab).forEach(t => {
-      // Check topic's own department_id first
-      if (t.department_id) {
-        const dept = departments.find(d => d.id === t.department_id);
-        if (dept) deptNames.add(dept.name);
-      }
-      // Also check assignee's department
-      if (t.assignee) {
-        const deptName = assigneeDeptMap.get(t.assignee);
-        if (deptName) deptNames.add(deptName);
-      }
-    });
-    return [...deptNames].sort();
-  }, [topics, statusTab, assigneeDeptMap, departments]);
+    const deptIds = new Set(
+      topics.filter(t => t.status === statusTab && t.department_id).map(t => t.department_id!)
+    );
+    return departments.filter(d => deptIds.has(d.id)).map(d => d.name).sort();
+  }, [topics, statusTab, departments]);
 
   const filteredTopics = useMemo(() => {
     const filtered = topics.filter((topic) => {
