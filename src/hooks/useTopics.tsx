@@ -42,6 +42,7 @@ export interface ProgressEntry {
   topic_id: string;
   content: string;
   created_at: string;
+  source?: string;
   attachments: EntryAttachment[];
 }
 

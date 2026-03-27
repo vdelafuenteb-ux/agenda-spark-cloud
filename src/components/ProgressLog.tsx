@@ -307,6 +307,7 @@ export function ProgressLog({ entries, onAdd, onUpdate, onDelete, onUploadFiles,
                         <FormattedText content={entry.content} />
                         <AttachmentList attachments={entry.attachments || []} onDelete={onDeleteAttachment} />
                       </div>
+                      {!isAssignee && (
                       <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                         {onUpdate && (
                           <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground" onClick={() => handleStartEdit(entry)}>
@@ -319,6 +320,7 @@ export function ProgressLog({ entries, onAdd, onUpdate, onDelete, onUploadFiles,
                           </Button>
                         )}
                       </div>
+                      )}
                     </div>
                     <p className="text-[10px] text-muted-foreground mt-1" title={format(new Date(entry.created_at), "dd MMM yyyy HH:mm", { locale: es })}>
                       {formatDistanceToNow(new Date(entry.created_at), { addSuffix: true, locale: es })}

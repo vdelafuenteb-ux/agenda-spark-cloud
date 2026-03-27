@@ -26,6 +26,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/update/:token" element={<UpdateTopics />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
