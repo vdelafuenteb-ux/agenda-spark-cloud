@@ -110,7 +110,9 @@ const Index = () => {
       }
       if (selectedAssignee && topic.assignee !== selectedAssignee) return false;
       if (selectedDepartment) {
-        const topicDept = topic.assignee ? assigneeDeptMap.get(topic.assignee) : undefined;
+        const topicDeptDirect = topic.department_id ? departments.find(d => d.id === topic.department_id)?.name : undefined;
+        const topicDeptViaAssignee = topic.assignee ? assigneeDeptMap.get(topic.assignee) : undefined;
+        const topicDept = topicDeptDirect || topicDeptViaAssignee;
         if (topicDept !== selectedDepartment) return false;
       }
       if (filterNoDueDate && topic.due_date) return false;
