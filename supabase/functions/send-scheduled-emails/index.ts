@@ -107,6 +107,30 @@ Deno.serve(async (req) => {
         const assigneeTopics = relevantTopics.filter((t: any) => t.assignee === assignee.name);
         if (assigneeTopics.length === 0) continue;
 
+        // Create/reuse update token for this assignee
+        let updateToken = "";
+        const { data: existingToken } = await supabase
+          .from("update_tokens")
+          .select("token, expires_at")
+          .eq("user_id", schedule.user_id)
+          .eq("assignee_name", assignee.name)
+          .gt("expires_at", new Date().toISOString())
+          .limit(1)
+          .single();
+
+        if (existingToken) {
+          updateToken = existingToken.token;
+        } else {
+          const { data: newToken } = await supabase
+            .from("update_tokens")
+            .insert({ user_id: schedule.user_id, assignee_name: assignee.name })
+            .select("token")
+            .single();
+          updateToken = newToken?.token || "";
+        }
+
+        const APP_URL = "https://project-zenflow-66.lovable.app";
+
         // Sort progress entries desc
         assigneeTopics.forEach((t: any) => {
           if (t.progress_entries) {
