@@ -101,12 +101,27 @@ export function useNotificationEmails(topicId?: string) {
     onSuccess: invalidateAll,
   });
 
+  const toggleReviewed = useMutation({
+    mutationFn: async ({ id, reviewed }: { id: string; reviewed: boolean }) => {
+      const { error } = await supabase
+        .from('notification_emails')
+        .update({
+          reviewed,
+          reviewed_at: reviewed ? new Date().toISOString() : null,
+        } as any)
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: invalidateAll,
+  });
+
   return {
     emails: emailsQuery.data || [],
     isLoading: emailsQuery.isLoading,
     logEmail,
     toggleResponded,
     toggleConfirmed,
+    toggleReviewed,
     deleteEmail,
   };
 }
