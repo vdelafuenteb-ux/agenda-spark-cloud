@@ -184,14 +184,19 @@ export function TopicCard({
 
   return (
     <div data-topic-id={topic.id} className={cn(
-      'bg-card rounded-lg shadow-sm hover:shadow-md transition-shadow border-l-4',
-      isCompleted
-        ? 'border-l-emerald-500'
-        : topic.status === 'pausado'
-          ? 'border-l-yellow-500'
-          : isSeguimiento
-            ? 'border-l-[hsl(var(--seguimiento))]'
-            : 'border-l-foreground'
+      'bg-card rounded-lg shadow-sm hover:shadow-md transition-shadow',
+      !isCompleted && topic.status !== 'pausado' && isStoredDateOverdue(topic.due_date) && !topic.is_ongoing
+        ? 'border-2 border-destructive'
+        : 'border-l-4',
+      !isCompleted && topic.status !== 'pausado' && isStoredDateOverdue(topic.due_date) && !topic.is_ongoing
+        ? ''
+        : isCompleted
+          ? 'border-l-emerald-500'
+          : topic.status === 'pausado'
+            ? 'border-l-yellow-500'
+            : isSeguimiento
+              ? 'border-l-[hsl(var(--seguimiento))]'
+              : 'border-l-foreground'
     )}>
       <button onClick={() => setExpanded(!expanded)} className="w-full flex items-center gap-3 p-3 text-left">
         {/* Pin + Chevron */}
