@@ -25,6 +25,7 @@ import type { Assignee } from '@/hooks/useAssignees';
 import { useIncidents } from '@/hooks/useIncidents';
 import { computeGlobalRescheduleStats } from '@/lib/rescheduleMetrics';
 import { computeProductivityScore } from '@/lib/productivityScore';
+import { useDepartments } from '@/hooks/useDepartments';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 interface AssigneeProfileViewProps {
@@ -45,6 +46,11 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, reschedule
   const [sendingIncidentEmail, setSendingIncidentEmail] = useState<string | null>(null);
 
   const { incidents, createIncident, deleteIncident, markEmailSent } = useIncidents(assigneeName);
+  const { departments } = useDepartments();
+  const assigneeDeptName = useMemo(() => {
+    if (!assignee?.department_id) return null;
+    return departments.find(d => d.id === assignee.department_id)?.name || null;
+  }, [assignee, departments]);
 
   const { data: emailHistory = [] } = useQuery({
     queryKey: ['notification_emails_assignee', assigneeName],
@@ -340,7 +346,11 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, reschedule
           </Button>
           <div className="flex-1 min-w-0">
             <h2 className="text-lg font-bold text-foreground truncate">{assigneeName}</h2>
-            {assignee?.email && <p className="text-xs text-muted-foreground">{assignee.email}</p>}
+            <div className="flex items-center gap-2">
+              {assignee?.email && <span className="text-xs text-muted-foreground">{assignee.email}</span>}
+              {assignee?.email && assigneeDeptName && <span className="text-xs text-muted-foreground">·</span>}
+              <span className="text-xs text-muted-foreground">{assigneeDeptName || 'Sin departamento'}</span>
+            </div>
           </div>
         </div>
       </div>
