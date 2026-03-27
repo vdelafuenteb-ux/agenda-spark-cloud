@@ -76,6 +76,20 @@ export function DashboardView({ topics, assignees, departments = [], reschedules
     return map;
   }, [topics, assignees, allEmails]);
 
+  // Compute average score per department
+  const deptScores = useMemo(() => {
+    return departments.map(dept => {
+      const deptAssignees = assignees.filter(a => a.department_id === dept.id);
+      const scores = deptAssignees
+        .map(a => liveScores.get(a.name))
+        .filter((s): s is number => s !== undefined);
+      const avg = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
+      return { name: dept.name, avg, count: deptAssignees.length, withScore: scores.length };
+    })
+    .filter(d => d.count > 0)
+    .sort((a, b) => (b.avg ?? 0) - (a.avg ?? 0));
+  }, [departments, assignees, liveScores]);
+
   const handleSendReminder = async (topic: TopicWithSubtasks) => {
     if (!topic.assignee) {
       toast.error('Este tema no tiene responsable asignado');
@@ -400,45 +414,72 @@ export function DashboardView({ topics, assignees, departments = [], reschedules
                       {metrics.closedWithDates} temas analizados
                     </Badge>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div className="space-y-1.5">
-                      <div className="flex items-baseline gap-1">
-                        <span className={`text-3xl font-bold ${metrics.closureCompliance !== null && metrics.closureCompliance >= 70 ? 'text-emerald-600' : metrics.closureCompliance !== null && metrics.closureCompliance >= 40 ? 'text-yellow-600' : 'text-destructive'}`}>
-                          {metrics.closureCompliance ?? 0}%
-                        </span>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {/* Left half: Cumplimiento de Cierre */}
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="space-y-1.5">
+                        <div className="flex items-baseline gap-1">
+                          <span className={`text-3xl font-bold ${metrics.closureCompliance !== null && metrics.closureCompliance >= 70 ? 'text-emerald-600' : metrics.closureCompliance !== null && metrics.closureCompliance >= 40 ? 'text-yellow-600' : 'text-destructive'}`}>
+                            {metrics.closureCompliance ?? 0}%
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground">Tasa de cumplimiento</p>
+                        <Progress value={metrics.closureCompliance ?? 0} className="h-2" />
                       </div>
-                      <p className="text-[11px] text-muted-foreground">Tasa de cumplimiento</p>
-                      <Progress value={metrics.closureCompliance ?? 0} className="h-2" />
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-1.5">
+                          <div className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                          <span className="text-xs text-muted-foreground">A tiempo</span>
+                        </div>
+                        <span className="text-2xl font-bold text-foreground">{metrics.onTime}</span>
+                        {metrics.avgEarlyDays > 0 && (
+                          <p className="text-[10px] text-emerald-600">Prom {metrics.avgEarlyDays}d antes</p>
+                        )}
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-1.5">
+                          <div className="h-2.5 w-2.5 rounded-full bg-destructive" />
+                          <span className="text-xs text-muted-foreground">Con atraso</span>
+                        </div>
+                        <span className="text-2xl font-bold text-foreground">{metrics.late}</span>
+                        {metrics.avgDelayDays > 0 && (
+                          <p className="text-[10px] text-destructive">Prom {metrics.avgDelayDays}d atraso</p>
+                        )}
+                      </div>
                     </div>
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-1.5">
-                        <div className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-                        <span className="text-xs text-muted-foreground">A tiempo / Anticipado</span>
+
+                    {/* Right half: Score por Departamento */}
+                    <div className="border-l border-border pl-4">
+                      <div className="flex items-center gap-1.5 mb-2">
+                        <Users className="h-3.5 w-3.5 text-primary" />
+                        <span className="text-xs font-medium text-foreground">Score por Departamento</span>
                       </div>
-                      <span className="text-2xl font-bold text-foreground">{metrics.onTime}</span>
-                      {metrics.avgEarlyDays > 0 && (
-                        <p className="text-[10px] text-emerald-600">Promedio {metrics.avgEarlyDays}d antes</p>
+                      {deptScores.length === 0 ? (
+                        <p className="text-[11px] text-muted-foreground">Sin datos de departamentos</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {deptScores.map((dept, idx) => (
+                            <div key={dept.name} className="flex items-center gap-2">
+                              <span className="text-[11px] font-medium text-muted-foreground w-4">{idx + 1}.</span>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between mb-0.5">
+                                  <span className="text-xs font-medium text-foreground truncate">{dept.name}</span>
+                                  <span className={cn(
+                                    "text-sm font-bold",
+                                    dept.avg !== null && dept.avg >= 70 ? 'text-emerald-600' : dept.avg !== null && dept.avg >= 40 ? 'text-yellow-600' : 'text-destructive'
+                                  )}>
+                                    {dept.avg ?? '—'}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Progress value={dept.avg ?? 0} className="h-1.5 flex-1" />
+                                  <span className="text-[10px] text-muted-foreground whitespace-nowrap">{dept.count} int.</span>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       )}
-                    </div>
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-1.5">
-                        <div className="h-2.5 w-2.5 rounded-full bg-destructive" />
-                        <span className="text-xs text-muted-foreground">Con atraso</span>
-                      </div>
-                      <span className="text-2xl font-bold text-foreground">{metrics.late}</span>
-                      {metrics.avgDelayDays > 0 && (
-                        <p className="text-[10px] text-destructive">Promedio {metrics.avgDelayDays}d de atraso</p>
-                      )}
-                    </div>
-                    <div className="flex flex-col justify-center space-y-1.5">
-                      <div className="flex h-4 rounded-full overflow-hidden bg-secondary">
-                        <div className="bg-emerald-500 transition-all" style={{ width: `${metrics.closureCompliance ?? 0}%` }} />
-                        <div className="bg-destructive transition-all" style={{ width: `${100 - (metrics.closureCompliance ?? 0)}%` }} />
-                      </div>
-                      <div className="flex justify-between text-[10px] text-muted-foreground">
-                        <span>{metrics.onTime} a tiempo</span>
-                        <span>{metrics.late} atrasados</span>
-                      </div>
                     </div>
                   </div>
                 </CardContent>
