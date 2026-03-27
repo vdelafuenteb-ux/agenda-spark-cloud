@@ -1,28 +1,46 @@
 
 
-## Plan: Mostrar KPIs de reprogramaciones siempre (incluso en 0) en formato compacto
+## Plan: Reordenar filtros + agregar Departamento + fusionar Continuos/Sin fecha
 
-### Problema
-La sección de Reprogramaciones en el Dashboard solo se muestra cuando `reschedules.length > 0`. Si no hay reprogramaciones, no aparece nada — ni siquiera los indicadores en 0. El usuario quiere verlos siempre.
+### Cambios en `FilterBar.tsx`
 
-### Solución
-En `DashboardView.tsx`:
+**1. Nuevo filtro "Departamento"** — dropdown con buscador (Popover + Command), igual que Responsable y Etiquetas.
 
-1. **Quitar la condición `reschedules.length > 0`** para que la card siempre se renderice
-2. **Compactar la card** en una sola fila horizontal de 4 KPIs (Total, Prom/tema, Extensión, Sobretiempo%) dentro de una card del mismo estilo que las 4 KPIs superiores, sin la lista de "Temas más reprogramados" que alarga el dashboard — esa lista se mueve como tooltip o se elimina
-3. **Diseño**: Una card compacta tipo fila con los 6 indicadores actuales condensados a 4 principales en una línea, similar a la fila de KPIs de arriba (Temas Totales, Estado de Plazos, etc.)
+**2. Fusionar "Continuos" + "Sin fecha fin"** en un solo dropdown llamado "Fecha" con 3 checkboxes:
+- ✓ Continuos
+- ✓ No continuos  
+- ✓ Sin fecha fin
 
-Layout resultante:
-```text
-┌─────────────────────────────────────────────────────────┐
-│ 🔄 Reprogramaciones                                     │
-│  0 total · 0 internas · 0 externas │ 0x prom · +0d · +0%│
-└─────────────────────────────────────────────────────────┘
+Esto reemplaza el botón separado "Sin fecha fin" y el dropdown "Continuos".
+
+**3. Reordenar los filtros** después del buscador:
+1. Responsable
+2. Departamento (nuevo)
+3. Etiquetas
+4. Fecha (fusionado)
+5. Expandir/Contraer
+6. Orden
+7. Correo masivo (condicional)
+
+### Cambios en `Index.tsx`
+
+- Agregar estado `selectedDepartment` (string, nombre del departamento)
+- Pasar `departments`, `selectedDepartment`, `onDepartmentChange` al FilterBar
+- Agregar filtro en `filteredTopics`: buscar el `department_id` del assignee del topic y comparar con el departamento seleccionado
+- Resetear `selectedDepartment` al cambiar de pestaña
+
+### Props nuevas en FilterBar
+
+```typescript
+departments?: string[];           // nombres de departamentos
+selectedDepartment?: string;
+onDepartmentChange?: (dept: string) => void;
 ```
 
-### Archivo afectado
+### Archivos afectados
 
 | Archivo | Cambio |
 |---|---|
-| `src/components/DashboardView.tsx` | Quitar condición `reschedules.length > 0`, compactar card de reprogramaciones en formato de fila resumida |
+| `src/components/FilterBar.tsx` | Reordenar filtros, agregar Departamento dropdown, fusionar Continuos+Sin fecha en "Fecha" |
+| `src/pages/Index.tsx` | Estado `selectedDepartment`, lógica de filtrado por departamento, pasar props al FilterBar |
 
