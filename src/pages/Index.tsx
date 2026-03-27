@@ -45,7 +45,7 @@ const Index = () => {
   const { tags, getTagsForTopic, createTag, updateTag, deleteTag, addTopicTag, removeTopicTag } = useTags();
   const { assignees, createAssignee, updateAssignee, deleteAssignee } = useAssignees();
   const { departments, createDepartment, updateDepartment, deleteDepartment } = useDepartments();
-  const { reschedules, reschedulesByTopic, createReschedule } = useReschedules();
+  const { reschedulesByTopic, createReschedule } = useReschedules();
   const [filter, setFilter] = useState<Filter>('todos');
   const [statusTab, setStatusTab] = useState<StatusTab>('activo');
   const [reportOpen, setReportOpen] = useState(false);
