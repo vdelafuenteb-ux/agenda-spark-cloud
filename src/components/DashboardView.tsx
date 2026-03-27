@@ -11,7 +11,7 @@ import { TrendingUp, Users, Target, CalendarClock, AlertTriangle, Bell, Loader2,
 import { computeProductivityScore } from '@/lib/productivityScore';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import type { Assignee } from '@/hooks/useAssignees';
 
@@ -49,6 +49,7 @@ const STATUS_COLORS = {
 };
 
 export function DashboardView({ topics, assignees, departments = [], reschedules, onUpdateTopic, onNavigateToTopic }: DashboardViewProps) {
+  const queryClient = useQueryClient();
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [selectedAssignee, setSelectedAssignee] = useState<string | null>(null);
 
@@ -122,6 +123,12 @@ export function DashboardView({ topics, assignees, departments = [], reschedules
       });
 
       if (error) throw error;
+      // Invalidate all email caches for cross-view sync
+      queryClient.invalidateQueries({ queryKey: ['notification_emails'] });
+      queryClient.invalidateQueries({ queryKey: ['notification_emails_all'] });
+      queryClient.invalidateQueries({ queryKey: ['notification_emails_all_dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['notification_emails_team'] });
+      queryClient.invalidateQueries({ queryKey: ['notification_emails_assignee'] });
       toast.success(`Recordatorio enviado a ${assignee.name}`);
     } catch (err: any) {
       toast.error(`Error al enviar: ${err.message}`);

@@ -67,34 +67,12 @@ const Index = () => {
     setSelectedTagIds((prev) => (prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]));
   }, []);
 
-  // Build a map: assignee name -> department name for filtering
-  const assigneeDeptMap = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const a of assignees) {
-      if (a.department_id) {
-        const dept = departments.find(d => d.id === a.department_id);
-        if (dept) map.set(a.name, dept.name);
-      }
-    }
-    return map;
-  }, [assignees, departments]);
-
   const uniqueDepartments = useMemo(() => {
-    const deptNames = new Set<string>();
-    topics.filter(t => t.status === statusTab).forEach(t => {
-      // Check topic's own department_id first
-      if (t.department_id) {
-        const dept = departments.find(d => d.id === t.department_id);
-        if (dept) deptNames.add(dept.name);
-      }
-      // Also check assignee's department
-      if (t.assignee) {
-        const deptName = assigneeDeptMap.get(t.assignee);
-        if (deptName) deptNames.add(deptName);
-      }
-    });
-    return [...deptNames].sort();
-  }, [topics, statusTab, assigneeDeptMap, departments]);
+    const deptIds = new Set(
+      topics.filter(t => t.status === statusTab && t.department_id).map(t => t.department_id!)
+    );
+    return departments.filter(d => deptIds.has(d.id)).map(d => d.name).sort();
+  }, [topics, statusTab, departments]);
 
   const filteredTopics = useMemo(() => {
     const filtered = topics.filter((topic) => {
@@ -111,10 +89,8 @@ const Index = () => {
       }
       if (selectedAssignee && topic.assignee !== selectedAssignee) return false;
       if (selectedDepartment) {
-        const topicDeptDirect = topic.department_id ? departments.find(d => d.id === topic.department_id)?.name : undefined;
-        const topicDeptViaAssignee = topic.assignee ? assigneeDeptMap.get(topic.assignee) : undefined;
-        const topicDept = topicDeptDirect || topicDeptViaAssignee;
-        if (topicDept !== selectedDepartment) return false;
+        const dept = departments.find(d => d.name === selectedDepartment);
+        if (!dept || topic.department_id !== dept.id) return false;
       }
       if (filterNoDueDate && topic.due_date) return false;
       if (!showOngoing && topic.is_ongoing) return false;
@@ -147,7 +123,7 @@ const Index = () => {
       // created
       return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
     });
-  }, [topics, statusTab, searchQuery, selectedTagIds, selectedAssignee, selectedDepartment, assigneeDeptMap, filterNoDueDate, showOngoing, showNotOngoing, getTagsForTopic, sortBy]);
+  }, [topics, statusTab, searchQuery, selectedTagIds, selectedAssignee, selectedDepartment, departments, filterNoDueDate, showOngoing, showNotOngoing, getTagsForTopic, sortBy]);
 
   useEffect(() => {
     if (expandedTopicId && filter === 'todos') {
@@ -328,6 +304,9 @@ const Index = () => {
               } as any);
               queryClient.invalidateQueries({ queryKey: ['notification_emails'] });
               queryClient.invalidateQueries({ queryKey: ['notification_emails_all'] });
+              queryClient.invalidateQueries({ queryKey: ['notification_emails_all_dashboard'] });
+              queryClient.invalidateQueries({ queryKey: ['notification_emails_team'] });
+              queryClient.invalidateQueries({ queryKey: ['notification_emails_assignee'] });
               toast.success(`Se notificó a ${assignee.name} del nuevo tema`);
             } else {
               console.error('Error sending new topic notification:', emailError);
@@ -490,6 +469,10 @@ const Index = () => {
                           onCreateAssignee={(name) => createAssignee.mutateAsync({ name })}
                           forceExpand={expandedTopicId === topic.id ? true : forceExpand}
                           onUpdate={(id, data) => {
+                            // Clear assignee filter if changing assignee while filter is active
+                            if ((data as Record<string, unknown>).assignee && selectedAssignee && (data as Record<string, unknown>).assignee !== selectedAssignee) {
+                              setSelectedAssignee('');
+                            }
                             updateTopic.mutate({ id, ...data });
                             if ((data as Record<string, unknown>).status === 'completado') {
                               const topic = topics.find(t => t.id === id);

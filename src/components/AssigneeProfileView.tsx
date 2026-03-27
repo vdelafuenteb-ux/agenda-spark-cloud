@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { formatStoredDate, isStoredDateOverdue } from '@/lib/date';
 import { cn } from '@/lib/utils';
@@ -37,6 +37,7 @@ interface AssigneeProfileViewProps {
 }
 
 export function AssigneeProfileView({ assigneeName, assignee, topics, reschedules: assigneeReschedules, onBack, onNavigateToTopic }: AssigneeProfileViewProps) {
+  const queryClient = useQueryClient();
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [showTrend, setShowTrend] = useState(false);
   const [showIncidentForm, setShowIncidentForm] = useState(false);
@@ -209,6 +210,11 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, reschedule
         },
       });
       if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['notification_emails'] });
+      queryClient.invalidateQueries({ queryKey: ['notification_emails_all'] });
+      queryClient.invalidateQueries({ queryKey: ['notification_emails_all_dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['notification_emails_team'] });
+      queryClient.invalidateQueries({ queryKey: ['notification_emails_assignee'] });
       toast.success(`Recordatorio enviado a ${assigneeName}`);
     } catch (err: any) {
       toast.error(`Error: ${err.message}`);

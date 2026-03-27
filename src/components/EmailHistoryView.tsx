@@ -157,8 +157,11 @@ export function EmailHistoryView() {
   });
 
   const invalidateAll = () => {
-    queryClient.invalidateQueries({ queryKey: ['notification_emails_all'] });
     queryClient.invalidateQueries({ queryKey: ['notification_emails'] });
+    queryClient.invalidateQueries({ queryKey: ['notification_emails_all'] });
+    queryClient.invalidateQueries({ queryKey: ['notification_emails_all_dashboard'] });
+    queryClient.invalidateQueries({ queryKey: ['notification_emails_team'] });
+    queryClient.invalidateQueries({ queryKey: ['notification_emails_assignee'] });
   };
 
   const toggleConfirmed = useMutation({
