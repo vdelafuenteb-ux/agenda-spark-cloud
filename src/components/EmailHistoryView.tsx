@@ -561,6 +561,15 @@ export function EmailHistoryView() {
                             </span>
                           </td>
                           )}
+                          <td className="px-3 py-2.5" onClick={e => e.stopPropagation()}>
+                            <Checkbox
+                              checked={batch.allReviewed}
+                              onCheckedChange={(checked) => {
+                                batchIds.forEach(id => toggleReviewed.mutate({ id, reviewed: !!checked }));
+                              }}
+                              className="h-4 w-4"
+                            />
+                          </td>
                           <td className="px-3 py-2.5 text-right" onClick={e => e.stopPropagation()}>
                             <button
                               onClick={() => deleteBatch.mutate(batchIds)}
@@ -572,7 +581,7 @@ export function EmailHistoryView() {
                         </tr>
                         {isExpanded && (
                           <tr>
-                            <td colSpan={isWeekly ? 9 : 6} className="bg-muted/20 px-0 py-0">
+                            <td colSpan={isWeekly ? 10 : 8} className="bg-muted/20 px-0 py-0">
                               <div className="px-8 py-2 space-y-1">
                                 <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-1.5">
                                   Temas incluidos en este envío
