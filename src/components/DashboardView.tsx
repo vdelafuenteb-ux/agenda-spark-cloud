@@ -49,6 +49,24 @@ export function DashboardView({ topics, assignees, reschedules, onUpdateTopic, o
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [selectedAssignee, setSelectedAssignee] = useState<string | null>(null);
 
+  // Fetch latest score snapshots
+  const { data: scoreSnapshots } = useQuery({
+    queryKey: ['score_snapshots_latest'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('score_snapshots')
+        .select('assignee_name, score, snapshot_date')
+        .order('snapshot_date', { ascending: false });
+      if (error) throw error;
+      // Group by assignee, keep latest
+      const map = new Map<string, number>();
+      for (const s of data || []) {
+        if (!map.has(s.assignee_name)) map.set(s.assignee_name, s.score);
+      }
+      return map;
+    },
+  });
+
   const handleSendReminder = async (topic: TopicWithSubtasks) => {
     if (!topic.assignee) {
       toast.error('Este tema no tiene responsable asignado');
