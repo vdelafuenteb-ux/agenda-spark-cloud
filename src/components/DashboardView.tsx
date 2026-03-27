@@ -269,7 +269,7 @@ export function DashboardView({ topics, assignees, departments = [], reschedules
       avgCreatedWeekly,
       avgCreatedMonthly,
     };
-  }, [topics]);
+  }, [topics, scoreSnapshots]);
 
   const totalOpen = metrics.byStatus.activo.length + metrics.byStatus.seguimiento.length + metrics.byStatus.pausado.length;
   const totalActivos = metrics.byStatus.activo.length + metrics.byStatus.seguimiento.length;
