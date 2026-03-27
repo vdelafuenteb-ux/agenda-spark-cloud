@@ -328,7 +328,8 @@ export function ProgressLog({ entries, onAdd, onUpdate, onDelete, onUploadFiles,
                   </>
                 )}
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       ) : (
