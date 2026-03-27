@@ -132,7 +132,7 @@ const Index = () => {
       // created
       return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
     });
-  }, [topics, statusTab, searchQuery, selectedTagIds, selectedAssignee, filterNoDueDate, showOngoing, showNotOngoing, getTagsForTopic, sortBy]);
+  }, [topics, statusTab, searchQuery, selectedTagIds, selectedAssignee, selectedDepartment, assigneeDeptMap, filterNoDueDate, showOngoing, showNotOngoing, getTagsForTopic, sortBy]);
 
   useEffect(() => {
     if (expandedTopicId && filter === 'todos') {
