@@ -1,35 +1,24 @@
 
 
-## Plan: Agregar columna "Revisado" (checkbox) a correos — sincronizada entre historial y tarjetas
+## Plan: Quitar auto-confirmación de correos "tema nuevo" + confirmar al enviar actualización
 
-### Cambio
+### Problema actual
+Cuando se envía un correo de tema nuevo, en `NotificationSection.tsx` se muestra siempre un check verde fijo con "Notificado" — no permite al admin confirmar/desconfirmar manualmente. Además, cuando el responsable envía su actualización vía el link, la función `submit-update` solo marca `responded = true` pero NO marca `confirmed = true`.
 
-Agregar campo `reviewed` (boolean) a `notification_emails` para que el admin pueda marcar cada correo como revisado después de que el responsable envió su actualización.
+### Cambios
 
-### 1. Migración BD
-- `ALTER TABLE notification_emails ADD COLUMN reviewed boolean NOT NULL DEFAULT false`
-- `ALTER TABLE notification_emails ADD COLUMN reviewed_at timestamptz DEFAULT NULL`
+**1. `src/components/NotificationSection.tsx` — Tratar correos new_topic igual que weekly**
+- Eliminar la rama `isNewTopic` que mostraba un check verde fijo. Usar la misma lógica de confirmación que los correos semanales (checkbox/ConfirmPopover)
+- Mantener el badge "Tema nuevo" para distinguirlos visualmente
 
-### 2. `src/hooks/useNotificationEmails.tsx`
-- Agregar `reviewed`, `reviewed_at` al interface `NotificationEmail`
-- Agregar mutación `toggleReviewed({ id, reviewed })` que actualiza `reviewed` y `reviewed_at`
-
-### 3. `src/components/EmailHistoryView.tsx`
-- Agregar `reviewed` al `EmailRecord` interface
-- En ambas sub-pestañas (masivos y nuevos temas), agregar columna "Revisado" con checkbox
-- Al marcar/desmarcar, llamar mutación `toggleReviewed`
-- Agregar filtro de estado "Revisado / No revisado" en los filtros existentes
-
-### 4. `src/components/NotificationSection.tsx`
-- Agregar checkbox de "Revisado" en cada fila de correo enviado (junto al estado actual)
-- Al cambiar, llamar `toggleReviewed` que invalida todas las query keys para sincronizar con historial
+**2. `supabase/functions/submit-update/index.ts` — Auto-confirmar al enviar actualización**
+- Cuando el responsable envía su actualización (y hay cambios), además de marcar `responded = true`, también marcar `confirmed = true` y `confirmed_at = now()` en los `notification_emails` correspondientes
+- Esto sincroniza automáticamente el estado tanto en la tarjeta como en el historial
 
 ### Archivos afectados
 
 | Archivo | Cambio |
 |---|---|
-| Migración BD | Agregar `reviewed` y `reviewed_at` a `notification_emails` |
-| `src/hooks/useNotificationEmails.tsx` | Interface + mutación `toggleReviewed` |
-| `src/components/EmailHistoryView.tsx` | Columna "Revisado" con checkbox en ambas pestañas |
-| `src/components/NotificationSection.tsx` | Checkbox "Revisado" en cada correo de la tarjeta del tema |
+| `src/components/NotificationSection.tsx` | Eliminar rama `isNewTopic` auto-confirmada, usar misma lógica de checkbox |
+| `supabase/functions/submit-update/index.ts` | Agregar `confirmed: true, confirmed_at` al update de `notification_emails` |
 
