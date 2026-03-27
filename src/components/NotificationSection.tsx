@@ -86,7 +86,7 @@ function ConfirmPopover({
 export function NotificationSection({ topic, assignees }: NotificationSectionProps) {
   const [sending, setSending] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const { emails, logEmail, toggleConfirmed, deleteEmail } = useNotificationEmails(topic.id);
+  const { emails, logEmail, toggleConfirmed, toggleReviewed, deleteEmail } = useNotificationEmails(topic.id);
 
   const assignee = assignees.find(a => a.name === topic.assignee);
   const hasEmail = assignee?.email;
