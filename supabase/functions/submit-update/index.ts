@@ -131,6 +131,12 @@ Deno.serve(async (req) => {
         .eq("responded", false);
     }
 
+    // Mark token as used so it can't be reused
+    await supabase
+      .from("update_tokens")
+      .update({ used: true })
+      .eq("token", token);
+
     return new Response(
       JSON.stringify({
         success: true,
