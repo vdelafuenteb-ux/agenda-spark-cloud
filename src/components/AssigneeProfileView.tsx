@@ -29,6 +29,7 @@ interface AssigneeProfileViewProps {
   assigneeName: string;
   assignee?: Assignee;
   topics: TopicWithSubtasks[];
+  reschedules: Reschedule[];
   onBack: () => void;
   onNavigateToTopic?: (topicId: string, status: string) => void;
 }
