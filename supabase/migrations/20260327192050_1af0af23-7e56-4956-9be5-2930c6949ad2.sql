@@ -1,0 +1,1 @@
+ALTER TABLE public.assignees ADD COLUMN department_id uuid DEFAULT NULL REFERENCES public.departments(id) ON DELETE SET NULL;
