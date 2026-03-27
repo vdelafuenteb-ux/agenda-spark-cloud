@@ -182,8 +182,17 @@ export default function UpdateTopics() {
       {/* Header */}
       <div className="bg-white border-b border-slate-200 sticky top-0 z-10">
         <div className="max-w-2xl mx-auto px-4 py-4">
-          <h1 className="text-lg font-bold text-slate-800">Actualizar mis temas</h1>
-          <p className="text-sm text-slate-500">Hola {assigneeName} — actualiza el estado de tus temas pendientes</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-lg font-bold text-slate-800">Actualizar mis temas</h1>
+              <p className="text-sm text-slate-500">Hola {assigneeName} — actualiza el estado de tus temas pendientes</p>
+            </div>
+            {topics.length > 0 && (
+              <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">
+                {savedTopics.size} de {topics.length} actualizados
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
