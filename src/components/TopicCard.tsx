@@ -185,10 +185,10 @@ export function TopicCard({
   return (
     <div data-topic-id={topic.id} className={cn(
       'bg-card rounded-lg shadow-sm hover:shadow-md transition-shadow',
-      !isCompleted && !isPaused && isStoredDateOverdue(topic.due_date) && !topic.is_ongoing
+      !isCompleted && topic.status !== 'pausado' && isStoredDateOverdue(topic.due_date) && !topic.is_ongoing
         ? 'border-2 border-destructive'
         : 'border-l-4',
-      !isCompleted && !isPaused && isStoredDateOverdue(topic.due_date) && !topic.is_ongoing
+      !isCompleted && topic.status !== 'pausado' && isStoredDateOverdue(topic.due_date) && !topic.is_ongoing
         ? ''
         : isCompleted
           ? 'border-l-emerald-500'
