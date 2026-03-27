@@ -1,36 +1,34 @@
 
 
-## Plan: Botón "Guardar comentario" por tema + indicador visual verde
+## Plan: Mostrar departamento en ficha de persona + corregir conteo y scores por departamento
 
-### Cambio
+### Problemas
 
-En `src/pages/UpdateTopics.tsx`:
+1. **Ficha del responsable** no muestra a qué departamento está asignado
+2. **Tarjetas de departamento** en TeamView derivan las personas desde los topics (`topics.department_id`), no desde la asignación real en configuración (`assignees.department_id`). Esto causa conteos incorrectos de personas
+3. **Scores por departamento** deben ser el promedio de scores de las personas asignadas al departamento vía `assignees.department_id`, no de quienes tienen topics en ese departamento
 
-1. **Nuevo estado `savedTopics`** (`Set<string>`) para rastrear qué temas tienen comentario guardado
-2. **Botón "Guardar comentario"** debajo del textarea de cada tema. Al presionar, agrega el `topic_id` al set `savedTopics`, colapsa el tema, y lo marca visualmente
-3. **Indicador verde** en temas guardados: borde verde (`ring-emerald-400`), fondo suave verde en el header, y un icono de check verde junto al titulo
-4. **Editable**: al expandir un tema guardado, puede modificar el comentario y volver a guardar. El estado se quita solo si borra todo el comentario
-5. **Contador en header**: mostrar "X de Y temas actualizados" para que vea progreso
+### Cambios
 
-### Flujo
-```text
-1. Usuario abre tema → escribe comentario → presiona "Guardar comentario"
-2. Tema se colapsa, borde cambia a verde + check ✓ junto al título
-3. Puede re-abrir, editar, y guardar de nuevo
-4. Al final presiona "Enviar actualización" para enviar todo
-```
+**1. `src/components/AssigneeProfileView.tsx` — Mostrar departamento**
+- Importar `useDepartments`
+- En el header (línea 341-344), debajo del email, mostrar el nombre del departamento si `assignee?.department_id` coincide con algún departamento, o "Sin departamento" si no tiene asignado
 
-### Detalle tecnico
+**2. `src/components/TeamView.tsx` — Corregir `deptMetrics`**
+- Cambiar la lógica para derivar personas desde `assignees.department_id === dept.id` en vez de extraerlas de los topics
+- El conteo de personas será exactamente las que están configuradas en ese departamento
+- El score será el promedio de productivity scores de esas personas asignadas
+- Los temas activos y cerrados se mantienen contando por `topics.department_id`
+- Si un departamento no tiene personas asignadas, mostrar "Sin personas" y no mostrar score
 
-- `savedTopics: Set<string>` — se agrega al hacer click en "Guardar"
-- Al guardar: si hay comentario o subtasks cambiadas, marca como saved y colapsa
-- Card class: si saved → `ring-2 ring-emerald-400 bg-emerald-50/30` en vez del default
-- Check icon verde al lado del titulo cuando está saved
-- Botón "Guardar" solo habilitado si hay comentario escrito o subtasks modificadas
+**3. `src/components/DashboardView.tsx` — Misma corrección en `deptScores`**
+- Aplicar la misma lógica: derivar assignees desde `assignees.department_id` para calcular el score promedio por departamento
 
-### Archivo afectado
+### Archivos afectados
 
 | Archivo | Cambio |
 |---|---|
-| `src/pages/UpdateTopics.tsx` | Agregar estado `savedTopics`, botón guardar, indicador verde, contador progreso |
+| `src/components/AssigneeProfileView.tsx` | Agregar departamento en header de la ficha |
+| `src/components/TeamView.tsx` | Corregir `deptMetrics` para usar `assignees.department_id` |
+| `src/components/DashboardView.tsx` | Corregir `deptScores` para usar `assignees.department_id` |
 
