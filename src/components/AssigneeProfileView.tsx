@@ -59,6 +59,11 @@ function CollapsibleSection({ title, icon: Icon, count, defaultOpen = false, chi
 export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, onNavigateToTopic }: AssigneeProfileViewProps) {
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [showTrend, setShowTrend] = useState(false);
+  const [showIncidentForm, setShowIncidentForm] = useState(false);
+  const [incidentForm, setIncidentForm] = useState({ title: '', description: '', category: 'leve' as 'leve' | 'moderada' | 'grave', incident_date: new Date().toISOString().split('T')[0] });
+  const [sendingIncidentEmail, setSendingIncidentEmail] = useState<string | null>(null);
+
+  const { incidents, createIncident, deleteIncident, markEmailSent } = useIncidents(assigneeName);
 
   const { data: emailHistory = [] } = useQuery({
     queryKey: ['notification_emails_assignee', assigneeName],
