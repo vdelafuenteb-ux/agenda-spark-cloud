@@ -409,75 +409,47 @@ export function DashboardView({ topics, assignees, reschedules, onUpdateTopic, o
           </Card>
         )}
 
-        {/* Reschedule KPI */}
-        {reschedules.length > 0 && (() => {
+        {/* Reschedule KPI - always visible */}
+        {(() => {
           const globalRescheduleStats = computeGlobalRescheduleStats(topics, reschedules);
           const internalCount = reschedules.filter(r => !r.is_external).length;
           const externalCount = reschedules.filter(r => r.is_external).length;
-          // Most rescheduled topics
-          const topicCounts = new Map<string, number>();
-          for (const r of reschedules) {
-            topicCounts.set(r.topic_id, (topicCounts.get(r.topic_id) || 0) + 1);
-          }
-          const topRescheduled = [...topicCounts.entries()]
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 5)
-            .map(([id, count]) => ({ topic: topics.find(t => t.id === id), count }))
-            .filter(x => x.topic);
           return (
             <Card className="border-amber-500/20">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <RefreshCw className="h-4 w-4 text-amber-500" />
-                  <span className="text-sm font-medium text-foreground">Reprogramaciones</span>
-                  <Badge variant="outline" className="ml-auto text-[10px]">{reschedules.length} total</Badge>
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-                  <div className="space-y-1">
-                    <span className="text-3xl font-bold text-foreground">{reschedules.length}</span>
-                    <p className="text-[11px] text-muted-foreground">Total reprogramaciones</p>
+              <CardContent className="p-3">
+                <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+                  <div className="flex items-center gap-2">
+                    <RefreshCw className="h-4 w-4 text-amber-500" />
+                    <span className="text-sm font-medium text-foreground">Reprogramaciones</span>
                   </div>
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full bg-amber-500" />
-                      <span className="text-xs text-muted-foreground">Internas</span>
-                    </div>
-                    <span className="text-2xl font-bold text-foreground">{internalCount}</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-lg font-bold text-foreground">{reschedules.length}</span>
+                    <span className="text-[11px] text-muted-foreground">total</span>
                   </div>
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full bg-blue-500" />
-                      <span className="text-xs text-muted-foreground">Externas</span>
-                    </div>
-                    <span className="text-2xl font-bold text-foreground">{externalCount}</span>
+                  <div className="flex items-center gap-1.5">
+                    <div className="h-2 w-2 rounded-full bg-amber-500" />
+                    <span className="text-lg font-bold text-foreground">{internalCount}</span>
+                    <span className="text-[11px] text-muted-foreground">internas</span>
                   </div>
-                  <div className="space-y-1">
-                    <span className="text-2xl font-bold text-foreground">{globalRescheduleStats.avgReschedulesPerTopic}x</span>
-                    <p className="text-[10px] text-muted-foreground">Prom. reprogs/tema</p>
+                  <div className="flex items-center gap-1.5">
+                    <div className="h-2 w-2 rounded-full bg-blue-500" />
+                    <span className="text-lg font-bold text-foreground">{externalCount}</span>
+                    <span className="text-[11px] text-muted-foreground">externas</span>
                   </div>
-                  <div className="space-y-1">
-                    <span className={cn("text-2xl font-bold", globalRescheduleStats.avgOvertimeDays > 0 ? "text-amber-600" : "text-foreground")}>+{globalRescheduleStats.avgOvertimeDays}d</span>
-                    <p className="text-[10px] text-muted-foreground">Extensión promedio</p>
+                  <div className="h-5 w-px bg-border hidden sm:block" />
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-lg font-bold text-foreground">{globalRescheduleStats.avgReschedulesPerTopic}x</span>
+                    <span className="text-[11px] text-muted-foreground">prom/tema</span>
                   </div>
-                  <div className="space-y-1">
-                    <span className={cn("text-2xl font-bold", globalRescheduleStats.avgOvertimePct > 30 ? "text-destructive" : globalRescheduleStats.avgOvertimePct > 0 ? "text-amber-600" : "text-foreground")}>+{globalRescheduleStats.avgOvertimePct}%</span>
-                    <p className="text-[10px] text-muted-foreground">Sobretiempo prom.</p>
+                  <div className="flex items-center gap-1.5">
+                    <span className={cn("text-lg font-bold", globalRescheduleStats.avgOvertimeDays > 0 ? "text-amber-600" : "text-foreground")}>+{globalRescheduleStats.avgOvertimeDays}d</span>
+                    <span className="text-[11px] text-muted-foreground">extensión</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className={cn("text-lg font-bold", globalRescheduleStats.avgOvertimePct > 30 ? "text-destructive" : globalRescheduleStats.avgOvertimePct > 0 ? "text-amber-600" : "text-foreground")}>+{globalRescheduleStats.avgOvertimePct}%</span>
+                    <span className="text-[11px] text-muted-foreground">sobretiempo</span>
                   </div>
                 </div>
-                {topRescheduled.length > 0 && (
-                  <div className="mt-3 pt-3 border-t border-border">
-                    <p className="text-[11px] font-medium text-muted-foreground mb-2">Temas más reprogramados</p>
-                    <div className="space-y-1.5">
-                      {topRescheduled.map(({ topic: t, count }) => (
-                        <div key={t!.id} className="flex items-center justify-between text-xs">
-                          <span className="truncate flex-1 text-foreground">{t!.title}</span>
-                          {t!.assignee && <span className="text-[10px] text-muted-foreground mx-2 shrink-0">{t!.assignee}</span>}
-                          <Badge variant="outline" className="text-[9px] border-amber-500/50 text-amber-600 shrink-0">{count}x</Badge>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </CardContent>
             </Card>
           );
