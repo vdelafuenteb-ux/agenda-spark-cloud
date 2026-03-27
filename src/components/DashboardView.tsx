@@ -679,12 +679,17 @@ export function DashboardView({ topics, assignees, departments = [], reschedules
                       {metrics.assigneeRanking.map((a) => {
                         const score = scoreSnapshots?.get(a.name);
                         const scoreColor = score !== undefined
-                          ? score >= 80 ? 'text-emerald-600' : score >= 50 ? 'text-yellow-600' : 'text-destructive'
+                          ? score >= 90 ? 'text-emerald-600' : score >= 70 ? 'text-lime-600' : score >= 50 ? 'text-yellow-600' : score >= 30 ? 'text-orange-500' : 'text-destructive'
                           : 'text-muted-foreground';
+                        const assigneeObj = assignees.find(x => x.name === a.name);
+                        const dept = assigneeObj?.department_id ? departments.find(d => d.id === assigneeObj.department_id) : undefined;
                         return (
                           <div key={a.name} className="rounded-md border border-border p-3 space-y-1.5 cursor-pointer hover:bg-muted/50" onClick={() => setSelectedAssignee(a.name)}>
                             <div className="flex items-center justify-between">
-                              <span className="text-sm font-medium text-primary underline underline-offset-2">{a.name}</span>
+                              <div>
+                                <span className="text-sm font-medium text-primary underline underline-offset-2">{a.name}</span>
+                                {dept && <span className="text-[10px] text-muted-foreground ml-1.5">{dept.name}</span>}
+                              </div>
                               <div className="flex items-center gap-2">
                                 {score !== undefined && (
                                   <span className={cn("text-sm font-bold", scoreColor)}>{score} pts</span>
