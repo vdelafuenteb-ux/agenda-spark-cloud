@@ -44,7 +44,7 @@ interface SettingsViewProps {
   onUpdateTag: (id: string, name: string) => void;
   onDeleteAssignee: (id: string) => void;
   onCreateAssignee: (name: string) => Promise<any>;
-  onUpdateAssignee: (id: string, data: { name?: string; email?: string | null; weekly_capacity?: number }) => void;
+  onUpdateAssignee: (id: string, data: { name?: string; email?: string | null; weekly_capacity?: number; department_id?: string | null }) => void;
   onCreateDepartment: (name: string) => Promise<any>;
   onUpdateDepartment: (id: string, name: string) => void;
   onDeleteDepartment: (id: string) => void;
