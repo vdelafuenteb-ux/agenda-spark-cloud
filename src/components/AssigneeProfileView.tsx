@@ -772,6 +772,157 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
               </CardContent>
             </Card>
           </CollapsibleSection>
+
+          {/* Registro de Incidencias */}
+          <CollapsibleSection title="Registro de Incidencias" icon={AlertTriangle} count={incidents.length}>
+            <Card>
+              <CardContent className="p-3 space-y-3">
+                <Button size="sm" onClick={() => setShowIncidentForm(true)} className="w-full">
+                  <Plus className="h-3.5 w-3.5 mr-1" /> Registrar incidencia
+                </Button>
+
+                {/* Form Dialog */}
+                <Dialog open={showIncidentForm} onOpenChange={setShowIncidentForm}>
+                  <DialogContent className="max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Registrar Incidencia — {assigneeName}</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={async (e) => {
+                      e.preventDefault();
+                      if (!incidentForm.title.trim()) return;
+                      try {
+                        await createIncident.mutateAsync({
+                          assignee_name: assigneeName,
+                          assignee_email: assignee?.email || '',
+                          category: incidentForm.category,
+                          title: incidentForm.title,
+                          description: incidentForm.description,
+                          incident_date: incidentForm.incident_date,
+                        });
+                        toast.success('Incidencia registrada');
+                        setIncidentForm({ title: '', description: '', category: 'leve', incident_date: new Date().toISOString().split('T')[0] });
+                        setShowIncidentForm(false);
+                      } catch { toast.error('Error al registrar'); }
+                    }} className="space-y-3">
+                      <div>
+                        <label className="text-xs font-medium text-muted-foreground">Fecha</label>
+                        <Input type="date" value={incidentForm.incident_date} onChange={e => setIncidentForm(f => ({ ...f, incident_date: e.target.value }))} className="mt-1" />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-muted-foreground">Severidad</label>
+                        <Select value={incidentForm.category} onValueChange={(v: 'leve' | 'moderada' | 'grave') => setIncidentForm(f => ({ ...f, category: v }))}>
+                          <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="leve">🟡 Leve — Observación menor</SelectItem>
+                            <SelectItem value="moderada">🟠 Moderada — Requiere atención</SelectItem>
+                            <SelectItem value="grave">🔴 Grave — Incumplimiento serio</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-muted-foreground">Título</label>
+                        <Input value={incidentForm.title} onChange={e => setIncidentForm(f => ({ ...f, title: e.target.value }))} placeholder="Ej: Atraso reiterado" className="mt-1" />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-muted-foreground">Descripción</label>
+                        <Textarea value={incidentForm.description} onChange={e => setIncidentForm(f => ({ ...f, description: e.target.value }))} placeholder="Detalle de lo ocurrido..." rows={3} className="mt-1" />
+                      </div>
+                      <Button type="submit" className="w-full" disabled={createIncident.isPending}>
+                        {createIncident.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Registrar'}
+                      </Button>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+
+                {/* Incidents list */}
+                {incidents.length === 0 ? (
+                  <p className="text-xs text-muted-foreground text-center py-4">Sin incidencias registradas</p>
+                ) : (
+                  <div className="space-y-2 max-h-[400px] overflow-auto">
+                    {incidents.map((inc) => {
+                      const categoryConfig = {
+                        leve: { color: 'border-l-yellow-500 bg-yellow-50 dark:bg-yellow-950/20', label: 'Leve', emoji: '🟡' },
+                        moderada: { color: 'border-l-orange-500 bg-orange-50 dark:bg-orange-950/20', label: 'Moderada', emoji: '🟠' },
+                        grave: { color: 'border-l-red-500 bg-red-50 dark:bg-red-950/20', label: 'Grave', emoji: '🔴' },
+                      };
+                      const cfg = categoryConfig[inc.category] || categoryConfig.leve;
+                      return (
+                        <div key={inc.id} className={cn("border-l-4 rounded-md p-3 space-y-1.5", cfg.color)}>
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-xs">{cfg.emoji}</span>
+                                <span className="text-xs font-semibold">{inc.title}</span>
+                              </div>
+                              <p className="text-[10px] text-muted-foreground mt-0.5">
+                                {format(new Date(inc.incident_date + 'T12:00:00'), 'dd MMM yyyy', { locale: es })}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-1 shrink-0">
+                              {inc.category === 'grave' && !inc.email_sent && assignee?.email && (
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  className="h-6 text-[10px] px-2"
+                                  disabled={sendingIncidentEmail === inc.id}
+                                  onClick={async () => {
+                                    setSendingIncidentEmail(inc.id);
+                                    try {
+                                      const { error } = await supabase.functions.invoke('send-incident-notification', {
+                                        body: {
+                                          to_email: assignee.email,
+                                          to_name: assigneeName,
+                                          incident_title: inc.title,
+                                          incident_description: inc.description,
+                                          incident_date: inc.incident_date,
+                                          category: inc.category,
+                                        },
+                                      });
+                                      if (error) throw error;
+                                      await markEmailSent.mutateAsync(inc.id);
+                                      toast.success('Notificación formal enviada');
+                                    } catch { toast.error('Error al enviar correo'); }
+                                    setSendingIncidentEmail(null);
+                                  }}
+                                >
+                                  {sendingIncidentEmail === inc.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <><Send className="h-3 w-3 mr-0.5" /> Notificar</>}
+                                </Button>
+                              )}
+                              {inc.email_sent && (
+                                <Badge variant="secondary" className="text-[9px] h-5">
+                                  <Mail className="h-3 w-3 mr-0.5" /> Notificado
+                                </Badge>
+                              )}
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button size="sm" variant="ghost" className="h-6 w-6 p-0">
+                                    <Trash2 className="h-3 w-3 text-muted-foreground" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>¿Eliminar incidencia?</AlertDialogTitle>
+                                    <AlertDialogDescription>Esta acción no se puede deshacer.</AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => deleteIncident.mutate(inc.id)}>Eliminar</AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
+                          </div>
+                          {inc.description && (
+                            <p className="text-xs text-muted-foreground">{inc.description}</p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </CollapsibleSection>
         </div>
       </ScrollArea>
     </div>
