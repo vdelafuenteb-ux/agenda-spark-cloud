@@ -37,6 +37,7 @@ interface AssigneeProfileViewProps {
 }
 
 export function AssigneeProfileView({ assigneeName, assignee, topics, reschedules: assigneeReschedules, onBack, onNavigateToTopic }: AssigneeProfileViewProps) {
+  const queryClient = useQueryClient();
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [showTrend, setShowTrend] = useState(false);
   const [showIncidentForm, setShowIncidentForm] = useState(false);
