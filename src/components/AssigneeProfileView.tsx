@@ -346,7 +346,11 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, reschedule
           </Button>
           <div className="flex-1 min-w-0">
             <h2 className="text-lg font-bold text-foreground truncate">{assigneeName}</h2>
-            {assignee?.email && <p className="text-xs text-muted-foreground">{assignee.email}</p>}
+            <div className="flex items-center gap-2">
+              {assignee?.email && <span className="text-xs text-muted-foreground">{assignee.email}</span>}
+              {assignee?.email && assigneeDeptName && <span className="text-xs text-muted-foreground">·</span>}
+              <span className="text-xs text-muted-foreground">{assigneeDeptName || 'Sin departamento'}</span>
+            </div>
           </div>
         </div>
       </div>
