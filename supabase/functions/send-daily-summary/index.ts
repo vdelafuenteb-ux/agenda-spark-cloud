@@ -135,7 +135,7 @@ Deno.serve(async (req) => {
       .eq("completed", false);
 
     // Build individual items (like ReviewView)
-    const todayItems = buildItems(topics, (d) => isToday(d, today), true);
+    const todayItems = buildItems(topics, (d) => isToday(d, today), false);
     const overdueItems = buildItems(topics, (d) => isOverdue(d, today), false);
     const upcomingItems = buildItems(topics, (d) => isUpcoming(d, today, limitDate), false);
 
