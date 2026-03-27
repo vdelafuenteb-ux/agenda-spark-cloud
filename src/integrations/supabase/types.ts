@@ -801,6 +801,48 @@ export type Database = {
           },
         ]
       }
+      worker_incidents: {
+        Row: {
+          assignee_email: string
+          assignee_name: string
+          category: Database["public"]["Enums"]["incident_category"]
+          created_at: string
+          description: string
+          email_sent: boolean
+          email_sent_at: string | null
+          id: string
+          incident_date: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          assignee_email?: string
+          assignee_name: string
+          category?: Database["public"]["Enums"]["incident_category"]
+          created_at?: string
+          description?: string
+          email_sent?: boolean
+          email_sent_at?: string | null
+          id?: string
+          incident_date?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          assignee_email?: string
+          assignee_name?: string
+          category?: Database["public"]["Enums"]["incident_category"]
+          created_at?: string
+          description?: string
+          email_sent?: boolean
+          email_sent_at?: string | null
+          id?: string
+          incident_date?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -812,6 +854,7 @@ export type Database = {
       }
     }
     Enums: {
+      incident_category: "leve" | "moderada" | "grave"
       topic_priority: "alta" | "media" | "baja"
       topic_status: "activo" | "completado" | "pausado" | "seguimiento"
     }
@@ -941,6 +984,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      incident_category: ["leve", "moderada", "grave"],
       topic_priority: ["alta", "media", "baja"],
       topic_status: ["activo", "completado", "pausado", "seguimiento"],
     },
