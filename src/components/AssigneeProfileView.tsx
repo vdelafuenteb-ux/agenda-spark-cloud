@@ -24,6 +24,7 @@ import type { Reschedule } from '@/hooks/useReschedules';
 import type { Assignee } from '@/hooks/useAssignees';
 import { useIncidents } from '@/hooks/useIncidents';
 import { computeGlobalRescheduleStats } from '@/lib/rescheduleMetrics';
+import { computeProductivityScore } from '@/lib/productivityScore';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 interface AssigneeProfileViewProps {
