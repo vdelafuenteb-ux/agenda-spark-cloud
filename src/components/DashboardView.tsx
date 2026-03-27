@@ -411,6 +411,7 @@ export function DashboardView({ topics, assignees, reschedules, onUpdateTopic, o
 
         {/* Reschedule KPI */}
         {reschedules.length > 0 && (() => {
+          const globalRescheduleStats = computeGlobalRescheduleStats(topics, reschedules);
           const internalCount = reschedules.filter(r => !r.is_external).length;
           const externalCount = reschedules.filter(r => r.is_external).length;
           // Most rescheduled topics

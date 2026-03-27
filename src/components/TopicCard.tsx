@@ -25,6 +25,7 @@ import type { Assignee } from '@/hooks/useAssignees';
 import type { Department } from '@/hooks/useDepartments';
 import type { Database } from '@/integrations/supabase/types';
 import type { Reschedule } from '@/hooks/useReschedules';
+import { computeTopicOvertime, formatDuration } from '@/lib/rescheduleMetrics';
 
 type Priority = Database['public']['Enums']['topic_priority'];
 
