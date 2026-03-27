@@ -323,6 +323,17 @@ export function SettingsView({ tags, assignees, departments, topics, onDeleteTag
                               placeholder="h/sem"
                               title="Capacidad semanal (hrs)"
                             />
+                            <Select value={editingAssigneeDeptId || 'none'} onValueChange={(v) => setEditingAssigneeDeptId(v === 'none' ? null : v)}>
+                              <SelectTrigger className="h-7 text-xs w-36">
+                                <SelectValue placeholder="Departamento" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">Sin departamento</SelectItem>
+                                {departments.map((d) => (
+                                  <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                             <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-emerald-500" onClick={() => handleSaveAssignee(a.id)}>
                               <Check className="h-3.5 w-3.5" />
                             </Button>
