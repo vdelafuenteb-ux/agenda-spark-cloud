@@ -48,10 +48,10 @@ Deno.serve(async (req) => {
     // Fetch topics for this assignee (not completed)
     const { data: topics, error: topicsError } = await supabase
       .from("topics")
-      .select("id, title, due_date, start_date, status, is_ongoing, assignee")
+      .select("id, title, due_date, start_date, created_at, status, is_ongoing, assignee")
       .eq("user_id", tokenData.user_id)
       .eq("assignee", tokenData.assignee_name)
-      .neq("status", "completado");
+      .in("status", ["activo", "seguimiento"]);
 
     if (topicsError) throw topicsError;
 

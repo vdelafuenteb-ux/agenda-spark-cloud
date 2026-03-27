@@ -214,10 +214,13 @@ export default function UpdateTopics() {
                         </Badge>
                       )}
                     </div>
-                    <div className="flex items-center gap-3 mt-1 text-xs text-slate-400">
+                    <div className="flex items-center gap-3 mt-1 text-xs text-slate-400 flex-wrap">
+                      {topic.created_at && (
+                        <span>Creado: {formatDate(topic.created_at.slice(0, 10))}</span>
+                      )}
                       <span className="flex items-center gap-1">
                         <Clock className="h-3 w-3" />
-                        {formatDate(topic.due_date)}
+                        Vence: {formatDate(topic.due_date)}
                       </span>
                       {pendingSubtasks.length > 0 && (
                         <span className="text-amber-600">{pendingSubtasks.length} pendiente{pendingSubtasks.length > 1 ? "s" : ""}</span>
