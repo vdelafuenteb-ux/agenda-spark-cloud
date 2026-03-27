@@ -347,7 +347,7 @@ const Index = () => {
               onDeleteDepartment={(id) => deleteDepartment.mutate(id)}
             />
           ) : filter === 'dashboard' ? (
-            <DashboardView topics={topics} assignees={assignees} onUpdateTopic={(id, data) => updateTopic.mutate({ id, ...data })} onNavigateToTopic={(topicId, status) => {
+            <DashboardView topics={topics} assignees={assignees} reschedules={Array.from(reschedulesByTopic.values()).flat()} onUpdateTopic={(id, data) => updateTopic.mutate({ id, ...data })} onNavigateToTopic={(topicId, status) => {
               setFilter('todos');
               setStatusTab(status as StatusTab);
               setExpandedTopicId(topicId);
