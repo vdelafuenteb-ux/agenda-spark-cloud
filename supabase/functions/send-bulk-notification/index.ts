@@ -63,6 +63,35 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Create/reuse update token
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const { createClient: createServiceClient } = await import("https://esm.sh/@supabase/supabase-js@2.99.2");
+    const serviceSupabase = createServiceClient(supabaseUrl, serviceRoleKey);
+    const userId = data.claims.sub;
+
+    let updateToken = "";
+    const { data: existingToken } = await serviceSupabase
+      .from("update_tokens")
+      .select("token, expires_at")
+      .eq("user_id", userId)
+      .eq("assignee_name", to_name || "")
+      .gt("expires_at", new Date().toISOString())
+      .limit(1)
+      .single();
+
+    if (existingToken) {
+      updateToken = existingToken.token;
+    } else {
+      const { data: newToken } = await serviceSupabase
+        .from("update_tokens")
+        .insert({ user_id: userId, assignee_name: to_name || "" })
+        .select("token")
+        .single();
+      updateToken = newToken?.token || "";
+    }
+
+    const APP_URL = "https://project-zenflow-66.lovable.app";
+
     // Build executive HTML email body with summary table
     const topicsWithPending = topics.map((topic: any, index: number) => {
       const pending = (topic.subtasks || []).filter((s: any) => !s.completed);
