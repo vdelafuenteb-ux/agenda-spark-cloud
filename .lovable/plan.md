@@ -1,47 +1,35 @@
 
 
-## Plan: KPIs de impacto de reprogramaciones (sobretiempo y frecuencia)
+## Plan: Asignar departamento a responsables + auto-selección en creación de temas
 
-### Problema
-No hay visibilidad del impacto real de las reprogramaciones: cuánto tiempo extra tomó un tema vs lo planificado originalmente, ni el promedio de veces que se reprograma una tarea.
+### Resumen
+Agregar un campo `department_id` a la tabla `assignees` para que cada responsable tenga un departamento asignado. Al crear un tema y seleccionar un responsable, el departamento se auto-completa.
 
-### Solución
-Calcular métricas de sobretiempo usando `start_date`, la primera `due_date` registrada (date original antes de reprogramaciones) vs la fecha final (`due_date` actual o `closed_at`), y mostrar esto en 3 lugares.
+### Cambios
 
-### Lógica de cálculo
+**1. Migración: agregar `department_id` a `assignees`**
+```sql
+ALTER TABLE public.assignees ADD COLUMN department_id uuid DEFAULT NULL;
+```
 
-Para cada tema con reprogramaciones:
-- **Duración planificada original**: `start_date` → primera `due_date` (si hay reschedules, tomar `previous_date` del primer reschedule como la fecha original)
-- **Duración real**: `start_date` → `closed_at` (o `due_date` actual si no está cerrado)
-- **Sobretiempo**: `duración_real - duración_planificada` en días/semanas
-- **% sobretiempo**: `(duración_real / duración_planificada - 1) * 100`
+**2. Hook `useAssignees.tsx`**
+- Agregar `department_id: string | null` a la interfaz `Assignee`
+- Incluir `department_id` en `updateAssignee` mutation
 
-Promedios globales:
-- **Promedio de reprogramaciones por tema** (solo temas que tienen al menos 1)
-- **Promedio de días de sobretiempo** por reprogramación
-- **% promedio de sobretiempo** sobre duración planificada
+**3. SettingsView — sección Responsables**
+- En modo edición de cada responsable, agregar un `Select` de departamento (usando la lista de `departments` que ya recibe como prop)
+- En modo vista, mostrar el nombre del departamento junto al nombre/email
 
-### Cambios en UI
+**4. CreateTopicModal — auto-selección de departamento**
+- Cuando el usuario selecciona un responsable (`setAssignee(a.name)`), buscar su `department_id` en la lista de assignees y hacer `setDepartmentId(a.department_id)` automáticamente
+- El usuario puede cambiar el departamento manualmente si quiere
 
-**1. TopicCard (tarjeta expandida)**
-- Junto al historial de reprogramaciones, agregar un mini resumen: "Planificado: 2 sem → Real: 5 sem (+150% sobretiempo)"
-
-**2. Dashboard — Enriquecer card de Reprogramaciones**
-- Agregar fila de KPIs:
-  - Promedio de reprogramaciones por tema: `2.3x`
-  - Tiempo promedio de extensión: `+8 días`
-  - % promedio de sobretiempo: `+45%`
-- Esto indica "estoy programando mal" con datos concretos
-
-**3. AssigneeProfileView — Pestaña Temas**
-- Agregar stats de reprogramación del trabajador: promedio de reprogs, sobretiempo promedio
-- En la tabla de temas, la columna 🔄 ya muestra el conteo; agregar tooltip con "Original: X sem → Real: Y sem"
-
-### Archivos afectados
+### Detalle técnico
 
 | Archivo | Cambio |
 |---|---|
-| `src/components/DashboardView.tsx` | Enriquecer card de Reprogramaciones con KPIs de sobretiempo y frecuencia promedio |
-| `src/components/AssigneeProfileView.tsx` | Agregar stats de sobretiempo en pestaña Temas |
-| `src/components/TopicCard.tsx` | Mini resumen de sobretiempo en historial de reprogramaciones |
+| Nueva migración | `ALTER TABLE assignees ADD COLUMN department_id uuid DEFAULT NULL` |
+| `src/hooks/useAssignees.tsx` | Agregar `department_id` a interfaz y a `updateAssignee` |
+| `src/components/SettingsView.tsx` | Select de departamento en edición de responsable + mostrar depto en vista |
+| `src/components/CreateTopicModal.tsx` | Auto-setear `departmentId` al seleccionar responsable |
 
