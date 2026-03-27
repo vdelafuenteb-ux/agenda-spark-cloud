@@ -118,13 +118,15 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Auto-mark notification_emails as responded
+    // Auto-mark notification_emails as responded AND confirmed
     if (commentsAdded > 0 || subtasksToggled > 0) {
       await supabase
         .from("notification_emails")
         .update({
           responded: true,
           responded_at: new Date().toISOString(),
+          confirmed: true,
+          confirmed_at: new Date().toISOString(),
         })
         .eq("user_id", tokenData.user_id)
         .eq("assignee_name", tokenData.assignee_name)
