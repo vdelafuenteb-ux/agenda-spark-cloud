@@ -53,23 +53,15 @@ export function DashboardView({ topics, assignees, departments = [], reschedules
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [selectedAssignee, setSelectedAssignee] = useState<string | null>(null);
 
-  // Fetch latest score snapshots
-  const { data: scoreSnapshots } = useQuery({
-    queryKey: ['score_snapshots_latest'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('score_snapshots')
-        .select('assignee_name, score, snapshot_date')
-        .order('snapshot_date', { ascending: false });
-      if (error) throw error;
-      // Group by assignee, keep latest
-      const map = new Map<string, number>();
-      for (const s of data || []) {
-        if (!map.has(s.assignee_name)) map.set(s.assignee_name, s.score);
-      }
-      return map;
-    },
-  });
+  // Compute real-time scores for all assignees
+  const liveScores = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const a of assignees) {
+      const result = computeProductivityScore(a.name, topics);
+      if (result.score !== null) map.set(a.name, result.score);
+    }
+    return map;
+  }, [topics, assignees]);
 
   const handleSendReminder = async (topic: TopicWithSubtasks) => {
     if (!topic.assignee) {
