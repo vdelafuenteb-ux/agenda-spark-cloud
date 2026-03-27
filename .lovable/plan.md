@@ -1,29 +1,59 @@
 
 
-## Plan: Corregir lógica del resumen diario para excluir tareas completadas
+## Plan: Sistema de Registro de Reprogramaciones de Temas
 
 ### Problema
-La función `send-daily-summary` muestra subtareas ya completadas (como "Cierre Stand", completada el 25 mar) en la sección "Hoy" porque usa `includeCompleted: true` al construir los ítems de hoy. Esto filtra por `due_date == today` sin importar si ya está terminada.
+Cuando se cambia la fecha de vencimiento de un tema, no queda registro. No se sabe cuántas veces se reprogramó ni por qué. Esto es crítico para una PMO efectiva.
 
 ### Solución
-En `supabase/functions/send-daily-summary/index.ts`:
 
-1. **Cambiar `todayItems`** de `includeCompleted: true` a `includeCompleted: false` — las tareas completadas no deben aparecer como pendientes
-2. **Igualmente para checklist**: ya filtra `completed: false` en la query, así que está bien
-3. **Para temas (topics)**: agregar filtro en `buildItems` para que también excluya temas con `status: 'completado'` o `status: 'pausado'` cuando no se quieren completados
+**Nueva tabla `topic_reschedules`** que registra cada cambio de fecha con motivo:
 
-Cambio principal — una sola línea:
-```typescript
-// ANTES
-const todayItems = buildItems(topics, (d) => isToday(d, today), true);
+| Columna | Tipo | Descripción |
+|---|---|---|
+| `id` | uuid PK | |
+| `user_id` | uuid | Dueño |
+| `topic_id` | uuid | Tema reprogramado |
+| `previous_date` | date | Fecha anterior |
+| `new_date` | date | Fecha nueva |
+| `reason` | text | Motivo de la reprogramación |
+| `is_external` | boolean | Si fue por causa externa (fuera de control) o interna |
+| `created_at` | timestamptz | Cuándo se hizo el cambio |
 
-// DESPUÉS  
-const todayItems = buildItems(topics, (d) => isToday(d, today), false);
-```
+RLS: solo el `user_id` autenticado accede a sus registros.
 
-### Archivo afectado
+### Cambios en UI
+
+**1. TopicCard — Dialog al cambiar fecha**
+- Al seleccionar una nueva fecha de vencimiento (en ambos calendarios del TopicCard), en vez de hacer `onUpdate` directo, abrir un Dialog que pida:
+  - Motivo de la reprogramación (texto)
+  - Checkbox: "Causa externa" (fuera de nuestro control)
+- Al confirmar, guardar en `topic_reschedules` y luego actualizar la fecha
+- Mostrar un badge con contador de reprogramaciones junto a la fecha (ej: "🔄 3")
+
+**2. TopicCard — Historial expandido**
+- En la sección expandida, mostrar lista de reprogramaciones con fecha anterior → nueva, motivo, y si fue externa
+
+**3. Dashboard — KPI de reprogramaciones**
+- Nuevo KPI: "Temas reprogramados" con cantidad y desglose interno/externo
+- Tabla de temas más reprogramados
+
+**4. AssigneeProfileView — Stats por trabajador**
+- Mostrar cantidad de reprogramaciones por trabajador
+- Distinguir internas vs externas para evaluar responsabilidad
+
+### Hook `useReschedules`
+- Query por `topic_id` o general
+- Mutation `createReschedule` que inserta el registro
+
+### Archivos afectados
 
 | Archivo | Cambio |
 |---|---|
-| `supabase/functions/send-daily-summary/index.ts` | Cambiar `includeCompleted` de `true` a `false` en la construcción de `todayItems` |
+| Nueva migración | Crear tabla `topic_reschedules` con RLS |
+| `src/hooks/useReschedules.tsx` | Nuevo hook CRUD |
+| `src/components/TopicCard.tsx` | Dialog de motivo al cambiar fecha + badge contador + historial |
+| `src/components/DashboardView.tsx` | KPI de reprogramaciones |
+| `src/components/AssigneeProfileView.tsx` | Stats de reprogramaciones por trabajador |
+| `src/hooks/useTopics.tsx` | Cargar reschedules junto con topics |
 
