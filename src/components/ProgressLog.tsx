@@ -10,6 +10,7 @@ interface GenericEntry {
   id: string;
   content: string;
   created_at: string;
+  source?: string;
   attachments?: EntryAttachment[];
 }
 
