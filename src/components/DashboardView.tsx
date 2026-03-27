@@ -240,7 +240,11 @@ export function DashboardView({ topics, assignees, departments = [], reschedules
         ...data,
         progress: data.subtasksTotal > 0 ? Math.round((data.subtasksDone / data.subtasksTotal) * 100) : 0,
       }))
-      .sort((a, b) => b.total - a.total);
+      .sort((a, b) => {
+        const scoreA = scoreSnapshots?.get(a.name) ?? -1;
+        const scoreB = scoreSnapshots?.get(b.name) ?? -1;
+        return scoreB - scoreA;
+      });
 
     return {
       byStatus,
