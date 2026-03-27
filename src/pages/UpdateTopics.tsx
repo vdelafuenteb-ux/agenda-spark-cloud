@@ -78,8 +78,8 @@ export default function UpdateTopics() {
           }
         }
         setToggles(initToggles);
-        // Expand all by default
-        setExpandedTopics(new Set(data.topics.map((t: TopicData) => t.id)));
+        // Start all collapsed
+        setExpandedTopics(new Set());
       } catch (err: any) {
         setError(err.message || "Error desconocido");
       } finally {
