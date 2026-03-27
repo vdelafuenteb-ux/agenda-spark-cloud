@@ -5,10 +5,12 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 import { TrendingUp, Users, Target, CalendarClock, AlertTriangle, Bell, Loader2, ListChecks, CheckCircle2, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useQuery } from '@tanstack/react-query';
 import type { Assignee } from '@/hooks/useAssignees';
 
 
@@ -46,6 +48,24 @@ const STATUS_COLORS = {
 export function DashboardView({ topics, assignees, reschedules, onUpdateTopic, onNavigateToTopic }: DashboardViewProps) {
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [selectedAssignee, setSelectedAssignee] = useState<string | null>(null);
+
+  // Fetch latest score snapshots
+  const { data: scoreSnapshots } = useQuery({
+    queryKey: ['score_snapshots_latest'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('score_snapshots')
+        .select('assignee_name, score, snapshot_date')
+        .order('snapshot_date', { ascending: false });
+      if (error) throw error;
+      // Group by assignee, keep latest
+      const map = new Map<string, number>();
+      for (const s of data || []) {
+        if (!map.has(s.assignee_name)) map.set(s.assignee_name, s.score);
+      }
+      return map;
+    },
+  });
 
   const handleSendReminder = async (topic: TopicWithSubtasks) => {
     if (!topic.assignee) {
@@ -283,379 +303,405 @@ export function DashboardView({ topics, assignees, reschedules, onUpdateTopic, o
   return (
     <div className="flex-1 overflow-auto p-3 md:p-4">
       <div className="max-w-6xl mx-auto space-y-4">
-        {/* KPI Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mx-auto">
-          {/* 1. Temas Totales */}
-          <Card>
-            <CardContent className="p-3">
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-[11px] font-medium text-muted-foreground">Temas Totales</span>
-                <Target className="h-3.5 w-3.5 text-primary" />
-              </div>
-              <div className="text-xl font-bold text-foreground">{totalOpen}</div>
-              <p className="text-[10px] text-muted-foreground mt-0.5">{totalActivos} activos · {totalPausados} en pausa</p>
-            </CardContent>
-          </Card>
+        <Tabs defaultValue="resumen">
+          <TabsList>
+            <TabsTrigger value="resumen">Resumen</TabsTrigger>
+            <TabsTrigger value="responsables">Responsables ({assignees.length})</TabsTrigger>
+          </TabsList>
 
-          {/* 2. Semáforo */}
-          <Card>
-            <CardContent className="p-3">
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-[11px] font-medium text-muted-foreground">Estado de Plazos</span>
-                <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                <div className="flex flex-col items-center text-center">
-                  <div className="h-2 w-full rounded-full bg-emerald-500 mb-1.5" />
-                  <span className="text-lg font-bold text-foreground">{onTrackCount}</span>
-                  <span className="text-[10px] text-muted-foreground">al día</span>
-                </div>
-                <div className="flex flex-col items-center text-center">
-                  <div className="h-2 w-full rounded-full bg-yellow-500 mb-1.5" />
-                  <span className="text-lg font-bold text-foreground">{dueSoonCount}</span>
-                  <span className="text-[10px] text-muted-foreground">por vencer</span>
-                </div>
-                <div className="flex flex-col items-center text-center">
-                  <div className="h-2 w-full rounded-full bg-destructive mb-1.5" />
-                  <span className="text-lg font-bold text-foreground">{overdueCount}</span>
-                  <span className="text-[10px] text-muted-foreground">atrasados</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* 3. Subtareas */}
-          <Card>
-            <CardContent className="p-3">
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-[11px] font-medium text-muted-foreground">Subtareas</span>
-                <ListChecks className="h-3.5 w-3.5 text-emerald-500" />
-              </div>
-              <div className="text-xl font-bold text-foreground">{metrics.completedSubtasks.length}/{metrics.allSubtasks.length}</div>
-              <p className="text-[10px] text-muted-foreground mt-0.5">{metrics.subtaskProgress}% completadas</p>
-            </CardContent>
-          </Card>
-
-          {/* 4. Cerrados */}
-          <Card>
-            <CardContent className="p-3">
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-[11px] font-medium text-muted-foreground">Cerrados</span>
-                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-              </div>
-              <div className="text-xl font-bold text-foreground">{metrics.byStatus.completado.length}</div>
-              <p className="text-[10px] text-muted-foreground mt-0.5">temas completados</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Closure Compliance KPI */}
-        {metrics.closedWithDates > 0 && (
-          <Card className="border-primary/20">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Target className="h-4 w-4 text-primary" />
-                <span className="text-sm font-medium text-foreground">Cumplimiento de Cierre</span>
-                <Badge variant="outline" className="ml-auto text-[10px]">
-                  {metrics.closedWithDates} temas analizados
-                </Badge>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* Compliance percentage */}
-                <div className="space-y-1.5">
-                  <div className="flex items-baseline gap-1">
-                    <span className={`text-3xl font-bold ${metrics.closureCompliance !== null && metrics.closureCompliance >= 70 ? 'text-emerald-600' : metrics.closureCompliance !== null && metrics.closureCompliance >= 40 ? 'text-yellow-600' : 'text-destructive'}`}>
-                      {metrics.closureCompliance ?? 0}%
-                    </span>
+          <TabsContent value="resumen" className="space-y-4">
+            {/* KPI Cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mx-auto">
+              {/* 1. Temas Totales */}
+              <Card>
+                <CardContent className="p-3">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[11px] font-medium text-muted-foreground">Temas Totales</span>
+                    <Target className="h-3.5 w-3.5 text-primary" />
                   </div>
-                  <p className="text-[11px] text-muted-foreground">Tasa de cumplimiento</p>
-                  <Progress value={metrics.closureCompliance ?? 0} className="h-2" />
-                </div>
-                {/* On time */}
-                <div className="space-y-1">
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-                    <span className="text-xs text-muted-foreground">A tiempo / Anticipado</span>
+                  <div className="text-xl font-bold text-foreground">{totalOpen}</div>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">{totalActivos} activos · {totalPausados} en pausa</p>
+                </CardContent>
+              </Card>
+
+              {/* 2. Semáforo */}
+              <Card>
+                <CardContent className="p-3">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[11px] font-medium text-muted-foreground">Estado de Plazos</span>
+                    <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
                   </div>
-                  <span className="text-2xl font-bold text-foreground">{metrics.onTime}</span>
-                  {metrics.avgEarlyDays > 0 && (
-                    <p className="text-[10px] text-emerald-600">Promedio {metrics.avgEarlyDays}d antes</p>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="flex flex-col items-center text-center">
+                      <div className="h-2 w-full rounded-full bg-emerald-500 mb-1.5" />
+                      <span className="text-lg font-bold text-foreground">{onTrackCount}</span>
+                      <span className="text-[10px] text-muted-foreground">al día</span>
+                    </div>
+                    <div className="flex flex-col items-center text-center">
+                      <div className="h-2 w-full rounded-full bg-yellow-500 mb-1.5" />
+                      <span className="text-lg font-bold text-foreground">{dueSoonCount}</span>
+                      <span className="text-[10px] text-muted-foreground">por vencer</span>
+                    </div>
+                    <div className="flex flex-col items-center text-center">
+                      <div className="h-2 w-full rounded-full bg-destructive mb-1.5" />
+                      <span className="text-lg font-bold text-foreground">{overdueCount}</span>
+                      <span className="text-[10px] text-muted-foreground">atrasados</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* 3. Subtareas */}
+              <Card>
+                <CardContent className="p-3">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[11px] font-medium text-muted-foreground">Subtareas</span>
+                    <ListChecks className="h-3.5 w-3.5 text-emerald-500" />
+                  </div>
+                  <div className="text-xl font-bold text-foreground">{metrics.completedSubtasks.length}/{metrics.allSubtasks.length}</div>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">{metrics.subtaskProgress}% completadas</p>
+                </CardContent>
+              </Card>
+
+              {/* 4. Cerrados */}
+              <Card>
+                <CardContent className="p-3">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[11px] font-medium text-muted-foreground">Cerrados</span>
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                  </div>
+                  <div className="text-xl font-bold text-foreground">{metrics.byStatus.completado.length}</div>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">temas completados</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Closure Compliance KPI */}
+            {metrics.closedWithDates > 0 && (
+              <Card className="border-primary/20">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Target className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-medium text-foreground">Cumplimiento de Cierre</span>
+                    <Badge variant="outline" className="ml-auto text-[10px]">
+                      {metrics.closedWithDates} temas analizados
+                    </Badge>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="space-y-1.5">
+                      <div className="flex items-baseline gap-1">
+                        <span className={`text-3xl font-bold ${metrics.closureCompliance !== null && metrics.closureCompliance >= 70 ? 'text-emerald-600' : metrics.closureCompliance !== null && metrics.closureCompliance >= 40 ? 'text-yellow-600' : 'text-destructive'}`}>
+                          {metrics.closureCompliance ?? 0}%
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">Tasa de cumplimiento</p>
+                      <Progress value={metrics.closureCompliance ?? 0} className="h-2" />
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-1.5">
+                        <div className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                        <span className="text-xs text-muted-foreground">A tiempo / Anticipado</span>
+                      </div>
+                      <span className="text-2xl font-bold text-foreground">{metrics.onTime}</span>
+                      {metrics.avgEarlyDays > 0 && (
+                        <p className="text-[10px] text-emerald-600">Promedio {metrics.avgEarlyDays}d antes</p>
+                      )}
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-1.5">
+                        <div className="h-2.5 w-2.5 rounded-full bg-destructive" />
+                        <span className="text-xs text-muted-foreground">Con atraso</span>
+                      </div>
+                      <span className="text-2xl font-bold text-foreground">{metrics.late}</span>
+                      {metrics.avgDelayDays > 0 && (
+                        <p className="text-[10px] text-destructive">Promedio {metrics.avgDelayDays}d de atraso</p>
+                      )}
+                    </div>
+                    <div className="flex flex-col justify-center space-y-1.5">
+                      <div className="flex h-4 rounded-full overflow-hidden bg-secondary">
+                        <div className="bg-emerald-500 transition-all" style={{ width: `${metrics.closureCompliance ?? 0}%` }} />
+                        <div className="bg-destructive transition-all" style={{ width: `${100 - (metrics.closureCompliance ?? 0)}%` }} />
+                      </div>
+                      <div className="flex justify-between text-[10px] text-muted-foreground">
+                        <span>{metrics.onTime} a tiempo</span>
+                        <span>{metrics.late} atrasados</span>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Reschedule KPI */}
+            {(() => {
+              const globalRescheduleStats = computeGlobalRescheduleStats(topics, reschedules);
+              const internalCount = reschedules.filter(r => !r.is_external).length;
+              const externalCount = reschedules.filter(r => r.is_external).length;
+              return (
+                <Card className="border-amber-500/20">
+                  <CardContent className="p-3">
+                    <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+                      <div className="flex items-center gap-2">
+                        <RefreshCw className="h-4 w-4 text-amber-500" />
+                        <span className="text-sm font-medium text-foreground">Reprogramaciones</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-lg font-bold text-foreground">{reschedules.length}</span>
+                        <span className="text-[11px] text-muted-foreground">total</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="h-2 w-2 rounded-full bg-amber-500" />
+                        <span className="text-lg font-bold text-foreground">{internalCount}</span>
+                        <span className="text-[11px] text-muted-foreground">internas</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="h-2 w-2 rounded-full bg-blue-500" />
+                        <span className="text-lg font-bold text-foreground">{externalCount}</span>
+                        <span className="text-[11px] text-muted-foreground">externas</span>
+                      </div>
+                      <div className="h-5 w-px bg-border hidden sm:block" />
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-lg font-bold text-foreground">{globalRescheduleStats.avgReschedulesPerTopic}x</span>
+                        <span className="text-[11px] text-muted-foreground">prom/tema</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className={cn("text-lg font-bold", globalRescheduleStats.avgOvertimeDays > 0 ? "text-amber-600" : "text-foreground")}>+{globalRescheduleStats.avgOvertimeDays}d</span>
+                        <span className="text-[11px] text-muted-foreground">extensión</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className={cn("text-lg font-bold", globalRescheduleStats.avgOvertimePct > 30 ? "text-destructive" : globalRescheduleStats.avgOvertimePct > 0 ? "text-amber-600" : "text-foreground")}>+{globalRescheduleStats.avgOvertimePct}%</span>
+                        <span className="text-[11px] text-muted-foreground">sobretiempo</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })()}
+
+            {/* Overdue + Due Soon */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+              <Card className="border-destructive/30">
+                <CardHeader className="pb-1 p-3">
+                  <CardTitle className="text-xs font-medium flex items-center gap-1.5 text-destructive">
+                    <AlertTriangle className="h-3.5 w-3.5" />
+                    Atrasados ({metrics.overdue.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-3 pt-0">
+                  {metrics.overdue.length === 0 ? (
+                    <p className="text-[11px] text-muted-foreground py-1">Sin temas atrasados ✓</p>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {metrics.overdue.slice(0, 6).map((t) => (
+                        <div key={t.id} className="flex items-center text-xs gap-2">
+                          <span className="text-foreground truncate flex-1 min-w-0">{t.title}</span>
+                          {t.assignee && (
+                            <span className="text-[10px] text-muted-foreground shrink-0 max-w-[80px] truncate">{t.assignee}</span>
+                          )}
+                          <Badge variant="destructive" className="text-[9px] shrink-0">{t.due_date}</Badge>
+                          <button
+                            onClick={() => handleSendReminder(t)}
+                            disabled={sendingId === t.id}
+                            className="shrink-0 p-1 rounded-full hover:bg-destructive/10 text-destructive transition-colors disabled:opacity-50"
+                            title={`Enviar recordatorio a ${t.assignee || 'responsable'}`}
+                          >
+                            {sendingId === t.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Bell className="h-3.5 w-3.5" />}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   )}
-                </div>
-                {/* Late */}
-                <div className="space-y-1">
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-2.5 w-2.5 rounded-full bg-destructive" />
-                    <span className="text-xs text-muted-foreground">Con atraso</span>
-                  </div>
-                  <span className="text-2xl font-bold text-foreground">{metrics.late}</span>
-                  {metrics.avgDelayDays > 0 && (
-                    <p className="text-[10px] text-destructive">Promedio {metrics.avgDelayDays}d de atraso</p>
-                  )}
-                </div>
-                {/* Visual bar */}
-                <div className="flex flex-col justify-center space-y-1.5">
-                  <div className="flex h-4 rounded-full overflow-hidden bg-secondary">
-                    <div className="bg-emerald-500 transition-all" style={{ width: `${metrics.closureCompliance ?? 0}%` }} />
-                    <div className="bg-destructive transition-all" style={{ width: `${100 - (metrics.closureCompliance ?? 0)}%` }} />
-                  </div>
-                  <div className="flex justify-between text-[10px] text-muted-foreground">
-                    <span>{metrics.onTime} a tiempo</span>
-                    <span>{metrics.late} atrasados</span>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+                </CardContent>
+              </Card>
 
-        {/* Reschedule KPI - always visible */}
-        {(() => {
-          const globalRescheduleStats = computeGlobalRescheduleStats(topics, reschedules);
-          const internalCount = reschedules.filter(r => !r.is_external).length;
-          const externalCount = reschedules.filter(r => r.is_external).length;
-          return (
-            <Card className="border-amber-500/20">
-              <CardContent className="p-3">
-                <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-                  <div className="flex items-center gap-2">
-                    <RefreshCw className="h-4 w-4 text-amber-500" />
-                    <span className="text-sm font-medium text-foreground">Reprogramaciones</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-lg font-bold text-foreground">{reschedules.length}</span>
-                    <span className="text-[11px] text-muted-foreground">total</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-2 w-2 rounded-full bg-amber-500" />
-                    <span className="text-lg font-bold text-foreground">{internalCount}</span>
-                    <span className="text-[11px] text-muted-foreground">internas</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-2 w-2 rounded-full bg-blue-500" />
-                    <span className="text-lg font-bold text-foreground">{externalCount}</span>
-                    <span className="text-[11px] text-muted-foreground">externas</span>
-                  </div>
-                  <div className="h-5 w-px bg-border hidden sm:block" />
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-lg font-bold text-foreground">{globalRescheduleStats.avgReschedulesPerTopic}x</span>
-                    <span className="text-[11px] text-muted-foreground">prom/tema</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className={cn("text-lg font-bold", globalRescheduleStats.avgOvertimeDays > 0 ? "text-amber-600" : "text-foreground")}>+{globalRescheduleStats.avgOvertimeDays}d</span>
-                    <span className="text-[11px] text-muted-foreground">extensión</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className={cn("text-lg font-bold", globalRescheduleStats.avgOvertimePct > 30 ? "text-destructive" : globalRescheduleStats.avgOvertimePct > 0 ? "text-amber-600" : "text-foreground")}>+{globalRescheduleStats.avgOvertimePct}%</span>
-                    <span className="text-[11px] text-muted-foreground">sobretiempo</span>
+              <Card className="border-yellow-500/30">
+                <CardHeader className="pb-1 p-3">
+                  <CardTitle className="text-xs font-medium flex items-center gap-1.5 text-yellow-600">
+                    <CalendarClock className="h-3.5 w-3.5" />
+                    Por Vencer Pronto ({metrics.dueSoon.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-3 pt-0">
+                  {metrics.dueSoon.length === 0 ? (
+                    <p className="text-[11px] text-muted-foreground py-1">Sin temas próximos a vencer ✓</p>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {metrics.dueSoon.slice(0, 6).map((t) => (
+                        <div key={t.id} className="flex items-center text-xs gap-2">
+                          <span className="text-foreground truncate flex-1 min-w-0">{t.title}</span>
+                          {t.assignee && (
+                            <span className="text-[10px] text-muted-foreground shrink-0 max-w-[80px] truncate">{t.assignee}</span>
+                          )}
+                          <Badge variant="outline" className="text-[9px] shrink-0 border-yellow-500/50 text-yellow-600">{t.due_date}</Badge>
+                          <button
+                            onClick={() => handleSendReminder(t)}
+                            disabled={sendingId === t.id}
+                            className="shrink-0 p-1 rounded-full hover:bg-yellow-500/10 text-yellow-600 transition-colors disabled:opacity-50"
+                            title={`Enviar recordatorio a ${t.assignee || 'responsable'}`}
+                          >
+                            {sendingId === t.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Bell className="h-3.5 w-3.5" />}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Weekly Trend */}
+            <Card>
+              <CardHeader className="pb-2 p-4">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                  Tendencia Semanal (últimas 8 semanas)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 pt-0 space-y-3">
+                <ChartContainer config={trendChartConfig} className="aspect-auto h-[200px] w-full">
+                  <AreaChart data={metrics.weeklyTrend} margin={{ top: 5, right: 5, bottom: 5, left: -20 }}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-border/40" />
+                    <XAxis dataKey="week" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+                    <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} allowDecimals={false} />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Area type="monotone" dataKey="creados" stackId="1" stroke="hsl(217 91% 60%)" fill="hsl(217 91% 60% / 0.2)" strokeWidth={2} />
+                    <Area type="monotone" dataKey="completados" stackId="2" stroke="hsl(142 71% 45%)" fill="hsl(142 71% 45% / 0.2)" strokeWidth={2} />
+                  </AreaChart>
+                </ChartContainer>
+                <div className="flex items-center gap-4 pt-1 border-t">
+                  <span className="text-[11px] text-muted-foreground font-medium">Promedio de creación:</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-foreground"><span className="font-semibold">{metrics.avgCreatedDaily.toFixed(1)}</span> <span className="text-muted-foreground">/ día</span></span>
+                    <span className="text-xs text-foreground"><span className="font-semibold">{metrics.avgCreatedWeekly.toFixed(1)}</span> <span className="text-muted-foreground">/ semana</span></span>
+                    <span className="text-xs text-foreground"><span className="font-semibold">{metrics.avgCreatedMonthly.toFixed(1)}</span> <span className="text-muted-foreground">/ mes</span></span>
                   </div>
                 </div>
               </CardContent>
             </Card>
-          );
-        })()}
+          </TabsContent>
 
-        {/* Overdue + Due Soon - always visible side by side */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-          {/* Overdue */}
-          <Card className="border-destructive/30">
-            <CardHeader className="pb-1 p-3">
-              <CardTitle className="text-xs font-medium flex items-center gap-1.5 text-destructive">
-                <AlertTriangle className="h-3.5 w-3.5" />
-                Atrasados ({metrics.overdue.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-3 pt-0">
-              {metrics.overdue.length === 0 ? (
-                <p className="text-[11px] text-muted-foreground py-1">Sin temas atrasados ✓</p>
-              ) : (
-                <div className="space-y-1.5">
-                  {metrics.overdue.slice(0, 6).map((t) => (
-                    <div key={t.id} className="flex items-center text-xs gap-2">
-                      <span className="text-foreground truncate flex-1 min-w-0">{t.title}</span>
-                      {t.assignee && (
-                        <span className="text-[10px] text-muted-foreground shrink-0 max-w-[80px] truncate">{t.assignee}</span>
-                      )}
-                      <Badge variant="destructive" className="text-[9px] shrink-0">
-                        {t.due_date}
-                      </Badge>
-                      <button
-                        onClick={() => handleSendReminder(t)}
-                        disabled={sendingId === t.id}
-                        className="shrink-0 p-1 rounded-full hover:bg-destructive/10 text-destructive transition-colors disabled:opacity-50"
-                        title={`Enviar recordatorio a ${t.assignee || 'responsable'}`}
-                      >
-                        {sendingId === t.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Bell className="h-3.5 w-3.5" />}
-                      </button>
+          <TabsContent value="responsables" className="space-y-4">
+            {/* Assignee Ranking Table with Score */}
+            <Card>
+              <CardHeader className="pb-2 p-4">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  Responsables
+                  <Badge variant="outline" className="ml-auto text-[10px]">{metrics.assigneeRanking.length} con temas asignados</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 pt-0">
+                {metrics.assigneeRanking.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-4 text-center">No hay responsables con temas asignados</p>
+                ) : (
+                  <>
+                    {/* Desktop table */}
+                    <div className="hidden sm:block">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="text-xs">Nombre</TableHead>
+                            <TableHead className="text-xs text-center">Score</TableHead>
+                            <TableHead className="text-xs text-center">Total</TableHead>
+                            <TableHead className="text-xs text-center">Activos</TableHead>
+                            <TableHead className="text-xs text-center">Pausados</TableHead>
+                            <TableHead className="text-xs text-center border-l">Al día</TableHead>
+                            <TableHead className="text-xs text-center">Atrasados</TableHead>
+                            <TableHead className="text-xs text-center">Por vencer</TableHead>
+                            <TableHead className="text-xs border-l">Avance</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {metrics.assigneeRanking.map((a) => {
+                            const score = scoreSnapshots?.get(a.name);
+                            const scoreColor = score !== undefined
+                              ? score >= 80 ? 'text-emerald-600' : score >= 50 ? 'text-yellow-600' : 'text-destructive'
+                              : 'text-muted-foreground';
+                            return (
+                              <TableRow key={a.name} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedAssignee(a.name)}>
+                                <TableCell className="text-sm font-medium text-primary underline underline-offset-2">{a.name}</TableCell>
+                                <TableCell className="text-center">
+                                  {score !== undefined ? (
+                                    <span className={cn("text-sm font-bold", scoreColor)}>{score}</span>
+                                  ) : (
+                                    <span className="text-xs text-muted-foreground">—</span>
+                                  )}
+                                </TableCell>
+                                <TableCell className="text-sm text-center font-medium">{a.total}</TableCell>
+                                <TableCell className="text-sm text-center">{a.activeCount}</TableCell>
+                                <TableCell className="text-sm text-center">{a.pausedCount}</TableCell>
+                                <TableCell className="text-sm text-center border-l">
+                                  {a.onTrackCount > 0 ? (
+                                    <Badge variant="outline" className="text-[10px] border-emerald-500/50 text-emerald-600">{a.onTrackCount}</Badge>
+                                  ) : (
+                                    <span className="text-muted-foreground text-xs">0</span>
+                                  )}
+                                </TableCell>
+                                <TableCell className="text-sm text-center">
+                                  {a.overdueCount > 0 ? (
+                                    <Badge variant="destructive" className="text-[10px]">{a.overdueCount}</Badge>
+                                  ) : (
+                                    <span className="text-muted-foreground text-xs">0</span>
+                                  )}
+                                </TableCell>
+                                <TableCell className="text-sm text-center">
+                                  {a.dueSoonCount > 0 ? (
+                                    <Badge variant="outline" className="text-[10px] border-yellow-500/50 text-yellow-600">{a.dueSoonCount}</Badge>
+                                  ) : (
+                                    <span className="text-muted-foreground text-xs">0</span>
+                                  )}
+                                </TableCell>
+                                <TableCell className="border-l">
+                                  <div className="flex items-center gap-2">
+                                    <Progress value={a.progress} className="h-2 flex-1" />
+                                    <span className="text-xs text-muted-foreground w-8">{a.progress}%</span>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
                     </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Due Soon */}
-          <Card className="border-yellow-500/30">
-            <CardHeader className="pb-1 p-3">
-              <CardTitle className="text-xs font-medium flex items-center gap-1.5 text-yellow-600">
-                <CalendarClock className="h-3.5 w-3.5" />
-                Por Vencer Pronto ({metrics.dueSoon.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-3 pt-0">
-              {metrics.dueSoon.length === 0 ? (
-                <p className="text-[11px] text-muted-foreground py-1">Sin temas próximos a vencer ✓</p>
-              ) : (
-                <div className="space-y-1.5">
-                  {metrics.dueSoon.slice(0, 6).map((t) => (
-                    <div key={t.id} className="flex items-center text-xs gap-2">
-                      <span className="text-foreground truncate flex-1 min-w-0">{t.title}</span>
-                      {t.assignee && (
-                        <span className="text-[10px] text-muted-foreground shrink-0 max-w-[80px] truncate">{t.assignee}</span>
-                      )}
-                      <Badge variant="outline" className="text-[9px] shrink-0 border-yellow-500/50 text-yellow-600">
-                        {t.due_date}
-                      </Badge>
-                      <button
-                        onClick={() => handleSendReminder(t)}
-                        disabled={sendingId === t.id}
-                        className="shrink-0 p-1 rounded-full hover:bg-yellow-500/10 text-yellow-600 transition-colors disabled:opacity-50"
-                        title={`Enviar recordatorio a ${t.assignee || 'responsable'}`}
-                      >
-                        {sendingId === t.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Bell className="h-3.5 w-3.5" />}
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-
-
-
-        {/* Weekly Trend */}
-        <Card>
-          <CardHeader className="pb-2 p-4">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-              Tendencia Semanal (últimas 8 semanas)
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 pt-0 space-y-3">
-            <ChartContainer config={trendChartConfig} className="aspect-auto h-[200px] w-full">
-              <AreaChart data={metrics.weeklyTrend} margin={{ top: 5, right: 5, bottom: 5, left: -20 }}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border/40" />
-                <XAxis dataKey="week" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-                <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} allowDecimals={false} />
-                <ChartTooltip content={<ChartTooltipContent />} />
-                <Area type="monotone" dataKey="creados" stackId="1" stroke="hsl(217 91% 60%)" fill="hsl(217 91% 60% / 0.2)" strokeWidth={2} />
-                <Area type="monotone" dataKey="completados" stackId="2" stroke="hsl(142 71% 45%)" fill="hsl(142 71% 45% / 0.2)" strokeWidth={2} />
-              </AreaChart>
-            </ChartContainer>
-
-            {/* Creation averages */}
-            <div className="flex items-center gap-4 pt-1 border-t">
-              <span className="text-[11px] text-muted-foreground font-medium">Promedio de creación:</span>
-              <div className="flex items-center gap-3">
-                <span className="text-xs text-foreground"><span className="font-semibold">{metrics.avgCreatedDaily.toFixed(1)}</span> <span className="text-muted-foreground">/ día</span></span>
-                <span className="text-xs text-foreground"><span className="font-semibold">{metrics.avgCreatedWeekly.toFixed(1)}</span> <span className="text-muted-foreground">/ semana</span></span>
-                <span className="text-xs text-foreground"><span className="font-semibold">{metrics.avgCreatedMonthly.toFixed(1)}</span> <span className="text-muted-foreground">/ mes</span></span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Assignee Ranking */}
-        {metrics.assigneeRanking.length > 0 && (
-          <Card>
-            <CardHeader className="pb-2 p-4">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Users className="h-4 w-4 text-muted-foreground" />
-                Responsables
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 pt-0">
-              {/* Desktop table */}
-              <div className="hidden sm:block">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-xs">Nombre</TableHead>
-                      <TableHead className="text-xs text-center">Total</TableHead>
-                      <TableHead className="text-xs text-center">Activos</TableHead>
-                      <TableHead className="text-xs text-center">Pausados</TableHead>
-                      <TableHead className="text-xs text-center border-l">Al día</TableHead>
-                      <TableHead className="text-xs text-center">Atrasados</TableHead>
-                      <TableHead className="text-xs text-center">Por vencer</TableHead>
-                      <TableHead className="text-xs border-l">Avance</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {metrics.assigneeRanking.map((a) => (
-                      <TableRow key={a.name} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedAssignee(a.name)}>
-                        <TableCell className="text-sm font-medium text-primary underline underline-offset-2">{a.name}</TableCell>
-                        <TableCell className="text-sm text-center font-medium">{a.total}</TableCell>
-                        <TableCell className="text-sm text-center">{a.activeCount}</TableCell>
-                        <TableCell className="text-sm text-center">{a.pausedCount}</TableCell>
-                        <TableCell className="text-sm text-center border-l">
-                          {a.onTrackCount > 0 ? (
-                            <Badge variant="outline" className="text-[10px] border-emerald-500/50 text-emerald-600">{a.onTrackCount}</Badge>
-                          ) : (
-                            <span className="text-muted-foreground text-xs">0</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-sm text-center">
-                          {a.overdueCount > 0 ? (
-                            <Badge variant="destructive" className="text-[10px]">{a.overdueCount}</Badge>
-                          ) : (
-                            <span className="text-muted-foreground text-xs">0</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-sm text-center">
-                          {a.dueSoonCount > 0 ? (
-                            <Badge variant="outline" className="text-[10px] border-yellow-500/50 text-yellow-600">{a.dueSoonCount}</Badge>
-                          ) : (
-                            <span className="text-muted-foreground text-xs">0</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="border-l">
-                          <div className="flex items-center gap-2">
-                            <Progress value={a.progress} className="h-2 flex-1" />
-                            <span className="text-xs text-muted-foreground w-8">{a.progress}%</span>
+                    {/* Mobile cards */}
+                    <div className="sm:hidden space-y-2">
+                      {metrics.assigneeRanking.map((a) => {
+                        const score = scoreSnapshots?.get(a.name);
+                        const scoreColor = score !== undefined
+                          ? score >= 80 ? 'text-emerald-600' : score >= 50 ? 'text-yellow-600' : 'text-destructive'
+                          : 'text-muted-foreground';
+                        return (
+                          <div key={a.name} className="rounded-md border border-border p-3 space-y-1.5 cursor-pointer hover:bg-muted/50" onClick={() => setSelectedAssignee(a.name)}>
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium text-primary underline underline-offset-2">{a.name}</span>
+                              <div className="flex items-center gap-2">
+                                {score !== undefined && (
+                                  <span className={cn("text-sm font-bold", scoreColor)}>{score} pts</span>
+                                )}
+                                <span className="text-xs text-muted-foreground">{a.total} temas</span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Progress value={a.progress} className="h-2 flex-1" />
+                              <span className="text-xs text-muted-foreground">{a.subtasksDone}/{a.subtasksTotal} ({a.progress}%)</span>
+                            </div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Badge variant="outline" className="text-[9px]">{a.activeCount} activos</Badge>
+                              <Badge variant="outline" className="text-[9px]">{a.pausedCount} pausados</Badge>
+                              {a.onTrackCount > 0 && <Badge variant="outline" className="text-[9px] border-emerald-500/50 text-emerald-600">{a.onTrackCount} al día</Badge>}
+                              {a.overdueCount > 0 && <Badge variant="destructive" className="text-[9px]">{a.overdueCount} atrasados</Badge>}
+                              {a.dueSoonCount > 0 && <Badge variant="outline" className="text-[9px] border-yellow-500/50 text-yellow-600">{a.dueSoonCount} por vencer</Badge>}
+                            </div>
                           </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-              {/* Mobile cards */}
-              <div className="sm:hidden space-y-2">
-                {metrics.assigneeRanking.map((a) => (
-                  <div key={a.name} className="rounded-md border border-border p-3 space-y-1.5 cursor-pointer hover:bg-muted/50" onClick={() => setSelectedAssignee(a.name)}>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-primary underline underline-offset-2">{a.name}</span>
-                      <span className="text-xs text-muted-foreground">{a.total} temas</span>
+                        );
+                      })}
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Progress value={a.progress} className="h-2 flex-1" />
-                      <span className="text-xs text-muted-foreground">{a.subtasksDone}/{a.subtasksTotal} ({a.progress}%)</span>
-                    </div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <Badge variant="outline" className="text-[9px]">{a.activeCount} activos</Badge>
-                      <Badge variant="outline" className="text-[9px]">{a.pausedCount} pausados</Badge>
-                      {a.onTrackCount > 0 && <Badge variant="outline" className="text-[9px] border-emerald-500/50 text-emerald-600">{a.onTrackCount} al día</Badge>}
-                      {a.overdueCount > 0 && <Badge variant="destructive" className="text-[9px]">{a.overdueCount} atrasados</Badge>}
-                      {a.dueSoonCount > 0 && <Badge variant="outline" className="text-[9px] border-yellow-500/50 text-yellow-600">{a.dueSoonCount} por vencer</Badge>}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
