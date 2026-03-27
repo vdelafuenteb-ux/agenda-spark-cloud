@@ -13,6 +13,8 @@ export interface NotificationEmail {
   confirmed: boolean;
   confirmed_at: string | null;
   email_type: 'weekly' | 'new_topic';
+  reviewed: boolean;
+  reviewed_at: string | null;
 }
 
 export function useNotificationEmails(topicId?: string) {
