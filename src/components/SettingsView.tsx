@@ -354,6 +354,14 @@ export function SettingsView({ tags, assignees, departments, topics, onDeleteTag
                                 <span className="text-xs text-muted-foreground/50 italic">Sin correo</span>
                               )}
                               <span className="text-[10px] text-muted-foreground ml-1 shrink-0">{a.weekly_capacity || 45}h/sem</span>
+                              {(() => {
+                                const dept = departments.find(d => d.id === a.department_id);
+                                return dept ? (
+                                  <span className="text-[10px] text-muted-foreground flex items-center gap-0.5 ml-1">
+                                    <Building2 className="h-2.5 w-2.5" />{dept.name}
+                                  </span>
+                                ) : null;
+                              })()}
                             </div>
                             <div className="flex items-center gap-0.5">
                               <Button
