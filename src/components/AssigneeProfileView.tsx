@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { ArrowLeft, Mail, CheckCircle2, AlertTriangle, Target, ListChecks, TrendingUp, CalendarClock, Bell, Loader2, ChevronDown, ChevronRight, BarChart3, Plus, Send, Trash2 } from 'lucide-react';
+import { ArrowLeft, Mail, CheckCircle2, AlertTriangle, Target, ListChecks, TrendingUp, CalendarClock, Bell, Loader2, ChevronDown, ChevronRight, BarChart3, Plus, Send, Trash2, RefreshCw } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -20,6 +20,7 @@ import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import type { TopicWithSubtasks } from '@/hooks/useTopics';
+import type { Reschedule } from '@/hooks/useReschedules';
 import type { Assignee } from '@/hooks/useAssignees';
 import { useIncidents } from '@/hooks/useIncidents';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -28,6 +29,7 @@ interface AssigneeProfileViewProps {
   assigneeName: string;
   assignee?: Assignee;
   topics: TopicWithSubtasks[];
+  reschedules: Reschedule[];
   onBack: () => void;
   onNavigateToTopic?: (topicId: string, status: string) => void;
 }
@@ -56,7 +58,7 @@ function CollapsibleSection({ title, icon: Icon, count, defaultOpen = false, chi
   );
 }
 
-export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, onNavigateToTopic }: AssigneeProfileViewProps) {
+export function AssigneeProfileView({ assigneeName, assignee, topics, reschedules: assigneeReschedules, onBack, onNavigateToTopic }: AssigneeProfileViewProps) {
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [showTrend, setShowTrend] = useState(false);
   const [showIncidentForm, setShowIncidentForm] = useState(false);
@@ -763,6 +765,39 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, onBack, on
                                 </Badge>
                               )}
                             </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </CollapsibleSection>
+
+          {/* Reprogramaciones */}
+          <CollapsibleSection title="Reprogramaciones" icon={RefreshCw} count={assigneeReschedules.length}>
+            <Card>
+              <CardContent className="p-3">
+                {assigneeReschedules.length === 0 ? (
+                  <p className="text-xs text-muted-foreground text-center py-4">Sin reprogramaciones registradas</p>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-4 mb-3 text-xs">
+                      <span className="text-muted-foreground">Total: <strong className="text-foreground">{assigneeReschedules.length}</strong></span>
+                      <span className="text-muted-foreground">Internas: <strong className="text-amber-600">{assigneeReschedules.filter(r => !r.is_external).length}</strong></span>
+                      <span className="text-muted-foreground">Externas: <strong className="text-blue-600">{assigneeReschedules.filter(r => r.is_external).length}</strong></span>
+                    </div>
+                    <div className="space-y-1.5 max-h-[250px] overflow-auto">
+                      {assigneeReschedules.map((r) => {
+                        const t = topics.find(t2 => t2.id === r.topic_id);
+                        return (
+                          <div key={r.id} className="flex items-center gap-2 text-xs py-1.5 border-b border-border last:border-0">
+                            <span className="truncate flex-1 font-medium">{t?.title || '—'}</span>
+                            <span className="text-muted-foreground font-mono shrink-0">
+                              {r.previous_date || '—'} → {r.new_date || '—'}
+                            </span>
+                            {r.is_external && <Badge variant="outline" className="text-[8px] border-blue-500/50 text-blue-600 shrink-0">Ext.</Badge>}
                           </div>
                         );
                       })}

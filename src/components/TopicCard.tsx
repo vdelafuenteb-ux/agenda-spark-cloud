@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { isStoredDateToday, isStoredDateUpcoming, isStoredDateOverdue } from '@/lib/date';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ChevronDown, Plus, Trash2, CalendarIcon, CheckCircle2, RotateCcw, Pause, Play, User, Pin, Check, X, Infinity as InfinityIcon } from 'lucide-react';
+import { ChevronRight, ChevronDown, Plus, Trash2, CalendarIcon, CheckCircle2, RotateCcw, Pause, Play, User, Pin, Check, X, Infinity as InfinityIcon, RefreshCw } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { NotificationSection } from '@/components/NotificationSection';
 import { es } from 'date-fns/locale';
@@ -24,6 +24,7 @@ import type { Tag } from '@/hooks/useTags';
 import type { Assignee } from '@/hooks/useAssignees';
 import type { Department } from '@/hooks/useDepartments';
 import type { Database } from '@/integrations/supabase/types';
+import type { Reschedule } from '@/hooks/useReschedules';
 
 type Priority = Database['public']['Enums']['topic_priority'];
 
@@ -34,6 +35,9 @@ interface TopicCardProps {
   topicTags: Tag[];
   assignees: Assignee[];
   departments: Department[];
+  reschedules: Reschedule[];
+  onCreateReschedule: { mutateAsync: (params: { user_id: string; topic_id: string; previous_date: string | null; new_date: string | null; reason: string; is_external: boolean }) => Promise<void> };
+  userId: string;
   onCreateAssignee: (name: string) => Promise<Assignee>;
   highlightToday?: boolean;
   highlightUpcoming?: boolean;
@@ -68,6 +72,9 @@ export function TopicCard({
   topicTags,
   assignees,
   departments,
+  reschedules,
+  onCreateReschedule,
+  userId,
   onCreateAssignee,
   highlightToday = false,
   highlightUpcoming = false,
@@ -108,6 +115,11 @@ export function TopicCard({
   const [pauseReasonDraft, setPauseReasonDraft] = useState(topic.pause_reason || '');
   const [showCloseDialog, setShowCloseDialog] = useState(false);
   const [closeDateDraft, setCloseDateDraft] = useState('');
+  const [showRescheduleDialog, setShowRescheduleDialog] = useState(false);
+  const [rescheduleNewDate, setRescheduleNewDate] = useState<Date | undefined>(undefined);
+  const [rescheduleReason, setRescheduleReason] = useState('');
+  const [rescheduleIsExternal, setRescheduleIsExternal] = useState(false);
+  const [showRescheduleHistory, setShowRescheduleHistory] = useState(false);
 
   useEffect(() => {
     if (forceExpand !== null) {
@@ -136,6 +148,37 @@ export function TopicCard({
     if (!newSubtask.trim()) return;
     onAddSubtask(topic.id, newSubtask.trim());
     setNewSubtask('');
+  };
+
+  const handleDateChange = (newDate: Date | undefined) => {
+    const newStored = toStoredDate(newDate);
+    // If topic already has a due_date and it's changing, show reschedule dialog
+    if (topic.due_date && newStored && newStored !== topic.due_date) {
+      setRescheduleNewDate(newDate);
+      setRescheduleReason('');
+      setRescheduleIsExternal(false);
+      setShowRescheduleDialog(true);
+    } else {
+      // First time setting or clearing — no reschedule needed
+      onUpdate(topic.id, { due_date: newStored });
+    }
+  };
+
+  const handleConfirmReschedule = async () => {
+    if (!rescheduleNewDate) return;
+    const newStored = toStoredDate(rescheduleNewDate);
+    try {
+      await onCreateReschedule.mutateAsync({
+        user_id: userId,
+        topic_id: topic.id,
+        previous_date: topic.due_date,
+        new_date: newStored,
+        reason: rescheduleReason.trim(),
+        is_external: rescheduleIsExternal,
+      });
+    } catch { /* ignore */ }
+    onUpdate(topic.id, { due_date: newStored });
+    setShowRescheduleDialog(false);
   };
 
   return (
@@ -254,7 +297,7 @@ export function TopicCard({
                     <Calendar
                       mode="single"
                       selected={parseStoredDate(topic.due_date)}
-                      onSelect={(d) => onUpdate(topic.id, { due_date: toStoredDate(d) })}
+                      onSelect={(d) => handleDateChange(d)}
                     />
                     {topic.due_date && (
                       <div className="p-2 border-t">
@@ -265,6 +308,21 @@ export function TopicCard({
                     )}
                   </PopoverContent>
                 </Popover>
+              )}
+              {/* Reschedule badge */}
+              {reschedules.length > 0 && (
+                <TooltipProvider delayDuration={200}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="inline-flex items-center gap-0.5 text-[10px] text-amber-600 dark:text-amber-400 font-medium">
+                        <RefreshCw className="h-2.5 w-2.5" />{reschedules.length}
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="text-xs">
+                      {reschedules.length} reprogramación{reschedules.length !== 1 ? 'es' : ''}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
             </div>
           </div>
@@ -450,7 +508,7 @@ export function TopicCard({
                     <Calendar
                       mode="single"
                       selected={parseStoredDate(topic.due_date)}
-                      onSelect={(date) => onUpdate(topic.id, { due_date: toStoredDate(date) })}
+                      onSelect={(date) => handleDateChange(date)}
                       initialFocus
                     />
                   </PopoverContent>
@@ -819,6 +877,45 @@ export function TopicCard({
                 <NotificationSection topic={topic} assignees={assignees} />
               )}
 
+              {/* Reschedule History */}
+              {reschedules.length > 0 && (
+                <div className="space-y-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setShowRescheduleHistory(!showRescheduleHistory)}
+                    className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors"
+                  >
+                    {showRescheduleHistory ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                    <RefreshCw className="h-3 w-3" />
+                    Reprogramaciones ({reschedules.length})
+                  </button>
+                  {showRescheduleHistory && (
+                    <div className="space-y-1.5 pl-4 border-l-2 border-amber-500/30">
+                      {reschedules.map((r) => (
+                        <div key={r.id} className="text-xs space-y-0.5 py-1.5 border-b border-border last:border-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-muted-foreground font-mono">
+                              {r.previous_date ? formatStoredDate(r.previous_date, 'dd MMM', { locale: es }) : 'Sin fecha'}
+                            </span>
+                            <span className="text-muted-foreground">→</span>
+                            <span className="font-mono font-medium text-foreground">
+                              {r.new_date ? formatStoredDate(r.new_date, 'dd MMM', { locale: es }) : 'Sin fecha'}
+                            </span>
+                            {r.is_external && (
+                              <Badge variant="outline" className="text-[8px] px-1.5 py-0 border-blue-500/50 text-blue-600">Externa</Badge>
+                            )}
+                            <span className="text-[10px] text-muted-foreground ml-auto">
+                              {formatStoredDate(r.created_at.split('T')[0], 'dd MMM yy', { locale: es })}
+                            </span>
+                          </div>
+                          {r.reason && <p className="text-muted-foreground italic">{r.reason}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
               <ProgressLog
                 entries={topic.progress_entries}
                 onAdd={async (content) => {
@@ -898,6 +995,38 @@ export function TopicCard({
               }}
             >
               <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Confirmar cierre
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reschedule reason dialog */}
+      <Dialog open={showRescheduleDialog} onOpenChange={setShowRescheduleDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Motivo de reprogramación</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Estás cambiando la fecha de <strong>{topic.due_date ? formatStoredDate(topic.due_date, 'dd MMM yyyy', { locale: es }) : '—'}</strong> a <strong>{rescheduleNewDate ? formatStoredDate(toStoredDate(rescheduleNewDate) || '', 'dd MMM yyyy', { locale: es }) : '—'}</strong>.
+          </p>
+          <Textarea
+            placeholder="¿Por qué se reprograma? (opcional)"
+            value={rescheduleReason}
+            onChange={(e) => setRescheduleReason(e.target.value)}
+            className="min-h-[60px]"
+          />
+          <label className="flex items-center gap-2 cursor-pointer">
+            <Switch
+              checked={rescheduleIsExternal}
+              onCheckedChange={setRescheduleIsExternal}
+              className="scale-90"
+            />
+            <span className="text-sm text-muted-foreground">Causa externa (fuera de nuestro control)</span>
+          </label>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setShowRescheduleDialog(false)}>Cancelar</Button>
+            <Button onClick={handleConfirmReschedule}>
+              <RefreshCw className="h-3.5 w-3.5 mr-1" /> Confirmar cambio
             </Button>
           </DialogFooter>
         </DialogContent>

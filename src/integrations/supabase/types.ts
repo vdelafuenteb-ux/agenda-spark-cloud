@@ -688,6 +688,47 @@ export type Database = {
         }
         Relationships: []
       }
+      topic_reschedules: {
+        Row: {
+          created_at: string
+          id: string
+          is_external: boolean
+          new_date: string | null
+          previous_date: string | null
+          reason: string
+          topic_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_external?: boolean
+          new_date?: string | null
+          previous_date?: string | null
+          reason?: string
+          topic_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_external?: boolean
+          new_date?: string | null
+          previous_date?: string | null
+          reason?: string
+          topic_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "topic_reschedules_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       topic_tags: {
         Row: {
           id: string

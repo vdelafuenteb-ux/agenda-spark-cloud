@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 
-import { TrendingUp, Users, Target, CalendarClock, AlertTriangle, Bell, Loader2, ListChecks, CheckCircle2 } from 'lucide-react';
+import { TrendingUp, Users, Target, CalendarClock, AlertTriangle, Bell, Loader2, ListChecks, CheckCircle2, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { Assignee } from '@/hooks/useAssignees';
@@ -18,10 +18,12 @@ import { isStoredDateOverdue } from '@/lib/date';
 import { startOfWeek, subWeeks, isAfter, isBefore, addDays, format, differenceInDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { AssigneeProfileView } from './AssigneeProfileView';
+import type { Reschedule } from '@/hooks/useReschedules';
 
 interface DashboardViewProps {
   topics: TopicWithSubtasks[];
   assignees: Assignee[];
+  reschedules: Reschedule[];
   onUpdateTopic?: (id: string, data: any) => void;
   onNavigateToTopic?: (topicId: string, status: string) => void;
 }
@@ -39,7 +41,7 @@ const STATUS_COLORS = {
   completado: 'hsl(142 71% 45%)',
 };
 
-export function DashboardView({ topics, assignees, onUpdateTopic, onNavigateToTopic }: DashboardViewProps) {
+export function DashboardView({ topics, assignees, reschedules, onUpdateTopic, onNavigateToTopic }: DashboardViewProps) {
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [selectedAssignee, setSelectedAssignee] = useState<string | null>(null);
 
@@ -266,6 +268,10 @@ export function DashboardView({ topics, assignees, onUpdateTopic, onNavigateToTo
         assigneeName={selectedAssignee}
         assignee={assigneeObj}
         topics={topics}
+        reschedules={reschedules.filter(r => {
+          const t = topics.find(t2 => t2.id === r.topic_id);
+          return t?.assignee === selectedAssignee;
+        })}
         onBack={() => setSelectedAssignee(null)}
         onNavigateToTopic={onNavigateToTopic}
       />
@@ -400,6 +406,69 @@ export function DashboardView({ topics, assignees, onUpdateTopic, onNavigateToTo
             </CardContent>
           </Card>
         )}
+
+        {/* Reschedule KPI */}
+        {reschedules.length > 0 && (() => {
+          const internalCount = reschedules.filter(r => !r.is_external).length;
+          const externalCount = reschedules.filter(r => r.is_external).length;
+          // Most rescheduled topics
+          const topicCounts = new Map<string, number>();
+          for (const r of reschedules) {
+            topicCounts.set(r.topic_id, (topicCounts.get(r.topic_id) || 0) + 1);
+          }
+          const topRescheduled = [...topicCounts.entries()]
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5)
+            .map(([id, count]) => ({ topic: topics.find(t => t.id === id), count }))
+            .filter(x => x.topic);
+          return (
+            <Card className="border-amber-500/20">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <RefreshCw className="h-4 w-4 text-amber-500" />
+                  <span className="text-sm font-medium text-foreground">Reprogramaciones</span>
+                  <Badge variant="outline" className="ml-auto text-[10px]">{reschedules.length} total</Badge>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="space-y-1">
+                    <span className="text-3xl font-bold text-foreground">{reschedules.length}</span>
+                    <p className="text-[11px] text-muted-foreground">Total reprogramaciones</p>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1.5">
+                      <div className="h-2.5 w-2.5 rounded-full bg-amber-500" />
+                      <span className="text-xs text-muted-foreground">Internas</span>
+                    </div>
+                    <span className="text-2xl font-bold text-foreground">{internalCount}</span>
+                    <p className="text-[10px] text-muted-foreground">Responsabilidad interna</p>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1.5">
+                      <div className="h-2.5 w-2.5 rounded-full bg-blue-500" />
+                      <span className="text-xs text-muted-foreground">Externas</span>
+                    </div>
+                    <span className="text-2xl font-bold text-foreground">{externalCount}</span>
+                    <p className="text-[10px] text-muted-foreground">Fuera de control</p>
+                  </div>
+                </div>
+                {topRescheduled.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-border">
+                    <p className="text-[11px] font-medium text-muted-foreground mb-2">Temas más reprogramados</p>
+                    <div className="space-y-1.5">
+                      {topRescheduled.map(({ topic: t, count }) => (
+                        <div key={t!.id} className="flex items-center justify-between text-xs">
+                          <span className="truncate flex-1 text-foreground">{t!.title}</span>
+                          {t!.assignee && <span className="text-[10px] text-muted-foreground mx-2 shrink-0">{t!.assignee}</span>}
+                          <Badge variant="outline" className="text-[9px] border-amber-500/50 text-amber-600 shrink-0">{count}x</Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })()}
 
         {/* Overdue + Due Soon - always visible side by side */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">

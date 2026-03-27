@@ -16,6 +16,7 @@ import { useTopics } from '@/hooks/useTopics';
 import { useTags } from '@/hooks/useTags';
 import { useAssignees } from '@/hooks/useAssignees';
 import { useDepartments } from '@/hooks/useDepartments';
+import { useReschedules } from '@/hooks/useReschedules';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Plus, FileText } from 'lucide-react';
@@ -44,6 +45,7 @@ const Index = () => {
   const { tags, getTagsForTopic, createTag, updateTag, deleteTag, addTopicTag, removeTopicTag } = useTags();
   const { assignees, createAssignee, updateAssignee, deleteAssignee } = useAssignees();
   const { departments, createDepartment, updateDepartment, deleteDepartment } = useDepartments();
+  const { reschedulesByTopic, createReschedule } = useReschedules();
   const [filter, setFilter] = useState<Filter>('todos');
   const [statusTab, setStatusTab] = useState<StatusTab>('activo');
   const [reportOpen, setReportOpen] = useState(false);
@@ -345,7 +347,7 @@ const Index = () => {
               onDeleteDepartment={(id) => deleteDepartment.mutate(id)}
             />
           ) : filter === 'dashboard' ? (
-            <DashboardView topics={topics} assignees={assignees} onUpdateTopic={(id, data) => updateTopic.mutate({ id, ...data })} onNavigateToTopic={(topicId, status) => {
+            <DashboardView topics={topics} assignees={assignees} reschedules={Array.from(reschedulesByTopic.values()).flat()} onUpdateTopic={(id, data) => updateTopic.mutate({ id, ...data })} onNavigateToTopic={(topicId, status) => {
               setFilter('todos');
               setStatusTab(status as StatusTab);
               setExpandedTopicId(topicId);
@@ -436,6 +438,9 @@ const Index = () => {
                           topicTags={getTagsForTopic(topic.id)}
                           assignees={assignees}
                           departments={departments}
+                          reschedules={reschedulesByTopic.get(topic.id) || []}
+                          onCreateReschedule={createReschedule}
+                          userId={user!.id}
                           onCreateAssignee={(name) => createAssignee.mutateAsync(name)}
                           forceExpand={expandedTopicId === topic.id ? true : forceExpand}
                           onUpdate={(id, data) => {
