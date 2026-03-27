@@ -878,7 +878,9 @@ export function TopicCard({
               )}
 
               {/* Reschedule History */}
-              {reschedules.length > 0 && (
+              {reschedules.length > 0 && (() => {
+                const impact = computeTopicOvertime(topic, reschedules);
+                return (
                 <div className="space-y-1.5">
                   <button
                     type="button"
@@ -889,6 +891,19 @@ export function TopicCard({
                     <RefreshCw className="h-3 w-3" />
                     Reprogramaciones ({reschedules.length})
                   </button>
+                  {/* Overtime summary */}
+                  {impact && (
+                    <div className="flex items-center gap-2 text-[11px] text-muted-foreground bg-amber-500/5 rounded px-2 py-1.5 border border-amber-500/20">
+                      <span>Planificado: <strong className="text-foreground">{formatDuration(impact.originalDuration)}</strong></span>
+                      <span>→</span>
+                      <span>Real: <strong className="text-foreground">{formatDuration(impact.actualDuration)}</strong></span>
+                      {impact.overtimePct > 0 && (
+                        <Badge variant="outline" className={cn("text-[9px] ml-auto", impact.overtimePct > 50 ? "border-destructive/50 text-destructive" : "border-amber-500/50 text-amber-600")}>
+                          +{impact.overtimePct}% sobretiempo
+                        </Badge>
+                      )}
+                    </div>
+                  )}
                   {showRescheduleHistory && (
                     <div className="space-y-1.5 pl-4 border-l-2 border-amber-500/30">
                       {reschedules.map((r) => (
@@ -914,7 +929,8 @@ export function TopicCard({
                     </div>
                   )}
                 </div>
-              )}
+                );
+              })()}
 
               <ProgressLog
                 entries={topic.progress_entries}
