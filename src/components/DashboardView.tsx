@@ -473,7 +473,7 @@ export function DashboardView({ topics, assignees, departments = [], reschedules
                                   <span className="text-xs font-medium text-foreground truncate">{dept.name}</span>
                                   <span className={cn(
                                     "text-sm font-bold",
-                                    dept.avg !== null && dept.avg >= 70 ? 'text-emerald-600' : dept.avg !== null && dept.avg >= 40 ? 'text-yellow-600' : 'text-destructive'
+                                    dept.avg !== null && dept.avg >= 80 ? 'text-emerald-600' : dept.avg !== null && dept.avg >= 60 ? 'text-yellow-600' : 'text-destructive'
                                   )}>
                                     {dept.avg ?? '—'}
                                   </span>
