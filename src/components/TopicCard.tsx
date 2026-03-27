@@ -119,7 +119,6 @@ export function TopicCard({
   const [rescheduleNewDate, setRescheduleNewDate] = useState<Date | undefined>(undefined);
   const [rescheduleReason, setRescheduleReason] = useState('');
   const [rescheduleIsExternal, setRescheduleIsExternal] = useState(false);
-  const [rescheduleSource, setRescheduleSource] = useState<'header' | 'body'>('header');
   const [showRescheduleHistory, setShowRescheduleHistory] = useState(false);
 
   useEffect(() => {
