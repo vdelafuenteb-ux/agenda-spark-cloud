@@ -23,6 +23,7 @@ import type { Reschedule } from '@/hooks/useReschedules';
 interface DashboardViewProps {
   topics: TopicWithSubtasks[];
   assignees: Assignee[];
+  reschedules: Reschedule[];
   onUpdateTopic?: (id: string, data: any) => void;
   onNavigateToTopic?: (topicId: string, status: string) => void;
 }
