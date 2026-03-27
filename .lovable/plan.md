@@ -1,40 +1,90 @@
 
 
-## Plan: Corregir "Score por Departamento" en Dashboard — usar department_id de topics, no de assignees
+## Plan: Auditoría y sincronización completa de datos entre todas las vistas
 
-### Problema
-En `DashboardView.tsx`, `deptScores` filtra assignees por `a.department_id === dept.id`, pero **todos los assignees tienen `department_id = null`** en la BD. Los departamentos están asignados a los **topics**, no a los assignees. Por eso muestra "Sin datos de departamentos".
+### Problemas encontrados
 
-La vista de **Equipo (TeamView)** funciona porque usa `topics.department_id`, no `assignees.department_id`.
+**1. Cachés de correos fragmentadas (causa principal de desincronización de scores)**
+Cada vista usa una query key diferente para los mismos datos de `notification_emails`:
+- Dashboard: `notification_emails_all_dashboard`
+- TeamView: `notification_emails_team`
+- AssigneeProfile: `notification_emails_assignee`
+- EmailHistory: `notification_emails_all`
+- useNotificationEmails: `notification_emails`
+
+Cuando se confirma/responde un correo en una vista, las otras NO se refrescan. Esto causa que los scores difieran entre vistas.
+
+**2. Departamentos inconsistentes en Index.tsx**
+`assigneeDeptMap` en Index.tsx usa `assignees.department_id` (que es `null` para todos), como fallback para filtrar por departamento. Debería usar solo `topics.department_id`.
+
+**3. Cambio de responsable desaparece el tema**
+Si hay filtro de responsable activo, al cambiar el responsable de un tema, la actualización optimista hace que el tema deje de cumplir el filtro y desaparezca instantáneamente.
 
 ### Solución
 
-**En `src/components/DashboardView.tsx`** (líneas 80-91), cambiar la lógica de `deptScores` para:
+#### A) Unificar cache de notification_emails (3 archivos)
 
-1. Obtener los responsables de cada departamento a través de los **topics** (misma lógica que TeamView):
-   - Filtrar topics por `t.department_id === dept.id`
-   - Extraer los nombres de assignees únicos de esos topics
-   - Buscar sus scores en `liveScores`
-
+**`src/hooks/useNotificationEmails.tsx`**: Agregar invalidación de TODAS las query keys de correos:
 ```typescript
-const deptScores = useMemo(() => {
-  return departments.map(dept => {
-    const deptTopics = topics.filter(t => t.department_id === dept.id);
-    const uniqueAssignees = [...new Set(deptTopics.map(t => t.assignee).filter(Boolean))];
-    const scores = uniqueAssignees
-      .map(name => liveScores.get(name!))
-      .filter((s): s is number => s !== undefined);
-    const avg = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
-    return { name: dept.name, avg, count: uniqueAssignees.length };
-  })
-  .filter(d => d.count > 0)
-  .sort((a, b) => (b.avg ?? 0) - (a.avg ?? 0));
-}, [departments, topics, liveScores]);
+const invalidateAll = () => {
+  queryClient.invalidateQueries({ queryKey: ['notification_emails'] });
+  queryClient.invalidateQueries({ queryKey: ['notification_emails_all'] });
+  queryClient.invalidateQueries({ queryKey: ['notification_emails_all_dashboard'] });
+  queryClient.invalidateQueries({ queryKey: ['notification_emails_team'] });
+  queryClient.invalidateQueries({ queryKey: ['notification_emails_assignee'] });
+};
 ```
 
-### Archivo afectado
+**`src/components/EmailHistoryView.tsx`**: Agregar las mismas invalidaciones en su `invalidateAll` local.
+
+**`src/components/NotificationSection.tsx`**: Asegurar que al confirmar/enviar correo invalide todas las keys.
+
+#### B) Corregir filtro de departamento en Index.tsx
+
+**`src/pages/Index.tsx`**: Eliminar `assigneeDeptMap` y usar solo `topics.department_id` para:
+- `uniqueDepartments`: derivar de `topics.department_id`
+- `filteredTopics`: filtrar por `topic.department_id` directamente
+
+```typescript
+const uniqueDepartments = useMemo(() => {
+  const deptIds = new Set(topics.filter(t => t.status === statusTab && t.department_id).map(t => t.department_id!));
+  return departments.filter(d => deptIds.has(d.id)).map(d => d.name).sort();
+}, [topics, statusTab, departments]);
+
+// En filteredTopics:
+if (selectedDepartment) {
+  const dept = departments.find(d => d.name === selectedDepartment);
+  if (!dept || topic.department_id !== dept.id) return false;
+}
+```
+
+#### C) Corregir cambio de responsable con filtro activo
+
+**`src/pages/Index.tsx`**: En el handler de update de tema, si se cambia el `assignee` y hay filtro activo que ya no aplica, limpiar el filtro automáticamente:
+
+```typescript
+const handleUpdateTopic = (id: string, data: Record<string, unknown>) => {
+  if (data.assignee && selectedAssignee && data.assignee !== selectedAssignee) {
+    setSelectedAssignee('');
+  }
+  updateTopic.mutate({ id, ...data });
+};
+```
+
+Pasar este handler centralizado a todas las vistas (TopicCard, ReviewView, etc.) en vez del `updateTopic.mutate` directo.
+
+#### D) Invalidaciones cruzadas al enviar correos desde Dashboard/AssigneeProfile
+
+**`src/components/DashboardView.tsx`** y **`src/components/AssigneeProfileView.tsx`**: Después de enviar recordatorio (`send-notification-email`), invalidar todas las query keys de correos para que los scores se actualicen en todas las vistas.
+
+### Archivos afectados
 
 | Archivo | Cambio |
 |---|---|
-| `src/components/DashboardView.tsx` | Cambiar `deptScores` para derivar assignees desde topics por department_id en vez de assignees.department_id |
+| `src/hooks/useNotificationEmails.tsx` | Invalidar todas las query keys de correos en todas las mutaciones |
+| `src/components/EmailHistoryView.tsx` | Invalidar todas las query keys en sus mutaciones |
+| `src/components/NotificationSection.tsx` | Invalidar todas las query keys al enviar/confirmar |
+| `src/pages/Index.tsx` | Eliminar `assigneeDeptMap`, usar solo `topics.department_id`, crear handler centralizado de update que limpie filtro al cambiar responsable |
+| `src/components/DashboardView.tsx` | Invalidar todas las query keys de correos al enviar recordatorio |
+| `src/components/AssigneeProfileView.tsx` | Invalidar todas las query keys de correos al enviar recordatorio |
 
