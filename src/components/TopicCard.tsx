@@ -35,6 +35,9 @@ interface TopicCardProps {
   topicTags: Tag[];
   assignees: Assignee[];
   departments: Department[];
+  reschedules: Reschedule[];
+  onCreateReschedule: { mutateAsync: (params: { user_id: string; topic_id: string; previous_date: string | null; new_date: string | null; reason: string; is_external: boolean }) => Promise<void> };
+  userId: string;
   onCreateAssignee: (name: string) => Promise<Assignee>;
   highlightToday?: boolean;
   highlightUpcoming?: boolean;
