@@ -79,16 +79,17 @@ export function DashboardView({ topics, assignees, departments = [], reschedules
   // Compute average score per department
   const deptScores = useMemo(() => {
     return departments.map(dept => {
-      const deptAssignees = assignees.filter(a => a.department_id === dept.id);
-      const scores = deptAssignees
-        .map(a => liveScores.get(a.name))
+      const deptTopics = topics.filter(t => t.department_id === dept.id);
+      const uniqueAssignees = [...new Set(deptTopics.map(t => t.assignee).filter(Boolean))];
+      const scores = uniqueAssignees
+        .map(name => liveScores.get(name!))
         .filter((s): s is number => s !== undefined);
       const avg = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
-      return { name: dept.name, avg, count: deptAssignees.length, withScore: scores.length };
+      return { name: dept.name, avg, count: uniqueAssignees.length, withScore: scores.length };
     })
     .filter(d => d.count > 0)
     .sort((a, b) => (b.avg ?? 0) - (a.avg ?? 0));
-  }, [departments, assignees, liveScores]);
+  }, [departments, topics, liveScores]);
 
   const handleSendReminder = async (topic: TopicWithSubtasks) => {
     if (!topic.assignee) {
