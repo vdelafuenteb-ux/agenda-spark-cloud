@@ -21,7 +21,7 @@ import { toast } from 'sonner';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import type { TopicWithSubtasks } from '@/hooks/useTopics';
 import type { Assignee } from '@/hooks/useAssignees';
-import { useIncidents, type WorkerIncident } from '@/hooks/useIncidents';
+import { useIncidents } from '@/hooks/useIncidents';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 interface AssigneeProfileViewProps {
