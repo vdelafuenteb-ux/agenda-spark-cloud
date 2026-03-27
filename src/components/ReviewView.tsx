@@ -4,6 +4,10 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, Circle, User, ArrowRight } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import type { TopicWithSubtasks } from '@/hooks/useTopics';
 import { useReminders } from '@/hooks/useReminders';
 import { useReminderCompletions } from '@/hooks/useReminderCompletions';
@@ -36,12 +40,16 @@ const priorityConfig: Record<string, { label: string; className: string }> = {
 interface ReviewViewProps {
   topics: TopicWithSubtasks[];
   onToggleSubtask: (id: string, completed: boolean) => void;
+  onUpdateTopic: (id: string, data: Record<string, unknown>) => void;
 }
 
-export function ReviewView({ topics, onToggleSubtask }: ReviewViewProps) {
+export function ReviewView({ topics, onToggleSubtask, onUpdateTopic }: ReviewViewProps) {
   const [tab, setTab] = useState<ReviewTab>('hoy');
   const [selectedAssignee, setSelectedAssignee] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('todos');
+  const [showCloseDialog, setShowCloseDialog] = useState(false);
+  const [closeTopicId, setCloseTopicId] = useState<string | null>(null);
+  const [closeDateDraft, setCloseDateDraft] = useState('');
   const { reminders } = useReminders();
   const { isCompleted, toggleCompletion } = useReminderCompletions();
   const { items: checklistItems, toggleItem } = useChecklist();
@@ -107,7 +115,13 @@ export function ReviewView({ topics, onToggleSubtask }: ReviewViewProps) {
           priority: topic.priority,
           dueDate: topic.due_date,
           completed: false,
-          onToggle: () => {},
+          onToggle: () => {
+            setCloseTopicId(topic.id);
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            setCloseDateDraft(now.toISOString().slice(0, 16));
+            setShowCloseDialog(true);
+          },
           topicStatus: topic.status,
         });
       }
@@ -202,7 +216,6 @@ export function ReviewView({ topics, onToggleSubtask }: ReviewViewProps) {
         <button
           onClick={item.onToggle}
           className="shrink-0 hover:scale-110 transition-transform"
-          disabled={item.type === 'topic'}
         >
           {item.completed ? (
             <CheckCircle2 className="h-4 w-4 text-emerald-500" />
@@ -328,6 +341,38 @@ export function ReviewView({ topics, onToggleSubtask }: ReviewViewProps) {
           )}
         </div>
       )}
+      {/* Diálogo de confirmación de cierre */}
+      <Dialog open={showCloseDialog} onOpenChange={setShowCloseDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>¿Cerrar este tema?</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="close-date-review">Fecha y hora real de cierre</Label>
+            <Input
+              id="close-date-review"
+              type="datetime-local"
+              value={closeDateDraft}
+              onChange={e => setCloseDateDraft(e.target.value)}
+            />
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setShowCloseDialog(false)}>Cancelar</Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (!closeTopicId) return;
+                const closedAt = closeDateDraft ? new Date(closeDateDraft).toISOString() : new Date().toISOString();
+                onUpdateTopic(closeTopicId, { status: 'completado', closed_at: closedAt, pause_reason: '', paused_at: null });
+                setShowCloseDialog(false);
+                setCloseTopicId(null);
+              }}
+            >
+              Confirmar cierre
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
