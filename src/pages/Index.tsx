@@ -490,7 +490,7 @@ const Index = () => {
           allTags={tags}
           assignees={assignees}
           departments={departments}
-          onCreateAssignee={(name) => createAssignee.mutateAsync(name)}
+          onCreateAssignee={(data) => createAssignee.mutateAsync(data)}
           onSubmit={handleCreateTopic}
           isPending={createTopic.isPending}
         />
