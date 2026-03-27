@@ -56,6 +56,7 @@ export default function UpdateTopics() {
   const [expandedTopics, setExpandedTopics] = useState<Set<string>>(new Set());
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [savedTopics, setSavedTopics] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!token) return;
