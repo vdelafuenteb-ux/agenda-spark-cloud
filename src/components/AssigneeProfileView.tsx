@@ -701,20 +701,44 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, reschedule
                 </CardContent>
               </Card>
 
-              {/* Reprogramaciones */}
-              {assigneeReschedules.length > 0 && (
+              {/* Reprogramaciones stats + history */}
+              {assigneeReschedules.length > 0 && (() => {
+                const assigneeRescheduleStats = computeGlobalRescheduleStats(
+                  topics.filter(t => t.assignee === assigneeName),
+                  assigneeReschedules,
+                );
+                return (
                 <Card>
                   <CardHeader className="pb-1 p-3">
                     <CardTitle className="text-xs font-medium flex items-center gap-1.5">
-                      <RefreshCw className="h-3.5 w-3.5 text-muted-foreground" /> Historial de reprogramaciones ({assigneeReschedules.length})
+                      <RefreshCw className="h-3.5 w-3.5 text-muted-foreground" /> Reprogramaciones ({assigneeReschedules.length})
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-3 pt-0">
-                    <div className="flex items-center gap-4 mb-3 text-xs">
-                      <span className="text-muted-foreground">Total: <strong className="text-foreground">{assigneeReschedules.length}</strong></span>
-                      <span className="text-muted-foreground">Internas: <strong className="text-amber-600">{assigneeReschedules.filter(r => !r.is_external).length}</strong></span>
-                      <span className="text-muted-foreground">Externas: <strong className="text-blue-600">{assigneeReschedules.filter(r => r.is_external).length}</strong></span>
+                    {/* Stats row */}
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-3 p-2 bg-muted/30 rounded-lg">
+                      <div className="text-center">
+                        <div className="text-lg font-bold text-foreground">{assigneeReschedules.length}</div>
+                        <p className="text-[10px] text-muted-foreground">Total</p>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-lg font-bold text-amber-600">{assigneeReschedules.filter(r => !r.is_external).length}</div>
+                        <p className="text-[10px] text-muted-foreground">Internas</p>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-lg font-bold text-blue-600">{assigneeReschedules.filter(r => r.is_external).length}</div>
+                        <p className="text-[10px] text-muted-foreground">Externas</p>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-lg font-bold text-foreground">{assigneeRescheduleStats.avgReschedulesPerTopic}x</div>
+                        <p className="text-[10px] text-muted-foreground">Prom/tema</p>
+                      </div>
+                      <div className="text-center">
+                        <div className={cn("text-lg font-bold", assigneeRescheduleStats.avgOvertimePct > 30 ? "text-destructive" : assigneeRescheduleStats.avgOvertimePct > 0 ? "text-amber-600" : "text-foreground")}>+{assigneeRescheduleStats.avgOvertimePct}%</div>
+                        <p className="text-[10px] text-muted-foreground">Sobretiempo</p>
+                      </div>
                     </div>
+                    {/* History list */}
                     <div className="space-y-1.5 max-h-[250px] overflow-auto">
                       {assigneeReschedules.map((r) => {
                         const t = topics.find(t2 => t2.id === r.topic_id);
@@ -731,7 +755,8 @@ export function AssigneeProfileView({ assigneeName, assignee, topics, reschedule
                     </div>
                   </CardContent>
                 </Card>
-              )}
+                );
+              })()}
             </TabsContent>
 
             {/* ===== TAB: CORREOS ===== */}
