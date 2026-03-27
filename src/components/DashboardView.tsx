@@ -268,6 +268,10 @@ export function DashboardView({ topics, assignees, reschedules, onUpdateTopic, o
         assigneeName={selectedAssignee}
         assignee={assigneeObj}
         topics={topics}
+        reschedules={reschedules.filter(r => {
+          const t = topics.find(t2 => t2.id === r.topic_id);
+          return t?.assignee === selectedAssignee;
+        })}
         onBack={() => setSelectedAssignee(null)}
         onNavigateToTopic={onNavigateToTopic}
       />
