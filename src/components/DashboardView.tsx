@@ -429,7 +429,7 @@ export function DashboardView({ topics, assignees, reschedules, onUpdateTopic, o
                   <span className="text-sm font-medium text-foreground">Reprogramaciones</span>
                   <Badge variant="outline" className="ml-auto text-[10px]">{reschedules.length} total</Badge>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
                   <div className="space-y-1">
                     <span className="text-3xl font-bold text-foreground">{reschedules.length}</span>
                     <p className="text-[11px] text-muted-foreground">Total reprogramaciones</p>
@@ -440,7 +440,6 @@ export function DashboardView({ topics, assignees, reschedules, onUpdateTopic, o
                       <span className="text-xs text-muted-foreground">Internas</span>
                     </div>
                     <span className="text-2xl font-bold text-foreground">{internalCount}</span>
-                    <p className="text-[10px] text-muted-foreground">Responsabilidad interna</p>
                   </div>
                   <div className="space-y-1">
                     <div className="flex items-center gap-1.5">
@@ -448,7 +447,18 @@ export function DashboardView({ topics, assignees, reschedules, onUpdateTopic, o
                       <span className="text-xs text-muted-foreground">Externas</span>
                     </div>
                     <span className="text-2xl font-bold text-foreground">{externalCount}</span>
-                    <p className="text-[10px] text-muted-foreground">Fuera de control</p>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-2xl font-bold text-foreground">{globalRescheduleStats.avgReschedulesPerTopic}x</span>
+                    <p className="text-[10px] text-muted-foreground">Prom. reprogs/tema</p>
+                  </div>
+                  <div className="space-y-1">
+                    <span className={cn("text-2xl font-bold", globalRescheduleStats.avgOvertimeDays > 0 ? "text-amber-600" : "text-foreground")}>+{globalRescheduleStats.avgOvertimeDays}d</span>
+                    <p className="text-[10px] text-muted-foreground">Extensión promedio</p>
+                  </div>
+                  <div className="space-y-1">
+                    <span className={cn("text-2xl font-bold", globalRescheduleStats.avgOvertimePct > 30 ? "text-destructive" : globalRescheduleStats.avgOvertimePct > 0 ? "text-amber-600" : "text-foreground")}>+{globalRescheduleStats.avgOvertimePct}%</span>
+                    <p className="text-[10px] text-muted-foreground">Sobretiempo prom.</p>
                   </div>
                 </div>
                 {topRescheduled.length > 0 && (
