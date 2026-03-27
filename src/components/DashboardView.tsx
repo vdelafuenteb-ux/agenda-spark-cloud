@@ -49,6 +49,7 @@ const STATUS_COLORS = {
 };
 
 export function DashboardView({ topics, assignees, departments = [], reschedules, onUpdateTopic, onNavigateToTopic }: DashboardViewProps) {
+  const queryClient = useQueryClient();
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [selectedAssignee, setSelectedAssignee] = useState<string | null>(null);
 
