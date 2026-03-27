@@ -37,6 +37,7 @@ interface EmailBatch {
   sent_at: string;
   emails: EmailRecord[];
   allConfirmed: boolean;
+  allReviewed: boolean;
   topicCount: number;
 }
 
