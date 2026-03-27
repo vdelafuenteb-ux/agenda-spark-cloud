@@ -381,6 +381,7 @@ const Index = () => {
               setSearchQuery('');
               setSelectedTagIds([]);
               setSelectedAssignee('');
+              setSelectedDepartment('');
               setFilterNoDueDate(false);
               setShowOngoing(true);
               setShowNotOngoing(true);
