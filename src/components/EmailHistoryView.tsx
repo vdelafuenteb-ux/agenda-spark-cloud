@@ -284,6 +284,8 @@ export function EmailHistoryView() {
         const info = getDeadlineInfo(b.sent_at, b.allConfirmed);
         if (!info.isOverdue) return false;
       }
+      if (statusFilter === 'reviewed' && !b.allReviewed) return false;
+      if (statusFilter === 'not_reviewed' && b.allReviewed) return false;
       if (dateFrom && new Date(b.sent_at) < dateFrom) return false;
       if (dateTo) {
         const endOfDay = new Date(dateTo);
