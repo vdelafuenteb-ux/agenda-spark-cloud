@@ -1,31 +1,28 @@
 
 
-## Plan: Responsable como dropdown con buscador + formulario de creación rápida
+## Plan: Mostrar KPIs de reprogramaciones siempre (incluso en 0) en formato compacto
 
-### Cambios en `src/components/CreateTopicModal.tsx`
+### Problema
+La sección de Reprogramaciones en el Dashboard solo se muestra cuando `reschedules.length > 0`. Si no hay reprogramaciones, no aparece nada — ni siquiera los indicadores en 0. El usuario quiere verlos siempre.
 
-**1. Mover "Responsable" justo debajo del Título** (antes de Orden/Prioridad/Estado/Departamento)
+### Solución
+En `DashboardView.tsx`:
 
-**2. Reemplazar los botones de responsables** por un dropdown con buscador usando `Popover` + `Command` (igual que los filtros del FilterBar):
-- Input que muestra el nombre seleccionado o placeholder "Seleccionar responsable..."
-- Lista buscable con lupa
-- Al seleccionar, auto-completa departamento como ya funciona
+1. **Quitar la condición `reschedules.length > 0`** para que la card siempre se renderice
+2. **Compactar la card** en una sola fila horizontal de 4 KPIs (Total, Prom/tema, Extensión, Sobretiempo%) dentro de una card del mismo estilo que las 4 KPIs superiores, sin la lista de "Temas más reprogramados" que alarga el dashboard — esa lista se mueve como tooltip o se elimina
+3. **Diseño**: Una card compacta tipo fila con los 6 indicadores actuales condensados a 4 principales en una línea, similar a la fila de KPIs de arriba (Temas Totales, Estado de Plazos, etc.)
 
-**3. Agregar opción "Crear nuevo responsable"** al final del dropdown:
-- Al hacer clic, abre un mini-formulario inline (dentro del modal) con 3 campos: Nombre, Email, Departamento (Select)
-- Al confirmar, llama a `onCreateAssignee` con el nombre, y luego actualiza el assignee con email y departamento
-- Requiere ampliar `onCreateAssignee` para aceptar `{ name, email?, department_id? }` en vez de solo `string`
+Layout resultante:
+```text
+┌─────────────────────────────────────────────────────────┐
+│ 🔄 Reprogramaciones                                     │
+│  0 total · 0 internas · 0 externas │ 0x prom · +0d · +0%│
+└─────────────────────────────────────────────────────────┘
+```
 
-**4. Actualizar el hook y la prop:**
-- `onCreateAssignee` pasa de `(name: string) => Promise<Assignee>` a `(data: { name: string; email?: string; department_id?: string }) => Promise<Assignee>`
-- En `useAssignees.tsx`, el mutation `createAssignee` inserta con `{ name, email, department_id }` 
-- En `src/pages/Index.tsx`, actualizar las llamadas a `createAssignee.mutateAsync`
-
-### Archivos afectados
+### Archivo afectado
 
 | Archivo | Cambio |
 |---|---|
-| `src/components/CreateTopicModal.tsx` | Mover responsable arriba, dropdown con buscador, mini-form de creación |
-| `src/hooks/useAssignees.tsx` | `createAssignee` acepta `{ name, email?, department_id? }` |
-| `src/pages/Index.tsx` | Actualizar llamadas a `createAssignee.mutateAsync` |
+| `src/components/DashboardView.tsx` | Quitar condición `reschedules.length > 0`, compactar card de reprogramaciones en formato de fila resumida |
 
