@@ -419,6 +419,7 @@ const Index = () => {
               <ReviewView
                 topics={topics}
                 onToggleSubtask={(id, completed) => toggleSubtask.mutate({ id, completed })}
+                onUpdateTopic={(id, data) => updateTopic.mutate({ id, ...data })}
               />
             </main>
           ) : (
