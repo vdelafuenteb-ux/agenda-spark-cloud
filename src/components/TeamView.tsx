@@ -302,6 +302,7 @@ export function TeamView({ topics, assignees, onUpdateTopic }: TeamViewProps) {
                   <div className="flex items-baseline gap-2">
                     <p className="text-2xl font-bold">{d.activeCount}</p>
                     <span className="text-[10px] text-muted-foreground">temas</span>
+                    <span className="text-[10px] text-emerald-600 ml-auto">{d.closedCount} cerrados</span>
                   </div>
                   <div className="flex items-center justify-between mt-1">
                     <span className="text-[10px] text-muted-foreground">{d.assigneeCount} persona{d.assigneeCount !== 1 ? 's' : ''}</span>
