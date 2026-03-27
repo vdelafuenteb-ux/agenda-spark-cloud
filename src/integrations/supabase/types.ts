@@ -71,6 +71,7 @@ export type Database = {
       contacts: {
         Row: {
           company: string
+          country: string
           created_at: string
           email: string
           id: string
@@ -81,6 +82,7 @@ export type Database = {
         }
         Insert: {
           company?: string
+          country?: string
           created_at?: string
           email?: string
           id?: string
@@ -91,6 +93,7 @@ export type Database = {
         }
         Update: {
           company?: string
+          country?: string
           created_at?: string
           email?: string
           id?: string
