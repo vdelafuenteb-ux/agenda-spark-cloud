@@ -85,9 +85,9 @@ export function ContactsView() {
 
   return (
     <main className="flex-1 overflow-auto p-3 md:p-4">
-      <div className="max-w-5xl mx-auto space-y-3">
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1">
+      <div className="max-w-6xl mx-auto space-y-3">
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Buscar por nombre, correo, empresa, cargo..."
@@ -103,11 +103,36 @@ export function ContactsView() {
           </Button>
         </div>
 
+        {companies.length > 0 && (
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+            <span className="text-xs text-muted-foreground whitespace-nowrap flex items-center gap-1"><Building2 className="h-3 w-3" />Empresa:</span>
+            <Button
+              size="sm"
+              variant={selectedCompany === '' ? 'default' : 'outline'}
+              className="h-7 text-xs px-2.5 rounded-full"
+              onClick={() => setSelectedCompany('')}
+            >
+              Todas
+            </Button>
+            {companies.map(company => (
+              <Button
+                key={company}
+                size="sm"
+                variant={selectedCompany === company ? 'default' : 'outline'}
+                className="h-7 text-xs px-2.5 rounded-full whitespace-nowrap"
+                onClick={() => setSelectedCompany(prev => prev === company ? '' : company)}
+              >
+                {company}
+              </Button>
+            ))}
+          </div>
+        )}
+
         {isLoading ? (
           <p className="text-sm text-muted-foreground text-center py-8">Cargando contactos...</p>
         ) : filtered.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-8">
-            {search ? 'No hay contactos que coincidan.' : 'No hay contactos aún. Crea el primero.'}
+            {search || selectedCompany ? 'No hay contactos que coincidan.' : 'No hay contactos aún. Crea el primero.'}
           </p>
         ) : isMobile ? (
           <div className="space-y-2">
@@ -133,22 +158,22 @@ export function ContactsView() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[15%] min-w-[100px]">Nombre</TableHead>
-                  <TableHead className="w-[28%] min-w-[160px]">Correo</TableHead>
-                  <TableHead className="w-[20%] min-w-[110px]">Cargo</TableHead>
-                  <TableHead className="w-[14%] min-w-[100px]">Celular</TableHead>
-                  <TableHead className="w-[13%] min-w-[80px]">Empresa</TableHead>
-                  <TableHead className="w-[10%] min-w-[70px]"></TableHead>
+                  <TableHead className="w-[180px]">Nombre</TableHead>
+                  <TableHead>Correo</TableHead>
+                  <TableHead className="w-[160px]">Cargo</TableHead>
+                  <TableHead className="w-[150px]">Celular</TableHead>
+                  <TableHead className="w-[120px]">Empresa</TableHead>
+                  <TableHead className="w-[80px]"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filtered.map(c => (
                   <TableRow key={c.id} className="cursor-pointer" onClick={() => openEdit(c)}>
-                    <TableCell className="font-medium truncate max-w-0">{c.name}</TableCell>
-                    <TableCell className="text-muted-foreground truncate max-w-0 text-xs">{c.email}</TableCell>
-                    <TableCell className="text-muted-foreground truncate max-w-0 text-xs">{c.position}</TableCell>
-                    <TableCell className="text-muted-foreground whitespace-nowrap text-xs">{c.phone}</TableCell>
-                    <TableCell className="text-muted-foreground truncate max-w-0 text-xs">{c.company}</TableCell>
+                    <TableCell className="font-medium text-sm whitespace-nowrap">{c.name}</TableCell>
+                    <TableCell className="text-muted-foreground text-xs truncate max-w-[250px]">{c.email}</TableCell>
+                    <TableCell className="text-muted-foreground text-xs truncate max-w-[160px]">{c.position}</TableCell>
+                    <TableCell className="text-muted-foreground text-xs whitespace-nowrap">{c.phone}</TableCell>
+                    <TableCell className="text-muted-foreground text-xs">{c.company}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={e => { e.stopPropagation(); openEdit(c); }}>
