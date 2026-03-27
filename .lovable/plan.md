@@ -1,34 +1,22 @@
 
 
-## Plan: Mejorar layout de la tarjeta "Cumplimiento de Cierre + Score por Departamento"
+## Plan: Filtrar solo temas activos + mostrar fechas en resumen de cada tema
 
-### Problema
-La tarjeta tiene mucho espacio vacío, especialmente en la mitad derecha (Score por Departamento) cuando hay pocos departamentos. El grid `lg:grid-cols-2` divide en mitades iguales dejando espacio desperdiciado.
+### Cambios
 
-### Cambio
+**1. `supabase/functions/validate-update-token/index.ts` — Filtrar solo temas activos**
+- Línea 54: cambiar `.neq("status", "completado")` a filtrar solo status `activo` y `seguimiento`, excluyendo `pausado`, `completado` y cualquier otro.
+- Agregar: `.in("status", ["activo", "seguimiento"])` en vez de `.neq("status", "completado")`
+- También incluir `created_at` en el select de topics (línea 51).
 
-**En `src/components/DashboardView.tsx`** (líneas 425-492):
+**2. `src/pages/UpdateTopics.tsx` — Mostrar fechas de creación y vencimiento**
+- Agregar `created_at` al interface `TopicData`.
+- En el header colapsado de cada tema, mostrar debajo del título: "Creado: 15-mar-2026 · Vence: 30-mar-2026" para que el responsable vea claramente las fechas.
 
-1. Cambiar el grid de `grid-cols-1 lg:grid-cols-2` a `flex flex-col lg:flex-row` para que cada mitad ocupe solo lo necesario
-2. La mitad izquierda (Cumplimiento) mantiene su grid de 3 columnas pero con `lg:w-1/2`
-3. La mitad derecha (Departamentos) usa `lg:flex-1` y reduce el espacio vertical entre items
-4. Reducir `gap-4` a `gap-3` y el padding general
-
-```text
-┌─────────────────────────────────────────────────────┐
-│ ◎ Cumplimiento de Cierre          12 temas analiz.  │
-│                                                     │
-│  67%    ● A tiempo   ● Con atraso │ Score x Depto   │
-│  Tasa   8            4            │ 1. Depto A — 85 │
-│  ████   Prom 3d ant  Prom 4d atr  │ 2. Depto B — 72 │
-└─────────────────────────────────────────────────────┘
-```
-
-Resultado: sin espacio vacío, ambas mitades bien proporcionadas.
-
-### Archivo afectado
+### Archivos afectados
 
 | Archivo | Cambio |
 |---|---|
-| `src/components/DashboardView.tsx` | Ajustar layout flex de la tarjeta de Cumplimiento + Departamentos para eliminar espacio vacío |
+| `supabase/functions/validate-update-token/index.ts` | Filtrar `.in("status", ["activo", "seguimiento"])` + incluir `created_at` en select |
+| `src/pages/UpdateTopics.tsx` | Agregar `created_at` a interface, mostrar fechas creación/vencimiento en header de cada tema |
 
