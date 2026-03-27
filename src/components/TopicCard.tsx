@@ -151,6 +151,37 @@ export function TopicCard({
     setNewSubtask('');
   };
 
+  const handleDateChange = (newDate: Date | undefined) => {
+    const newStored = toStoredDate(newDate);
+    // If topic already has a due_date and it's changing, show reschedule dialog
+    if (topic.due_date && newStored && newStored !== topic.due_date) {
+      setRescheduleNewDate(newDate);
+      setRescheduleReason('');
+      setRescheduleIsExternal(false);
+      setShowRescheduleDialog(true);
+    } else {
+      // First time setting or clearing — no reschedule needed
+      onUpdate(topic.id, { due_date: newStored });
+    }
+  };
+
+  const handleConfirmReschedule = async () => {
+    if (!rescheduleNewDate) return;
+    const newStored = toStoredDate(rescheduleNewDate);
+    try {
+      await onCreateReschedule.mutateAsync({
+        user_id: userId,
+        topic_id: topic.id,
+        previous_date: topic.due_date,
+        new_date: newStored,
+        reason: rescheduleReason.trim(),
+        is_external: rescheduleIsExternal,
+      });
+    } catch { /* ignore */ }
+    onUpdate(topic.id, { due_date: newStored });
+    setShowRescheduleDialog(false);
+  };
+
   return (
     <div data-topic-id={topic.id} className={cn(
       'bg-card rounded-lg shadow-sm hover:shadow-md transition-shadow border-l-4',
