@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Mail, Send, Loader2, CheckCircle2, X, Clock } from 'lucide-react';
+import { Mail, Send, Loader2, CheckCircle2, X, Clock, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
