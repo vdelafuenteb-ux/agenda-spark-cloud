@@ -59,11 +59,33 @@ const Index = () => {
   const [showOngoing, setShowOngoing] = useState(true);
   const [showNotOngoing, setShowNotOngoing] = useState(true);
   const [sortBy, setSortBy] = useState<SortOption>('order');
+  const [selectedDepartment, setSelectedDepartment] = useState<string>('');
   const [expandedTopicId, setExpandedTopicId] = useState<string | null>(null);
 
   const toggleTagFilter = useCallback((tagId: string) => {
     setSelectedTagIds((prev) => (prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]));
   }, []);
+
+  // Build a map: assignee name -> department name for filtering
+  const assigneeDeptMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const a of assignees) {
+      if (a.department_id) {
+        const dept = departments.find(d => d.id === a.department_id);
+        if (dept) map.set(a.name, dept.name);
+      }
+    }
+    return map;
+  }, [assignees, departments]);
+
+  const uniqueDepartments = useMemo(() => {
+    const deptNames = new Set<string>();
+    topics.filter(t => t.status === statusTab && t.assignee).forEach(t => {
+      const deptName = assigneeDeptMap.get(t.assignee!);
+      if (deptName) deptNames.add(deptName);
+    });
+    return [...deptNames].sort();
+  }, [topics, statusTab, assigneeDeptMap]);
 
   const filteredTopics = useMemo(() => {
     const filtered = topics.filter((topic) => {
@@ -79,6 +101,10 @@ const Index = () => {
         if (!selectedTagIds.some((id) => topicTagIds.includes(id))) return false;
       }
       if (selectedAssignee && topic.assignee !== selectedAssignee) return false;
+      if (selectedDepartment) {
+        const topicDept = topic.assignee ? assigneeDeptMap.get(topic.assignee) : undefined;
+        if (topicDept !== selectedDepartment) return false;
+      }
       if (filterNoDueDate && topic.due_date) return false;
       if (!showOngoing && topic.is_ongoing) return false;
       if (!showNotOngoing && !topic.is_ongoing) return false;
@@ -106,7 +132,7 @@ const Index = () => {
       // created
       return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
     });
-  }, [topics, statusTab, searchQuery, selectedTagIds, selectedAssignee, filterNoDueDate, showOngoing, showNotOngoing, getTagsForTopic, sortBy]);
+  }, [topics, statusTab, searchQuery, selectedTagIds, selectedAssignee, selectedDepartment, assigneeDeptMap, filterNoDueDate, showOngoing, showNotOngoing, getTagsForTopic, sortBy]);
 
   useEffect(() => {
     if (expandedTopicId && filter === 'todos') {
@@ -355,6 +381,7 @@ const Index = () => {
               setSearchQuery('');
               setSelectedTagIds([]);
               setSelectedAssignee('');
+              setSelectedDepartment('');
               setFilterNoDueDate(false);
               setShowOngoing(true);
               setShowNotOngoing(true);
@@ -386,7 +413,7 @@ const Index = () => {
                   <ReportsList onNewReport={() => setReportOpen(true)} />
                 ) : (
                   <>
-                    <Tabs value={statusTab} onValueChange={(value) => { setStatusTab(value as StatusTab); setForceExpand(null); setExpandedTopicId(null); setSearchQuery(''); setSelectedTagIds([]); setSelectedAssignee(''); setFilterNoDueDate(false); setShowOngoing(true); setShowNotOngoing(true); setSortBy('order'); }}>
+                    <Tabs value={statusTab} onValueChange={(value) => { setStatusTab(value as StatusTab); setForceExpand(null); setExpandedTopicId(null); setSearchQuery(''); setSelectedTagIds([]); setSelectedAssignee(''); setSelectedDepartment(''); setFilterNoDueDate(false); setShowOngoing(true); setShowNotOngoing(true); setSortBy('order'); }}>
                       <TabsList className="w-full">
                         <TabsTrigger value="activo" className="flex-1 text-[11px] sm:text-xs px-1 sm:px-3">Activos <span className="hidden sm:inline">({statusCounts.activo})</span><span className="sm:hidden ml-0.5">{statusCounts.activo}</span></TabsTrigger>
                         <TabsTrigger value="seguimiento" className="flex-1 text-[11px] sm:text-xs px-1 sm:px-3"><span className="sm:hidden">Seguim.</span><span className="hidden sm:inline">Seguimiento</span> <span className="hidden sm:inline">({statusCounts.seguimiento})</span><span className="sm:hidden ml-0.5">{statusCounts.seguimiento}</span></TabsTrigger>
@@ -401,9 +428,12 @@ const Index = () => {
                       allTags={tags}
                       selectedTagIds={selectedTagIds}
                       onToggleTag={toggleTagFilter}
-                      assignees={statusTab !== 'activo' && uniqueAssignees.length > 0 ? uniqueAssignees : undefined}
-                      selectedAssignee={statusTab !== 'activo' ? selectedAssignee : ''}
-                      onAssigneeChange={statusTab !== 'activo' ? setSelectedAssignee : undefined}
+                      assignees={uniqueAssignees.length > 0 ? uniqueAssignees : undefined}
+                      selectedAssignee={selectedAssignee}
+                      onAssigneeChange={setSelectedAssignee}
+                      departments={uniqueDepartments.length > 0 ? uniqueDepartments : undefined}
+                      selectedDepartment={selectedDepartment}
+                      onDepartmentChange={setSelectedDepartment}
                       forceExpand={forceExpand}
                       onToggleExpand={() => setForceExpand(prev => !prev)}
                       onBulkEmail={bulkEmailAssignee ? () => setBulkEmailOpen(true) : undefined}
