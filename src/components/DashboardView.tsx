@@ -11,7 +11,7 @@ import { TrendingUp, Users, Target, CalendarClock, AlertTriangle, Bell, Loader2,
 import { computeProductivityScore } from '@/lib/productivityScore';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import type { Assignee } from '@/hooks/useAssignees';
 
