@@ -18,6 +18,7 @@ import { isStoredDateOverdue } from '@/lib/date';
 import { startOfWeek, subWeeks, isAfter, isBefore, addDays, format, differenceInDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { AssigneeProfileView } from './AssigneeProfileView';
+import type { Reschedule } from '@/hooks/useReschedules';
 
 interface DashboardViewProps {
   topics: TopicWithSubtasks[];
