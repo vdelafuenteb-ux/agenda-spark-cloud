@@ -80,12 +80,20 @@ const Index = () => {
 
   const uniqueDepartments = useMemo(() => {
     const deptNames = new Set<string>();
-    topics.filter(t => t.status === statusTab && t.assignee).forEach(t => {
-      const deptName = assigneeDeptMap.get(t.assignee!);
-      if (deptName) deptNames.add(deptName);
+    topics.filter(t => t.status === statusTab).forEach(t => {
+      // Check topic's own department_id first
+      if (t.department_id) {
+        const dept = departments.find(d => d.id === t.department_id);
+        if (dept) deptNames.add(dept.name);
+      }
+      // Also check assignee's department
+      if (t.assignee) {
+        const deptName = assigneeDeptMap.get(t.assignee);
+        if (deptName) deptNames.add(deptName);
+      }
     });
     return [...deptNames].sort();
-  }, [topics, statusTab, assigneeDeptMap]);
+  }, [topics, statusTab, assigneeDeptMap, departments]);
 
   const filteredTopics = useMemo(() => {
     const filtered = topics.filter((topic) => {
