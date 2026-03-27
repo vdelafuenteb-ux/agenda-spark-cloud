@@ -718,6 +718,16 @@ export function EmailHistoryView() {
                             )}
                           </div>
                           )}
+                          <div onClick={e => e.stopPropagation()}>
+                            <Checkbox
+                              checked={batch.allReviewed}
+                              onCheckedChange={(checked) => {
+                                batchIds.forEach(id => toggleReviewed.mutate({ id, reviewed: !!checked }));
+                              }}
+                              className="h-4 w-4"
+                              title="Revisado"
+                            />
+                          </div>
                           <button
                             onClick={(e) => { e.stopPropagation(); deleteBatch.mutate(batchIds); }}
                             className="text-muted-foreground hover:text-destructive transition-colors"
