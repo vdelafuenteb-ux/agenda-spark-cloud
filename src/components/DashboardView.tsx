@@ -48,7 +48,7 @@ const STATUS_COLORS = {
   completado: 'hsl(142 71% 45%)',
 };
 
-export function DashboardView({ topics, assignees, reschedules, onUpdateTopic, onNavigateToTopic }: DashboardViewProps) {
+export function DashboardView({ topics, assignees, departments = [], reschedules, onUpdateTopic, onNavigateToTopic }: DashboardViewProps) {
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [selectedAssignee, setSelectedAssignee] = useState<string | null>(null);
 
