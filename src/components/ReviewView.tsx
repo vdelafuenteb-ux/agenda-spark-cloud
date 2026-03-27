@@ -115,7 +115,13 @@ export function ReviewView({ topics, onToggleSubtask, onUpdateTopic }: ReviewVie
           priority: topic.priority,
           dueDate: topic.due_date,
           completed: false,
-          onToggle: () => {},
+          onToggle: () => {
+            setCloseTopicId(topic.id);
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            setCloseDateDraft(now.toISOString().slice(0, 16));
+            setShowCloseDialog(true);
+          },
           topicStatus: topic.status,
         });
       }
