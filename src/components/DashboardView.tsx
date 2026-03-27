@@ -608,6 +608,7 @@ export function DashboardView({ topics, assignees, departments = [], reschedules
                         <TableHeader>
                           <TableRow>
                             <TableHead className="text-xs">Nombre</TableHead>
+                            <TableHead className="text-xs">Departamento</TableHead>
                             <TableHead className="text-xs text-center">Score</TableHead>
                             <TableHead className="text-xs text-center">Total</TableHead>
                             <TableHead className="text-xs text-center">Activos</TableHead>
@@ -622,11 +623,14 @@ export function DashboardView({ topics, assignees, departments = [], reschedules
                           {metrics.assigneeRanking.map((a) => {
                             const score = scoreSnapshots?.get(a.name);
                             const scoreColor = score !== undefined
-                              ? score >= 80 ? 'text-emerald-600' : score >= 50 ? 'text-yellow-600' : 'text-destructive'
+                              ? score >= 90 ? 'text-emerald-600' : score >= 70 ? 'text-lime-600' : score >= 50 ? 'text-yellow-600' : score >= 30 ? 'text-orange-500' : 'text-destructive'
                               : 'text-muted-foreground';
+                            const assigneeObj = assignees.find(x => x.name === a.name);
+                            const dept = assigneeObj?.department_id ? departments.find(d => d.id === assigneeObj.department_id) : undefined;
                             return (
                               <TableRow key={a.name} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedAssignee(a.name)}>
                                 <TableCell className="text-sm font-medium text-primary underline underline-offset-2">{a.name}</TableCell>
+                                <TableCell className="text-xs text-muted-foreground truncate max-w-[140px]">{dept?.name || '—'}</TableCell>
                                 <TableCell className="text-center">
                                   {score !== undefined ? (
                                     <span className={cn("text-sm font-bold", scoreColor)}>{score}</span>
