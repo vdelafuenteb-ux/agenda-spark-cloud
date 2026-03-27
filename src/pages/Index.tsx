@@ -59,6 +59,7 @@ const Index = () => {
   const [showOngoing, setShowOngoing] = useState(true);
   const [showNotOngoing, setShowNotOngoing] = useState(true);
   const [sortBy, setSortBy] = useState<SortOption>('order');
+  const [selectedDepartment, setSelectedDepartment] = useState<string>('');
   const [expandedTopicId, setExpandedTopicId] = useState<string | null>(null);
 
   const toggleTagFilter = useCallback((tagId: string) => {
