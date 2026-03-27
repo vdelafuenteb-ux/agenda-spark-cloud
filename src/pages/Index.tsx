@@ -126,6 +126,10 @@ const Index = () => {
       const pinDiff = (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0);
       if (pinDiff !== 0) return pinDiff;
 
+      const aOverdue = a.due_date && !a.is_ongoing && a.status !== 'completado' && isStoredDateOverdue(a.due_date) ? 1 : 0;
+      const bOverdue = b.due_date && !b.is_ongoing && b.status !== 'completado' && isStoredDateOverdue(b.due_date) ? 1 : 0;
+      if (aOverdue !== bOverdue) return bOverdue - aOverdue;
+
       if (sortBy === 'order') {
         const orderA = (a as any).execution_order ?? Infinity;
         const orderB = (b as any).execution_order ?? Infinity;
