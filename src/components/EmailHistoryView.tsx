@@ -553,6 +553,15 @@ export function EmailHistoryView() {
                             </span>
                           </td>
                           )}
+                          <td className="px-3 py-2.5" onClick={e => e.stopPropagation()}>
+                            <Checkbox
+                              checked={batch.allReviewed}
+                              onCheckedChange={(checked) => {
+                                toggleBatchReviewed.mutate({ ids: batchIds, reviewed: !!checked });
+                              }}
+                              className="h-4 w-4"
+                            />
+                          </td>
                           <td className="px-3 py-2.5 font-medium text-foreground">{batch.assignee_name}</td>
                           <td className="px-3 py-2.5 text-muted-foreground">{batch.assignee_email}</td>
                           <td className="px-3 py-2.5">
@@ -572,14 +581,6 @@ export function EmailHistoryView() {
                             </span>
                           </td>
                           )}
-                          <td className="px-3 py-2.5" onClick={e => e.stopPropagation()}>
-                            <Checkbox
-                              checked={batch.allReviewed}
-                              onCheckedChange={(checked) => {
-                                batchIds.forEach(id => toggleReviewed.mutate({ id, reviewed: !!checked }));
-                              }}
-                              className="h-4 w-4"
-                            />
                           </td>
                           <td className="px-3 py-2.5 text-right" onClick={e => e.stopPropagation()}>
                             <button
