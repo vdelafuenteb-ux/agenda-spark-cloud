@@ -326,7 +326,7 @@ export function EmailHistoryView() {
     setStatusFilter('all');
   };
 
-  const hasFilters = searchQuery || selectedAssignee !== 'all' || dateFrom || dateTo || statusFilter !== 'all';
+  const hasFilters = searchQuery || selectedAssignee !== 'all' || dateFrom || dateTo || statusFilter !== 'not_reviewed';
 
   const toggleExpand = (key: string) => {
     setExpandedBatches(prev => {
