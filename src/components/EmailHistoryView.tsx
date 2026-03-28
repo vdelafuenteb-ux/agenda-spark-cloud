@@ -734,7 +734,7 @@ export function EmailHistoryView() {
                             <Checkbox
                               checked={batch.allReviewed}
                               onCheckedChange={(checked) => {
-                                batchIds.forEach(id => toggleReviewed.mutate({ id, reviewed: !!checked }));
+                                toggleBatchReviewed.mutate({ ids: batchIds, reviewed: !!checked });
                               }}
                               className="h-4 w-4"
                               title="Revisado"
