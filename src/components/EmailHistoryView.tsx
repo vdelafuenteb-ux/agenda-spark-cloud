@@ -581,7 +581,6 @@ export function EmailHistoryView() {
                             </span>
                           </td>
                           )}
-                          </td>
                           <td className="px-3 py-2.5 text-right" onClick={e => e.stopPropagation()}>
                             <button
                               onClick={() => deleteBatch.mutate(batchIds)}
