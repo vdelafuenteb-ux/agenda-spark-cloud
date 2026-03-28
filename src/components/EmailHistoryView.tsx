@@ -220,6 +220,20 @@ export function EmailHistoryView() {
     onSuccess: invalidateAll,
   });
 
+  const toggleBatchReviewed = useMutation({
+    mutationFn: async ({ ids, reviewed }: { ids: string[]; reviewed: boolean }) => {
+      const { error } = await supabase
+        .from('notification_emails')
+        .update({
+          reviewed,
+          reviewed_at: reviewed ? new Date().toISOString() : null,
+        } as any)
+        .in('id', ids);
+      if (error) throw error;
+    },
+    onSuccess: invalidateAll,
+  });
+
   const deleteBatch = useMutation({
     mutationFn: async (ids: string[]) => {
       const { error } = await supabase.from('notification_emails').delete().in('id', ids);
