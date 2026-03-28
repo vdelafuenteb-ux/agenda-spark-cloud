@@ -477,15 +477,15 @@ export function EmailHistoryView() {
                 <thead>
                   <tr className="bg-muted/50 border-b border-border">
                     <th className="text-left px-3 py-2 font-medium text-muted-foreground w-8"></th>
-                    {isWeekly && <th className="text-left px-3 py-2 font-medium text-muted-foreground">Confirmado</th>}
-                    {isWeekly && <th className="text-left px-3 py-2 font-medium text-muted-foreground">Estado</th>}
-                    <th className="text-left px-3 py-2 font-medium text-muted-foreground">Persona</th>
-                    <th className="text-left px-3 py-2 font-medium text-muted-foreground">Email</th>
-                    <th className="text-left px-3 py-2 font-medium text-muted-foreground">Temas</th>
-                    <th className="text-left px-3 py-2 font-medium text-muted-foreground">Enviado</th>
-                    {isWeekly && <th className="text-left px-3 py-2 font-medium text-muted-foreground">Plazo 48h</th>}
-                    <th className="text-left px-3 py-2 font-medium text-muted-foreground">Revisado</th>
-                    <th className="text-right px-3 py-2 font-medium text-muted-foreground"></th>
+                     {isWeekly && <th className="text-left px-3 py-2 font-medium text-muted-foreground">Confirmado</th>}
+                     {isWeekly && <th className="text-left px-3 py-2 font-medium text-muted-foreground">Estado</th>}
+                     <th className="text-left px-3 py-2 font-medium text-muted-foreground">Revisado</th>
+                     <th className="text-left px-3 py-2 font-medium text-muted-foreground">Persona</th>
+                     <th className="text-left px-3 py-2 font-medium text-muted-foreground">Email</th>
+                     <th className="text-left px-3 py-2 font-medium text-muted-foreground">Temas</th>
+                     <th className="text-left px-3 py-2 font-medium text-muted-foreground">Enviado</th>
+                     {isWeekly && <th className="text-left px-3 py-2 font-medium text-muted-foreground">Plazo 48h</th>}
+                     <th className="text-right px-3 py-2 font-medium text-muted-foreground"></th>
                   </tr>
                 </thead>
                 <tbody>
