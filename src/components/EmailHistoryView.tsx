@@ -135,7 +135,7 @@ export function EmailHistoryView() {
   const [selectedAssignee, setSelectedAssignee] = useState<string>('all');
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
   const [dateTo, setDateTo] = useState<Date | undefined>();
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('not_reviewed');
   const [expandedBatches, setExpandedBatches] = useState<Set<string>>(new Set());
   const [, setTick] = useState(0);
 
