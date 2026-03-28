@@ -1,24 +1,8 @@
 
 
-## Plan: Quitar auto-confirmación de correos "tema nuevo" + confirmar al enviar actualización
+## Plan: Mover columna "Revisado" junto a "Confirmado" + optimizar velocidad + filtro por defecto
 
-### Problema actual
-Cuando se envía un correo de tema nuevo, en `NotificationSection.tsx` se muestra siempre un check verde fijo con "Notificado" — no permite al admin confirmar/desconfirmar manualmente. Además, cuando el responsable envía su actualización vía el link, la función `submit-update` solo marca `responded = true` pero NO marca `confirmed = true`.
+### Problemas identificados
 
-### Cambios
-
-**1. `src/components/NotificationSection.tsx` — Tratar correos new_topic igual que weekly**
-- Eliminar la rama `isNewTopic` que mostraba un check verde fijo. Usar la misma lógica de confirmación que los correos semanales (checkbox/ConfirmPopover)
-- Mantener el badge "Tema nuevo" para distinguirlos visualmente
-
-**2. `supabase/functions/submit-update/index.ts` — Auto-confirmar al enviar actualización**
-- Cuando el responsable envía su actualización (y hay cambios), además de marcar `responded = true`, también marcar `confirmed = true` y `confirmed_at = now()` en los `notification_emails` correspondientes
-- Esto sincroniza automáticamente el estado tanto en la tarjeta como en el historial
-
-### Archivos afectados
-
-| Archivo | Cambio |
-|---|---|
-| `src/components/NotificationSection.tsx` | Eliminar rama `isNewTopic` auto-confirmada, usar misma lógica de checkbox |
-| `supabase/functions/submit-update/index.ts` | Agregar `confirmed: true, confirmed_at` al update de `notification_emails` |
-
+1. **Columna "Revisado" está al final** de la tabla, lejos de "Confirmado". Hay que moverla justo después.
+2. **Lentitud al marcar "Revisado"**: el batch checkbox ejecuta N mutaciones individuales (`batchIds.forEach(id => toggleReviewed.mutate(...))`), una por cada correo. Esto causa N requests independientes.
