@@ -323,7 +323,7 @@ export function EmailHistoryView() {
     setSelectedAssignee('all');
     setDateFrom(undefined);
     setDateTo(undefined);
-    setStatusFilter('all');
+    setStatusFilter('not_reviewed');
   };
 
   const hasFilters = searchQuery || selectedAssignee !== 'all' || dateFrom || dateTo || statusFilter !== 'not_reviewed';
