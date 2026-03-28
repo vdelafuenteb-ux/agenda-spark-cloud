@@ -135,7 +135,7 @@ export function EmailHistoryView() {
   const [selectedAssignee, setSelectedAssignee] = useState<string>('all');
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
   const [dateTo, setDateTo] = useState<Date | undefined>();
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('not_reviewed');
   const [expandedBatches, setExpandedBatches] = useState<Set<string>>(new Set());
   const [, setTick] = useState(0);
 
@@ -215,6 +215,20 @@ export function EmailHistoryView() {
           reviewed_at: reviewed ? new Date().toISOString() : null,
         } as any)
         .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: invalidateAll,
+  });
+
+  const toggleBatchReviewed = useMutation({
+    mutationFn: async ({ ids, reviewed }: { ids: string[]; reviewed: boolean }) => {
+      const { error } = await supabase
+        .from('notification_emails')
+        .update({
+          reviewed,
+          reviewed_at: reviewed ? new Date().toISOString() : null,
+        } as any)
+        .in('id', ids);
       if (error) throw error;
     },
     onSuccess: invalidateAll,
@@ -309,10 +323,10 @@ export function EmailHistoryView() {
     setSelectedAssignee('all');
     setDateFrom(undefined);
     setDateTo(undefined);
-    setStatusFilter('all');
+    setStatusFilter('not_reviewed');
   };
 
-  const hasFilters = searchQuery || selectedAssignee !== 'all' || dateFrom || dateTo || statusFilter !== 'all';
+  const hasFilters = searchQuery || selectedAssignee !== 'all' || dateFrom || dateTo || statusFilter !== 'not_reviewed';
 
   const toggleExpand = (key: string) => {
     setExpandedBatches(prev => {
@@ -463,15 +477,15 @@ export function EmailHistoryView() {
                 <thead>
                   <tr className="bg-muted/50 border-b border-border">
                     <th className="text-left px-3 py-2 font-medium text-muted-foreground w-8"></th>
-                    {isWeekly && <th className="text-left px-3 py-2 font-medium text-muted-foreground">Confirmado</th>}
-                    {isWeekly && <th className="text-left px-3 py-2 font-medium text-muted-foreground">Estado</th>}
-                    <th className="text-left px-3 py-2 font-medium text-muted-foreground">Persona</th>
-                    <th className="text-left px-3 py-2 font-medium text-muted-foreground">Email</th>
-                    <th className="text-left px-3 py-2 font-medium text-muted-foreground">Temas</th>
-                    <th className="text-left px-3 py-2 font-medium text-muted-foreground">Enviado</th>
-                    {isWeekly && <th className="text-left px-3 py-2 font-medium text-muted-foreground">Plazo 48h</th>}
-                    <th className="text-left px-3 py-2 font-medium text-muted-foreground">Revisado</th>
-                    <th className="text-right px-3 py-2 font-medium text-muted-foreground"></th>
+                     {isWeekly && <th className="text-left px-3 py-2 font-medium text-muted-foreground">Confirmado</th>}
+                     {isWeekly && <th className="text-left px-3 py-2 font-medium text-muted-foreground">Estado</th>}
+                     <th className="text-left px-3 py-2 font-medium text-muted-foreground">Revisado</th>
+                     <th className="text-left px-3 py-2 font-medium text-muted-foreground">Persona</th>
+                     <th className="text-left px-3 py-2 font-medium text-muted-foreground">Email</th>
+                     <th className="text-left px-3 py-2 font-medium text-muted-foreground">Temas</th>
+                     <th className="text-left px-3 py-2 font-medium text-muted-foreground">Enviado</th>
+                     {isWeekly && <th className="text-left px-3 py-2 font-medium text-muted-foreground">Plazo 48h</th>}
+                     <th className="text-right px-3 py-2 font-medium text-muted-foreground"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -539,6 +553,15 @@ export function EmailHistoryView() {
                             </span>
                           </td>
                           )}
+                          <td className="px-3 py-2.5" onClick={e => e.stopPropagation()}>
+                            <Checkbox
+                              checked={batch.allReviewed}
+                              onCheckedChange={(checked) => {
+                                toggleBatchReviewed.mutate({ ids: batchIds, reviewed: !!checked });
+                              }}
+                              className="h-4 w-4"
+                            />
+                          </td>
                           <td className="px-3 py-2.5 font-medium text-foreground">{batch.assignee_name}</td>
                           <td className="px-3 py-2.5 text-muted-foreground">{batch.assignee_email}</td>
                           <td className="px-3 py-2.5">
@@ -558,15 +581,6 @@ export function EmailHistoryView() {
                             </span>
                           </td>
                           )}
-                          <td className="px-3 py-2.5" onClick={e => e.stopPropagation()}>
-                            <Checkbox
-                              checked={batch.allReviewed}
-                              onCheckedChange={(checked) => {
-                                batchIds.forEach(id => toggleReviewed.mutate({ id, reviewed: !!checked }));
-                              }}
-                              className="h-4 w-4"
-                            />
-                          </td>
                           <td className="px-3 py-2.5 text-right" onClick={e => e.stopPropagation()}>
                             <button
                               onClick={() => deleteBatch.mutate(batchIds)}
@@ -720,7 +734,7 @@ export function EmailHistoryView() {
                             <Checkbox
                               checked={batch.allReviewed}
                               onCheckedChange={(checked) => {
-                                batchIds.forEach(id => toggleReviewed.mutate({ id, reviewed: !!checked }));
+                                toggleBatchReviewed.mutate({ ids: batchIds, reviewed: !!checked });
                               }}
                               className="h-4 w-4"
                               title="Revisado"
