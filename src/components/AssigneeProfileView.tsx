@@ -465,7 +465,7 @@ export function AssigneeProfileView({
                       const radius = 40;
                       const circumference = 2 * Math.PI * radius;
                       const offset = circumference - (score / 100) * circumference;
-                      const prevSnapshot = scoreSnapshots.length >= 2 ? scoreSnapshots[scoreSnapshots.length - 2] : null;
+                      const prevSnapshot = scoreSnapshots.length >= 1 ? scoreSnapshots[scoreSnapshots.length - 1] : null;
                       const previousScore = prevSnapshot ? prevSnapshot.score : null;
                       const trendDiff = previousScore !== null ? score - previousScore : null;
                       return (
