@@ -33,6 +33,7 @@ interface DashboardViewProps {
   reschedules: Reschedule[];
   onUpdateTopic?: (id: string, data: any) => void;
   onNavigateToTopic?: (topicId: string, status: string) => void;
+  topicEditingProps?: Record<string, any>;
 }
 
 const PRIORITY_COLORS = {
