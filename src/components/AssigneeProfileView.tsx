@@ -660,7 +660,6 @@ export function AssigneeProfileView({
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead className="text-xs w-8"></TableHead>
                           <TableHead className="text-xs">Tema</TableHead>
                           <TableHead className="text-xs text-center">Prioridad</TableHead>
                           <TableHead className="text-xs text-center">Estado</TableHead>
@@ -668,6 +667,7 @@ export function AssigneeProfileView({
                           <TableHead className="text-xs text-center">Subtareas</TableHead>
                           <TableHead className="text-xs text-center">🔄</TableHead>
                           <TableHead className="text-xs text-center w-10">📧</TableHead>
+                          <TableHead className="text-xs w-8"></TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -677,17 +677,6 @@ export function AssigneeProfileView({
                           const topicReschedules = assigneeReschedules.filter(r => r.topic_id === t.id);
                           return (
                             <TableRow key={t.id} className={`${isOverdue ? 'bg-destructive/5' : ''}`}>
-                              <TableCell className="w-8 px-1">
-                                {onUpdate && (
-                                  <button
-                                    onClick={(e) => { e.stopPropagation(); setSelectedTopicId(t.id); }}
-                                    className="p-1 rounded-full hover:bg-muted transition-colors"
-                                    title="Abrir tema"
-                                  >
-                                    <Eye className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
-                                  </button>
-                                )}
-                              </TableCell>
                               <TableCell className="text-sm font-medium max-w-[200px] truncate text-primary">{t.title}</TableCell>
                               <TableCell className="text-center">
                                 <Badge variant={t.priority === 'alta' ? 'destructive' : t.priority === 'media' ? 'outline' : 'secondary'} className="text-[9px]">{t.priority}</Badge>
@@ -722,6 +711,17 @@ export function AssigneeProfileView({
                                   className="p-1 rounded-full hover:bg-muted transition-colors disabled:opacity-30">
                                   {sendingId === t.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Bell className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />}
                                 </button>
+                              </TableCell>
+                              <TableCell className="w-8 px-1">
+                                {onUpdate && (
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); setSelectedTopicId(t.id); }}
+                                    className="p-1 rounded-full hover:bg-muted transition-colors"
+                                    title="Abrir tema"
+                                  >
+                                    <Eye className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
+                                  </button>
+                                )}
                               </TableCell>
                             </TableRow>
                           );
