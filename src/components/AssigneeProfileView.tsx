@@ -857,81 +857,114 @@ export function AssigneeProfileView({
                   {emailHistory.length === 0 ? (
                     <p className="text-sm text-muted-foreground py-4 text-center">No se han enviado correos a {assigneeName}</p>
                   ) : (
-                    <>
-                      <div className="flex items-center gap-4 mb-3 text-xs">
-                        <span className="text-muted-foreground">Enviados: <strong className="text-foreground">{metrics.emailsSent}</strong></span>
-                        <span className="text-muted-foreground">Confirmados: <strong className="text-green-600">{metrics.emailsConfirmed}</strong></span>
-                        <span className="text-muted-foreground">
-                          Tasa: <strong className={metrics.responseRate >= 80 ? 'text-green-600' : metrics.responseRate >= 50 ? 'text-yellow-600' : 'text-destructive'}>{metrics.responseRate}%</strong>
-                        </span>
-                      </div>
-                      <div className="hidden sm:block max-h-[500px] overflow-auto">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead className="text-xs">Tema</TableHead>
-                              <TableHead className="text-xs text-center">Enviado</TableHead>
-                              <TableHead className="text-xs text-center">Confirmado</TableHead>
-                              <TableHead className="text-xs text-center">Plazo</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {emailHistory.map((e: any) => {
-                              const onTime = e.confirmed && e.confirmed_at
-                                ? new Date(e.confirmed_at).getTime() <= new Date(e.sent_at).getTime() + DEADLINE_HOURS * 60 * 60 * 1000
-                                : null;
-                              return (
-                                <TableRow key={e.id}>
-                                  <TableCell className="text-xs">{e.topics?.title || e.topic_id}</TableCell>
-                                  <TableCell className="text-xs text-center text-muted-foreground">
-                                    {format(new Date(e.sent_at), 'dd MMM HH:mm', { locale: es })}
-                                  </TableCell>
-                                  <TableCell className="text-center">
-                                    {e.confirmed ? (
-                                      <CheckCircle2 className="h-3.5 w-3.5 text-green-600 mx-auto" />
-                                    ) : (
-                                      <span className="text-xs text-muted-foreground">—</span>
-                                    )}
-                                  </TableCell>
-                                  <TableCell className="text-center">
-                                    {onTime !== null ? (
-                                      <Badge variant={onTime ? 'secondary' : 'destructive'} className="text-[9px]">
-                                        {onTime ? 'A tiempo' : 'Fuera de plazo'}
-                                      </Badge>
-                                    ) : (
-                                      <span className="text-xs text-muted-foreground">—</span>
-                                    )}
-                                  </TableCell>
-                                </TableRow>
-                              );
-                            })}
-                          </TableBody>
-                        </Table>
-                      </div>
-                      <div className="sm:hidden space-y-1.5 max-h-[500px] overflow-auto">
-                        {emailHistory.map((e: any) => {
-                          const onTime = e.confirmed && e.confirmed_at
-                            ? new Date(e.confirmed_at).getTime() <= new Date(e.sent_at).getTime() + DEADLINE_HOURS * 60 * 60 * 1000
-                            : null;
-                          return (
-                            <div key={e.id} className="flex items-center justify-between py-1.5 border-b border-border last:border-0">
-                              <div className="min-w-0">
-                                <p className="text-xs font-medium truncate">{e.topics?.title || e.topic_id}</p>
-                                <p className="text-[10px] text-muted-foreground">{format(new Date(e.sent_at), 'dd MMM HH:mm', { locale: es })}</p>
+                    <Tabs defaultValue="weekly">
+                      <TabsList className="h-8 mb-3">
+                        <TabsTrigger value="weekly" className="text-xs h-7">
+                          Semanales ({emailHistory.filter((e: any) => !e.email_type || e.email_type === 'weekly').length})
+                        </TabsTrigger>
+                        <TabsTrigger value="new_topic" className="text-xs h-7">
+                          Temas nuevos ({emailHistory.filter((e: any) => e.email_type === 'new_topic').length})
+                        </TabsTrigger>
+                      </TabsList>
+
+                      {(['weekly', 'new_topic'] as const).map(emailTabType => {
+                        const filteredEmails = emailHistory.filter((e: any) =>
+                          emailTabType === 'weekly' ? (!e.email_type || e.email_type === 'weekly') : e.email_type === 'new_topic'
+                        );
+                        const isWeekly = emailTabType === 'weekly';
+                        const confirmed = filteredEmails.filter((e: any) => e.confirmed).length;
+
+                        return (
+                          <TabsContent key={emailTabType} value={emailTabType} className="mt-0">
+                            {isWeekly && (
+                              <div className="flex items-center gap-4 mb-3 text-xs">
+                                <span className="text-muted-foreground">Enviados: <strong className="text-foreground">{filteredEmails.length}</strong></span>
+                                <span className="text-muted-foreground">Confirmados: <strong className="text-green-600">{confirmed}</strong></span>
+                                <span className="text-muted-foreground">
+                                  Tasa: <strong className={filteredEmails.length > 0 && (confirmed / filteredEmails.length * 100) >= 80 ? 'text-green-600' : filteredEmails.length > 0 && (confirmed / filteredEmails.length * 100) >= 50 ? 'text-yellow-600' : 'text-destructive'}>
+                                    {filteredEmails.length > 0 ? Math.round(confirmed / filteredEmails.length * 100) : 0}%
+                                  </strong>
+                                </span>
                               </div>
-                              <div className="flex items-center gap-1.5 shrink-0">
-                                {e.confirmed ? <CheckCircle2 className="h-3.5 w-3.5 text-green-600" /> : <span className="text-[10px] text-muted-foreground">—</span>}
-                                {onTime !== null && (
-                                  <Badge variant={onTime ? 'secondary' : 'destructive'} className="text-[8px]">
-                                    {onTime ? 'A tiempo' : 'Tarde'}
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </>
+                            )}
+                            {filteredEmails.length === 0 ? (
+                              <p className="text-sm text-muted-foreground py-4 text-center">Sin correos de este tipo</p>
+                            ) : (
+                              <>
+                                <div className="hidden sm:block max-h-[500px] overflow-auto">
+                                  <Table>
+                                    <TableHeader>
+                                      <TableRow>
+                                        <TableHead className="text-xs">Tema</TableHead>
+                                        <TableHead className="text-xs text-center">Enviado</TableHead>
+                                        <TableHead className="text-xs text-center">Confirmado</TableHead>
+                                        {isWeekly && <TableHead className="text-xs text-center">Plazo</TableHead>}
+                                      </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                      {filteredEmails.map((e: any) => {
+                                        const onTime = isWeekly && e.confirmed && e.confirmed_at
+                                          ? new Date(e.confirmed_at).getTime() <= new Date(e.sent_at).getTime() + DEADLINE_HOURS * 60 * 60 * 1000
+                                          : null;
+                                        return (
+                                          <TableRow key={e.id}>
+                                            <TableCell className="text-xs">{e.topics?.title || e.topic_id}</TableCell>
+                                            <TableCell className="text-xs text-center text-muted-foreground">
+                                              {format(new Date(e.sent_at), 'dd MMM HH:mm', { locale: es })}
+                                            </TableCell>
+                                            <TableCell className="text-center">
+                                              {e.confirmed ? (
+                                                <CheckCircle2 className="h-3.5 w-3.5 text-green-600 mx-auto" />
+                                              ) : (
+                                                <span className="text-xs text-muted-foreground">—</span>
+                                              )}
+                                            </TableCell>
+                                            {isWeekly && (
+                                              <TableCell className="text-center">
+                                                {onTime !== null ? (
+                                                  <Badge variant={onTime ? 'secondary' : 'destructive'} className="text-[9px]">
+                                                    {onTime ? 'A tiempo' : 'Fuera de plazo'}
+                                                  </Badge>
+                                                ) : (
+                                                  <span className="text-xs text-muted-foreground">—</span>
+                                                )}
+                                              </TableCell>
+                                            )}
+                                          </TableRow>
+                                        );
+                                      })}
+                                    </TableBody>
+                                  </Table>
+                                </div>
+                                <div className="sm:hidden space-y-1.5 max-h-[500px] overflow-auto">
+                                  {filteredEmails.map((e: any) => {
+                                    const onTime = isWeekly && e.confirmed && e.confirmed_at
+                                      ? new Date(e.confirmed_at).getTime() <= new Date(e.sent_at).getTime() + DEADLINE_HOURS * 60 * 60 * 1000
+                                      : null;
+                                    return (
+                                      <div key={e.id} className="flex items-center justify-between py-1.5 border-b border-border last:border-0">
+                                        <div className="min-w-0">
+                                          <p className="text-xs font-medium truncate">{e.topics?.title || e.topic_id}</p>
+                                          <p className="text-[10px] text-muted-foreground">{format(new Date(e.sent_at), 'dd MMM HH:mm', { locale: es })}</p>
+                                        </div>
+                                        <div className="flex items-center gap-1.5 shrink-0">
+                                          {e.confirmed ? <CheckCircle2 className="h-3.5 w-3.5 text-green-600" /> : <span className="text-[10px] text-muted-foreground">—</span>}
+                                          {isWeekly && onTime !== null && (
+                                            <Badge variant={onTime ? 'secondary' : 'destructive'} className="text-[8px]">
+                                              {onTime ? 'A tiempo' : 'Tarde'}
+                                            </Badge>
+                                          )}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </>
+                            )}
+                          </TabsContent>
+                        );
+                      })}
+                    </Tabs>
                   )}
                 </CardContent>
               </Card>
