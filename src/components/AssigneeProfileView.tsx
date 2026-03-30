@@ -693,9 +693,14 @@ export function AssigneeProfileView({
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {metrics.assigneeTopics.map(t => {
+                        {metrics.assigneeTopics.filter(t => {
+                          if (topicStatusFilter === 'activos') return t.status === 'activo' || t.status === 'seguimiento';
+                          if (topicStatusFilter === 'completados') return t.status === 'completado';
+                          if (topicStatusFilter === 'pausados') return t.status === 'pausado';
+                          return true;
+                        }).map(t => {
                           const pending = t.subtasks.filter(s => !s.completed).length;
-                          const isOverdue = isStoredDateOverdue(t.due_date);
+                          const isOverdue = t.status !== 'completado' && isStoredDateOverdue(t.due_date);
                           const topicReschedules = assigneeReschedules.filter(r => r.topic_id === t.id);
                           return (
                             <TableRow key={t.id} className={`${isOverdue ? 'bg-destructive/5' : ''}`}>
