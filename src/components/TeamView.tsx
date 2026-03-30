@@ -165,7 +165,7 @@ function calculateAssigneeScore(
   };
 }
 
-export function TeamView({ topics, assignees, onUpdateTopic }: TeamViewProps) {
+export function TeamView({ topics, assignees, onUpdateTopic, topicEditingProps }: TeamViewProps) {
   const [selectedAssignee, setSelectedAssignee] = useState<string | null>(null);
   const { departments } = useDepartments();
 
