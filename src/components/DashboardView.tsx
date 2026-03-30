@@ -33,6 +33,7 @@ interface DashboardViewProps {
   reschedules: Reschedule[];
   onUpdateTopic?: (id: string, data: any) => void;
   onNavigateToTopic?: (topicId: string, status: string) => void;
+  topicEditingProps?: Record<string, any>;
 }
 
 const PRIORITY_COLORS = {
@@ -48,7 +49,7 @@ const STATUS_COLORS = {
   completado: 'hsl(142 71% 45%)',
 };
 
-export function DashboardView({ topics, assignees, departments = [], reschedules, onUpdateTopic, onNavigateToTopic }: DashboardViewProps) {
+export function DashboardView({ topics, assignees, departments = [], reschedules, onUpdateTopic, onNavigateToTopic, topicEditingProps }: DashboardViewProps) {
   const queryClient = useQueryClient();
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [selectedAssignee, setSelectedAssignee] = useState<string | null>(null);
@@ -330,6 +331,7 @@ export function DashboardView({ topics, assignees, departments = [], reschedules
         })}
         onBack={() => setSelectedAssignee(null)}
         onNavigateToTopic={onNavigateToTopic}
+        {...(topicEditingProps || {})}
       />
     );
   }

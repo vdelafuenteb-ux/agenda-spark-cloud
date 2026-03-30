@@ -381,9 +381,71 @@ const Index = () => {
               setShowOngoing(true);
               setShowNotOngoing(true);
               setSortBy('order');
-            }} />
+            }}
+              topicEditingProps={{
+                allTags: tags,
+                topicTagsFn: getTagsForTopic,
+                allAssignees: assignees,
+                allDepartments: departments,
+                allReschedulesByTopic: reschedulesByTopic,
+                onCreateReschedule: createReschedule,
+                userId: user!.id,
+                onCreateAssignee: (name: string) => createAssignee.mutateAsync({ name }),
+                onUpdate: (id: string, data: Record<string, unknown>) => updateTopic.mutate({ id, ...data }),
+                onDelete: (id: string) => deleteTopic.mutate(id),
+                onAddSubtask: (topicId: string, title: string) => addSubtask.mutate({ topic_id: topicId, title }),
+                onToggleSubtask: (id: string, completed: boolean) => toggleSubtask.mutate({ id, completed }),
+                onUpdateSubtask: (id: string, data: Record<string, unknown>) => updateSubtask.mutate({ id, ...data }),
+                onDeleteSubtask: (id: string) => deleteSubtask.mutate(id),
+                onAddSubtaskEntry: async (subtaskId: string, content: string) => { const res = await addSubtaskEntry.mutateAsync({ subtask_id: subtaskId, content }); return res; },
+                onUpdateSubtaskEntry: (id: string, content: string) => updateSubtaskEntry.mutate({ id, content }),
+                onDeleteSubtaskEntry: (id: string) => deleteSubtaskEntry.mutate(id),
+                onAddSubtaskContact: (subtaskId: string, name: string, email: string) => addSubtaskContact.mutate({ subtask_id: subtaskId, name, email }),
+                onUpdateSubtaskContact: (id: string, name?: string, email?: string) => updateSubtaskContact.mutate({ id, name, email }),
+                onDeleteSubtaskContact: (id: string) => deleteSubtaskContact.mutate(id),
+                onAddProgressEntry: async (topicId: string, content: string) => { const res = await addProgressEntry.mutateAsync({ topic_id: topicId, content }); return res; },
+                onUpdateProgressEntry: (id: string, content: string) => updateProgressEntry.mutate({ id, content }),
+                onDeleteProgressEntry: (id: string) => deleteProgressEntry.mutate(id),
+                onUploadFiles: (entryId: string, entryType: 'progress' | 'subtask', files: File[]) => { files.forEach(file => uploadEntryAttachment.mutate({ entryId, entryType, file, userId: user!.id })); },
+                onDeleteAttachment: (id: string, fileUrl: string) => deleteEntryAttachment.mutate({ id, fileUrl }),
+                onAddTag: (topicId: string, tagId: string) => addTopicTag.mutate({ topic_id: topicId, tag_id: tagId }),
+                onRemoveTag: (topicId: string, tagId: string) => removeTopicTag.mutate({ topic_id: topicId, tag_id: tagId }),
+                onCreateTag: (name: string, color: string) => createTag.mutateAsync({ name, color }),
+              }}
+            />
           ) : filter === 'equipo' ? (
-            <TeamView topics={topics} assignees={assignees} onUpdateTopic={(id, data) => updateTopic.mutate({ id, ...data })} />
+            <TeamView topics={topics} assignees={assignees} onUpdateTopic={(id, data) => updateTopic.mutate({ id, ...data })}
+              topicEditingProps={{
+                allTags: tags,
+                topicTagsFn: getTagsForTopic,
+                allAssignees: assignees,
+                allDepartments: departments,
+                allReschedulesByTopic: reschedulesByTopic,
+                onCreateReschedule: createReschedule,
+                userId: user!.id,
+                onCreateAssignee: (name: string) => createAssignee.mutateAsync({ name }),
+                onUpdate: (id: string, data: Record<string, unknown>) => updateTopic.mutate({ id, ...data }),
+                onDelete: (id: string) => deleteTopic.mutate(id),
+                onAddSubtask: (topicId: string, title: string) => addSubtask.mutate({ topic_id: topicId, title }),
+                onToggleSubtask: (id: string, completed: boolean) => toggleSubtask.mutate({ id, completed }),
+                onUpdateSubtask: (id: string, data: Record<string, unknown>) => updateSubtask.mutate({ id, ...data }),
+                onDeleteSubtask: (id: string) => deleteSubtask.mutate(id),
+                onAddSubtaskEntry: async (subtaskId: string, content: string) => { const res = await addSubtaskEntry.mutateAsync({ subtask_id: subtaskId, content }); return res; },
+                onUpdateSubtaskEntry: (id: string, content: string) => updateSubtaskEntry.mutate({ id, content }),
+                onDeleteSubtaskEntry: (id: string) => deleteSubtaskEntry.mutate(id),
+                onAddSubtaskContact: (subtaskId: string, name: string, email: string) => addSubtaskContact.mutate({ subtask_id: subtaskId, name, email }),
+                onUpdateSubtaskContact: (id: string, name?: string, email?: string) => updateSubtaskContact.mutate({ id, name, email }),
+                onDeleteSubtaskContact: (id: string) => deleteSubtaskContact.mutate(id),
+                onAddProgressEntry: async (topicId: string, content: string) => { const res = await addProgressEntry.mutateAsync({ topic_id: topicId, content }); return res; },
+                onUpdateProgressEntry: (id: string, content: string) => updateProgressEntry.mutate({ id, content }),
+                onDeleteProgressEntry: (id: string) => deleteProgressEntry.mutate(id),
+                onUploadFiles: (entryId: string, entryType: 'progress' | 'subtask', files: File[]) => { files.forEach(file => uploadEntryAttachment.mutate({ entryId, entryType, file, userId: user!.id })); },
+                onDeleteAttachment: (id: string, fileUrl: string) => deleteEntryAttachment.mutate({ id, fileUrl }),
+                onAddTag: (topicId: string, tagId: string) => addTopicTag.mutate({ topic_id: topicId, tag_id: tagId }),
+                onRemoveTag: (topicId: string, tagId: string) => removeTopicTag.mutate({ topic_id: topicId, tag_id: tagId }),
+                onCreateTag: (name: string, color: string) => createTag.mutateAsync({ name, color }),
+              }}
+            />
           ) : filter === 'historial_correos' ? (
             <EmailHistoryView />
           ) : filter === 'checklist' ? (

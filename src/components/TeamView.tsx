@@ -16,6 +16,7 @@ interface TeamViewProps {
   topics: TopicWithSubtasks[];
   assignees: Assignee[];
   onUpdateTopic?: (id: string, data: any) => void;
+  topicEditingProps?: Record<string, any>;
 }
 
 const DEADLINE_HOURS = 48;
@@ -164,7 +165,7 @@ function calculateAssigneeScore(
   };
 }
 
-export function TeamView({ topics, assignees, onUpdateTopic }: TeamViewProps) {
+export function TeamView({ topics, assignees, onUpdateTopic, topicEditingProps }: TeamViewProps) {
   const [selectedAssignee, setSelectedAssignee] = useState<string | null>(null);
   const { departments } = useDepartments();
 
@@ -275,6 +276,7 @@ export function TeamView({ topics, assignees, onUpdateTopic }: TeamViewProps) {
         topics={topics.filter(t => t.assignee === selectedAssignee)}
         reschedules={[]}
         onBack={() => setSelectedAssignee(null)}
+        {...(topicEditingProps || {})}
       />
     );
   }
