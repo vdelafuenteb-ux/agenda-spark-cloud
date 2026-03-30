@@ -16,7 +16,7 @@ export interface ProductivityScoreResult {
 export function computeProductivityScore(
   assigneeName: string,
   topics: TopicWithSubtasks[],
-  emailHistory: { confirmed?: boolean; confirmed_at?: string | null; sent_at: string }[] = [],
+  emailHistory: { confirmed?: boolean; confirmed_at?: string | null; sent_at: string; email_type?: string }[] = [],
 ): ProductivityScoreResult {
   const assigneeTopics = topics.filter(t => t.assignee === assigneeName);
   const active = assigneeTopics.filter(t => t.status === 'activo');
