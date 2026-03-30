@@ -331,6 +331,7 @@ export function DashboardView({ topics, assignees, departments = [], reschedules
         })}
         onBack={() => setSelectedAssignee(null)}
         onNavigateToTopic={onNavigateToTopic}
+        {...(topicEditingProps || {})}
       />
     );
   }

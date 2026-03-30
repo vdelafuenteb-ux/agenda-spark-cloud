@@ -16,6 +16,7 @@ interface TeamViewProps {
   topics: TopicWithSubtasks[];
   assignees: Assignee[];
   onUpdateTopic?: (id: string, data: any) => void;
+  topicEditingProps?: Record<string, any>;
 }
 
 const DEADLINE_HOURS = 48;
