@@ -276,6 +276,7 @@ export function TeamView({ topics, assignees, onUpdateTopic, topicEditingProps }
         topics={topics.filter(t => t.assignee === selectedAssignee)}
         reschedules={[]}
         onBack={() => setSelectedAssignee(null)}
+        {...(topicEditingProps || {})}
       />
     );
   }
