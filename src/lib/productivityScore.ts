@@ -47,8 +47,9 @@ export function computeProductivityScore(
   const subtaskTimelinessRate = completedWithDue.length > 0
     ? Math.round((subtasksOnTime.length / completedWithDue.length) * 100) : null;
 
-  // --- Email compliance ---
-  const confirmedEmails = emailHistory.filter(e => e.confirmed && e.confirmed_at);
+  // --- Email compliance (only weekly emails count for the 48h KPI) ---
+  const weeklyEmails = emailHistory.filter(e => !e.email_type || e.email_type === 'weekly');
+  const confirmedEmails = weeklyEmails.filter(e => e.confirmed && e.confirmed_at);
   const onTimeEmails = confirmedEmails.filter(e => {
     const deadlineTime = new Date(e.sent_at).getTime() + DEADLINE_HOURS * 60 * 60 * 1000;
     return new Date(e.confirmed_at!).getTime() <= deadlineTime;
