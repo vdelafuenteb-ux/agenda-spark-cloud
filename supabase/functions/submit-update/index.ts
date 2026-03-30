@@ -118,8 +118,12 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Auto-mark notification_emails as responded AND confirmed
+    // Auto-mark recent notification_emails as responded AND confirmed
+    // Only confirm emails sent in the last 7 days to avoid corrupting historical data
     if (commentsAdded > 0 || subtasksToggled > 0) {
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
       await supabase
         .from("notification_emails")
         .update({
@@ -130,7 +134,8 @@ Deno.serve(async (req) => {
         })
         .eq("user_id", tokenData.user_id)
         .eq("assignee_name", tokenData.assignee_name)
-        .eq("responded", false);
+        .eq("confirmed", false)
+        .gte("sent_at", sevenDaysAgo.toISOString());
     }
 
     // Mark token as used so it can't be reused

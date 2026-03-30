@@ -16,7 +16,7 @@ export interface ProductivityScoreResult {
 export function computeProductivityScore(
   assigneeName: string,
   topics: TopicWithSubtasks[],
-  emailHistory: { confirmed?: boolean; confirmed_at?: string | null; sent_at: string }[] = [],
+  emailHistory: { confirmed?: boolean; confirmed_at?: string | null; sent_at: string; email_type?: string }[] = [],
 ): ProductivityScoreResult {
   const assigneeTopics = topics.filter(t => t.assignee === assigneeName);
   const active = assigneeTopics.filter(t => t.status === 'activo');
@@ -47,8 +47,9 @@ export function computeProductivityScore(
   const subtaskTimelinessRate = completedWithDue.length > 0
     ? Math.round((subtasksOnTime.length / completedWithDue.length) * 100) : null;
 
-  // --- Email compliance ---
-  const confirmedEmails = emailHistory.filter(e => e.confirmed && e.confirmed_at);
+  // --- Email compliance (only weekly emails count for the 48h KPI) ---
+  const weeklyEmails = emailHistory.filter(e => !e.email_type || e.email_type === 'weekly');
+  const confirmedEmails = weeklyEmails.filter(e => e.confirmed && e.confirmed_at);
   const onTimeEmails = confirmedEmails.filter(e => {
     const deadlineTime = new Date(e.sent_at).getTime() + DEADLINE_HOURS * 60 * 60 * 1000;
     return new Date(e.confirmed_at!).getTime() <= deadlineTime;
@@ -82,7 +83,7 @@ export function computeProductivityScore(
   // --- Aggregate ---
   const dimensions: { key: string; value: number; weight: number }[] = [];
   if (closedWithDates.length > 0) dimensions.push({ key: 'closure', value: closureComplianceRate ?? 0, weight: 0.50 });
-  if (confirmedEmails.length > 0) dimensions.push({ key: 'email', value: complianceRate, weight: 0.10 });
+  if (weeklyEmails.length > 0 && confirmedEmails.length > 0) dimensions.push({ key: 'email', value: complianceRate, weight: 0.10 });
   if (completedWithDue.length > 0) dimensions.push({ key: 'subtask', value: subtaskTimelinessRate ?? 0, weight: 0.20 });
   if (deadlineCompliance !== null) dimensions.push({ key: 'deadline', value: deadlineCompliance, weight: 0.10 });
   if (velocityScore !== null) dimensions.push({ key: 'velocity', value: velocityScore, weight: 0.10 });

@@ -170,11 +170,13 @@ export function AssigneeProfileView({
     const media = assigneeTopics.filter(t => t.priority === 'media' && t.status !== 'completado');
     const baja = assigneeTopics.filter(t => t.priority === 'baja' && t.status !== 'completado');
 
-    const emailsSent = emailHistory.length;
-    const emailsConfirmed = emailHistory.filter((e: any) => e.confirmed).length;
+    // Only weekly emails count for the 48h compliance KPI
+    const weeklyEmailHistory = emailHistory.filter((e: any) => !e.email_type || e.email_type === 'weekly');
+    const emailsSent = weeklyEmailHistory.length;
+    const emailsConfirmed = weeklyEmailHistory.filter((e: any) => e.confirmed).length;
     const responseRate = emailsSent > 0 ? Math.round((emailsConfirmed / emailsSent) * 100) : 0;
 
-    const confirmedEmails = emailHistory.filter((e: any) => e.confirmed && e.confirmed_at);
+    const confirmedEmails = weeklyEmailHistory.filter((e: any) => e.confirmed && e.confirmed_at);
     const onTimeEmails = confirmedEmails.filter((e: any) => {
       const deadlineTime = new Date(e.sent_at).getTime() + DEADLINE_HOURS * 60 * 60 * 1000;
       return new Date(e.confirmed_at).getTime() <= deadlineTime;
