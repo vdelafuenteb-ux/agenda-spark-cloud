@@ -1056,6 +1056,52 @@ export function AssigneeProfileView({
           </Tabs>
         </div>
       </ScrollArea>
+
+      {/* Dialog para abrir TopicCard completa */}
+      {onUpdate && selectedTopicId && (() => {
+        const selectedTopic = topics.find(t => t.id === selectedTopicId);
+        if (!selectedTopic) return null;
+        return (
+          <Dialog open={!!selectedTopicId} onOpenChange={() => setSelectedTopicId(null)}>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
+              <div className="p-1">
+                <TopicCard
+                  topic={selectedTopic}
+                  allTags={allTags || []}
+                  topicTags={topicTagsFn ? topicTagsFn(selectedTopic.id) : []}
+                  assignees={allAssignees || []}
+                  departments={allDepartments || []}
+                  reschedules={allReschedulesByTopic?.get(selectedTopic.id) || []}
+                  onCreateReschedule={onCreateReschedule}
+                  userId={userId || ''}
+                  onCreateAssignee={onCreateAssignee || (async () => ({} as Assignee))}
+                  forceExpand={true}
+                  onUpdate={onUpdate}
+                  onDelete={onDelete || (() => {})}
+                  onAddSubtask={onAddSubtask || (() => {})}
+                  onToggleSubtask={onToggleSubtask || (() => {})}
+                  onUpdateSubtask={onUpdateSubtask || (() => {})}
+                  onDeleteSubtask={onDeleteSubtask || (() => {})}
+                  onAddSubtaskEntry={onAddSubtaskEntry || (async () => '')}
+                  onUpdateSubtaskEntry={onUpdateSubtaskEntry}
+                  onDeleteSubtaskEntry={onDeleteSubtaskEntry}
+                  onAddSubtaskContact={onAddSubtaskContact}
+                  onUpdateSubtaskContact={onUpdateSubtaskContact}
+                  onDeleteSubtaskContact={onDeleteSubtaskContact}
+                  onAddProgressEntry={onAddProgressEntry || (async () => '')}
+                  onUpdateProgressEntry={onUpdateProgressEntry}
+                  onDeleteProgressEntry={onDeleteProgressEntry}
+                  onUploadFiles={onUploadFiles}
+                  onDeleteAttachment={onDeleteAttachment}
+                  onAddTag={onAddTag || (() => {})}
+                  onRemoveTag={onRemoveTag || (() => {})}
+                  onCreateTag={onCreateTag || (async () => ({}))}
+                />
+              </div>
+            </DialogContent>
+          </Dialog>
+        );
+      })()}
     </div>
   );
 }
