@@ -712,6 +712,17 @@ export function AssigneeProfileView({
                                   {sendingId === t.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Bell className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />}
                                 </button>
                               </TableCell>
+                              <TableCell className="w-8 px-1">
+                                {onUpdate && (
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); setSelectedTopicId(t.id); }}
+                                    className="p-1 rounded-full hover:bg-muted transition-colors"
+                                    title="Abrir tema"
+                                  >
+                                    <Eye className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
+                                  </button>
+                                )}
+                              </TableCell>
                             </TableRow>
                           );
                         })}
