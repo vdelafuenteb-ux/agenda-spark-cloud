@@ -87,6 +87,7 @@ export function AssigneeProfileView({
   const [showIncidentForm, setShowIncidentForm] = useState(false);
   const [incidentForm, setIncidentForm] = useState({ title: '', description: '', category: 'leve' as 'leve' | 'moderada' | 'grave', incident_date: new Date().toISOString().split('T')[0] });
   const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
+  const [topicStatusFilter, setTopicStatusFilter] = useState<string>('activos');
   const [sendingIncidentEmail, setSendingIncidentEmail] = useState<string | null>(null);
 
   const { incidents, createIncident, deleteIncident, markEmailSent } = useIncidents(assigneeName);
