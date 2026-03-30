@@ -87,6 +87,7 @@ export function AssigneeProfileView({
   const [showIncidentForm, setShowIncidentForm] = useState(false);
   const [incidentForm, setIncidentForm] = useState({ title: '', description: '', category: 'leve' as 'leve' | 'moderada' | 'grave', incident_date: new Date().toISOString().split('T')[0] });
   const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
+  const [topicStatusFilter, setTopicStatusFilter] = useState<string>('activos');
   const [sendingIncidentEmail, setSendingIncidentEmail] = useState<string | null>(null);
 
   const { incidents, createIncident, deleteIncident, markEmailSent } = useIncidents(assigneeName);
@@ -651,8 +652,29 @@ export function AssigneeProfileView({
             <TabsContent value="temas" className="space-y-4 mt-4">
               <Card>
                 <CardHeader className="pb-1 p-3">
-                  <CardTitle className="text-xs font-medium flex items-center gap-1.5">
-                    <ListChecks className="h-3.5 w-3.5 text-muted-foreground" /> Todos los temas ({metrics.assigneeTopics.length})
+                  <CardTitle className="text-xs font-medium flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <ListChecks className="h-3.5 w-3.5 text-muted-foreground" /> Temas ({(() => {
+                        const filtered = metrics.assigneeTopics.filter(t => {
+                          if (topicStatusFilter === 'activos') return t.status === 'activo' || t.status === 'seguimiento';
+                          if (topicStatusFilter === 'completados') return t.status === 'completado';
+                          if (topicStatusFilter === 'pausados') return t.status === 'pausado';
+                          return true;
+                        });
+                        return filtered.length;
+                      })()})
+                    </span>
+                    <Select value={topicStatusFilter} onValueChange={setTopicStatusFilter}>
+                      <SelectTrigger className="h-7 w-[130px] text-[11px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="activos">Activos</SelectItem>
+                        <SelectItem value="completados">Completados</SelectItem>
+                        <SelectItem value="pausados">Pausados</SelectItem>
+                        <SelectItem value="todos">Todos</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-3 pt-0">
@@ -671,9 +693,14 @@ export function AssigneeProfileView({
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {metrics.assigneeTopics.map(t => {
+                        {metrics.assigneeTopics.filter(t => {
+                          if (topicStatusFilter === 'activos') return t.status === 'activo' || t.status === 'seguimiento';
+                          if (topicStatusFilter === 'completados') return t.status === 'completado';
+                          if (topicStatusFilter === 'pausados') return t.status === 'pausado';
+                          return true;
+                        }).map(t => {
                           const pending = t.subtasks.filter(s => !s.completed).length;
-                          const isOverdue = isStoredDateOverdue(t.due_date);
+                          const isOverdue = t.status !== 'completado' && isStoredDateOverdue(t.due_date);
                           const topicReschedules = assigneeReschedules.filter(r => r.topic_id === t.id);
                           return (
                             <TableRow key={t.id} className={`${isOverdue ? 'bg-destructive/5' : ''}`}>
@@ -731,9 +758,14 @@ export function AssigneeProfileView({
                   </div>
                   {/* Mobile */}
                   <div className="sm:hidden space-y-2 max-h-[400px] overflow-auto">
-                    {metrics.assigneeTopics.map(t => {
+                    {metrics.assigneeTopics.filter(t => {
+                      if (topicStatusFilter === 'activos') return t.status === 'activo' || t.status === 'seguimiento';
+                      if (topicStatusFilter === 'completados') return t.status === 'completado';
+                      if (topicStatusFilter === 'pausados') return t.status === 'pausado';
+                      return true;
+                    }).map(t => {
                       const pending = t.subtasks.filter(s => !s.completed).length;
-                      const isOverdue = isStoredDateOverdue(t.due_date);
+                      const isOverdue = t.status !== 'completado' && isStoredDateOverdue(t.due_date);
                       const topicReschedules = assigneeReschedules.filter(r => r.topic_id === t.id);
                       return (
                         <div key={t.id} className={`rounded-md border p-2.5 space-y-1 ${isOverdue ? 'border-destructive/30 bg-destructive/5' : 'border-border'} ${onNavigateToTopic ? 'cursor-pointer hover:bg-muted/50' : ''}`} onClick={() => onNavigateToTopic?.(t.id, t.status)}>
