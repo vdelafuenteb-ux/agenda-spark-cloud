@@ -676,8 +676,18 @@ export function AssigneeProfileView({
                           const isOverdue = isStoredDateOverdue(t.due_date);
                           const topicReschedules = assigneeReschedules.filter(r => r.topic_id === t.id);
                           return (
-                            <TableRow key={t.id} className={`${isOverdue ? 'bg-destructive/5' : ''} ${onNavigateToTopic ? 'cursor-pointer hover:bg-muted/50' : ''}`} onClick={() => onNavigateToTopic?.(t.id, t.status)}>
-                              <TableCell className="text-sm font-medium max-w-[200px] truncate text-primary">{t.title}</TableCell>
+                            <TableRow key={t.id} className={`${isOverdue ? 'bg-destructive/5' : ''}`}>
+                              <TableCell className="w-8 px-1">
+                                {onUpdate && (
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); setSelectedTopicId(t.id); }}
+                                    className="p-1 rounded-full hover:bg-muted transition-colors"
+                                    title="Abrir tema"
+                                  >
+                                    <Eye className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
+                                  </button>
+                                )}
+                              </TableCell>
                               <TableCell className="text-center">
                                 <Badge variant={t.priority === 'alta' ? 'destructive' : t.priority === 'media' ? 'outline' : 'secondary'} className="text-[9px]">{t.priority}</Badge>
                               </TableCell>
