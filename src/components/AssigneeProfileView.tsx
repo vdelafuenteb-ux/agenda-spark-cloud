@@ -533,7 +533,7 @@ export function AssigneeProfileView({
                   {scoreSnapshots.length >= 2 ? (
                     <div className="h-[220px]">
                       <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={scoreSnapshots}>
+                        <LineChart data={[...scoreSnapshots, { label: 'Hoy', score: metrics.productivityScore }]}>
                           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                           <XAxis dataKey="label" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
                           <YAxis domain={[0, 100]} tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
