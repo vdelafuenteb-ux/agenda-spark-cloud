@@ -72,12 +72,21 @@ interface AssigneeProfileViewProps extends TopicEditingProps {
   onNavigateToTopic?: (topicId: string, status: string) => void;
 }
 
-export function AssigneeProfileView({ assigneeName, assignee, topics, reschedules: assigneeReschedules, onBack, onNavigateToTopic }: AssigneeProfileViewProps) {
+export function AssigneeProfileView({
+  assigneeName, assignee, topics, reschedules: assigneeReschedules, onBack, onNavigateToTopic,
+  allTags, topicTagsFn, allAssignees, allDepartments, allReschedulesByTopic, onCreateReschedule,
+  userId, onCreateAssignee, onUpdate, onDelete, onAddSubtask, onToggleSubtask, onUpdateSubtask,
+  onDeleteSubtask, onAddSubtaskEntry, onUpdateSubtaskEntry, onDeleteSubtaskEntry,
+  onAddSubtaskContact, onUpdateSubtaskContact, onDeleteSubtaskContact,
+  onAddProgressEntry, onUpdateProgressEntry, onDeleteProgressEntry,
+  onUploadFiles, onDeleteAttachment, onAddTag, onRemoveTag, onCreateTag,
+}: AssigneeProfileViewProps) {
   const queryClient = useQueryClient();
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [showTrend, setShowTrend] = useState(false);
   const [showIncidentForm, setShowIncidentForm] = useState(false);
   const [incidentForm, setIncidentForm] = useState({ title: '', description: '', category: 'leve' as 'leve' | 'moderada' | 'grave', incident_date: new Date().toISOString().split('T')[0] });
+  const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
   const [sendingIncidentEmail, setSendingIncidentEmail] = useState<string | null>(null);
 
   const { incidents, createIncident, deleteIncident, markEmailSent } = useIncidents(assigneeName);
