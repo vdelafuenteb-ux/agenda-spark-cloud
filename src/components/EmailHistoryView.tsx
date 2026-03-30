@@ -576,6 +576,18 @@ export function EmailHistoryView() {
                           <td className="px-3 py-2.5 text-muted-foreground font-mono">
                             {format(new Date(batch.sent_at), "dd MMM yyyy HH:mm", { locale: es })}
                           </td>
+                          <td className="px-3 py-2.5">
+                            {(() => {
+                              const respondedEmail = batch.emails.find(e => e.responded && e.responded_at);
+                              return respondedEmail ? (
+                                <span className="text-green-600 font-mono text-[11px]">
+                                  {format(new Date(respondedEmail.responded_at!), "dd MMM yyyy HH:mm", { locale: es })}
+                                </span>
+                              ) : (
+                                <span className="text-muted-foreground">—</span>
+                              );
+                            })()}
+                          </td>
                           {isWeekly && (
                           <td className="px-3 py-2.5">
                             <span className={cn("font-mono font-medium text-[11px] inline-flex items-center gap-1", deadline.color)}>
