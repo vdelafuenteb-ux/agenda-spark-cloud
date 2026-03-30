@@ -667,6 +667,7 @@ export function AssigneeProfileView({
                           <TableHead className="text-xs text-center">Subtareas</TableHead>
                           <TableHead className="text-xs text-center">🔄</TableHead>
                           <TableHead className="text-xs text-center w-10">📧</TableHead>
+                          <TableHead className="text-xs w-8"></TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
