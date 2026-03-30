@@ -1,31 +1,32 @@
 
 
-## Plan: Corregir tendencia — indicador y gráfico inconsistentes
+## Plan: Sincronizar pestaña de correos con KPIs + separar por tipo
 
 ### Problema
 
-- El indicador `▲ +5` compara el score en vivo vs el **penúltimo** snapshot (`scoreSnapshots[length - 2]`), pero debería comparar vs el **último** snapshot (`scoreSnapshots[length - 1]`)
-- El gráfico de tendencia solo muestra snapshots históricos y **no incluye el score actual** como último punto, por eso la línea "baja" mientras el indicador dice que subió
+La pestaña "Correos" en el perfil del responsable muestra **todos** los correos (weekly + new_topic = 34) sin distinguir tipo, pero los KPIs solo cuentan los `weekly` (11 confirmados). Esto genera confusión porque:
+- KPI dice "Total: 11, Fuera de plazo: 2" 
+- La lista muestra 34 correos, muchos con "Fuera de plazo" porque incluye `new_topic` con confirmaciones tardías del bug anterior
 
 ### Corrección en `src/components/AssigneeProfileView.tsx`
 
-**1. Indicador de tendencia (línea ~468)**
-- Cambiar `scoreSnapshots[scoreSnapshots.length - 2]` → `scoreSnapshots[scoreSnapshots.length - 1]`
-- El último snapshot es el punto de comparación correcto (el score en vivo es el valor actual)
+**1. Separar la lista de correos en dos sub-pestañas** (igual que EmailHistoryView):
+- "Semanales" (weekly) — por defecto
+- "Temas nuevos" (new_topic)
 
-**2. Gráfico de tendencia (línea ~536)**
-- Agregar el score en vivo como último punto del `LineChart data`:
-```
-const chartData = [
-  ...scoreSnapshots,
-  { label: 'Hoy', score: metrics.productivityScore }
-];
-```
-- Así el gráfico refleja la trayectoria real hasta el momento actual
+**2. Solo aplicar badge "A tiempo / Fuera de plazo" a correos weekly**
+- Para `new_topic`: mostrar solo si está confirmado o no, sin evaluar la regla de 48h (no aplica)
+
+**3. Actualizar los stats del header** para que reflejen la sub-pestaña seleccionada
+
+### Resultado
+- Al entrar a la pestaña "Correos" de Godoy, verá por defecto los 31 semanales
+- Los KPIs (A tiempo: 9, Fuera de plazo: 2, Total: 11) coincidirán con la lista
+- Los 3 correos de tema nuevo estarán en su propia sub-pestaña sin badge de plazo
 
 ### Archivo afectado
 
 | Archivo | Cambio |
 |---|---|
-| `src/components/AssigneeProfileView.tsx` | Fix comparación de tendencia + agregar score actual al gráfico |
+| `src/components/AssigneeProfileView.tsx` | Agregar tabs weekly/new_topic en pestaña Correos, badge solo para weekly |
 
