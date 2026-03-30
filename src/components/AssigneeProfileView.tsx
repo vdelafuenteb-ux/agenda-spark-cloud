@@ -660,6 +660,7 @@ export function AssigneeProfileView({
                     <Table>
                       <TableHeader>
                         <TableRow>
+                          <TableHead className="text-xs w-8"></TableHead>
                           <TableHead className="text-xs">Tema</TableHead>
                           <TableHead className="text-xs text-center">Prioridad</TableHead>
                           <TableHead className="text-xs text-center">Estado</TableHead>
