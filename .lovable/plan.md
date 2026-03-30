@@ -1,53 +1,32 @@
 
 
-## Plan: Abrir TopicCard completa desde la pestaña "Temas" del perfil del responsable
+## Plan: Filtro de estado en pestaña "Temas" del perfil + fix de estilo completados
 
-### Problema
-Actualmente, al hacer click en un tema en la pestaña "Temas" del perfil, se usa `onNavigateToTopic` que redirige a la vista principal. El usuario quiere poder abrir el tema completo (con todas las opciones de edición) directamente desde el perfil, sin salir de él.
+### Problemas
 
-### Cambio
+1. **Temas completados aparecen en rojo** porque `isStoredDateOverdue` evalúa la fecha de vencimiento sin importar si ya está cerrado
+2. **No hay filtro de estado** — se muestran todos los temas mezclados (activos, completados, pausados)
 
-**En `src/components/AssigneeProfileView.tsx`:**
+### Cambios en `src/components/AssigneeProfileView.tsx`
 
-1. **Agregar props necesarias** para pasar las mismas callbacks de edición que usa `TopicCard` en Index.tsx (mutations de subtasks, progress entries, attachments, tags, etc.)
+1. **Nuevo estado `topicStatusFilter`** con valor por defecto `'activos'` (muestra activo + seguimiento)
+   - Opciones: "Activos" (activo + seguimiento), "Completados", "Pausados", "Todos"
 
-2. **Estado local `selectedTopicId`** para rastrear qué tema está abierto
+2. **Select de filtro** en el header de la card de temas, al lado del título "Todos los temas"
 
-3. **Agregar un ícono/botón "Abrir tema"** (ExternalLink o Eye) en cada fila de la tabla de temas, que al hacer click abre un `Dialog` con el `TopicCard` completo dentro
+3. **Filtrar `metrics.assigneeTopics`** según el filtro seleccionado antes de renderizar la tabla
 
-4. **Dialog con TopicCard**: Renderizar un `Dialog` fullscreen o grande que contenga el `<TopicCard>` con todas las props de edición (las mismas que en Index.tsx), permitiendo modificar todo como si estuviera en la vista principal
-
-### Props nuevas en AssigneeProfileView
-
-```typescript
-interface AssigneeProfileViewProps {
-  // ... existentes ...
-  // Nuevas para edición completa:
-  allTags?: Tag[];
-  topicTags?: (topicId: string) => Tag[];
-  userId?: string;
-  onUpdate?: (id: string, data: Record<string, unknown>) => void;
-  onDelete?: (id: string) => void;
-  onAddSubtask?: (topicId: string, title: string) => void;
-  onToggleSubtask?: (id: string, completed: boolean) => void;
-  onUpdateSubtask?: (id: string, data: Record<string, unknown>) => void;
-  onDeleteSubtask?: (id: string) => void;
-  // ... todas las demás callbacks de TopicCard ...
-}
-```
+4. **Fix overdue styling**: no aplicar `bg-destructive/5` ni texto rojo a temas con `status === 'completado'` — un tema cerrado no está "atrasado"
 
 ### Flujo
-1. En la tabla de temas, agregar columna con botón "Abrir" (ícono ojo o expand)
-2. Click → `setSelectedTopicId(topic.id)` → abre Dialog
-3. Dialog contiene `<TopicCard>` con `forceExpand={true}` y todas las props de mutación
-4. Al cerrar el dialog → `setSelectedTopicId(null)`
+- Por defecto el usuario ve solo temas activos y en seguimiento
+- Puede cambiar a "Completados", "Pausados" o "Todos" con el Select
+- El contador en el header refleja los temas filtrados
+- Temas completados nunca muestran estilo de "atrasado"
 
-### Archivos afectados
+### Archivo afectado
 
 | Archivo | Cambio |
 |---|---|
-| `src/components/AssigneeProfileView.tsx` | Agregar props de edición, estado selectedTopicId, Dialog con TopicCard |
-| `src/pages/Index.tsx` | Pasar las props de edición adicionales a AssigneeProfileView |
-| `src/components/DashboardView.tsx` | Pasar las mismas props adicionales si también usa AssigneeProfileView |
-| `src/components/TeamView.tsx` | Pasar las mismas props adicionales si también usa AssigneeProfileView |
+| `src/components/AssigneeProfileView.tsx` | Agregar estado + Select de filtro, filtrar temas en tabla, fix overdue para completados |
 
