@@ -28,6 +28,8 @@ interface EmailRecord {
   email_type?: string;
   reviewed: boolean;
   reviewed_at: string | null;
+  responded: boolean;
+  responded_at: string | null;
 }
 
 interface EmailBatch {
