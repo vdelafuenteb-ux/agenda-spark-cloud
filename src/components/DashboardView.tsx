@@ -60,7 +60,8 @@ export function DashboardView({ topics, assignees, departments = [], reschedules
     queryFn: async () => {
       const { data, error } = await supabase
         .from('notification_emails')
-        .select('assignee_name, sent_at, confirmed, confirmed_at')
+        .select('assignee_name, sent_at, confirmed, confirmed_at, email_type')
+        .eq('email_type', 'weekly')
         .order('sent_at', { ascending: false });
       if (error) throw error;
       return data || [];
