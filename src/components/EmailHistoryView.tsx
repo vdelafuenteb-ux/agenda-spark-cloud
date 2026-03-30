@@ -486,6 +486,7 @@ export function EmailHistoryView() {
                      <th className="text-left px-3 py-2 font-medium text-muted-foreground">Email</th>
                      <th className="text-left px-3 py-2 font-medium text-muted-foreground">Temas</th>
                      <th className="text-left px-3 py-2 font-medium text-muted-foreground">Enviado</th>
+                     <th className="text-left px-3 py-2 font-medium text-muted-foreground">Respondido</th>
                      {isWeekly && <th className="text-left px-3 py-2 font-medium text-muted-foreground">Plazo 48h</th>}
                      <th className="text-right px-3 py-2 font-medium text-muted-foreground"></th>
                   </tr>
