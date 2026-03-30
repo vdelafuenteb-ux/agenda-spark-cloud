@@ -22,13 +22,48 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import type { TopicWithSubtasks } from '@/hooks/useTopics';
 import type { Reschedule } from '@/hooks/useReschedules';
 import type { Assignee } from '@/hooks/useAssignees';
+import type { Department } from '@/hooks/useDepartments';
+import type { Tag } from '@/hooks/useTags';
 import { useIncidents } from '@/hooks/useIncidents';
 import { computeGlobalRescheduleStats } from '@/lib/rescheduleMetrics';
 import { computeProductivityScore } from '@/lib/productivityScore';
 import { useDepartments } from '@/hooks/useDepartments';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { TopicCard } from '@/components/TopicCard';
+import { Eye } from 'lucide-react';
 
-interface AssigneeProfileViewProps {
+interface TopicEditingProps {
+  allTags?: Tag[];
+  topicTagsFn?: (topicId: string) => Tag[];
+  allAssignees?: Assignee[];
+  allDepartments?: Department[];
+  allReschedulesByTopic?: Map<string, Reschedule[]>;
+  onCreateReschedule?: any;
+  userId?: string;
+  onCreateAssignee?: (name: string) => Promise<Assignee>;
+  onUpdate?: (id: string, data: Record<string, unknown>) => void;
+  onDelete?: (id: string) => void;
+  onAddSubtask?: (topicId: string, title: string) => void;
+  onToggleSubtask?: (id: string, completed: boolean) => void;
+  onUpdateSubtask?: (id: string, data: Record<string, unknown>) => void;
+  onDeleteSubtask?: (id: string) => void;
+  onAddSubtaskEntry?: (subtaskId: string, content: string) => Promise<string>;
+  onUpdateSubtaskEntry?: (id: string, content: string) => void;
+  onDeleteSubtaskEntry?: (id: string) => void;
+  onAddSubtaskContact?: (subtaskId: string, name: string, email: string) => void;
+  onUpdateSubtaskContact?: (id: string, name?: string, email?: string) => void;
+  onDeleteSubtaskContact?: (id: string) => void;
+  onAddProgressEntry?: (topicId: string, content: string) => Promise<string>;
+  onUpdateProgressEntry?: (id: string, content: string) => void;
+  onDeleteProgressEntry?: (id: string) => void;
+  onUploadFiles?: (entryId: string, entryType: 'progress' | 'subtask', files: File[]) => void;
+  onDeleteAttachment?: (id: string, fileUrl: string) => void;
+  onAddTag?: (topicId: string, tagId: string) => void;
+  onRemoveTag?: (topicId: string, tagId: string) => void;
+  onCreateTag?: (name: string, color: string) => Promise<any>;
+}
+
+interface AssigneeProfileViewProps extends TopicEditingProps {
   assigneeName: string;
   assignee?: Assignee;
   topics: TopicWithSubtasks[];
