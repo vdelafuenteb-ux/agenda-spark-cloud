@@ -28,6 +28,8 @@ interface EmailRecord {
   email_type?: string;
   reviewed: boolean;
   reviewed_at: string | null;
+  responded: boolean;
+  responded_at: string | null;
 }
 
 interface EmailBatch {
@@ -484,6 +486,7 @@ export function EmailHistoryView() {
                      <th className="text-left px-3 py-2 font-medium text-muted-foreground">Email</th>
                      <th className="text-left px-3 py-2 font-medium text-muted-foreground">Temas</th>
                      <th className="text-left px-3 py-2 font-medium text-muted-foreground">Enviado</th>
+                     <th className="text-left px-3 py-2 font-medium text-muted-foreground">Respondido</th>
                      {isWeekly && <th className="text-left px-3 py-2 font-medium text-muted-foreground">Plazo 48h</th>}
                      <th className="text-right px-3 py-2 font-medium text-muted-foreground"></th>
                   </tr>
@@ -573,6 +576,18 @@ export function EmailHistoryView() {
                           <td className="px-3 py-2.5 text-muted-foreground font-mono">
                             {format(new Date(batch.sent_at), "dd MMM yyyy HH:mm", { locale: es })}
                           </td>
+                          <td className="px-3 py-2.5">
+                            {(() => {
+                              const respondedEmail = batch.emails.find(e => e.responded && e.responded_at);
+                              return respondedEmail ? (
+                                <span className="text-green-600 font-mono text-[11px]">
+                                  {format(new Date(respondedEmail.responded_at!), "dd MMM yyyy HH:mm", { locale: es })}
+                                </span>
+                              ) : (
+                                <span className="text-muted-foreground">—</span>
+                              );
+                            })()}
+                          </td>
                           {isWeekly && (
                           <td className="px-3 py-2.5">
                             <span className={cn("font-mono font-medium text-[11px] inline-flex items-center gap-1", deadline.color)}>
@@ -592,7 +607,7 @@ export function EmailHistoryView() {
                         </tr>
                         {isExpanded && (
                           <tr>
-                            <td colSpan={isWeekly ? 10 : 8} className="bg-muted/20 px-0 py-0">
+                            <td colSpan={isWeekly ? 11 : 9} className="bg-muted/20 px-0 py-0">
                               <div className="px-8 py-2 space-y-1">
                                 <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-1.5">
                                   Temas incluidos en este envío
