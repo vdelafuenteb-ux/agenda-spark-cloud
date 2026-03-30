@@ -688,6 +688,7 @@ export function AssigneeProfileView({
                                   </button>
                                 )}
                               </TableCell>
+                              <TableCell className="text-sm font-medium max-w-[200px] truncate text-primary">{t.title}</TableCell>
                               <TableCell className="text-center">
                                 <Badge variant={t.priority === 'alta' ? 'destructive' : t.priority === 'media' ? 'outline' : 'secondary'} className="text-[9px]">{t.priority}</Badge>
                               </TableCell>
