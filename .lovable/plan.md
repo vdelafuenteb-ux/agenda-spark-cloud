@@ -1,32 +1,41 @@
 
 
-## Plan: Sincronizar pestaña de correos con KPIs + separar por tipo
+## Plan: Fix silent save failures + race conditions in topic updates
 
-### Problema
+### Root cause found
 
-La pestaña "Correos" en el perfil del responsable muestra **todos** los correos (weekly + new_topic = 34) sin distinguir tipo, pero los KPIs solo cuentan los `weekly` (11 confirmados). Esto genera confusión porque:
-- KPI dice "Total: 11, Fuera de plazo: 2" 
-- La lista muestra 34 correos, muchos con "Fuera de plazo" porque incluye `new_topic` con confirmaciones tardías del bug anterior
+The `updateTopic` mutation in `useTopics.tsx` has **no error feedback**. When the DB update fails (network issue, timeout, etc.):
+1. The optimistic update shows the change immediately
+2. The actual `.update()` call to the DB fails silently
+3. `onError` rolls back the UI to the previous state
+4. `onSettled` refetches from DB, confirming the old data
+5. **The user never sees any error** — it just looks like the change "disappeared"
 
-### Corrección en `src/components/AssigneeProfileView.tsx`
+This explains the user's experience: they changed an assignee, it appeared to work, but on reload the old value was back.
 
-**1. Separar la lista de correos en dos sub-pestañas** (igual que EmailHistoryView):
-- "Semanales" (weekly) — por defecto
-- "Temas nuevos" (new_topic)
+### Changes
 
-**2. Solo aplicar badge "A tiempo / Fuera de plazo" a correos weekly**
-- Para `new_topic`: mostrar solo si está confirmado o no, sin evaluar la regla de 48h (no aplica)
+**1. `src/hooks/useTopics.tsx` — Add error toast to `updateTopic`**
+- Import `toast` from sonner
+- Add `onError` handler that shows `toast.error('Error al guardar cambios')` in addition to the optimistic rollback
+- Do the same for `toggleSubtask`, `updateSubtask`, `deleteSubtask`, `deleteTopic` — any mutation with optimistic updates
 
-**3. Actualizar los stats del header** para que reflejen la sub-pestaña seleccionada
+**2. `src/hooks/useTopics.tsx` — Prevent race conditions on rapid updates**
+- The current `onMutate` calls `cancelQueries` which cancels in-flight refetches from previous mutations' `onSettled`. This is correct React Query pattern.
+- But if two `updateTopic.mutate()` calls fire in quick succession, the second `onMutate`'s `previous` captures the first's optimistic state (not the real DB state). If the first mutation then fails, `onError` rolls back to wrong baseline.
+- Fix: no structural change needed, but ensure `onSettled` always refetches (already does via `invalidateTopics`).
 
-### Resultado
-- Al entrar a la pestaña "Correos" de Godoy, verá por defecto los 31 semanales
-- Los KPIs (A tiempo: 9, Fuera de plazo: 2, Total: 11) coincidirán con la lista
-- Los 3 correos de tema nuevo estarán en su propia sub-pestaña sin badge de plazo
+**3. `src/pages/Index.tsx` — line 540-544 race condition**
+- When status changes to `completado`, the handler fires `updateTopic.mutate()` AND multiple `toggleSubtask.mutate()` simultaneously. Each triggers `cancelQueries(['topics'])` which can cancel each other's refetches.
+- Fix: use `mutateAsync` + `await` for the topic update before toggling subtasks, OR remove the client-side subtask toggling (it's already handled by the `auto_complete_subtasks_on_topic_close` trigger in the DB).
 
-### Archivo afectado
+### Key fix detail
+The DB already has a trigger `auto_complete_subtasks_on_topic_close` that marks subtasks as completed when a topic closes. The duplicate client-side code at line 540-544 is unnecessary and causes race conditions. Removing it eliminates a source of conflicts.
 
-| Archivo | Cambio |
+### Files affected
+
+| File | Change |
 |---|---|
-| `src/components/AssigneeProfileView.tsx` | Agregar tabs weekly/new_topic en pestaña Correos, badge solo para weekly |
+| `src/hooks/useTopics.tsx` | Add `toast.error()` on all optimistic mutation failures |
+| `src/pages/Index.tsx` | Remove redundant subtask toggling on topic close (DB trigger handles it) |
 
