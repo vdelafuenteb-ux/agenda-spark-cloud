@@ -213,6 +213,7 @@ export function useTopics() {
     },
     onError: (_err, _vars, ctx) => {
       if (ctx?.previous) queryClient.setQueryData(['topics'], ctx.previous);
+      toast.error('Error al actualizar la subtarea');
     },
     onSettled: invalidateTopics,
   });
