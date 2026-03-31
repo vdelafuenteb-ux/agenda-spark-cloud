@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import type { Database } from '@/integrations/supabase/types';
 
 type Topic = Database['public']['Tables']['topics']['Row'];
@@ -155,6 +156,7 @@ export function useTopics() {
     },
     onError: (_err, _vars, ctx) => {
       if (ctx?.previous) queryClient.setQueryData(['topics'], ctx.previous);
+      toast.error('Error al guardar los cambios del tema');
     },
     onSettled: invalidateTopics,
   });
@@ -174,6 +176,7 @@ export function useTopics() {
     },
     onError: (_err, _vars, ctx) => {
       if (ctx?.previous) queryClient.setQueryData(['topics'], ctx.previous);
+      toast.error('Error al eliminar el tema');
     },
     onSettled: invalidateTopics,
   });
@@ -210,6 +213,7 @@ export function useTopics() {
     },
     onError: (_err, _vars, ctx) => {
       if (ctx?.previous) queryClient.setQueryData(['topics'], ctx.previous);
+      toast.error('Error al actualizar la subtarea');
     },
     onSettled: invalidateTopics,
   });
@@ -232,6 +236,7 @@ export function useTopics() {
     },
     onError: (_err, _vars, ctx) => {
       if (ctx?.previous) queryClient.setQueryData(['topics'], ctx.previous);
+      toast.error('Error al eliminar la subtarea');
     },
     onSettled: invalidateTopics,
   });
@@ -279,6 +284,7 @@ export function useTopics() {
     },
     onError: (_err, _vars, ctx) => {
       if (ctx?.previous) queryClient.setQueryData(['topics'], ctx.previous);
+      toast.error('Error al actualizar la subtarea');
     },
     onSettled: invalidateTopics,
   });
