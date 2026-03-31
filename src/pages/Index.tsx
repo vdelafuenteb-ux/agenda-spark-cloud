@@ -537,12 +537,6 @@ const Index = () => {
                               setSelectedAssignee('');
                             }
                             updateTopic.mutate({ id, ...data });
-                            if ((data as Record<string, unknown>).status === 'completado') {
-                              const topic = topics.find(t => t.id === id);
-                              topic?.subtasks.filter(s => !s.completed).forEach(s => {
-                                toggleSubtask.mutate({ id: s.id, completed: true });
-                              });
-                            }
                           }}
                           onDelete={(id) => deleteTopic.mutate(id, { onSuccess: () => toast.success('Tema eliminado') })}
                           onAddSubtask={(topicId, title) => addSubtask.mutate({ topic_id: topicId, title })}
