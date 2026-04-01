@@ -1,36 +1,24 @@
 
 
-## Plan: Sub-pestaña "Archivados" en Activos
+## Diagnóstico: Diferencia de conteo entre tablero principal (16) y equipo (14)
 
-### Concepto
+### Causa raíz
 
-Agregar un campo `archived` (boolean) a la tabla `topics`. Los temas archivados mantienen su estado `activo` (así los correos programados y recordatorios siguen funcionando), pero se ocultan del tablero principal. Dentro de la pestaña "Activos" aparecen dos sub-pestañas: **En curso** y **Archivados**.
+La pestaña principal "Activos" cuenta **todos** los temas activos no archivados (16), incluyendo temas sin responsable asignado. La vista de Equipo suma los temas **por responsable** — si un tema activo no tiene responsable (campo `assignee` vacío o null), no aparece en el conteo de ninguna persona. La diferencia de 2 significa que tienes 2 temas activos sin responsable asignado.
 
-### Cambios
+### No es un bug
 
-**1. Migración BD**
-- `ALTER TABLE topics ADD COLUMN archived boolean NOT NULL DEFAULT false;`
+Esto no es un error de cálculo, es una diferencia de perspectiva:
+- **Tablero**: "¿Cuántos temas activos tengo en total?" → 16
+- **Equipo**: "¿Cuántos temas tiene cada persona?" → suma = 14 (porque 2 no tienen dueño)
 
-**2. UI en Index.tsx**
-- Nuevo estado `archivedTab: 'active' | 'archived'` (default `'active'`)
-- Renderizar un toggle group (2 botones pequeños tipo pill) debajo de las Tabs, visible solo cuando `statusTab === 'activo'`
-- En `filteredTopics`: cuando `statusTab === 'activo'`, filtrar por `archived === false` (En curso) o `archived === true` (Archivados)
-- Actualizar conteo: mostrar cuenta separada en cada sub-pestaña
+### Solución propuesta
 
-**3. Botón archivar/desarchivar en TopicCard.tsx**
-- Agregar opción rápida (ícono de archivo) en el header de la tarjeta para temas activos
-- Click → `updateTopic.mutate({ id, archived: !topic.archived })`
-- En la sub-pestaña "Archivados", el botón dice "Restaurar" para volver al tablero
-
-**4. Sin impacto en correos/recordatorios**
-- El status sigue siendo `activo`, por lo que `send-topic-reminders`, `send-scheduled-emails` y los KPIs funcionan igual
-- Los temas archivados simplemente no aparecen en la vista principal
-
-### Archivos afectados
+Agregar en la vista de Equipo un indicador de **temas sin asignar** para que el total cuadre visualmente:
 
 | Archivo | Cambio |
 |---|---|
-| Migración BD | Agregar columna `archived` |
-| `src/pages/Index.tsx` | Sub-pestañas En curso / Archivados + filtro |
-| `src/components/TopicCard.tsx` | Botón archivar/desarchivar |
+| `src/components/TeamView.tsx` | Mostrar un contador "Sin asignar: X temas" debajo de los KPIs de departamento cuando hay temas activos sin responsable |
+
+Así cuando entres a Equipo verás: 14 asignados + 2 sin asignar = 16 total, y todo cuadra.
 
