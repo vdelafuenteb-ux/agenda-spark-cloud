@@ -129,7 +129,7 @@ export function TopicCard({
     ? reminders.filter(r => !r.sent).sort((a, b) => a.reminder_date.localeCompare(b.reminder_date))[0]
     : undefined;
 
-    if (forceExpand !== null) {
+    useEffect(() => {
       setExpanded(forceExpand);
     } else if (highlightToday || highlightUpcoming) {
       setExpanded(true);
