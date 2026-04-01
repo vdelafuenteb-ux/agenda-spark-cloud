@@ -202,6 +202,18 @@ export function TopicCard({
       <button onClick={() => setExpanded(!expanded)} className="w-full flex items-center gap-3 p-3 text-left">
         {/* Pin + Chevron */}
         <div className="flex items-center gap-1 shrink-0">
+          {topic.status === 'activo' && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onUpdate(topic.id, { archived: !(topic as any).archived }); }}
+              className={cn(
+                'p-0.5 rounded hover:bg-accent transition-colors',
+                (topic as any).archived ? 'text-primary' : 'text-muted-foreground/40 hover:text-muted-foreground'
+              )}
+              title={(topic as any).archived ? 'Restaurar al tablero' : 'Archivar'}
+            >
+              {(topic as any).archived ? <ArchiveRestore className="h-3.5 w-3.5" /> : <Archive className="h-3.5 w-3.5" />}
+            </button>
+          )}
           <button
             onClick={(e) => { e.stopPropagation(); onUpdate(topic.id, { pinned: !topic.pinned }); }}
             className={cn(
@@ -211,6 +223,7 @@ export function TopicCard({
             title={topic.pinned ? 'Desfijar' : 'Fijar arriba'}
           >
             <Pin className={cn('h-3.5 w-3.5', topic.pinned && 'fill-current')} />
+          </button>
           </button>
           <motion.div animate={{ rotate: expanded ? 90 : 0 }} transition={{ duration: 0.15 }}>
             <ChevronRight className="h-4 w-4 text-muted-foreground" />
