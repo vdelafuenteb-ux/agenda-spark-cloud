@@ -952,6 +952,10 @@ export function TopicCard({
                 );
               })()}
 
+              {(topic.status === 'activo' || topic.status === 'seguimiento') && (
+                <TopicReminders topicId={topic.id} />
+              )}
+
               <ProgressLog
                 entries={topic.progress_entries}
                 onAdd={async (content) => {
