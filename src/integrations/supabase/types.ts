@@ -825,6 +825,7 @@ export type Database = {
       }
       topics: {
         Row: {
+          archived: boolean
           assignee: string | null
           closed_at: string | null
           created_at: string
@@ -848,6 +849,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          archived?: boolean
           assignee?: string | null
           closed_at?: string | null
           created_at?: string
@@ -871,6 +873,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          archived?: boolean
           assignee?: string | null
           closed_at?: string | null
           created_at?: string

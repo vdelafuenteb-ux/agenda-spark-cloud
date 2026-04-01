@@ -20,7 +20,7 @@ import { useDepartments } from '@/hooks/useDepartments';
 import { useReschedules } from '@/hooks/useReschedules';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Plus, FileText } from 'lucide-react';
+import { Plus, FileText, Archive } from 'lucide-react';
 import { NotesView } from '@/components/NotesView';
 import { DashboardView } from '@/components/DashboardView';
 import { ChecklistView } from '@/components/ChecklistView';
@@ -63,6 +63,7 @@ const Index = () => {
   const [sortBy, setSortBy] = useState<SortOption>('order');
   const [selectedDepartment, setSelectedDepartment] = useState<string>('');
   const [expandedTopicId, setExpandedTopicId] = useState<string | null>(null);
+  const [archivedTab, setArchivedTab] = useState<'active' | 'archived'>('active');
 
   const toggleTagFilter = useCallback((tagId: string) => {
     setSelectedTagIds((prev) => (prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]));
@@ -78,6 +79,11 @@ const Index = () => {
   const filteredTopics = useMemo(() => {
     const filtered = topics.filter((topic) => {
       if (topic.status !== statusTab) return false;
+      if (statusTab === 'activo') {
+        const isArchived = !!(topic as any).archived;
+        if (archivedTab === 'active' && isArchived) return false;
+        if (archivedTab === 'archived' && !isArchived) return false;
+      }
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
         const matchesTitle = topic.title.toLowerCase().includes(query);
@@ -124,7 +130,7 @@ const Index = () => {
       // created
       return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
     });
-  }, [topics, statusTab, searchQuery, selectedTagIds, selectedAssignee, selectedDepartment, departments, filterNoDueDate, showOngoing, showNotOngoing, getTagsForTopic, sortBy]);
+  }, [topics, statusTab, archivedTab, searchQuery, selectedTagIds, selectedAssignee, selectedDepartment, departments, filterNoDueDate, showOngoing, showNotOngoing, getTagsForTopic, sortBy]);
 
   useEffect(() => {
     if (expandedTopicId && filter === 'todos') {
@@ -472,7 +478,7 @@ const Index = () => {
                   <ReportsList onNewReport={() => setReportOpen(true)} />
                 ) : (
                   <>
-                    <Tabs value={statusTab} onValueChange={(value) => { setStatusTab(value as StatusTab); setForceExpand(null); setExpandedTopicId(null); setSearchQuery(''); setSelectedTagIds([]); setSelectedAssignee(''); setSelectedDepartment(''); setFilterNoDueDate(false); setShowOngoing(true); setShowNotOngoing(true); setSortBy('order'); }}>
+                    <Tabs value={statusTab} onValueChange={(value) => { setStatusTab(value as StatusTab); setForceExpand(null); setExpandedTopicId(null); setSearchQuery(''); setSelectedTagIds([]); setSelectedAssignee(''); setSelectedDepartment(''); setFilterNoDueDate(false); setShowOngoing(true); setShowNotOngoing(true); setSortBy('order'); setArchivedTab('active'); }}>
                       <TabsList className="w-full">
                         <TabsTrigger value="activo" className="flex-1 text-[11px] sm:text-xs px-1 sm:px-3">Activos <span className="hidden sm:inline">({statusCounts.activo})</span><span className="sm:hidden ml-0.5">{statusCounts.activo}</span></TabsTrigger>
                         <TabsTrigger value="seguimiento" className="flex-1 text-[11px] sm:text-xs px-1 sm:px-3"><span className="sm:hidden">Seguim.</span><span className="hidden sm:inline">Seguimiento</span> <span className="hidden sm:inline">({statusCounts.seguimiento})</span><span className="sm:hidden ml-0.5">{statusCounts.seguimiento}</span></TabsTrigger>
@@ -481,7 +487,27 @@ const Index = () => {
                       </TabsList>
                     </Tabs>
 
-
+                    {statusTab === 'activo' && (
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant={archivedTab === 'active' ? 'default' : 'outline'}
+                          size="sm"
+                          className="h-7 text-xs rounded-full px-3"
+                          onClick={() => setArchivedTab('active')}
+                        >
+                          En curso ({topics.filter(t => t.status === 'activo' && !(t as any).archived).length})
+                        </Button>
+                        <Button
+                          variant={archivedTab === 'archived' ? 'default' : 'outline'}
+                          size="sm"
+                          className="h-7 text-xs rounded-full px-3 gap-1"
+                          onClick={() => setArchivedTab('archived')}
+                        >
+                          <Archive className="h-3 w-3" />
+                          Archivados ({topics.filter(t => t.status === 'activo' && !!(t as any).archived).length})
+                        </Button>
+                      </div>
+                    )}
 
                     <FilterBar
                       searchQuery={searchQuery}
