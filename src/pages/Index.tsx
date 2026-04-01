@@ -20,7 +20,7 @@ import { useDepartments } from '@/hooks/useDepartments';
 import { useReschedules } from '@/hooks/useReschedules';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Plus, FileText } from 'lucide-react';
+import { Plus, FileText, Archive } from 'lucide-react';
 import { NotesView } from '@/components/NotesView';
 import { DashboardView } from '@/components/DashboardView';
 import { ChecklistView } from '@/components/ChecklistView';
