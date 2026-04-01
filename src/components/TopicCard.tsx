@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { isStoredDateToday, isStoredDateUpcoming, isStoredDateOverdue } from '@/lib/date';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ChevronDown, Plus, Trash2, CalendarIcon, CheckCircle2, RotateCcw, Pause, Play, User, Pin, Check, X, Infinity as InfinityIcon, RefreshCw, Archive, ArchiveRestore } from 'lucide-react';
+import { ChevronRight, ChevronDown, Plus, Trash2, CalendarIcon, CheckCircle2, RotateCcw, Pause, Play, User, Pin, Check, X, Infinity as InfinityIcon, RefreshCw, Archive, ArchiveRestore, AlertTriangle } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { NotificationSection } from '@/components/NotificationSection';
 import { TopicReminders } from '@/components/TopicReminders';
@@ -151,6 +151,17 @@ export function TopicCard({
   const progress = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
   const isCompleted = topic.status === 'completado';
   const isSeguimiento = topic.status === 'seguimiento';
+
+  // Inactivity alert: >7 days without progress entry
+  const needsUpdateAlert = (() => {
+    if (topic.status === 'completado' || topic.status === 'pausado') return false;
+    const entries = topic.progress_entries ?? [];
+    const lastDate = entries.length > 0
+      ? Math.max(...entries.map(e => new Date(e.created_at).getTime()))
+      : new Date(topic.created_at).getTime();
+    const daysSince = Math.floor((Date.now() - lastDate) / (1000 * 60 * 60 * 24));
+    return daysSince > 7;
+  })();
 
   const handleAddSubtask = () => {
     if (!newSubtask.trim()) return;
@@ -382,15 +393,24 @@ export function TopicCard({
 
           {/* Line 2: Metadata — subtle, dot-separated */}
           {(() => {
-            const metaParts: React.ReactNode[] = [];
+             const metaParts: React.ReactNode[] = [];
 
-            // Alerts
-            if (showSubtaskOverdueBadge) {
-              metaParts.push(
-                <span key="overdue" className="text-destructive font-medium">
-                  {subtaskOverdueCount} atrasada{subtaskOverdueCount === 1 ? '' : 's'}
-                </span>
-              );
+             // Inactivity alert
+             if (needsUpdateAlert) {
+               metaParts.push(
+                 <span key="stale" className="inline-flex items-center gap-0.5 text-destructive font-medium">
+                   <AlertTriangle className="h-3 w-3" />Sin actualizar
+                 </span>
+               );
+             }
+
+             // Alerts
+             if (showSubtaskOverdueBadge) {
+               metaParts.push(
+                 <span key="overdue" className="text-destructive font-medium">
+                   {subtaskOverdueCount} atrasada{subtaskOverdueCount === 1 ? '' : 's'}
+                 </span>
+               );
             }
             if (showSubtaskTodayBadge) {
               metaParts.push(
