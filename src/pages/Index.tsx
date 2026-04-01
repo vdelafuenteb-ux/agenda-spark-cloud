@@ -96,6 +96,8 @@ const Index = () => {
       if (filterNoDueDate && topic.due_date) return false;
       if (!showOngoing && topic.is_ongoing) return false;
       if (!showNotOngoing && !topic.is_ongoing) return false;
+      if (statusTab === 'activo' && activeSubFilter === 'ongoing' && !topic.is_ongoing) return false;
+      if (statusTab === 'activo' && activeSubFilter === 'dated' && topic.is_ongoing) return false;
       return true;
     });
     const priorityOrder: Record<string, number> = { alta: 0, media: 1, baja: 2 };
