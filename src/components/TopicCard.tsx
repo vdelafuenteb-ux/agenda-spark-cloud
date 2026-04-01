@@ -393,15 +393,24 @@ export function TopicCard({
 
           {/* Line 2: Metadata — subtle, dot-separated */}
           {(() => {
-            const metaParts: React.ReactNode[] = [];
+             const metaParts: React.ReactNode[] = [];
 
-            // Alerts
-            if (showSubtaskOverdueBadge) {
-              metaParts.push(
-                <span key="overdue" className="text-destructive font-medium">
-                  {subtaskOverdueCount} atrasada{subtaskOverdueCount === 1 ? '' : 's'}
-                </span>
-              );
+             // Inactivity alert
+             if (needsUpdateAlert) {
+               metaParts.push(
+                 <span key="stale" className="inline-flex items-center gap-0.5 text-destructive font-medium">
+                   <AlertTriangle className="h-3 w-3" />Sin actualizar
+                 </span>
+               );
+             }
+
+             // Alerts
+             if (showSubtaskOverdueBadge) {
+               metaParts.push(
+                 <span key="overdue" className="text-destructive font-medium">
+                   {subtaskOverdueCount} atrasada{subtaskOverdueCount === 1 ? '' : 's'}
+                 </span>
+               );
             }
             if (showSubtaskTodayBadge) {
               metaParts.push(
