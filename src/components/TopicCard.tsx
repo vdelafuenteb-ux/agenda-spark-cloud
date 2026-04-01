@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import { isStoredDateToday, isStoredDateUpcoming, isStoredDateOverdue } from '@/lib/date';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, ChevronDown, Plus, Trash2, CalendarIcon, CheckCircle2, RotateCcw, Pause, Play, User, Pin, Check, X, Infinity as InfinityIcon, RefreshCw, Archive, ArchiveRestore, AlertTriangle } from 'lucide-react';
@@ -1067,7 +1069,7 @@ export function TopicCard({
           <DialogFooter className="gap-2 sm:gap-0">
             <Button variant="outline" onClick={() => setShowCloseDialog(false)}>Cancelar</Button>
             <Button
-              onClick={() => {
+              onClick={async () => {
                 const closedAt = closeDateDraft
                   ? new Date(closeDateDraft).toISOString()
                   : new Date().toISOString();
@@ -1078,6 +1080,32 @@ export function TopicCard({
                   paused_at: null,
                 });
                 setShowCloseDialog(false);
+
+                // Send closed notification email
+                if (topic.assignee) {
+                  const assigneeObj = assignees.find(a => a.name === topic.assignee);
+                  if (assigneeObj?.email) {
+                    const lastEntry = topic.progress_entries?.length
+                      ? [...topic.progress_entries].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]?.content
+                      : null;
+                    try {
+                      await supabase.functions.invoke('send-topic-closed-notification', {
+                        body: {
+                          to_email: assigneeObj.email,
+                          to_name: assigneeObj.name,
+                          topic_title: topic.title,
+                          due_date: topic.due_date,
+                          closed_at: closedAt,
+                          is_ongoing: topic.is_ongoing,
+                          last_progress_entry: lastEntry,
+                        },
+                      });
+                      toast.success(`Correo de cierre enviado a ${assigneeObj.name}`);
+                    } catch {
+                      toast.error('No se pudo enviar el correo de cierre');
+                    }
+                  }
+                }
               }}
             >
               <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Confirmar cierre
