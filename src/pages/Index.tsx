@@ -468,6 +468,7 @@ const Index = () => {
             <main className="flex-1 overflow-auto p-3 md:p-4">
               <ReviewView
                 topics={topics}
+                assignees={assignees}
                 onToggleSubtask={(id, completed) => toggleSubtask.mutate({ id, completed })}
                 onUpdateTopic={(id, data) => updateTopic.mutate({ id, ...data })}
               />

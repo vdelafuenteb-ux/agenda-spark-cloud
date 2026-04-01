@@ -364,11 +364,38 @@ export function ReviewView({ topics, assignees, onToggleSubtask, onUpdateTopic }
             <Button variant="outline" onClick={() => setShowCloseDialog(false)}>Cancelar</Button>
             <Button
               variant="destructive"
-              onClick={() => {
+              onClick={async () => {
                 if (!closeTopicId) return;
                 const closedAt = closeDateDraft ? new Date(closeDateDraft).toISOString() : new Date().toISOString();
                 onUpdateTopic(closeTopicId, { status: 'completado', closed_at: closedAt, pause_reason: '', paused_at: null });
                 setShowCloseDialog(false);
+
+                // Send closed notification email
+                const closedTopic = topics.find(t => t.id === closeTopicId);
+                if (closedTopic?.assignee) {
+                  const assigneeObj = assignees.find(a => a.name === closedTopic.assignee);
+                  if (assigneeObj?.email) {
+                    const lastEntry = closedTopic.progress_entries?.length
+                      ? [...closedTopic.progress_entries].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]?.content
+                      : null;
+                    try {
+                      await supabase.functions.invoke('send-topic-closed-notification', {
+                        body: {
+                          to_email: assigneeObj.email,
+                          to_name: assigneeObj.name,
+                          topic_title: closedTopic.title,
+                          due_date: closedTopic.due_date,
+                          closed_at: closedAt,
+                          is_ongoing: closedTopic.is_ongoing,
+                          last_progress_entry: lastEntry,
+                        },
+                      });
+                      toast.success(`Correo de cierre enviado a ${assigneeObj.name}`);
+                    } catch {
+                      toast.error('No se pudo enviar el correo de cierre');
+                    }
+                  }
+                }
                 setCloseTopicId(null);
               }}
             >
