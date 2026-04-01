@@ -97,7 +97,7 @@ function calculateAssigneeScore(
   emailHistory: any[]
 ): Omit<AssigneeScore, 'assignee' | 'weeklyHours' | 'capacity' | 'loadPct'> {
   const assigneeTopics = allTopics.filter(t => t.assignee === assigneeName);
-  const active = assigneeTopics.filter(t => t.status === 'activo');
+  const active = assigneeTopics.filter(t => t.status === 'activo' && !(t as any).archived);
   const seguimiento = assigneeTopics.filter(t => t.status === 'seguimiento');
   const completed = assigneeTopics.filter(t => t.status === 'completado');
   const activeAndTracking = [...active, ...seguimiento];
