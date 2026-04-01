@@ -272,13 +272,16 @@ export function TopicCard({
                   Cerrado {formatStoredDate((topic as any).closed_at.split('T')[0], 'dd MMM yy', { locale: es })}
                 </span>
               )}
-              {isCompleted && topic.due_date && (topic as any).closed_at && (() => {
+              {isCompleted && (topic as any).closed_at && topic.due_date && (() => {
                 const closedDate = new Date((topic as any).closed_at);
                 const dueDate = new Date(topic.due_date + 'T23:59:59');
                 const diffDays = Math.round((closedDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
                 if (diffDays <= 0) return <Badge variant="outline" className="text-[9px] border-emerald-500/50 text-emerald-600 px-1.5 py-0">A tiempo</Badge>;
                 return <Badge variant="destructive" className="text-[9px] px-1.5 py-0">{diffDays}d atraso</Badge>;
               })()}
+              {isCompleted && (topic as any).closed_at && !topic.due_date && topic.is_ongoing && (
+                <Badge variant="outline" className="text-[9px] border-emerald-500/50 text-emerald-600 px-1.5 py-0">A tiempo</Badge>
+              )}
               {!isCompleted && (() => {
                 const isOverdue = isStoredDateOverdue(topic.due_date);
                 const overdueDays = isOverdue && topic.due_date
