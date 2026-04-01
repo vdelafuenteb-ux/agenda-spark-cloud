@@ -142,7 +142,7 @@ export function DashboardView({ topics, assignees, departments = [], reschedules
     const threeDaysFromNow = addDays(now, 3);
 
     const byStatus = {
-      activo: topics.filter(t => t.status === 'activo'),
+      activo: topics.filter(t => t.status === 'activo' && !(t as any).archived),
       seguimiento: topics.filter(t => t.status === 'seguimiento'),
       pausado: topics.filter(t => t.status === 'pausado'),
       completado: topics.filter(t => t.status === 'completado'),
