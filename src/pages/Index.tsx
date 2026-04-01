@@ -48,7 +48,7 @@ const Index = () => {
   const { departments, createDepartment, updateDepartment, deleteDepartment } = useDepartments();
   const { reschedulesByTopic, createReschedule } = useReschedules();
   const [filter, setFilter] = useState<Filter>('todos');
-  const [activeSubFilter, setActiveSubFilter] = useState<'all' | 'ongoing' | 'dated'>('all');
+  
   const [statusTab, setStatusTab] = useState<StatusTab>('activo');
   const [reportOpen, setReportOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
