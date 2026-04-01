@@ -1,24 +1,25 @@
 
 
-## Plan: Mostrar fecha del próximo recordatorio en temas archivados
+## Plan: Alerta de triángulo rojo por inactividad en bitácora (+7 días)
 
 ### Cambio
 
-En el header de la tarjeta (zona donde aparece "∞ Continuo" o la fecha), cuando el tema está archivado, mostrar la fecha del próximo recordatorio pendiente. Ejemplo: `🔔 Recordatorio: 29 jun`.
+Agregar un ícono de triángulo rojo (⚠️ `AlertTriangle`) en la línea de metadatos de cada tarjeta de tema cuando la última entrada en la bitácora (`progress_entries`) tiene más de 7 días de antigüedad, o cuando no hay ninguna entrada. Solo se muestra en temas activos/seguimiento (no completados ni pausados).
 
 ### Implementación
 
 **Archivo: `src/components/TopicCard.tsx`**
 
-1. Importar `useTopicReminders` en TopicCard
-2. Llamar al hook: `const { reminders } = useTopicReminders(topic.id)`
-3. Calcular el próximo recordatorio pendiente: filtrar `reminders` donde `sent === false`, ordenar por fecha, tomar el primero
-4. En la zona del header (después del badge "Continuo" o la fecha, ~línea 298), agregar una condición: si `(topic as any).archived && nextReminder`, mostrar un badge con ícono de campana y la fecha formateada
-5. Solo se muestra en temas archivados, no en los activos normales (ahí ya se ve la sección completa de recordatorios al expandir)
+1. Importar `AlertTriangle` de `lucide-react`
+2. Calcular días desde la última entrada de bitácora:
+   - Tomar `topic.progress_entries`, ordenar por `created_at` desc, obtener la más reciente
+   - Si no hay entradas o la más reciente tiene >7 días → mostrar alerta
+3. En la sección de metadatos (línea ~388, donde ya se muestran alertas de subtareas atrasadas), agregar al inicio de `metaParts` un span rojo con `AlertTriangle` + texto "Sin actualizar" cuando aplique
+4. Solo para temas no completados y no pausados
 
 ### Archivos afectados
 
 | Archivo | Cambio |
 |---|---|
-| `src/components/TopicCard.tsx` | Importar hook, calcular próximo recordatorio, renderizar badge en header solo para archivados |
+| `src/components/TopicCard.tsx` | Importar `AlertTriangle`, calcular inactividad de bitácora, renderizar alerta en metadatos |
 
