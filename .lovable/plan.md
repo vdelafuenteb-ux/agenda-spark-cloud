@@ -1,24 +1,24 @@
 
 
-## Diagnóstico: Diferencia de conteo entre tablero principal (16) y equipo (14)
+## Plan: Mostrar fecha del próximo recordatorio en temas archivados
 
-### Causa raíz
+### Cambio
 
-La pestaña principal "Activos" cuenta **todos** los temas activos no archivados (16), incluyendo temas sin responsable asignado. La vista de Equipo suma los temas **por responsable** — si un tema activo no tiene responsable (campo `assignee` vacío o null), no aparece en el conteo de ninguna persona. La diferencia de 2 significa que tienes 2 temas activos sin responsable asignado.
+En el header de la tarjeta (zona donde aparece "∞ Continuo" o la fecha), cuando el tema está archivado, mostrar la fecha del próximo recordatorio pendiente. Ejemplo: `🔔 Recordatorio: 29 jun`.
 
-### No es un bug
+### Implementación
 
-Esto no es un error de cálculo, es una diferencia de perspectiva:
-- **Tablero**: "¿Cuántos temas activos tengo en total?" → 16
-- **Equipo**: "¿Cuántos temas tiene cada persona?" → suma = 14 (porque 2 no tienen dueño)
+**Archivo: `src/components/TopicCard.tsx`**
 
-### Solución propuesta
+1. Importar `useTopicReminders` en TopicCard
+2. Llamar al hook: `const { reminders } = useTopicReminders(topic.id)`
+3. Calcular el próximo recordatorio pendiente: filtrar `reminders` donde `sent === false`, ordenar por fecha, tomar el primero
+4. En la zona del header (después del badge "Continuo" o la fecha, ~línea 298), agregar una condición: si `(topic as any).archived && nextReminder`, mostrar un badge con ícono de campana y la fecha formateada
+5. Solo se muestra en temas archivados, no en los activos normales (ahí ya se ve la sección completa de recordatorios al expandir)
 
-Agregar en la vista de Equipo un indicador de **temas sin asignar** para que el total cuadre visualmente:
+### Archivos afectados
 
 | Archivo | Cambio |
 |---|---|
-| `src/components/TeamView.tsx` | Mostrar un contador "Sin asignar: X temas" debajo de los KPIs de departamento cuando hay temas activos sin responsable |
-
-Así cuando entres a Equipo verás: 14 asignados + 2 sin asignar = 16 total, y todo cuadra.
+| `src/components/TopicCard.tsx` | Importar hook, calcular próximo recordatorio, renderizar badge en header solo para archivados |
 
