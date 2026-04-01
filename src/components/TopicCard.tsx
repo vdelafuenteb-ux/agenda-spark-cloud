@@ -152,6 +152,17 @@ export function TopicCard({
   const isCompleted = topic.status === 'completado';
   const isSeguimiento = topic.status === 'seguimiento';
 
+  // Inactivity alert: >7 days without progress entry
+  const needsUpdateAlert = (() => {
+    if (topic.status === 'completado' || topic.status === 'pausado') return false;
+    const entries = topic.progress_entries ?? [];
+    const lastDate = entries.length > 0
+      ? Math.max(...entries.map(e => new Date(e.created_at).getTime()))
+      : new Date(topic.created_at).getTime();
+    const daysSince = Math.floor((Date.now() - lastDate) / (1000 * 60 * 60 * 24));
+    return daysSince > 7;
+  })();
+
   const handleAddSubtask = () => {
     if (!newSubtask.trim()) return;
     onAddSubtask(topic.id, newSubtask.trim());
