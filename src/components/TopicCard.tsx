@@ -282,7 +282,14 @@ export function TopicCard({
               {isCompleted && (topic as any).closed_at && !topic.due_date && topic.is_ongoing && (
                 <Badge variant="outline" className="text-[9px] border-emerald-500/50 text-emerald-600 px-1.5 py-0">A tiempo</Badge>
               )}
+              {!isCompleted && topic.is_ongoing && !topic.due_date && (
+                <span className="inline-flex items-center gap-1 text-muted-foreground px-1 py-0.5">
+                  <InfinityIcon className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-[11px] font-medium text-primary">Continuo</span>
+                </span>
+              )}
               {!isCompleted && (() => {
+                if (topic.is_ongoing && !topic.due_date) return null;
                 const isOverdue = isStoredDateOverdue(topic.due_date);
                 const overdueDays = isOverdue && topic.due_date
                   ? Math.ceil((Date.now() - parseStoredDate(topic.due_date)!.getTime()) / 86400000)
@@ -384,14 +391,7 @@ export function TopicCard({
               metaParts.push(<span key="dept">{dept.name}</span>);
             }
 
-            // Ongoing
-            if (topic.is_ongoing && !isCompleted) {
-              metaParts.push(
-                <span key="ongoing" className="inline-flex items-center gap-0.5">
-                  <InfinityIcon className="h-2.5 w-2.5" /> Continuo
-                </span>
-              );
-            }
+            // Ongoing badge moved to calendar area (top right)
 
             // HH badge
             if ((topic as any).hh_value && (topic as any).hh_type) {
