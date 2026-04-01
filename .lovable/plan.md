@@ -1,41 +1,24 @@
 
 
-## Plan: Fix silent save failures + race conditions in topic updates
+## Plan: Sub-filtro "Continuos" / "Con fecha" en pestaña Activos
 
-### Root cause found
+### Cambio
 
-The `updateTopic` mutation in `useTopics.tsx` has **no error feedback**. When the DB update fails (network issue, timeout, etc.):
-1. The optimistic update shows the change immediately
-2. The actual `.update()` call to the DB fails silently
-3. `onError` rolls back the UI to the previous state
-4. `onSettled` refetches from DB, confirming the old data
-5. **The user never sees any error** — it just looks like the change "disappeared"
+Agregar un grupo de botones pequeños (toggle group) debajo de las pestañas principales, visible **solo cuando `statusTab === 'activo'`**, con 3 opciones:
+- **Todos** (por defecto) — muestra todos los temas activos
+- **Continuos** — solo `is_ongoing === true`
+- **Con fecha** — solo `is_ongoing !== true` (temas con fecha definida)
 
-This explains the user's experience: they changed an assignee, it appeared to work, but on reload the old value was back.
+### Archivo afectado
 
-### Changes
-
-**1. `src/hooks/useTopics.tsx` — Add error toast to `updateTopic`**
-- Import `toast` from sonner
-- Add `onError` handler that shows `toast.error('Error al guardar cambios')` in addition to the optimistic rollback
-- Do the same for `toggleSubtask`, `updateSubtask`, `deleteSubtask`, `deleteTopic` — any mutation with optimistic updates
-
-**2. `src/hooks/useTopics.tsx` — Prevent race conditions on rapid updates**
-- The current `onMutate` calls `cancelQueries` which cancels in-flight refetches from previous mutations' `onSettled`. This is correct React Query pattern.
-- But if two `updateTopic.mutate()` calls fire in quick succession, the second `onMutate`'s `previous` captures the first's optimistic state (not the real DB state). If the first mutation then fails, `onError` rolls back to wrong baseline.
-- Fix: no structural change needed, but ensure `onSettled` always refetches (already does via `invalidateTopics`).
-
-**3. `src/pages/Index.tsx` — line 540-544 race condition**
-- When status changes to `completado`, the handler fires `updateTopic.mutate()` AND multiple `toggleSubtask.mutate()` simultaneously. Each triggers `cancelQueries(['topics'])` which can cancel each other's refetches.
-- Fix: use `mutateAsync` + `await` for the topic update before toggling subtasks, OR remove the client-side subtask toggling (it's already handled by the `auto_complete_subtasks_on_topic_close` trigger in the DB).
-
-### Key fix detail
-The DB already has a trigger `auto_complete_subtasks_on_topic_close` that marks subtasks as completed when a topic closes. The duplicate client-side code at line 540-544 is unnecessary and causes race conditions. Removing it eliminates a source of conflicts.
-
-### Files affected
-
-| File | Change |
+| Archivo | Cambio |
 |---|---|
-| `src/hooks/useTopics.tsx` | Add `toast.error()` on all optimistic mutation failures |
-| `src/pages/Index.tsx` | Remove redundant subtask toggling on topic close (DB trigger handles it) |
+| `src/pages/Index.tsx` | Agregar estado `activeSubFilter` (`'all' | 'ongoing' | 'dated'`), renderizar toggle group entre Tabs y FilterBar cuando activo, aplicar filtro en `filteredTopics`, resetear al cambiar de pestaña |
+
+### Detalle técnico
+
+1. Nuevo estado: `const [activeSubFilter, setActiveSubFilter] = useState<'all' | 'ongoing' | 'dated'>('all')`
+2. Resetear a `'all'` en el `onValueChange` de Tabs (línea 474)
+3. Renderizar entre las Tabs y el FilterBar (línea ~482) un grupo de 3 botones pequeños con estilo similar a pills/chips
+4. En `filteredTopics` (línea ~96-97): cuando `statusTab === 'activo'` y `activeSubFilter !== 'all'`, filtrar por `is_ongoing` según corresponda. Este filtro reemplaza/complementa los toggles existentes de `showOngoing`/`showNotOngoing` del FilterBar solo para la pestaña activa
 
