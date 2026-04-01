@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.send-new-topic-notification]
 verify_jwt = false
+
+[functions.send-topic-closed-notification]
+verify_jwt = false
