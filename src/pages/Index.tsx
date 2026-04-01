@@ -487,7 +487,27 @@ const Index = () => {
                       </TabsList>
                     </Tabs>
 
-
+                    {statusTab === 'activo' && (
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant={archivedTab === 'active' ? 'default' : 'outline'}
+                          size="sm"
+                          className="h-7 text-xs rounded-full px-3"
+                          onClick={() => setArchivedTab('active')}
+                        >
+                          En curso ({topics.filter(t => t.status === 'activo' && !(t as any).archived).length})
+                        </Button>
+                        <Button
+                          variant={archivedTab === 'archived' ? 'default' : 'outline'}
+                          size="sm"
+                          className="h-7 text-xs rounded-full px-3 gap-1"
+                          onClick={() => setArchivedTab('archived')}
+                        >
+                          <Archive className="h-3 w-3" />
+                          Archivados ({topics.filter(t => t.status === 'activo' && !!(t as any).archived).length})
+                        </Button>
+                      </div>
+                    )}
 
                     <FilterBar
                       searchQuery={searchQuery}
