@@ -306,6 +306,14 @@ export function TopicCard({
                   <span className="text-[11px] font-medium text-primary">Continuo</span>
                 </span>
               )}
+              {(topic as any).archived && nextReminder && (
+                <span className="inline-flex items-center gap-1 text-muted-foreground px-1 py-0.5">
+                  <span className="text-[11px]">🔔</span>
+                  <span className="text-[11px] font-medium text-primary">
+                    {formatStoredDate(nextReminder.reminder_date, 'dd MMM', { locale: es })}
+                  </span>
+                </span>
+              )}
               {!isCompleted && (() => {
                 if (topic.is_ongoing && !topic.due_date) return null;
                 const isOverdue = isStoredDateOverdue(topic.due_date);
