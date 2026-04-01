@@ -25,15 +25,18 @@ export function computeProductivityScore(
   const activeAndTracking = [...active, ...seguimiento];
 
   // --- Closure compliance ---
-  const closedWithDates = completed.filter(t => t.due_date && t.closed_at);
-  let closureOnTime = 0;
+  // Ongoing topics closed count as "on time" (they have no due_date to miss)
+  const closedOngoing = completed.filter(t => t.is_ongoing && t.closed_at);
+  const closedWithDates = completed.filter(t => !t.is_ongoing && t.due_date && t.closed_at);
+  let closureOnTime = closedOngoing.length; // all ongoing count as on-time
   for (const t of closedWithDates) {
     const closedDate = new Date(t.closed_at!);
     const dueDate = new Date(t.due_date! + 'T23:59:59');
     if (closedDate.getTime() <= dueDate.getTime()) closureOnTime++;
   }
-  const closureComplianceRate = closedWithDates.length > 0
-    ? Math.round((closureOnTime / closedWithDates.length) * 100) : null;
+  const closureTotal = closedOngoing.length + closedWithDates.length;
+  const closureComplianceRate = closureTotal > 0
+    ? Math.round((closureOnTime / closureTotal) * 100) : null;
 
   // --- Subtask timeliness ---
   const allSubtasks = assigneeTopics.flatMap(t => t.subtasks);
@@ -82,7 +85,7 @@ export function computeProductivityScore(
 
   // --- Aggregate ---
   const dimensions: { key: string; value: number; weight: number }[] = [];
-  if (closedWithDates.length > 0) dimensions.push({ key: 'closure', value: closureComplianceRate ?? 0, weight: 0.50 });
+  if (closureTotal > 0) dimensions.push({ key: 'closure', value: closureComplianceRate ?? 0, weight: 0.50 });
   if (weeklyEmails.length > 0 && confirmedEmails.length > 0) dimensions.push({ key: 'email', value: complianceRate, weight: 0.10 });
   if (completedWithDue.length > 0) dimensions.push({ key: 'subtask', value: subtaskTimelinessRate ?? 0, weight: 0.20 });
   if (deadlineCompliance !== null) dimensions.push({ key: 'deadline', value: deadlineCompliance, weight: 0.10 });

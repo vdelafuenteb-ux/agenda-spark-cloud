@@ -31,15 +31,17 @@ function calculateScore(
   const active = assigneeTopics.filter((t: any) => t.status === 'activo' || t.status === 'seguimiento');
   const completed = assigneeTopics.filter((t: any) => t.status === 'completado');
 
-  // 1. Closure compliance (50%)
-  const closedWithDates = completed.filter((t: any) => t.due_date && t.closed_at);
-  let closureOnTime = 0;
+  // 1. Closure compliance (50%) — ongoing closed topics always count as on-time
+  const closedOngoing = completed.filter((t: any) => t.is_ongoing && t.closed_at);
+  const closedWithDates = completed.filter((t: any) => !t.is_ongoing && t.due_date && t.closed_at);
+  let closureOnTime = closedOngoing.length;
   for (const t of closedWithDates) {
     const closedDate = new Date(t.closed_at);
     const dueDate = new Date(t.due_date + 'T23:59:59');
     if (closedDate.getTime() <= dueDate.getTime()) closureOnTime++;
   }
-  const closureRate = closedWithDates.length > 0 ? Math.round((closureOnTime / closedWithDates.length) * 100) : null;
+  const closureTotal = closedOngoing.length + closedWithDates.length;
+  const closureRate = closureTotal > 0 ? Math.round((closureOnTime / closureTotal) * 100) : null;
 
   // 2. Subtask timeliness (20%)
   const assigneeSubtasks = subtasks.filter((s: any) =>
