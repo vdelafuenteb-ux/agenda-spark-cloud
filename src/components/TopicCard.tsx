@@ -384,14 +384,7 @@ export function TopicCard({
               metaParts.push(<span key="dept">{dept.name}</span>);
             }
 
-            // Ongoing
-            if (topic.is_ongoing && !isCompleted) {
-              metaParts.push(
-                <span key="ongoing" className="inline-flex items-center gap-0.5">
-                  <InfinityIcon className="h-2.5 w-2.5" /> Continuo
-                </span>
-              );
-            }
+            // Ongoing badge moved to calendar area (top right)
 
             // HH badge
             if ((topic as any).hh_value && (topic as any).hh_type) {
