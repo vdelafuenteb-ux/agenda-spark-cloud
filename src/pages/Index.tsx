@@ -481,34 +481,7 @@ const Index = () => {
                       </TabsList>
                     </Tabs>
 
-                    {statusTab === 'activo' && (
-                      <div className="flex gap-1">
-                        <Button
-                          size="sm"
-                          variant={activeSubFilter === 'all' ? 'default' : 'outline'}
-                          className="h-7 text-xs px-3 rounded-full"
-                          onClick={() => setActiveSubFilter('all')}
-                        >
-                          Todos
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant={activeSubFilter === 'ongoing' ? 'default' : 'outline'}
-                          className="h-7 text-xs px-3 rounded-full"
-                          onClick={() => setActiveSubFilter('ongoing')}
-                        >
-                          Continuos
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant={activeSubFilter === 'dated' ? 'default' : 'outline'}
-                          className="h-7 text-xs px-3 rounded-full"
-                          onClick={() => setActiveSubFilter('dated')}
-                        >
-                          Con fecha
-                        </Button>
-                      </div>
-                    )}
+
 
                     <FilterBar
                       searchQuery={searchQuery}
