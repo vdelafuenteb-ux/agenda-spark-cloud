@@ -6,6 +6,7 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/comp
 import { NotificationSection } from '@/components/NotificationSection';
 import { TopicReminders } from '@/components/TopicReminders';
 import { es } from 'date-fns/locale';
+import { useTopicReminders } from '@/hooks/useTopicReminders';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -122,6 +123,11 @@ export function TopicCard({
   const [rescheduleReason, setRescheduleReason] = useState('');
   const [rescheduleIsExternal, setRescheduleIsExternal] = useState(false);
   const [showRescheduleHistory, setShowRescheduleHistory] = useState(false);
+
+  const { reminders } = useTopicReminders(topic.id);
+  const nextReminder = (topic as any).archived
+    ? reminders.filter(r => !r.sent).sort((a, b) => a.reminder_date.localeCompare(b.reminder_date))[0]
+    : undefined;
 
   useEffect(() => {
     if (forceExpand !== null) {
@@ -299,6 +305,14 @@ export function TopicCard({
                 <span className="inline-flex items-center gap-1 text-muted-foreground px-1 py-0.5">
                   <InfinityIcon className="h-3.5 w-3.5 text-primary" />
                   <span className="text-[11px] font-medium text-primary">Continuo</span>
+                </span>
+              )}
+              {(topic as any).archived && nextReminder && (
+                <span className="inline-flex items-center gap-1 text-muted-foreground px-1 py-0.5">
+                  <span className="text-[11px]">🔔</span>
+                  <span className="text-[11px] font-medium text-primary">
+                    {formatStoredDate(nextReminder.reminder_date, 'dd MMM', { locale: es })}
+                  </span>
                 </span>
               )}
               {!isCompleted && (() => {
