@@ -1,48 +1,36 @@
 
 
-## Plan: Recordatorios por tema — "Recuérdame revisar esto"
+## Plan: Sub-pestaña "Archivados" en Activos
 
-### Qué se construirá
+### Concepto
 
-Un sistema de recordatorios por tema donde puedes programar fechas específicas para recibir un correo a tu email (matias@transitglobalgroup.com) recordándote revisar un tema. Podrás agregar múltiples recordatorios por tema, editarlos y eliminarlos.
+Agregar un campo `archived` (boolean) a la tabla `topics`. Los temas archivados mantienen su estado `activo` (así los correos programados y recordatorios siguen funcionando), pero se ocultan del tablero principal. Dentro de la pestaña "Activos" aparecen dos sub-pestañas: **En curso** y **Archivados**.
 
 ### Cambios
 
-**1. Nueva tabla `topic_reminders` (migración)**
-- `id`, `user_id`, `topic_id`, `reminder_date` (date), `note` (texto opcional, ej: "Revisar avance polígonos"), `sent` (boolean, default false), `created_at`
-- RLS: solo el dueño puede CRUD
+**1. Migración BD**
+- `ALTER TABLE topics ADD COLUMN archived boolean NOT NULL DEFAULT false;`
 
-**2. Hook `useTopicReminders.tsx`**
-- CRUD para recordatorios: crear, editar fecha/nota, eliminar, marcar como enviado
-- Query por `topic_id`
+**2. UI en Index.tsx**
+- Nuevo estado `archivedTab: 'active' | 'archived'` (default `'active'`)
+- Renderizar un toggle group (2 botones pequeños tipo pill) debajo de las Tabs, visible solo cuando `statusTab === 'activo'`
+- En `filteredTopics`: cuando `statusTab === 'activo'`, filtrar por `archived === false` (En curso) o `archived === true` (Archivados)
+- Actualizar conteo: mostrar cuenta separada en cada sub-pestaña
 
-**3. Componente `TopicReminders.tsx`**
-- Sección dentro del TopicCard (después de NotificationSection), con ícono de campana
-- Lista de recordatorios programados con fecha y nota
-- Botón para agregar nuevo: abre popover con date picker + campo de nota
-- Cada recordatorio permite editar fecha/nota o eliminar
-- Badge visual: "Pendiente" (naranja) o "Enviado" (verde)
+**3. Botón archivar/desarchivar en TopicCard.tsx**
+- Agregar opción rápida (ícono de archivo) en el header de la tarjeta para temas activos
+- Click → `updateTopic.mutate({ id, archived: !topic.archived })`
+- En la sub-pestaña "Archivados", el botón dice "Restaurar" para volver al tablero
 
-**4. Edge function `send-topic-reminders/index.ts`**
-- Se ejecuta vía cron diario
-- Consulta `topic_reminders` donde `reminder_date = hoy` y `sent = false`
-- Para cada uno, obtiene el tema y envía correo al usuario (usando el email del auth user o hardcoded matias@transitglobalgroup.com) vía Firebase Cloud Function existente
-- Marca como `sent = true`
-
-**5. Cron job para ejecutar la función diariamente**
-- `pg_cron` + `pg_net` para invocar la edge function cada día a las 8:00 AM Chile
-
-**6. Integración en TopicCard.tsx**
-- Agregar `TopicReminders` debajo de `NotificationSection`, visible para temas activos y en seguimiento
+**4. Sin impacto en correos/recordatorios**
+- El status sigue siendo `activo`, por lo que `send-topic-reminders`, `send-scheduled-emails` y los KPIs funcionan igual
+- Los temas archivados simplemente no aparecen en la vista principal
 
 ### Archivos afectados
 
 | Archivo | Cambio |
 |---|---|
-| Migración BD | Crear tabla `topic_reminders` con RLS |
-| `src/hooks/useTopicReminders.tsx` | Nuevo hook CRUD |
-| `src/components/TopicReminders.tsx` | Nuevo componente UI |
-| `src/components/TopicCard.tsx` | Integrar TopicReminders |
-| `supabase/functions/send-topic-reminders/index.ts` | Nueva edge function |
-| Cron job (insert SQL) | Programar ejecución diaria |
+| Migración BD | Agregar columna `archived` |
+| `src/pages/Index.tsx` | Sub-pestañas En curso / Archivados + filtro |
+| `src/components/TopicCard.tsx` | Botón archivar/desarchivar |
 
