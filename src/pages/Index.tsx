@@ -79,6 +79,11 @@ const Index = () => {
   const filteredTopics = useMemo(() => {
     const filtered = topics.filter((topic) => {
       if (topic.status !== statusTab) return false;
+      if (statusTab === 'activo') {
+        const isArchived = !!(topic as any).archived;
+        if (archivedTab === 'active' && isArchived) return false;
+        if (archivedTab === 'archived' && !isArchived) return false;
+      }
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
         const matchesTitle = topic.title.toLowerCase().includes(query);
