@@ -1,25 +1,42 @@
 
 
-## Plan: Alerta de triángulo rojo por inactividad en bitácora (+7 días)
+## Plan: Correo de felicitaciones al cerrar un tema
 
-### Cambio
+### Qué se construirá
 
-Agregar un ícono de triángulo rojo (⚠️ `AlertTriangle`) en la línea de metadatos de cada tarjeta de tema cuando la última entrada en la bitácora (`progress_entries`) tiene más de 7 días de antigüedad, o cuando no hay ninguna entrada. Solo se muestra en temas activos/seguimiento (no completados ni pausados).
+Cuando confirmes el cierre de un tema, el sistema enviará automáticamente un correo al responsable (assignee) felicitándolo por completar el tema. El correo incluirá:
+- Nombre del tema
+- Si se cerró a tiempo o con retraso
+- El último mensaje de la bitácora
+- CC a gerencia como en los demás correos
 
-### Implementación
+### Cambios
 
-**Archivo: `src/components/TopicCard.tsx`**
+**1. Nueva edge function `send-topic-closed-notification`**
 
-1. Importar `AlertTriangle` de `lucide-react`
-2. Calcular días desde la última entrada de bitácora:
-   - Tomar `topic.progress_entries`, ordenar por `created_at` desc, obtener la más reciente
-   - Si no hay entradas o la más reciente tiene >7 días → mostrar alerta
-3. En la sección de metadatos (línea ~388, donde ya se muestran alertas de subtareas atrasadas), agregar al inicio de `metaParts` un span rojo con `AlertTriangle` + texto "Sin actualizar" cuando aplique
-4. Solo para temas no completados y no pausados
+Edge function que recibe: `to_email`, `to_name`, `topic_title`, `due_date`, `closed_at`, `is_ongoing`, `last_progress_entry`. Construye un HTML con:
+- "¡Felicitaciones! Se ha cerrado el tema: [título]"
+- Badge verde "✅ A tiempo" o rojo "⚠️ Fuera de plazo" (temas continuos siempre "A tiempo")
+- Último avance de la bitácora
+- CC a matias@ y vicente@
+
+**2. Invocar la función al confirmar cierre en `TopicCard.tsx`**
+
+En el botón "Confirmar cierre" (~línea 1069-1081), después de llamar `onUpdate(...)`:
+- Verificar que el tema tenga `assignee` con email
+- Buscar el email del assignee en la lista de `assignees`
+- Invocar `supabase.functions.invoke('send-topic-closed-notification', { body: ... })`
+- Toast de confirmación/error
+
+**3. Mismo cambio en `ReviewView.tsx`**
+
+En el diálogo de cierre (~línea 364-368), agregar la misma lógica de envío de correo.
 
 ### Archivos afectados
 
 | Archivo | Cambio |
 |---|---|
-| `src/components/TopicCard.tsx` | Importar `AlertTriangle`, calcular inactividad de bitácora, renderizar alerta en metadatos |
+| `supabase/functions/send-topic-closed-notification/index.ts` | Nueva edge function |
+| `src/components/TopicCard.tsx` | Invocar correo al confirmar cierre |
+| `src/components/ReviewView.tsx` | Invocar correo al confirmar cierre desde revisión |
 
