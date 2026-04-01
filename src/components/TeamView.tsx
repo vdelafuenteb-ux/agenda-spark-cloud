@@ -184,7 +184,7 @@ export function TeamView({ topics, assignees, onUpdateTopic, topicEditingProps }
   });
 
   const activeTopics = useMemo(() =>
-    topics.filter(t => t.status === 'activo' || t.status === 'seguimiento'),
+    topics.filter(t => (t.status === 'activo' && !(t as any).archived) || t.status === 'seguimiento'),
     [topics]
   );
 
