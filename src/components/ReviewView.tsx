@@ -42,11 +42,12 @@ const priorityConfig: Record<string, { label: string; className: string }> = {
 
 interface ReviewViewProps {
   topics: TopicWithSubtasks[];
+  assignees: Assignee[];
   onToggleSubtask: (id: string, completed: boolean) => void;
   onUpdateTopic: (id: string, data: Record<string, unknown>) => void;
 }
 
-export function ReviewView({ topics, onToggleSubtask, onUpdateTopic }: ReviewViewProps) {
+export function ReviewView({ topics, assignees, onToggleSubtask, onUpdateTopic }: ReviewViewProps) {
   const [tab, setTab] = useState<ReviewTab>('hoy');
   const [selectedAssignee, setSelectedAssignee] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('todos');
