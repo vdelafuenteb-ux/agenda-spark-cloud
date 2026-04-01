@@ -6,6 +6,7 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/comp
 import { NotificationSection } from '@/components/NotificationSection';
 import { TopicReminders } from '@/components/TopicReminders';
 import { es } from 'date-fns/locale';
+import { useTopicReminders } from '@/hooks/useTopicReminders';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
