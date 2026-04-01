@@ -63,6 +63,7 @@ const Index = () => {
   const [sortBy, setSortBy] = useState<SortOption>('order');
   const [selectedDepartment, setSelectedDepartment] = useState<string>('');
   const [expandedTopicId, setExpandedTopicId] = useState<string | null>(null);
+  const [archivedTab, setArchivedTab] = useState<'active' | 'archived'>('active');
 
   const toggleTagFilter = useCallback((tagId: string) => {
     setSelectedTagIds((prev) => (prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]));
