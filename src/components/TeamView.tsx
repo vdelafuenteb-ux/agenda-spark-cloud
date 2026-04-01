@@ -336,6 +336,18 @@ export function TeamView({ topics, assignees, onUpdateTopic, topicEditingProps }
           </div>
         )}
 
+        {/* Temas sin asignar */}
+        {(() => {
+          const unassigned = activeTopics.filter(t => !t.assignee || t.assignee.trim() === '');
+          return unassigned.length > 0 ? (
+            <div className="flex items-center gap-2 px-1">
+              <Badge variant="outline" className="text-xs text-muted-foreground">
+                Sin asignar: {unassigned.length} tema{unassigned.length !== 1 ? 's' : ''} activo{unassigned.length !== 1 ? 's' : ''}
+              </Badge>
+            </div>
+          ) : null;
+        })()}
+
         {/* Ranking */}
         <div className="space-y-2">
           <h2 className="text-sm font-semibold text-foreground">Ranking de Equipo</h2>
