@@ -124,7 +124,11 @@ export function TopicCard({
   const [rescheduleIsExternal, setRescheduleIsExternal] = useState(false);
   const [showRescheduleHistory, setShowRescheduleHistory] = useState(false);
 
-  useEffect(() => {
+  const { reminders } = useTopicReminders(topic.id);
+  const nextReminder = (topic as any).archived
+    ? reminders.filter(r => !r.sent).sort((a, b) => a.reminder_date.localeCompare(b.reminder_date))[0]
+    : undefined;
+
     if (forceExpand !== null) {
       setExpanded(forceExpand);
     } else if (highlightToday || highlightUpcoming) {
