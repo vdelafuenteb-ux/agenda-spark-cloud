@@ -48,6 +48,7 @@ const Index = () => {
   const { departments, createDepartment, updateDepartment, deleteDepartment } = useDepartments();
   const { reschedulesByTopic, createReschedule } = useReschedules();
   const [filter, setFilter] = useState<Filter>('todos');
+  const [activeSubFilter, setActiveSubFilter] = useState<'all' | 'ongoing' | 'dated'>('all');
   const [statusTab, setStatusTab] = useState<StatusTab>('activo');
   const [reportOpen, setReportOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
@@ -95,6 +96,8 @@ const Index = () => {
       if (filterNoDueDate && topic.due_date) return false;
       if (!showOngoing && topic.is_ongoing) return false;
       if (!showNotOngoing && !topic.is_ongoing) return false;
+      if (statusTab === 'activo' && activeSubFilter === 'ongoing' && !topic.is_ongoing) return false;
+      if (statusTab === 'activo' && activeSubFilter === 'dated' && topic.is_ongoing) return false;
       return true;
     });
     const priorityOrder: Record<string, number> = { alta: 0, media: 1, baja: 2 };
@@ -471,7 +474,7 @@ const Index = () => {
                   <ReportsList onNewReport={() => setReportOpen(true)} />
                 ) : (
                   <>
-                    <Tabs value={statusTab} onValueChange={(value) => { setStatusTab(value as StatusTab); setForceExpand(null); setExpandedTopicId(null); setSearchQuery(''); setSelectedTagIds([]); setSelectedAssignee(''); setSelectedDepartment(''); setFilterNoDueDate(false); setShowOngoing(true); setShowNotOngoing(true); setSortBy('order'); }}>
+                    <Tabs value={statusTab} onValueChange={(value) => { setStatusTab(value as StatusTab); setActiveSubFilter('all'); setForceExpand(null); setExpandedTopicId(null); setSearchQuery(''); setSelectedTagIds([]); setSelectedAssignee(''); setSelectedDepartment(''); setFilterNoDueDate(false); setShowOngoing(true); setShowNotOngoing(true); setSortBy('order'); }}>
                       <TabsList className="w-full">
                         <TabsTrigger value="activo" className="flex-1 text-[11px] sm:text-xs px-1 sm:px-3">Activos <span className="hidden sm:inline">({statusCounts.activo})</span><span className="sm:hidden ml-0.5">{statusCounts.activo}</span></TabsTrigger>
                         <TabsTrigger value="seguimiento" className="flex-1 text-[11px] sm:text-xs px-1 sm:px-3"><span className="sm:hidden">Seguim.</span><span className="hidden sm:inline">Seguimiento</span> <span className="hidden sm:inline">({statusCounts.seguimiento})</span><span className="sm:hidden ml-0.5">{statusCounts.seguimiento}</span></TabsTrigger>
@@ -479,6 +482,35 @@ const Index = () => {
                         <TabsTrigger value="completado" className="flex-1 text-[11px] sm:text-xs px-1 sm:px-3">Cerrados <span className="hidden sm:inline">({statusCounts.completado})</span><span className="sm:hidden ml-0.5">{statusCounts.completado}</span></TabsTrigger>
                       </TabsList>
                     </Tabs>
+
+                    {statusTab === 'activo' && (
+                      <div className="flex gap-1">
+                        <Button
+                          size="sm"
+                          variant={activeSubFilter === 'all' ? 'default' : 'outline'}
+                          className="h-7 text-xs px-3 rounded-full"
+                          onClick={() => setActiveSubFilter('all')}
+                        >
+                          Todos
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant={activeSubFilter === 'ongoing' ? 'default' : 'outline'}
+                          className="h-7 text-xs px-3 rounded-full"
+                          onClick={() => setActiveSubFilter('ongoing')}
+                        >
+                          Continuos
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant={activeSubFilter === 'dated' ? 'default' : 'outline'}
+                          className="h-7 text-xs px-3 rounded-full"
+                          onClick={() => setActiveSubFilter('dated')}
+                        >
+                          Con fecha
+                        </Button>
+                      </div>
+                    )}
 
                     <FilterBar
                       searchQuery={searchQuery}
