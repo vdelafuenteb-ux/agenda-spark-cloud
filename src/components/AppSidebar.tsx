@@ -42,7 +42,7 @@ export function AppSidebar({ activeFilter, onFilterChange, topics }: AppSidebarP
   const collapsed = state === 'collapsed';
   const { signOut } = useAuth();
 
-  const activeTopics = topics.filter(t => t.status === 'activo');
+  const activeTopics = topics.filter(t => t.status === 'activo' && !(t as any).archived);
   const seguimientoCount = topics.filter(t => t.status === 'seguimiento').length;
   const overdueCount = activeTopics.filter(t => isStoredDateOverdue(t.due_date)).length;
   const totalSubtasks = activeTopics.reduce((acc, t) => acc + t.subtasks.length, 0);

@@ -142,7 +142,7 @@ export function DashboardView({ topics, assignees, departments = [], reschedules
     const threeDaysFromNow = addDays(now, 3);
 
     const byStatus = {
-      activo: topics.filter(t => t.status === 'activo'),
+      activo: topics.filter(t => t.status === 'activo' && !(t as any).archived),
       seguimiento: topics.filter(t => t.status === 'seguimiento'),
       pausado: topics.filter(t => t.status === 'pausado'),
       completado: topics.filter(t => t.status === 'completado'),
@@ -239,6 +239,7 @@ export function DashboardView({ topics, assignees, departments = [], reschedules
     const assigneeMap = new Map<string, { total: number; activeCount: number; pausedCount: number; subtasksTotal: number; subtasksDone: number; overdueCount: number; dueSoonCount: number; onTrackCount: number; closedCount: number }>();
     for (const t of topics) {
       if (!t.assignee) continue;
+      if (t.status === 'activo' && (t as any).archived) continue;
       const entry = assigneeMap.get(t.assignee) || { total: 0, activeCount: 0, pausedCount: 0, subtasksTotal: 0, subtasksDone: 0, overdueCount: 0, dueSoonCount: 0, onTrackCount: 0, closedCount: 0 };
       entry.subtasksTotal += t.subtasks.length;
       entry.subtasksDone += t.subtasks.filter(s => s.completed).length;

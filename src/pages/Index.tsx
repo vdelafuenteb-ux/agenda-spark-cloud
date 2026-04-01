@@ -144,6 +144,7 @@ const Index = () => {
   const statusCounts = useMemo(() => {
     const counts = { activo: 0, seguimiento: 0, pausado: 0, completado: 0 };
     for (const t of topics) {
+      if (t.status === 'activo' && (t as any).archived) continue;
       if (t.status in counts) counts[t.status as keyof typeof counts]++;
     }
     return counts;

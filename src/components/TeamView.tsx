@@ -97,7 +97,7 @@ function calculateAssigneeScore(
   emailHistory: any[]
 ): Omit<AssigneeScore, 'assignee' | 'weeklyHours' | 'capacity' | 'loadPct'> {
   const assigneeTopics = allTopics.filter(t => t.assignee === assigneeName);
-  const active = assigneeTopics.filter(t => t.status === 'activo');
+  const active = assigneeTopics.filter(t => t.status === 'activo' && !(t as any).archived);
   const seguimiento = assigneeTopics.filter(t => t.status === 'seguimiento');
   const completed = assigneeTopics.filter(t => t.status === 'completado');
   const activeAndTracking = [...active, ...seguimiento];
@@ -184,7 +184,7 @@ export function TeamView({ topics, assignees, onUpdateTopic, topicEditingProps }
   });
 
   const activeTopics = useMemo(() =>
-    topics.filter(t => t.status === 'activo' || t.status === 'seguimiento'),
+    topics.filter(t => (t.status === 'activo' && !(t as any).archived) || t.status === 'seguimiento'),
     [topics]
   );
 
