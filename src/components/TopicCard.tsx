@@ -224,7 +224,6 @@ export function TopicCard({
           >
             <Pin className={cn('h-3.5 w-3.5', topic.pinned && 'fill-current')} />
           </button>
-          </button>
           <motion.div animate={{ rotate: expanded ? 90 : 0 }} transition={{ duration: 0.15 }}>
             <ChevronRight className="h-4 w-4 text-muted-foreground" />
           </motion.div>
