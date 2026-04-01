@@ -91,9 +91,9 @@ Deno.serve(async (req) => {
     `;
 
     const emailPayload = {
-      to: to_email,
-      subject: `✅ Tema cerrado: ${topic_title}`,
-      html,
+      para: to_email,
+      asunto: `✅ Tema cerrado: ${topic_title}`,
+      mensaje: html,
       cc: ["matias@transitglobalgroup.com", "vicente@transitglobalgroup.com"],
     };
 
