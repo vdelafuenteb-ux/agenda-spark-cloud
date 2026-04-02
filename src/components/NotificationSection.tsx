@@ -104,6 +104,7 @@ export function NotificationSection({ topic, assignees }: NotificationSectionPro
           to_email: assignee.email,
           to_name: assignee.name,
           topic_title: topic.title,
+          execution_order: (topic as any).execution_order ?? null,
           start_date: topic.start_date,
           due_date: topic.due_date,
           subtasks: topic.subtasks.map((s) => ({

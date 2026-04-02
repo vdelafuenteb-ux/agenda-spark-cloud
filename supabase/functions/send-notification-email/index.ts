@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { to_email, to_name, topic_title, subtasks, start_date, due_date, progress_entries, topic_id } = await req.json();
+    const { to_email, to_name, topic_title, execution_order, subtasks, start_date, due_date, progress_entries, topic_id } = await req.json();
 
     if (!to_email || !topic_title) {
       return new Response(
@@ -120,7 +120,10 @@ Deno.serve(async (req) => {
     const titleColor = isOverdue ? "color:#c0392b;" : "color:#2c3e50;";
 
     mensaje += `<div style="margin:12px 0;padding:12px 16px;background:#f8f9fa;border-radius:6px;${cardBorder}">`;
-    mensaje += `<p style="margin:0 0 8px;font-size:15px;font-weight:700;${titleColor}">1. ${topic_title}</p>`;
+    const orderBadge = execution_order != null
+      ? `<span style="display:inline-block;background:#2563eb;color:#fff;border-radius:50%;width:24px;height:24px;text-align:center;line-height:24px;font-size:12px;font-weight:700;margin-right:6px;vertical-align:middle;">${execution_order}</span>`
+      : '';
+    mensaje += `<p style="margin:0 0 8px;font-size:15px;font-weight:700;${titleColor}">${orderBadge}${topic_title}</p>`;
     mensaje += `<table style="width:100%;border-collapse:collapse;font-size:13px;">`;
     mensaje += `<tr><td style="padding:3px 0;color:#888;width:110px;">Inicio</td><td style="padding:3px 0;">${formatDate(start_date) || "—"}</td></tr>`;
     mensaje += `<tr><td style="padding:3px 0;color:#888;">Vencimiento</td><td style="padding:3px 0;">${formatDate(due_date) || "—"}</td></tr>`;
