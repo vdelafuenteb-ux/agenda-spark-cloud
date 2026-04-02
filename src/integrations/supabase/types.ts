@@ -477,6 +477,42 @@ export type Database = {
           },
         ]
       }
+      reminder_emails: {
+        Row: {
+          created_at: string
+          day_of_week: number
+          enabled: boolean
+          id: string
+          message: string
+          recipient_emails: Json
+          send_hour: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week?: number
+          enabled?: boolean
+          id?: string
+          message?: string
+          recipient_emails?: Json
+          send_hour?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: number
+          enabled?: boolean
+          id?: string
+          message?: string
+          recipient_emails?: Json
+          send_hour?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       reminders: {
         Row: {
           color: string
