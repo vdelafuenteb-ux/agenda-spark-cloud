@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { isStoredDateToday, isStoredDateUpcoming, isStoredDateOverdue } from '@/lib/date';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ChevronDown, Plus, Trash2, CalendarIcon, CheckCircle2, RotateCcw, Pause, Play, User, Pin, Check, X, Infinity as InfinityIcon, RefreshCw, Archive, ArchiveRestore, AlertTriangle } from 'lucide-react';
+import { ChevronRight, ChevronDown, Plus, Trash2, CalendarIcon, CheckCircle2, RotateCcw, Pause, Play, User, Pin, Check, X, Infinity as InfinityIcon, RefreshCw, Archive, ArchiveRestore, AlertTriangle, Flag } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { NotificationSection } from '@/components/NotificationSection';
 import { TopicReminders } from '@/components/TopicReminders';
@@ -253,10 +253,11 @@ export function TopicCard({
           {/* Line 1: Title + progress + date */}
           <div className="flex items-center gap-2">
              {(topic as any).execution_order != null && (
-              <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-primary text-primary-foreground text-xs font-bold shrink-0 shadow-sm ring-2 ring-primary/20" title={`Orden de prioridad #${(topic as any).execution_order}`}>
-                {(topic as any).execution_order}
-              </span>
-             )}
+               <span className="inline-flex items-center gap-1 rounded-md bg-primary text-primary-foreground px-2 py-0.5 text-xs font-bold shrink-0 shadow-sm" title={`Prioridad de ejecución #${(topic as any).execution_order}`}>
+                 <Flag className="h-3 w-3" />
+                 P{(topic as any).execution_order}
+               </span>
+              )}
             {editingTitle ? (
               <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                 <input
