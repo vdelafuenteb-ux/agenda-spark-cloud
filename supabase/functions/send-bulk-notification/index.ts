@@ -92,8 +92,16 @@ Deno.serve(async (req) => {
 
     const APP_URL = "https://project-zenflow-66.lovable.app";
 
+    // Sort topics by execution_order (those with order first, then rest)
+    const sortedTopics = [...topics].sort((a: any, b: any) => {
+      if (a.execution_order != null && b.execution_order != null) return a.execution_order - b.execution_order;
+      if (a.execution_order != null) return -1;
+      if (b.execution_order != null) return 1;
+      return 0;
+    });
+
     // Build executive HTML email body with summary table
-    const topicsWithPending = topics.map((topic: any, index: number) => {
+    const topicsWithPending = sortedTopics.map((topic: any, index: number) => {
       const pending = (topic.subtasks || []).filter((s: any) => !s.completed);
       return { ...topic, pendingSubtasks: pending, num: index + 1 };
     });
