@@ -1,42 +1,50 @@
 
 
-## Plan: Correo de felicitaciones al cerrar un tema
+## Plan: Destacar el orden de prioridad en correos y en la vista de temas
 
-### Qué se construirá
+### Problema actual
 
-Cuando confirmes el cierre de un tema, el sistema enviará automáticamente un correo al responsable (assignee) felicitándolo por completar el tema. El correo incluirá:
-- Nombre del tema
-- Si se cerró a tiempo o con retraso
-- El último mensaje de la bitácora
-- CC a gerencia como en los demás correos
+- En los correos (programados del lunes, bulk, individual), los temas se numeran secuencialmente (1, 2, 3...) sin mostrar el `execution_order` real que asignas en la plataforma.
+- En la vista de temas del tablero, el número de orden aparece como un círculo pequeño (20px) que no destaca lo suficiente.
 
 ### Cambios
 
-**1. Nueva edge function `send-topic-closed-notification`**
+**1. Correos programados (`send-scheduled-emails/index.ts`)**
+- Ordenar `assigneeTopics` por `execution_order` (los que tienen orden primero, luego el resto)
+- Mostrar el `execution_order` como badge destacado antes del título: `🔷 #1 — Nombre del tema` en lugar de un número secuencial
+- Si no tiene orden asignado, mostrar sin número
 
-Edge function que recibe: `to_email`, `to_name`, `topic_title`, `due_date`, `closed_at`, `is_ongoing`, `last_progress_entry`. Construye un HTML con:
-- "¡Felicitaciones! Se ha cerrado el tema: [título]"
-- Badge verde "✅ A tiempo" o rojo "⚠️ Fuera de plazo" (temas continuos siempre "A tiempo")
-- Último avance de la bitácora
-- CC a matias@ y vicente@
+**2. Correo bulk (`send-bulk-notification/index.ts`)**
+- Mismo cambio: ordenar topics por `execution_order` y mostrar el badge de prioridad destacado
 
-**2. Invocar la función al confirmar cierre en `TopicCard.tsx`**
+**3. Correo individual (`send-notification-email/index.ts`)**
+- Recibir `execution_order` como campo adicional en el body
+- Si existe, mostrarlo destacado en el título del tema
 
-En el botón "Confirmar cierre" (~línea 1069-1081), después de llamar `onUpdate(...)`:
-- Verificar que el tema tenga `assignee` con email
-- Buscar el email del assignee en la lista de `assignees`
-- Invocar `supabase.functions.invoke('send-topic-closed-notification', { body: ... })`
-- Toast de confirmación/error
+**4. Vista de temas en el tablero (`TopicCard.tsx`)**
+- Agrandar el badge de orden: de 20px a 24px, con fondo más llamativo (azul primario más grande)
+- Agregar un borde/sombra para que resalte visualmente
 
-**3. Mismo cambio en `ReviewView.tsx`**
+### Formato del orden en correos (HTML)
 
-En el diálogo de cierre (~línea 364-368), agregar la misma lógica de envío de correo.
+```html
+<!-- Con orden asignado -->
+<span style="display:inline-block;background:#2563eb;color:#fff;
+  border-radius:50%;width:24px;height:24px;text-align:center;
+  line-height:24px;font-size:12px;font-weight:700;margin-right:6px;">1</span>
+<strong>Nombre del tema</strong>
+
+<!-- Sin orden asignado -->
+<strong>• Nombre del tema</strong>
+```
 
 ### Archivos afectados
 
 | Archivo | Cambio |
 |---|---|
-| `supabase/functions/send-topic-closed-notification/index.ts` | Nueva edge function |
-| `src/components/TopicCard.tsx` | Invocar correo al confirmar cierre |
-| `src/components/ReviewView.tsx` | Invocar correo al confirmar cierre desde revisión |
+| `supabase/functions/send-scheduled-emails/index.ts` | Ordenar por `execution_order`, mostrar badge de orden |
+| `supabase/functions/send-bulk-notification/index.ts` | Ordenar por `execution_order`, mostrar badge de orden |
+| `supabase/functions/send-notification-email/index.ts` | Recibir y mostrar `execution_order` |
+| `src/components/TopicCard.tsx` | Agrandar y destacar badge de orden de ejecución |
+| `src/components/NotificationSection.tsx` | Pasar `execution_order` al invocar send-notification-email |
 
