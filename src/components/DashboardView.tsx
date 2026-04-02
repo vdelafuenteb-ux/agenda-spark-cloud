@@ -148,7 +148,7 @@ export function DashboardView({ topics, assignees, departments = [], reschedules
       completado: topics.filter(t => t.status === 'completado'),
     };
 
-    const allSubtasks = topics.flatMap(t => t.subtasks);
+    const allSubtasks = topics.filter(t => t.status !== 'pausado').flatMap(t => t.subtasks);
     const completedSubtasks = allSubtasks.filter(s => s.completed);
     const subtaskProgress = allSubtasks.length > 0
       ? Math.round((completedSubtasks.length / allSubtasks.length) * 100)
