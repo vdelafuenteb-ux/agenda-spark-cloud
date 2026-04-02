@@ -253,10 +253,11 @@ export function TopicCard({
           {/* Line 1: Title + progress + date */}
           <div className="flex items-center gap-2">
              {(topic as any).execution_order != null && (
-              <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-primary text-primary-foreground text-xs font-bold shrink-0 shadow-sm ring-2 ring-primary/20" title={`Orden de prioridad #${(topic as any).execution_order}`}>
-                {(topic as any).execution_order}
-              </span>
-             )}
+               <span className="inline-flex items-center gap-1 rounded-md bg-primary text-primary-foreground px-2 py-0.5 text-xs font-bold shrink-0 shadow-sm" title={`Prioridad de ejecución #${(topic as any).execution_order}`}>
+                 <Flag className="h-3 w-3" />
+                 P{(topic as any).execution_order}
+               </span>
+              )}
             {editingTitle ? (
               <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                 <input
