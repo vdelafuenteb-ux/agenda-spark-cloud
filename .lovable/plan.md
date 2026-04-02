@@ -1,50 +1,39 @@
 
 
-## Plan: Destacar el orden de prioridad en correos y en la vista de temas
+## Plan: Mejorar badge de prioridad de ejecución
 
 ### Problema actual
 
-- En los correos (programados del lunes, bulk, individual), los temas se numeran secuencialmente (1, 2, 3...) sin mostrar el `execution_order` real que asignas en la plataforma.
-- En la vista de temas del tablero, el número de orden aparece como un círculo pequeño (20px) que no destaca lo suficiente.
+1. El badge solo muestra el número (ej: "3") sin contexto — no queda claro que es la prioridad
+2. Los temas ya se ordenan por `execution_order` (el sorting funciona), pero visualmente no se distingue bien
 
-### Cambios
+### Cambio
 
-**1. Correos programados (`send-scheduled-emails/index.ts`)**
-- Ordenar `assigneeTopics` por `execution_order` (los que tienen orden primero, luego el resto)
-- Mostrar el `execution_order` como badge destacado antes del título: `🔷 #1 — Nombre del tema` en lugar de un número secuencial
-- Si no tiene orden asignado, mostrar sin número
+**Archivo: `src/components/TopicCard.tsx`**
 
-**2. Correo bulk (`send-bulk-notification/index.ts`)**
-- Mismo cambio: ordenar topics por `execution_order` y mostrar el badge de prioridad destacado
+Reemplazar el badge circular con solo el número por un badge tipo etiqueta más descriptivo y ejecutivo:
 
-**3. Correo individual (`send-notification-email/index.ts`)**
-- Recibir `execution_order` como campo adicional en el body
-- Si existe, mostrarlo destacado en el título del tema
+- Formato: `P1`, `P2`, `P3` (P de Prioridad) dentro de un badge rectangular redondeado
+- O alternativamente: `#1`, `#2`, `#3` con un label "Prioridad" en tooltip
+- Color: azul primario para prioridades 1-3, gris para el resto
+- Tamaño más grande y con texto "Prioridad" visible como sub-texto o label
 
-**4. Vista de temas en el tablero (`TopicCard.tsx`)**
-- Agrandar el badge de orden: de 20px a 24px, con fondo más llamativo (azul primario más grande)
-- Agregar un borde/sombra para que resalte visualmente
-
-### Formato del orden en correos (HTML)
-
-```html
-<!-- Con orden asignado -->
-<span style="display:inline-block;background:#2563eb;color:#fff;
-  border-radius:50%;width:24px;height:24px;text-align:center;
-  line-height:24px;font-size:12px;font-weight:700;margin-right:6px;">1</span>
-<strong>Nombre del tema</strong>
-
-<!-- Sin orden asignado -->
-<strong>• Nombre del tema</strong>
+Propuesta visual:
 ```
+[🏷 P1]  Facturas API 2025...
+[🏷 P2]  Desarrollo Plataforma...
+[🏷 P3]  Patentes comerciales...
+```
+
+El badge sería un rectángulo redondeado con fondo azul, texto blanco, y un icono pequeño de bandera o medalla para que se entienda de inmediato que es el orden de prioridad.
+
+Ejemplo de estilo:
+- Badge: `bg-primary text-white rounded-md px-2 py-0.5 text-xs font-bold` con texto `P1`
+- Tooltip al pasar el mouse: "Prioridad de ejecución #1"
 
 ### Archivos afectados
 
 | Archivo | Cambio |
 |---|---|
-| `supabase/functions/send-scheduled-emails/index.ts` | Ordenar por `execution_order`, mostrar badge de orden |
-| `supabase/functions/send-bulk-notification/index.ts` | Ordenar por `execution_order`, mostrar badge de orden |
-| `supabase/functions/send-notification-email/index.ts` | Recibir y mostrar `execution_order` |
-| `src/components/TopicCard.tsx` | Agrandar y destacar badge de orden de ejecución |
-| `src/components/NotificationSection.tsx` | Pasar `execution_order` al invocar send-notification-email |
+| `src/components/TopicCard.tsx` | Cambiar badge circular por badge rectangular con "P1/P2/P3" más descriptivo y ejecutivo |
 
