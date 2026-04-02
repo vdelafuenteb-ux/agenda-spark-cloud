@@ -1,33 +1,57 @@
 
 
-## Plan: Orden de ejecución siempre primero, automáticamente
+## Plan: Correo semanal de recordatorio de reportes
 
-### Problema
+### Qué se construirá
 
-Actualmente el orden de ejecución solo aplica cuando se selecciona manualmente "Orden de ejecución" en el dropdown. Si seleccionas "Prioridad", los temas con P1 pueden quedar debajo de P3 porque ordena solo por nivel (alta/media/baja).
+Un nuevo tipo de correo automático configurable: un recordatorio simple con un mensaje personalizado (ej: "Estimados por favor no olvidar enviar los reportes semanales") que se envía a correos seleccionados en un día y hora específicos. Se gestiona desde la sección de Correos Automáticos en Configuración.
 
-### Solución
+### Cambios
 
-Hacer que el orden de ejecución (`execution_order`) **siempre mande** en todos los modos de ordenamiento. Los temas con orden asignado siempre van primero (P1, P2, P3...), y los temas sin orden se ordenan según el criterio seleccionado (prioridad, fecha, etc.).
+**1. Nueva tabla `reminder_emails` (migración)**
 
-### Cambio
+Almacena las configuraciones de correos recordatorio simples:
+- `id`, `user_id`, `enabled`, `day_of_week`, `send_hour`, `message` (texto del correo), `recipient_emails` (jsonb array de strings), `created_at`, `updated_at`
 
-**Archivo: `src/pages/Index.tsx`** (~líneas 108-131)
+RLS: solo el usuario dueño puede CRUD.
 
-Modificar la función de sort para que **antes** de aplicar el criterio seleccionado, siempre agrupe los temas con `execution_order` al inicio:
+**2. Hook `useReminderEmails.tsx`**
 
-```
-1. Pinned primero
-2. Atrasados primero  
-3. Temas CON execution_order → ordenados por execution_order (P1, P2, P3...)
-4. Temas SIN execution_order → ordenados por el criterio seleccionado (prioridad/fecha/creación)
-```
+CRUD para la tabla `reminder_emails`, mismo patrón que `useEmailSchedules`.
 
-Así, sin importar qué opción de ordenamiento elijas, P1 siempre estará antes que P2, y P2 antes que P3. Los temas sin orden asignado aparecen después, ordenados según tu selección.
+**3. Componente `ReminderEmailSettings.tsx`**
+
+Formulario con:
+- Switch activar/desactivar
+- Selector de día y hora
+- Textarea para el mensaje a enviar
+- Lista de correos destinatarios (input para agregar/quitar emails)
+- Resumen de la configuración
+- Botones guardar/eliminar
+
+**4. Integrar en `SettingsView.tsx`**
+
+Renderizar `ReminderEmailSettings` debajo de `EmailScheduleSettings` en la sección "Correos Automáticos".
+
+**5. Edge function `send-reminder-email/index.ts`**
+
+- Consulta `reminder_emails` donde `enabled = true`, `day_of_week` coincide con el día actual y `send_hour` con la hora actual (Chile)
+- Envía el mensaje a cada email en `recipient_emails` vía la API de Firebase existente
+- Se invoca por cron (mismo patrón que `send-scheduled-emails`)
+
+**6. Cron job**
+
+Agregar un cron que invoque `send-reminder-email` cada hora (mismo patrón existente).
 
 ### Archivos afectados
 
 | Archivo | Cambio |
 |---|---|
-| `src/pages/Index.tsx` | Modificar sort para que `execution_order` siempre sea el criterio principal después de pinned/atrasados |
+| Migración BD | Crear tabla `reminder_emails` con RLS |
+| `src/hooks/useReminderEmails.tsx` | Nuevo hook CRUD |
+| `src/components/ReminderEmailSettings.tsx` | Nuevo componente UI |
+| `src/components/SettingsView.tsx` | Agregar `ReminderEmailSettings` en sección correos automáticos |
+| `supabase/functions/send-reminder-email/index.ts` | Nueva edge function |
+| `supabase/config.toml` | Agregar `verify_jwt = false` para la función |
+| SQL (insert tool) | Crear cron job |
 
