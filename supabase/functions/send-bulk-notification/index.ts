@@ -125,7 +125,10 @@ Deno.serve(async (req) => {
       const lastEntry = (t.progress_entries || []).length > 0 ? (t.progress_entries || [])[0]?.content || "" : "";
 
       mensaje += `<div style="margin:10px 0;padding:10px 14px;background:#f8f9fa;border-radius:6px;${cardBorder}">`;
-      mensaje += `<p style="margin:0 0 6px;font-size:14px;font-weight:700;${titleColor}">${t.num}. ${t.title}</p>`;
+          const orderBadge = t.execution_order != null
+            ? `<span style="display:inline-block;background:#2563eb;color:#fff;border-radius:50%;width:24px;height:24px;text-align:center;line-height:24px;font-size:12px;font-weight:700;margin-right:6px;vertical-align:middle;">${t.execution_order}</span>`
+            : '';
+          mensaje += `<p style="margin:0 0 6px;font-size:14px;font-weight:700;${titleColor}">${orderBadge}${t.title}</p>`;
       mensaje += `<table style="width:100%;border-collapse:collapse;font-size:13px;">`;
       mensaje += `<tr><td style="padding:3px 0;color:#888;width:110px;">Inicio</td><td style="padding:3px 0;">${formatDate(t.start_date) || "—"}</td></tr>`;
       mensaje += `<tr><td style="padding:3px 0;color:#888;">Vencimiento</td><td style="padding:3px 0;">${formatDate(t.due_date) || "—"}</td></tr>`;
