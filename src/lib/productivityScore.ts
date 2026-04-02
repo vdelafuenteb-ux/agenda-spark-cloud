@@ -38,8 +38,9 @@ export function computeProductivityScore(
   const closureComplianceRate = closureTotal > 0
     ? Math.round((closureOnTime / closureTotal) * 100) : null;
 
-  // --- Subtask timeliness ---
-  const allSubtasks = assigneeTopics.flatMap(t => t.subtasks);
+  // --- Subtask timeliness (exclude paused topics) ---
+  const nonPausedTopics = assigneeTopics.filter(t => t.status !== 'pausado');
+  const allSubtasks = nonPausedTopics.flatMap(t => t.subtasks);
   const completedSubtasks = allSubtasks.filter(s => s.completed);
   const completedWithDue = completedSubtasks.filter(s => s.due_date && s.completed_at);
   const subtasksOnTime = completedWithDue.filter(s => {

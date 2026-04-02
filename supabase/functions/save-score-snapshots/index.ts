@@ -44,8 +44,9 @@ function calculateScore(
   const closureRate = closureTotal > 0 ? Math.round((closureOnTime / closureTotal) * 100) : null;
 
   // 2. Subtask timeliness (20%)
+  const nonPausedTopics = assigneeTopics.filter((t: any) => t.status !== 'pausado');
   const assigneeSubtasks = subtasks.filter((s: any) =>
-    assigneeTopics.some((t: any) => t.id === s.topic_id)
+    nonPausedTopics.some((t: any) => t.id === s.topic_id)
   );
   const completedWithDue = assigneeSubtasks.filter((s: any) => s.completed && s.due_date && s.completed_at);
   const subtasksOnTime = completedWithDue.filter((s: any) => {
