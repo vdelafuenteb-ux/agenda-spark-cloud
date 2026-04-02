@@ -488,6 +488,7 @@ export function SettingsView({ tags, assignees, departments, topics, onDeleteTag
                 <p className="text-xs text-muted-foreground mt-0.5">Configura el envío programado de correos a responsables.</p>
               </div>
               <EmailScheduleSettings assignees={assignees} topics={topics} />
+              <ReminderEmailSettings />
             </div>
           )}
 

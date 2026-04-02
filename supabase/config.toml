@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.send-topic-closed-notification]
 verify_jwt = false
+
+[functions.send-reminder-email]
+verify_jwt = false
