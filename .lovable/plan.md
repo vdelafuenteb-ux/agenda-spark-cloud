@@ -1,39 +1,33 @@
 
 
-## Plan: Mejorar badge de prioridad de ejecución
+## Plan: Orden de ejecución siempre primero, automáticamente
 
-### Problema actual
+### Problema
 
-1. El badge solo muestra el número (ej: "3") sin contexto — no queda claro que es la prioridad
-2. Los temas ya se ordenan por `execution_order` (el sorting funciona), pero visualmente no se distingue bien
+Actualmente el orden de ejecución solo aplica cuando se selecciona manualmente "Orden de ejecución" en el dropdown. Si seleccionas "Prioridad", los temas con P1 pueden quedar debajo de P3 porque ordena solo por nivel (alta/media/baja).
+
+### Solución
+
+Hacer que el orden de ejecución (`execution_order`) **siempre mande** en todos los modos de ordenamiento. Los temas con orden asignado siempre van primero (P1, P2, P3...), y los temas sin orden se ordenan según el criterio seleccionado (prioridad, fecha, etc.).
 
 ### Cambio
 
-**Archivo: `src/components/TopicCard.tsx`**
+**Archivo: `src/pages/Index.tsx`** (~líneas 108-131)
 
-Reemplazar el badge circular con solo el número por un badge tipo etiqueta más descriptivo y ejecutivo:
+Modificar la función de sort para que **antes** de aplicar el criterio seleccionado, siempre agrupe los temas con `execution_order` al inicio:
 
-- Formato: `P1`, `P2`, `P3` (P de Prioridad) dentro de un badge rectangular redondeado
-- O alternativamente: `#1`, `#2`, `#3` con un label "Prioridad" en tooltip
-- Color: azul primario para prioridades 1-3, gris para el resto
-- Tamaño más grande y con texto "Prioridad" visible como sub-texto o label
-
-Propuesta visual:
 ```
-[🏷 P1]  Facturas API 2025...
-[🏷 P2]  Desarrollo Plataforma...
-[🏷 P3]  Patentes comerciales...
+1. Pinned primero
+2. Atrasados primero  
+3. Temas CON execution_order → ordenados por execution_order (P1, P2, P3...)
+4. Temas SIN execution_order → ordenados por el criterio seleccionado (prioridad/fecha/creación)
 ```
 
-El badge sería un rectángulo redondeado con fondo azul, texto blanco, y un icono pequeño de bandera o medalla para que se entienda de inmediato que es el orden de prioridad.
-
-Ejemplo de estilo:
-- Badge: `bg-primary text-white rounded-md px-2 py-0.5 text-xs font-bold` con texto `P1`
-- Tooltip al pasar el mouse: "Prioridad de ejecución #1"
+Así, sin importar qué opción de ordenamiento elijas, P1 siempre estará antes que P2, y P2 antes que P3. Los temas sin orden asignado aparecen después, ordenados según tu selección.
 
 ### Archivos afectados
 
 | Archivo | Cambio |
 |---|---|
-| `src/components/TopicCard.tsx` | Cambiar badge circular por badge rectangular con "P1/P2/P3" más descriptivo y ejecutivo |
+| `src/pages/Index.tsx` | Modificar sort para que `execution_order` siempre sea el criterio principal después de pinned/atrasados |
 
