@@ -131,6 +131,14 @@ Deno.serve(async (req) => {
 
         const APP_URL = "https://project-zenflow-66.lovable.app";
 
+        // Sort by execution_order (those with order first, then rest)
+        assigneeTopics.sort((a: any, b: any) => {
+          if (a.execution_order != null && b.execution_order != null) return a.execution_order - b.execution_order;
+          if (a.execution_order != null) return -1;
+          if (b.execution_order != null) return 1;
+          return 0;
+        });
+
         // Sort progress entries desc
         assigneeTopics.forEach((t: any) => {
           if (t.progress_entries) {
