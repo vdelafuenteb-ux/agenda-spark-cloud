@@ -113,13 +113,19 @@ const Index = () => {
       const bOverdue = b.due_date && !b.is_ongoing && b.status !== 'completado' && isStoredDateOverdue(b.due_date) ? 1 : 0;
       if (aOverdue !== bOverdue) return bOverdue - aOverdue;
 
-      if (sortBy === 'order') {
-        const orderA = (a as any).execution_order ?? Infinity;
-        const orderB = (b as any).execution_order ?? Infinity;
-        if (orderA !== orderB) return orderA - orderB;
-        return (priorityOrder[a.priority] ?? 2) - (priorityOrder[b.priority] ?? 2);
+      // execution_order siempre manda: temas con orden van primero
+      const orderA = (a as any).execution_order;
+      const orderB = (b as any).execution_order;
+      const hasOrderA = orderA != null;
+      const hasOrderB = orderB != null;
+
+      if (hasOrderA || hasOrderB) {
+        if (hasOrderA && hasOrderB) return orderA - orderB;
+        return hasOrderA ? -1 : 1;
       }
-      if (sortBy === 'priority') {
+
+      // Temas sin execution_order: ordenar según criterio seleccionado
+      if (sortBy === 'priority' || sortBy === 'order') {
         return (priorityOrder[a.priority] ?? 2) - (priorityOrder[b.priority] ?? 2);
       }
       if (sortBy === 'due_date') {
@@ -127,7 +133,6 @@ const Index = () => {
         const db = b.due_date || '9999-12-31';
         return da.localeCompare(db);
       }
-      // created
       return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
     });
   }, [topics, statusTab, archivedTab, searchQuery, selectedTagIds, selectedAssignee, selectedDepartment, departments, filterNoDueDate, showOngoing, showNotOngoing, getTagsForTopic, sortBy]);
