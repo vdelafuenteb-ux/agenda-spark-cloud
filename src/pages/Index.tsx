@@ -109,11 +109,7 @@ const Index = () => {
       const pinDiff = (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0);
       if (pinDiff !== 0) return pinDiff;
 
-      const aOverdue = a.due_date && !a.is_ongoing && a.status !== 'completado' && isStoredDateOverdue(a.due_date) ? 1 : 0;
-      const bOverdue = b.due_date && !b.is_ongoing && b.status !== 'completado' && isStoredDateOverdue(b.due_date) ? 1 : 0;
-      if (aOverdue !== bOverdue) return bOverdue - aOverdue;
-
-      // execution_order siempre manda: temas con orden van primero
+      // execution_order siempre manda: temas con orden van primero incluso si están atrasados
       const orderA = (a as any).execution_order;
       const orderB = (b as any).execution_order;
       const hasOrderA = orderA != null;
@@ -123,6 +119,11 @@ const Index = () => {
         if (hasOrderA && hasOrderB) return orderA - orderB;
         return hasOrderA ? -1 : 1;
       }
+
+      // Para temas sin execution_order, los atrasados siguen yendo primero
+      const aOverdue = a.due_date && !a.is_ongoing && a.status !== 'completado' && isStoredDateOverdue(a.due_date) ? 1 : 0;
+      const bOverdue = b.due_date && !b.is_ongoing && b.status !== 'completado' && isStoredDateOverdue(b.due_date) ? 1 : 0;
+      if (aOverdue !== bOverdue) return bOverdue - aOverdue;
 
       // Temas sin execution_order: ordenar según criterio seleccionado
       if (sortBy === 'priority' || sortBy === 'order') {
