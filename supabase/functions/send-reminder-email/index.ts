@@ -72,47 +72,33 @@ Deno.serve(async (req) => {
       for (const recipientEmail of recipients) {
         try {
           const htmlBody = `
-            <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:600px;margin:0 auto;background:#ffffff;">
-              <!-- Header -->
-              <div style="background:linear-gradient(135deg,#1e40af 0%,#3b82f6 100%);padding:32px 32px 24px;border-radius:12px 12px 0 0;">
-                <h1 style="margin:0;font-size:22px;font-weight:700;color:#ffffff;letter-spacing:-0.3px;">
-                  📋 ${subject}
+            <div style="font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;max-width:600px;margin:0 auto;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+              <!-- Header con gradiente premium -->
+              <div style="background:linear-gradient(135deg,#0f172a 0%,#1e40af 50%,#3b82f6 100%);padding:40px 36px 32px;text-align:center;">
+                <div style="width:56px;height:56px;background:rgba(255,255,255,0.15);border-radius:50%;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;">
+                  <span style="font-size:28px;line-height:56px;">📋</span>
+                </div>
+                <h1 style="margin:0;font-size:24px;font-weight:700;color:#ffffff;letter-spacing:-0.3px;">
+                  ${subject}
                 </h1>
-                <p style="margin:6px 0 0;font-size:13px;color:rgba(255,255,255,0.8);">
-                  Notificación automática del sistema de gestión
-                </p>
               </div>
 
-              <!-- Body -->
-              <div style="border:1px solid #e5e7eb;border-top:none;padding:32px;border-radius:0 0 12px 12px;">
-                <div style="background:#f8fafc;border-left:4px solid #3b82f6;border-radius:0 8px 8px 0;padding:20px 24px;margin-bottom:24px;">
-                  <p style="font-size:15px;color:#1e293b;line-height:1.7;margin:0;white-space:pre-line;">
+              <!-- Contenido principal -->
+              <div style="padding:36px 36px 28px;">
+                <div style="background:linear-gradient(135deg,#eff6ff,#f0f9ff);border-left:4px solid #3b82f6;border-radius:0 12px 12px 0;padding:24px 28px;margin-bottom:28px;">
+                  <p style="font-size:15px;color:#1e293b;line-height:1.8;margin:0;white-space:pre-line;">
                     ${reminder.message.replace(/\n/g, "<br/>")}
                   </p>
                 </div>
 
-                <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
-                  <tr>
-                    <td style="padding:8px 12px;background:#f1f5f9;border-radius:6px;width:50%;">
-                      <p style="margin:0;font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;">Programado</p>
-                      <p style="margin:2px 0 0;font-size:14px;color:#1e293b;font-weight:600;">
-                        ${["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"][reminder.day_of_week]} a las ${String(reminder.send_hour).padStart(2,"0")}:00
-                      </p>
-                    </td>
-                    <td style="width:12px;"></td>
-                    <td style="padding:8px 12px;background:#f1f5f9;border-radius:6px;width:50%;">
-                      <p style="margin:0;font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;">Destinatarios</p>
-                      <p style="margin:2px 0 0;font-size:14px;color:#1e293b;font-weight:600;">
-                        ${recipients.length} persona${recipients.length !== 1 ? "s" : ""}
-                      </p>
-                    </td>
-                  </tr>
-                </table>
+                <!-- Separador decorativo -->
+                <div style="text-align:center;margin:24px 0;">
+                  <span style="display:inline-block;width:40px;height:3px;background:linear-gradient(90deg,#3b82f6,#60a5fa);border-radius:2px;"></span>
+                </div>
 
-                <hr style="border:none;border-top:1px solid #e2e8f0;margin:0 0 16px;" />
-                <p style="font-size:11px;color:#94a3b8;margin:0;text-align:center;">
-                  Este es un correo automático enviado por el sistema de gestión.<br/>
-                  Por favor no responder a este mensaje.
+                <!-- Footer elegante -->
+                <p style="font-size:12px;color:#94a3b8;margin:0;text-align:center;line-height:1.6;">
+                  Correo generado automáticamente · Sistema de Gestión
                 </p>
               </div>
             </div>
