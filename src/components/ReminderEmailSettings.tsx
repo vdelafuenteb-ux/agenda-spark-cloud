@@ -7,8 +7,9 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Save, Trash2, X, Mail, UserPlus } from 'lucide-react';
+import { Plus, Save, Trash2, X, Mail, UserPlus, Send, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import { useReminderEmails, type ReminderEmail } from '@/hooks/useReminderEmails';
 import type { Assignee } from '@/hooks/useAssignees';
 
@@ -25,6 +26,22 @@ export function ReminderEmailSettings({ assignees }: ReminderEmailSettingsProps)
   const [editing, setEditing] = useState<Partial<ReminderEmail> | null>(null);
   const [customEmail, setCustomEmail] = useState('');
   const [showCustomInput, setShowCustomInput] = useState(false);
+  const [sendingTest, setSendingTest] = useState<string | null>(null);
+
+  const handleTestSend = async (id: string) => {
+    setSendingTest(id);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-reminder-email', {
+        body: { test: true, reminder_id: id },
+      });
+      if (error) throw error;
+      toast.success(`Correo de prueba enviado (${data?.emails_sent || 0} destinatarios)`);
+    } catch (e: any) {
+      toast.error('Error al enviar prueba: ' + (e.message || e));
+    } finally {
+      setSendingTest(null);
+    }
+  };
 
   const assigneesWithEmail = assignees.filter(a => a.email);
 
@@ -231,9 +248,20 @@ export function ReminderEmailSettings({ assignees }: ReminderEmailSettingsProps)
               <Save className="h-3.5 w-3.5 mr-1" /> Guardar
             </Button>
             {editing.id && (
-              <Button size="sm" variant="destructive" onClick={() => handleDelete(editing.id!)} disabled={deleteReminderEmail.isPending}>
-                <Trash2 className="h-3.5 w-3.5 mr-1" /> Eliminar
-              </Button>
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleTestSend(editing.id!)}
+                  disabled={sendingTest === editing.id || !editing.recipient_emails?.length}
+                >
+                  {sendingTest === editing.id ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Send className="h-3.5 w-3.5 mr-1" />}
+                  Enviar prueba
+                </Button>
+                <Button size="sm" variant="destructive" onClick={() => handleDelete(editing.id!)} disabled={deleteReminderEmail.isPending}>
+                  <Trash2 className="h-3.5 w-3.5 mr-1" /> Eliminar
+                </Button>
+              </>
             )}
             <Button size="sm" variant="ghost" onClick={() => setEditing(null)}>Cancelar</Button>
           </div>
@@ -273,9 +301,20 @@ export function ReminderEmailSettings({ assignees }: ReminderEmailSettingsProps)
                     {DAYS[re.day_of_week]} a las {re.send_hour.toString().padStart(2, '0')}:00 · {re.recipient_emails.length} destinatario{re.recipient_emails.length !== 1 ? 's' : ''}
                   </p>
                 </div>
-                <Badge variant={re.enabled ? 'default' : 'secondary'} className="text-[10px]">
-                  {re.enabled ? 'Activo' : 'Inactivo'}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs gap-1"
+                    onClick={(e) => { e.stopPropagation(); handleTestSend(re.id); }}
+                    disabled={sendingTest === re.id}
+                  >
+                    {sendingTest === re.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
+                  </Button>
+                  <Badge variant={re.enabled ? 'default' : 'secondary'} className="text-[10px]">
+                    {re.enabled ? 'Activo' : 'Inactivo'}
+                  </Badge>
+                </div>
               </div>
             ))}
           </div>

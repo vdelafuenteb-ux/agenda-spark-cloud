@@ -17,19 +17,41 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    const now = new Date();
-    const chileTime = new Date(now.toLocaleString("en-US", { timeZone: "America/Santiago" }));
-    const currentDay = chileTime.getDay();
-    const currentHour = chileTime.getHours();
+    // Check for test mode
+    let body: any = {};
+    try { body = await req.json(); } catch { /* no body */ }
+    const testMode = body?.test === true;
+    const testReminderId = body?.reminder_id;
 
-    console.log(`[send-reminder-email] Chile day=${currentDay} hour=${currentHour}`);
+    let reminders: any[] = [];
 
-    const { data: reminders, error: remErr } = await supabase
-      .from("reminder_emails")
-      .select("*")
-      .eq("enabled", true)
-      .eq("day_of_week", currentDay)
-      .eq("send_hour", currentHour);
+    if (testMode && testReminderId) {
+      // Test mode: send a specific reminder regardless of schedule
+      const { data, error } = await supabase
+        .from("reminder_emails")
+        .select("*")
+        .eq("id", testReminderId)
+        .single();
+      if (error) throw error;
+      reminders = [data];
+      console.log(`[send-reminder-email] TEST mode for reminder ${testReminderId}`);
+    } else {
+      const now = new Date();
+      const chileTime = new Date(now.toLocaleString("en-US", { timeZone: "America/Santiago" }));
+      const currentDay = chileTime.getDay();
+      const currentHour = chileTime.getHours();
+
+      console.log(`[send-reminder-email] Chile day=${currentDay} hour=${currentHour}`);
+
+      const { data, error: remErr } = await supabase
+        .from("reminder_emails")
+        .select("*")
+        .eq("enabled", true)
+        .eq("day_of_week", currentDay)
+        .eq("send_hour", currentHour);
+      if (remErr) throw remErr;
+      reminders = data || [];
+    }
 
     if (remErr) throw remErr;
     if (!reminders || reminders.length === 0) {
