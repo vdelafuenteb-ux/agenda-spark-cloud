@@ -1,57 +1,38 @@
 
 
-## Plan: Correo semanal de recordatorio de reportes
-
-### Qué se construirá
-
-Un nuevo tipo de correo automático configurable: un recordatorio simple con un mensaje personalizado (ej: "Estimados por favor no olvidar enviar los reportes semanales") que se envía a correos seleccionados en un día y hora específicos. Se gestiona desde la sección de Correos Automáticos en Configuración.
+## Plan: Mejorar selección de destinatarios y diseño del correo recordatorio
 
 ### Cambios
 
-**1. Nueva tabla `reminder_emails` (migración)**
+**1. Componente `ReminderEmailSettings.tsx`**
 
-Almacena las configuraciones de correos recordatorio simples:
-- `id`, `user_id`, `enabled`, `day_of_week`, `send_hour`, `message` (texto del correo), `recipient_emails` (jsonb array de strings), `created_at`, `updated_at`
+- Recibir `assignees` como prop (desde SettingsView que ya los tiene)
+- Reemplazar el input manual de correo por una lista de checkboxes con los responsables que tienen email registrado (nombre + email)
+- Mantener opción de agregar correos adicionales manualmente (por si quieres enviar a alguien que no es responsable)
+- Al marcar/desmarcar un responsable, se agrega/quita su email de `recipient_emails`
+- Agregar campo configurable para el **asunto** del correo (actualmente fijo "📋 Recordatorio semanal")
 
-RLS: solo el usuario dueño puede CRUD.
+**2. Base de datos: agregar columna `subject`**
 
-**2. Hook `useReminderEmails.tsx`**
+- Migración para agregar `subject TEXT DEFAULT 'Recordatorio semanal'` a la tabla `reminder_emails`
+- Actualizar hook `useReminderEmails` para incluir el campo
 
-CRUD para la tabla `reminder_emails`, mismo patrón que `useEmailSchedules`.
+**3. Componente `SettingsView.tsx`**
 
-**3. Componente `ReminderEmailSettings.tsx`**
+- Pasar `assignees` como prop a `ReminderEmailSettings`
 
-Formulario con:
-- Switch activar/desactivar
-- Selector de día y hora
-- Textarea para el mensaje a enviar
-- Lista de correos destinatarios (input para agregar/quitar emails)
-- Resumen de la configuración
-- Botones guardar/eliminar
+**4. Edge function `send-reminder-email/index.ts`**
 
-**4. Integrar en `SettingsView.tsx`**
-
-Renderizar `ReminderEmailSettings` debajo de `EmailScheduleSettings` en la sección "Correos Automáticos".
-
-**5. Edge function `send-reminder-email/index.ts`**
-
-- Consulta `reminder_emails` donde `enabled = true`, `day_of_week` coincide con el día actual y `send_hour` con la hora actual (Chile)
-- Envía el mensaje a cada email en `recipient_emails` vía la API de Firebase existente
-- Se invoca por cron (mismo patrón que `send-scheduled-emails`)
-
-**6. Cron job**
-
-Agregar un cron que invoque `send-reminder-email` cada hora (mismo patrón existente).
+- Usar el campo `subject` de la BD como asunto (en vez del fijo)
+- Mejorar el HTML del correo con diseño profesional: header con gradiente, tipografía ejecutiva, separadores, footer corporativo — mismo estilo que los correos de cierre de tema
 
 ### Archivos afectados
 
 | Archivo | Cambio |
 |---|---|
-| Migración BD | Crear tabla `reminder_emails` con RLS |
-| `src/hooks/useReminderEmails.tsx` | Nuevo hook CRUD |
-| `src/components/ReminderEmailSettings.tsx` | Nuevo componente UI |
-| `src/components/SettingsView.tsx` | Agregar `ReminderEmailSettings` en sección correos automáticos |
-| `supabase/functions/send-reminder-email/index.ts` | Nueva edge function |
-| `supabase/config.toml` | Agregar `verify_jwt = false` para la función |
-| SQL (insert tool) | Crear cron job |
+| Migración BD | Agregar columna `subject` a `reminder_emails` |
+| `src/hooks/useReminderEmails.tsx` | Agregar campo `subject` al tipo y mutations |
+| `src/components/ReminderEmailSettings.tsx` | Recibir assignees, checkboxes de selección, campo asunto |
+| `src/components/SettingsView.tsx` | Pasar `assignees` a `ReminderEmailSettings` |
+| `supabase/functions/send-reminder-email/index.ts` | Usar subject dinámico, HTML profesional |
 
