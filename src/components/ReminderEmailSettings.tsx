@@ -7,8 +7,9 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Save, Trash2, X, Mail, UserPlus } from 'lucide-react';
+import { Plus, Save, Trash2, X, Mail, UserPlus, Send, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import { useReminderEmails, type ReminderEmail } from '@/hooks/useReminderEmails';
 import type { Assignee } from '@/hooks/useAssignees';
 
