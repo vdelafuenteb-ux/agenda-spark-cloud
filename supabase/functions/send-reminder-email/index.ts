@@ -53,7 +53,6 @@ Deno.serve(async (req) => {
       reminders = data || [];
     }
 
-    if (remErr) throw remErr;
     if (!reminders || reminders.length === 0) {
       return new Response(JSON.stringify({ success: true, message: "No reminders to send" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
