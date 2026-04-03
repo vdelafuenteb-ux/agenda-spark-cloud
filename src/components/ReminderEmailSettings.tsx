@@ -301,9 +301,20 @@ export function ReminderEmailSettings({ assignees }: ReminderEmailSettingsProps)
                     {DAYS[re.day_of_week]} a las {re.send_hour.toString().padStart(2, '0')}:00 · {re.recipient_emails.length} destinatario{re.recipient_emails.length !== 1 ? 's' : ''}
                   </p>
                 </div>
-                <Badge variant={re.enabled ? 'default' : 'secondary'} className="text-[10px]">
-                  {re.enabled ? 'Activo' : 'Inactivo'}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs gap-1"
+                    onClick={(e) => { e.stopPropagation(); handleTestSend(re.id); }}
+                    disabled={sendingTest === re.id}
+                  >
+                    {sendingTest === re.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
+                  </Button>
+                  <Badge variant={re.enabled ? 'default' : 'secondary'} className="text-[10px]">
+                    {re.enabled ? 'Activo' : 'Inactivo'}
+                  </Badge>
+                </div>
               </div>
             ))}
           </div>
