@@ -8,6 +8,7 @@ export interface ReminderEmail {
   day_of_week: number;
   send_hour: number;
   message: string;
+  subject: string;
   recipient_emails: string[];
   created_at: string;
   updated_at: string;
@@ -41,6 +42,7 @@ export function useReminderEmails() {
             day_of_week: item.day_of_week,
             send_hour: item.send_hour,
             message: item.message,
+            subject: item.subject,
             recipient_emails: item.recipient_emails,
           } as any)
           .eq('id', item.id);
@@ -54,6 +56,7 @@ export function useReminderEmails() {
             day_of_week: item.day_of_week ?? 4,
             send_hour: item.send_hour ?? 9,
             message: item.message ?? '',
+            subject: item.subject ?? 'Recordatorio semanal',
             recipient_emails: item.recipient_emails ?? [],
           } as any);
         if (error) throw error;

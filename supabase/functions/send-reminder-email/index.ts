@@ -17,7 +17,6 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    // Get current day and hour in Chile timezone
     const now = new Date();
     const chileTime = new Date(now.toLocaleString("en-US", { timeZone: "America/Santiago" }));
     const currentDay = chileTime.getDay();
@@ -45,24 +44,54 @@ Deno.serve(async (req) => {
       const recipients: string[] = reminder.recipient_emails || [];
       if (recipients.length === 0) continue;
 
-      // Get user email for CC
       const { data: userData } = await supabase.auth.admin.getUserById(reminder.user_id);
       const ccEmail = userData?.user?.email || "";
+      const subject = reminder.subject || "Recordatorio semanal";
 
       for (const recipientEmail of recipients) {
         try {
           const htmlBody = `
-            <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
-              <div style="background:#1e40af;color:white;padding:16px 24px;border-radius:8px 8px 0 0;">
-                <h2 style="margin:0;font-size:18px;">📋 Recordatorio</h2>
-              </div>
-              <div style="border:1px solid #e5e7eb;border-top:none;padding:24px;border-radius:0 0 8px 8px;">
-                <p style="font-size:15px;color:#1f2937;line-height:1.6;margin:0;">
-                  ${reminder.message.replace(/\n/g, "<br/>")}
+            <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:600px;margin:0 auto;background:#ffffff;">
+              <!-- Header -->
+              <div style="background:linear-gradient(135deg,#1e40af 0%,#3b82f6 100%);padding:32px 32px 24px;border-radius:12px 12px 0 0;">
+                <h1 style="margin:0;font-size:22px;font-weight:700;color:#ffffff;letter-spacing:-0.3px;">
+                  📋 ${subject}
+                </h1>
+                <p style="margin:6px 0 0;font-size:13px;color:rgba(255,255,255,0.8);">
+                  Notificación automática del sistema de gestión
                 </p>
-                <hr style="margin:20px 0;border:none;border-top:1px solid #e5e7eb;" />
-                <p style="font-size:11px;color:#9ca3af;margin:0;">
-                  Este es un correo automático enviado por el sistema de gestión.
+              </div>
+
+              <!-- Body -->
+              <div style="border:1px solid #e5e7eb;border-top:none;padding:32px;border-radius:0 0 12px 12px;">
+                <div style="background:#f8fafc;border-left:4px solid #3b82f6;border-radius:0 8px 8px 0;padding:20px 24px;margin-bottom:24px;">
+                  <p style="font-size:15px;color:#1e293b;line-height:1.7;margin:0;white-space:pre-line;">
+                    ${reminder.message.replace(/\n/g, "<br/>")}
+                  </p>
+                </div>
+
+                <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
+                  <tr>
+                    <td style="padding:8px 12px;background:#f1f5f9;border-radius:6px;width:50%;">
+                      <p style="margin:0;font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;">Programado</p>
+                      <p style="margin:2px 0 0;font-size:14px;color:#1e293b;font-weight:600;">
+                        ${["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"][reminder.day_of_week]} a las ${String(reminder.send_hour).padStart(2,"0")}:00
+                      </p>
+                    </td>
+                    <td style="width:12px;"></td>
+                    <td style="padding:8px 12px;background:#f1f5f9;border-radius:6px;width:50%;">
+                      <p style="margin:0;font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;">Destinatarios</p>
+                      <p style="margin:2px 0 0;font-size:14px;color:#1e293b;font-weight:600;">
+                        ${recipients.length} persona${recipients.length !== 1 ? "s" : ""}
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+
+                <hr style="border:none;border-top:1px solid #e2e8f0;margin:0 0 16px;" />
+                <p style="font-size:11px;color:#94a3b8;margin:0;text-align:center;">
+                  Este es un correo automático enviado por el sistema de gestión.<br/>
+                  Por favor no responder a este mensaje.
                 </p>
               </div>
             </div>
@@ -73,7 +102,7 @@ Deno.serve(async (req) => {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               para: recipientEmail,
-              asunto: "📋 Recordatorio semanal",
+              asunto: `📋 ${subject}`,
               mensaje: htmlBody,
               cc: ccEmail,
             }),
