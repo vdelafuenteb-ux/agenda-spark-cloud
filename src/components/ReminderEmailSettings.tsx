@@ -26,6 +26,22 @@ export function ReminderEmailSettings({ assignees }: ReminderEmailSettingsProps)
   const [editing, setEditing] = useState<Partial<ReminderEmail> | null>(null);
   const [customEmail, setCustomEmail] = useState('');
   const [showCustomInput, setShowCustomInput] = useState(false);
+  const [sendingTest, setSendingTest] = useState<string | null>(null);
+
+  const handleTestSend = async (id: string) => {
+    setSendingTest(id);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-reminder-email', {
+        body: { test: true, reminder_id: id },
+      });
+      if (error) throw error;
+      toast.success(`Correo de prueba enviado (${data?.emails_sent || 0} destinatarios)`);
+    } catch (e: any) {
+      toast.error('Error al enviar prueba: ' + (e.message || e));
+    } finally {
+      setSendingTest(null);
+    }
+  };
 
   const assigneesWithEmail = assignees.filter(a => a.email);
 
