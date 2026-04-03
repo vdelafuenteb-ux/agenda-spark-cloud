@@ -1,0 +1,1 @@
+ALTER TABLE public.reminder_emails ADD COLUMN subject TEXT NOT NULL DEFAULT 'Recordatorio semanal';

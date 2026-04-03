@@ -486,6 +486,7 @@ export type Database = {
           message: string
           recipient_emails: Json
           send_hour: number
+          subject: string
           updated_at: string
           user_id: string
         }
@@ -497,6 +498,7 @@ export type Database = {
           message?: string
           recipient_emails?: Json
           send_hour?: number
+          subject?: string
           updated_at?: string
           user_id: string
         }
@@ -508,6 +510,7 @@ export type Database = {
           message?: string
           recipient_emails?: Json
           send_hour?: number
+          subject?: string
           updated_at?: string
           user_id?: string
         }
