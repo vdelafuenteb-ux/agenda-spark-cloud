@@ -248,9 +248,20 @@ export function ReminderEmailSettings({ assignees }: ReminderEmailSettingsProps)
               <Save className="h-3.5 w-3.5 mr-1" /> Guardar
             </Button>
             {editing.id && (
-              <Button size="sm" variant="destructive" onClick={() => handleDelete(editing.id!)} disabled={deleteReminderEmail.isPending}>
-                <Trash2 className="h-3.5 w-3.5 mr-1" /> Eliminar
-              </Button>
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleTestSend(editing.id!)}
+                  disabled={sendingTest === editing.id || !editing.recipient_emails?.length}
+                >
+                  {sendingTest === editing.id ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Send className="h-3.5 w-3.5 mr-1" />}
+                  Enviar prueba
+                </Button>
+                <Button size="sm" variant="destructive" onClick={() => handleDelete(editing.id!)} disabled={deleteReminderEmail.isPending}>
+                  <Trash2 className="h-3.5 w-3.5 mr-1" /> Eliminar
+                </Button>
+              </>
             )}
             <Button size="sm" variant="ghost" onClick={() => setEditing(null)}>Cancelar</Button>
           </div>
