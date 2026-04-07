@@ -1,38 +1,39 @@
 
 
-## Plan: Mejorar selección de destinatarios y diseño del correo recordatorio
+## Plan: Corregir tokens de correos programados semanales
 
-### Cambios
+### Problema confirmado
 
-**1. Componente `ReminderEmailSettings.tsx`**
+En `send-scheduled-emails/index.ts` líneas 112-119, la búsqueda de tokens reutilizables:
+1. No filtra por `used = false` — puede reutilizar un token ya usado
+2. No filtra por `topic_id IS NULL` — puede reutilizar un token creado para un recordatorio individual (que tiene `topic_id` seteado)
 
-- Recibir `assignees` como prop (desde SettingsView que ya los tiene)
-- Reemplazar el input manual de correo por una lista de checkboxes con los responsables que tienen email registrado (nombre + email)
-- Mantener opción de agregar correos adicionales manualmente (por si quieres enviar a alguien que no es responsable)
-- Al marcar/desmarcar un responsable, se agrega/quita su email de `recipient_emails`
-- Agregar campo configurable para el **asunto** del correo (actualmente fijo "📋 Recordatorio semanal")
+Cuando el responsable abre el link con ese token, `validate-update-token` detecta que `topic_id` existe y filtra solo ese tema, mostrando 1 en vez de 5.
 
-**2. Base de datos: agregar columna `subject`**
+### Solución
 
-- Migración para agregar `subject TEXT DEFAULT 'Recordatorio semanal'` a la tabla `reminder_emails`
-- Actualizar hook `useReminderEmails` para incluir el campo
+**Archivo: `supabase/functions/send-scheduled-emails/index.ts`**
 
-**3. Componente `SettingsView.tsx`**
+Cambiar la query de búsqueda de tokens existentes (líneas 112-119) para agregar dos filtros:
 
-- Pasar `assignees` como prop a `ReminderEmailSettings`
+```typescript
+const { data: existingToken } = await supabase
+  .from("update_tokens")
+  .select("token, expires_at")
+  .eq("user_id", schedule.user_id)
+  .eq("assignee_name", assignee.name)
+  .eq("used", false)          // solo tokens no usados
+  .is("topic_id", null)       // solo tokens genéricos (sin topic_id)
+  .gt("expires_at", new Date().toISOString())
+  .limit(1)
+  .single();
+```
 
-**4. Edge function `send-reminder-email/index.ts`**
-
-- Usar el campo `subject` de la BD como asunto (en vez del fijo)
-- Mejorar el HTML del correo con diseño profesional: header con gradiente, tipografía ejecutiva, separadores, footer corporativo — mismo estilo que los correos de cierre de tema
+Esto asegura que los correos semanales siempre usen un token genérico que muestre todos los temas del responsable.
 
 ### Archivos afectados
 
 | Archivo | Cambio |
 |---|---|
-| Migración BD | Agregar columna `subject` a `reminder_emails` |
-| `src/hooks/useReminderEmails.tsx` | Agregar campo `subject` al tipo y mutations |
-| `src/components/ReminderEmailSettings.tsx` | Recibir assignees, checkboxes de selección, campo asunto |
-| `src/components/SettingsView.tsx` | Pasar `assignees` a `ReminderEmailSettings` |
-| `supabase/functions/send-reminder-email/index.ts` | Usar subject dinámico, HTML profesional |
+| `supabase/functions/send-scheduled-emails/index.ts` | Agregar filtros `.eq("used", false)` y `.is("topic_id", null)` en búsqueda de tokens |
 
