@@ -114,6 +114,8 @@ Deno.serve(async (req) => {
           .select("token, expires_at")
           .eq("user_id", schedule.user_id)
           .eq("assignee_name", assignee.name)
+          .eq("used", false)
+          .is("topic_id", null)
           .gt("expires_at", new Date().toISOString())
           .limit(1)
           .single();
