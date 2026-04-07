@@ -44,7 +44,7 @@ export function AppSidebar({ activeFilter, onFilterChange, topics }: AppSidebarP
 
   const activeTopics = topics.filter(t => t.status === 'activo' && !(t as any).archived);
   const seguimientoCount = topics.filter(t => t.status === 'seguimiento').length;
-  const overdueCount = activeTopics.filter(t => isStoredDateOverdue(t.due_date)).length;
+  const overdueCount = topics.filter(t => (t.status === 'activo' || t.status === 'seguimiento') && !(t as any).archived && isStoredDateOverdue(t.due_date)).length;
   const totalSubtasks = activeTopics.reduce((acc, t) => acc + t.subtasks.length, 0);
   const completedSubtasks = activeTopics.reduce((acc, t) => acc + t.subtasks.filter(s => s.completed).length, 0);
   const progress = totalSubtasks > 0 ? Math.round((completedSubtasks / totalSubtasks) * 100) : 0;
