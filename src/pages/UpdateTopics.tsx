@@ -329,8 +329,9 @@ export default function UpdateTopics() {
                             <div key={e.id} className={`text-xs p-2 rounded ${e.source === "assignee" ? "bg-blue-50 text-blue-800" : "bg-slate-50 text-slate-600"}`}>
                               <p className="whitespace-pre-wrap">{e.content}</p>
                               <p className="text-[10px] mt-0.5 opacity-60">
+                                <span className="font-semibold">{e.source === "assignee" ? assigneeName : ownerName}</span>
+                                {" · "}
                                 {new Date(e.created_at).toLocaleDateString("es-CL", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
-                                {e.source === "assignee" && " · Tú"}
                               </p>
                             </div>
                           ))}
