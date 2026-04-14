@@ -53,6 +53,16 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Fetch owner name
+    let ownerName = "Administrador";
+    try {
+      const { data: userData } = await supabase.auth.admin.getUserById(tokenData.user_id);
+      if (userData?.user) {
+        const meta = userData.user.user_metadata;
+        ownerName = meta?.full_name || meta?.name || userData.user.email?.split("@")[0] || "Administrador";
+      }
+    } catch (_) { /* fallback */ }
+
     // Fetch topics — if topic_id is set, only that topic; otherwise all active
     let topicsQuery = supabase
       .from("topics")
@@ -109,6 +119,7 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         assignee_name: tokenData.assignee_name,
+        owner_name: ownerName,
         topics: result,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }

@@ -51,6 +51,7 @@ export default function UpdateTopics() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [assigneeName, setAssigneeName] = useState("");
+  const [ownerName, setOwnerName] = useState("Administrador");
   const [topics, setTopics] = useState<TopicData[]>([]);
   const [comments, setComments] = useState<Record<string, string>>({});
   const [toggles, setToggles] = useState<Record<string, boolean>>({});
@@ -71,6 +72,7 @@ export default function UpdateTopics() {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Error validando token");
         setAssigneeName(data.assignee_name);
+        setOwnerName(data.owner_name || "Administrador");
         setTopics(data.topics);
         // Initialize toggles with current state
         const initToggles: Record<string, boolean> = {};
@@ -329,8 +331,9 @@ export default function UpdateTopics() {
                             <div key={e.id} className={`text-xs p-2 rounded ${e.source === "assignee" ? "bg-blue-50 text-blue-800" : "bg-slate-50 text-slate-600"}`}>
                               <p className="whitespace-pre-wrap">{e.content}</p>
                               <p className="text-[10px] mt-0.5 opacity-60">
+                                <span className="font-semibold">{e.source === "assignee" ? assigneeName : ownerName}</span>
+                                {" · "}
                                 {new Date(e.created_at).toLocaleDateString("es-CL", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
-                                {e.source === "assignee" && " · Tú"}
                               </p>
                             </div>
                           ))}
