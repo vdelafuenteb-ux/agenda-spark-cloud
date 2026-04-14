@@ -51,6 +51,7 @@ export default function UpdateTopics() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [assigneeName, setAssigneeName] = useState("");
+  const [ownerName, setOwnerName] = useState("Administrador");
   const [topics, setTopics] = useState<TopicData[]>([]);
   const [comments, setComments] = useState<Record<string, string>>({});
   const [toggles, setToggles] = useState<Record<string, boolean>>({});
@@ -71,6 +72,7 @@ export default function UpdateTopics() {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Error validando token");
         setAssigneeName(data.assignee_name);
+        setOwnerName(data.owner_name || "Administrador");
         setTopics(data.topics);
         // Initialize toggles with current state
         const initToggles: Record<string, boolean> = {};
