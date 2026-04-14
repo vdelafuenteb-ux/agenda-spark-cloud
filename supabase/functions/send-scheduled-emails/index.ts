@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
       // Fetch all seguimiento topics for this user
       const { data: allTopics, error: topicsError } = await supabase
         .from("topics")
-        .select("*, subtasks(*), progress_entries(*)")
+        .select("*, subtasks(*), progress_entries(id, content, created_at, source, topic_id)")
         .eq("user_id", schedule.user_id)
         .eq("status", "seguimiento");
 
@@ -151,7 +151,12 @@ Deno.serve(async (req) => {
         // Build HTML email (same format as bulk notification)
         const topicsWithPending = assigneeTopics.map((topic: any, index: number) => {
           const pending = (topic.subtasks || []).filter((s: any) => !s.completed);
-          return { ...topic, pendingSubtasks: pending, num: index + 1 };
+          // Find description: first non-assignee progress entry (sorted by created_at asc)
+          const sortedEntries = [...(topic.progress_entries || [])].sort(
+            (a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          );
+          const description = sortedEntries.find((e: any) => e.source !== "assignee")?.content || "";
+          return { ...topic, pendingSubtasks: pending, num: index + 1, description };
         });
 
         let mensaje = `<div style="max-width:600px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333;">`;
@@ -170,20 +175,25 @@ Deno.serve(async (req) => {
           const isOverdue = t.due_date && new Date(t.due_date) < now;
           const cardBorder = isOverdue ? "border-left:4px solid #c0392b;" : "border-left:4px solid #3498db;";
           const titleColor = isOverdue ? "color:#c0392b;" : "color:#2c3e50;";
-          const lastEntry = (t.progress_entries || []).length > 0 ? (t.progress_entries || [])[0]?.content || "" : "";
 
           mensaje += `<div style="margin:10px 0;padding:10px 14px;background:#f8f9fa;border-radius:6px;${cardBorder}">`;
           const orderBadge = t.execution_order != null
             ? `<span style="display:inline-block;background:#2563eb;color:#fff;border-radius:50%;width:24px;height:24px;text-align:center;line-height:24px;font-size:12px;font-weight:700;margin-right:6px;vertical-align:middle;">${t.execution_order}</span>`
             : '';
           mensaje += `<p style="margin:0 0 6px;font-size:14px;font-weight:700;${titleColor}">${orderBadge}${t.title}</p>`;
+
+          // Pinned description
+          if (t.description) {
+            mensaje += `<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:4px;padding:8px 10px;margin-bottom:8px;">`;
+            mensaje += `<p style="margin:0 0 2px;font-size:10px;font-weight:700;color:#2563eb;text-transform:uppercase;">📌 Descripción</p>`;
+            mensaje += `<p style="margin:0;font-size:12px;color:#1e3a5f;white-space:pre-wrap;">${t.description}</p>`;
+            mensaje += `</div>`;
+          }
+
           mensaje += `<table style="width:100%;border-collapse:collapse;font-size:13px;">`;
           mensaje += `<tr><td style="padding:3px 0;color:#888;width:110px;">Inicio</td><td style="padding:3px 0;">${formatDate(t.start_date) || "—"}</td></tr>`;
           mensaje += `<tr><td style="padding:3px 0;color:#888;">Vencimiento</td><td style="padding:3px 0;">${formatDate(t.due_date) || "—"}</td></tr>`;
           mensaje += `<tr><td style="padding:3px 0;color:#888;">Pendientes</td><td style="padding:3px 0;color:${pendingColor};">${pendingText}</td></tr>`;
-          if (lastEntry) {
-            mensaje += `<tr><td style="padding:3px 0;color:#888;vertical-align:top;">Último avance</td><td style="padding:3px 0;color:#555;font-size:12px;word-wrap:break-word;">${lastEntry}</td></tr>`;
-          }
           mensaje += `</table>`;
           mensaje += `</div>`;
         });

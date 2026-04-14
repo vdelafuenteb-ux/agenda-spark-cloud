@@ -84,20 +84,27 @@ Deno.serve(async (req) => {
           .from("progress_entries")
           .select("id, content, created_at, topic_id, source")
           .in("topic_id", topicIds)
-          .order("created_at", { ascending: false })
-          .limit(50),
+          .order("created_at", { ascending: true }),
       ]);
 
       subtasks = subtasksRes.data || [];
       progressEntries = entriesRes.data || [];
     }
 
-    // Group by topic
-    const result = (topics || []).map((t: any) => ({
-      ...t,
-      subtasks: subtasks.filter((s: any) => s.topic_id === t.id),
-      recent_entries: progressEntries.filter((e: any) => e.topic_id === t.id).slice(0, 5),
-    }));
+    // Group by topic, separate description (first non-assignee entry) from rest
+    const result = (topics || []).map((t: any) => {
+      const topicEntries = progressEntries.filter((e: any) => e.topic_id === t.id);
+      const descriptionEntry = topicEntries.find((e: any) => e.source !== "assignee");
+      const allEntries = topicEntries.filter((e: any) => e !== descriptionEntry);
+      // Reverse for display (newest first)
+      allEntries.reverse();
+      return {
+        ...t,
+        subtasks: subtasks.filter((s: any) => s.topic_id === t.id),
+        description: descriptionEntry ? { content: descriptionEntry.content, created_at: descriptionEntry.created_at } : null,
+        recent_entries: allEntries,
+      };
+    });
 
     return new Response(
       JSON.stringify({
