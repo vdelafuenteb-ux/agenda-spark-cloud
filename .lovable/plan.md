@@ -1,39 +1,37 @@
 
 
-## Plan: Corregir tokens de correos programados semanales
+## Plan: Descripción fijada + historial completo en página de actualización
 
-### Problema confirmado
+### Resumen
 
-En `send-scheduled-emails/index.ts` líneas 112-119, la búsqueda de tokens reutilizables:
-1. No filtra por `used = false` — puede reutilizar un token ya usado
-2. No filtra por `topic_id IS NULL` — puede reutilizar un token creado para un recordatorio individual (que tiene `topic_id` seteado)
+Dos mejoras en la página externa `/update/:token` que ven los responsables:
 
-Cuando el responsable abre el link con ese token, `validate-update-token` detecta que `topic_id` existe y filtra solo ese tema, mostrando 1 en vez de 5.
+1. **Primer mensaje de bitácora fijado como "Descripción"** — siempre visible arriba del tema (incluso colapsado), separado visualmente del resto del historial.
+2. **Historial completo visible** — actualmente solo muestra los últimos 3 mensajes; se mostrará todo el historial con scroll.
 
-### Solución
+### Cambios
 
-**Archivo: `supabase/functions/send-scheduled-emails/index.ts`**
+#### 1. Edge Function `validate-update-token/index.ts`
 
-Cambiar la query de búsqueda de tokens existentes (líneas 112-119) para agregar dos filtros:
+- Quitar el `limit(50)` y el `.slice(0, 5)` para devolver **todas** las entradas de progreso por tema.
+- Ordenar por `created_at ascending` para identificar fácilmente el primer mensaje.
+- Separar en la respuesta JSON: `description` (primer entry sin source "assignee") y `all_entries` (el resto).
 
-```typescript
-const { data: existingToken } = await supabase
-  .from("update_tokens")
-  .select("token, expires_at")
-  .eq("user_id", schedule.user_id)
-  .eq("assignee_name", assignee.name)
-  .eq("used", false)          // solo tokens no usados
-  .is("topic_id", null)       // solo tokens genéricos (sin topic_id)
-  .gt("expires_at", new Date().toISOString())
-  .limit(1)
-  .single();
-```
+#### 2. Página `src/pages/UpdateTopics.tsx`
 
-Esto asegura que los correos semanales siempre usen un token genérico que muestre todos los temas del responsable.
+- Actualizar la interfaz `TopicData` para incluir `description: { content: string; created_at: string } | null` además de `recent_entries` (ahora con todos los mensajes).
+- **Descripción fijada**: Mostrar siempre debajo del header del tema (visible incluso colapsado), con estilo diferenciado — fondo azul suave, icono de pin, etiqueta "DESCRIPCIÓN".
+- **Historial completo**: Reemplazar el `.slice(0, 3)` actual por la lista completa con un contenedor scrollable (max-height ~300px). Mantener los estilos azul/gris según source.
+
+#### 3. Correos semanales `send-scheduled-emails/index.ts`
+
+- Incluir el primer mensaje de bitácora como sección "Descripción" en el HTML del correo semanal, antes de las subtareas pendientes.
 
 ### Archivos afectados
 
 | Archivo | Cambio |
 |---|---|
-| `supabase/functions/send-scheduled-emails/index.ts` | Agregar filtros `.eq("used", false)` y `.is("topic_id", null)` en búsqueda de tokens |
+| `supabase/functions/validate-update-token/index.ts` | Devolver todas las entries, separar `description` del resto |
+| `src/pages/UpdateTopics.tsx` | Mostrar descripción fijada + historial completo con scroll |
+| `supabase/functions/send-scheduled-emails/index.ts` | Incluir descripción en el HTML del correo |
 
