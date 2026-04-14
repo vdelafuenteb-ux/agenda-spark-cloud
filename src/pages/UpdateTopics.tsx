@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { CheckCircle2, AlertCircle, Clock, Loader2, Send, ChevronDown, ChevronUp, Save, Check } from "lucide-react";
+import { CheckCircle2, AlertCircle, Clock, Loader2, Send, ChevronDown, ChevronUp, Save, Check, Pin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -25,6 +25,7 @@ interface TopicData {
   status: string;
   is_ongoing: boolean;
   subtasks: SubtaskData[];
+  description: { content: string; created_at: string } | null;
   recent_entries: { id: string; content: string; created_at: string; source: string }[];
 }
 
@@ -270,6 +271,17 @@ export default function UpdateTopics() {
                   {isExpanded ? <ChevronUp className="h-4 w-4 text-slate-400" /> : <ChevronDown className="h-4 w-4 text-slate-400" />}
                 </button>
 
+                {/* Pinned description - always visible */}
+                {topic.description && (
+                  <div className="mx-4 mt-2 mb-1 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <Pin className="h-3 w-3 text-blue-500" />
+                      <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">Descripción</span>
+                    </div>
+                    <p className="text-sm text-blue-900 whitespace-pre-wrap">{topic.description.content}</p>
+                  </div>
+                )}
+
                 {isExpanded && (
                   <div className="border-t border-slate-100 px-4 py-3 space-y-3">
                     {/* Subtasks */}
@@ -308,19 +320,21 @@ export default function UpdateTopics() {
                       </div>
                     )}
 
-                    {/* Recent entries preview */}
+                    {/* Full history */}
                     {topic.recent_entries.length > 0 && (
                       <div className="space-y-1">
-                        <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Últimos avances</p>
-                        {topic.recent_entries.slice(0, 3).map((e) => (
-                          <div key={e.id} className={`text-xs p-2 rounded ${e.source === "assignee" ? "bg-blue-50 text-blue-800" : "bg-slate-50 text-slate-600"}`}>
-                            <p className="line-clamp-2">{e.content}</p>
-                            <p className="text-[10px] mt-0.5 opacity-60">
-                              {new Date(e.created_at).toLocaleDateString("es-CL", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
-                              {e.source === "assignee" && " · Tú"}
-                            </p>
-                          </div>
-                        ))}
+                        <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Historial de avances</p>
+                        <div className="max-h-[300px] overflow-y-auto space-y-1 pr-1">
+                          {topic.recent_entries.map((e) => (
+                            <div key={e.id} className={`text-xs p-2 rounded ${e.source === "assignee" ? "bg-blue-50 text-blue-800" : "bg-slate-50 text-slate-600"}`}>
+                              <p className="whitespace-pre-wrap">{e.content}</p>
+                              <p className="text-[10px] mt-0.5 opacity-60">
+                                {new Date(e.created_at).toLocaleDateString("es-CL", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                                {e.source === "assignee" && " · Tú"}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
 
