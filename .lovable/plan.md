@@ -1,37 +1,28 @@
 
 
-## Plan: Descripción fijada + historial completo en página de actualización
+## Plan: Mostrar nombres de autor en historial de avances
 
-### Resumen
+### Problema
+En la página de actualización externa, los mensajes del historial solo muestran "Tú" para los del responsable y nada para los del administrador. No queda claro quién escribió cada mensaje.
 
-Dos mejoras en la página externa `/update/:token` que ven los responsables:
-
-1. **Primer mensaje de bitácora fijado como "Descripción"** — siempre visible arriba del tema (incluso colapsado), separado visualmente del resto del historial.
-2. **Historial completo visible** — actualmente solo muestra los últimos 3 mensajes; se mostrará todo el historial con scroll.
-
-### Cambios
+### Solución
 
 #### 1. Edge Function `validate-update-token/index.ts`
-
-- Quitar el `limit(50)` y el `.slice(0, 5)` para devolver **todas** las entradas de progreso por tema.
-- Ordenar por `created_at ascending` para identificar fácilmente el primer mensaje.
-- Separar en la respuesta JSON: `description` (primer entry sin source "assignee") y `all_entries` (el resto).
+- Buscar el nombre del dueño de los temas consultando `auth.users` con el `user_id` del token para obtener el email, o mejor: pasar un campo `owner_name` en la respuesta.
+- Como no hay tabla de perfiles, usar el email del usuario (`auth.users.email`) como fallback, o hardcodear según la memoria de branding. La opción más limpia: consultar `auth.users` con service role para obtener el email y extraer el nombre antes del `@`, o agregar el nombre del usuario como campo adicional en la respuesta.
+- **Mejor enfoque**: Agregar `owner_name` a la respuesta JSON. Consultar `supabase.auth.admin.getUserById(tokenData.user_id)` para obtener el email/metadata del dueño.
 
 #### 2. Página `src/pages/UpdateTopics.tsx`
-
-- Actualizar la interfaz `TopicData` para incluir `description: { content: string; created_at: string } | null` además de `recent_entries` (ahora con todos los mensajes).
-- **Descripción fijada**: Mostrar siempre debajo del header del tema (visible incluso colapsado), con estilo diferenciado — fondo azul suave, icono de pin, etiqueta "DESCRIPCIÓN".
-- **Historial completo**: Reemplazar el `.slice(0, 3)` actual por la lista completa con un contenedor scrollable (max-height ~300px). Mantener los estilos azul/gris según source.
-
-#### 3. Correos semanales `send-scheduled-emails/index.ts`
-
-- Incluir el primer mensaje de bitácora como sección "Descripción" en el HTML del correo semanal, antes de las subtareas pendientes.
+- Guardar `ownerName` del response en estado.
+- En cada entrada del historial, mostrar:
+  - Si `source === "assignee"` → nombre del responsable (ya disponible como `assigneeName`)
+  - Si no → nombre del dueño (`ownerName`)
+- Mostrar el nombre en negrita antes del contenido o en la línea de fecha.
 
 ### Archivos afectados
 
 | Archivo | Cambio |
 |---|---|
-| `supabase/functions/validate-update-token/index.ts` | Devolver todas las entries, separar `description` del resto |
-| `src/pages/UpdateTopics.tsx` | Mostrar descripción fijada + historial completo con scroll |
-| `supabase/functions/send-scheduled-emails/index.ts` | Incluir descripción en el HTML del correo |
+| `supabase/functions/validate-update-token/index.ts` | Consultar nombre del dueño y agregarlo al JSON de respuesta |
+| `src/pages/UpdateTopics.tsx` | Mostrar nombre del autor en cada entrada del historial |
 
