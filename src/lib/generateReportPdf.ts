@@ -323,7 +323,10 @@ export function generateReportPdf(opts: PdfOptions) {
             const a = list.filter(t => t.status === 'activo' || t.status === 'seguimiento').length;
             const p = list.filter(t => t.status === 'pausado').length;
             const c = list.filter(t => t.status === 'completado').length;
-            const od = list.filter(t => getTrafficLight(t.due_date).label === 'Atrasado').length;
+            const od = list.filter(t =>
+              (t.status === 'activo' || t.status === 'seguimiento') &&
+              getTrafficLight(t.due_date).label === 'Atrasado'
+            ).length;
             return [name, String(a), String(p), String(c), String(od), String(list.length)];
           }),
         styles: { fontSize: 8.5, cellPadding: 2.5, lineColor: SLATE_200 as any, lineWidth: 0.15, halign: 'center', textColor: SLATE_700 as any },
