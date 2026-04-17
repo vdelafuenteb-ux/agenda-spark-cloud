@@ -373,50 +373,100 @@ export function generateReportPdf(opts: PdfOptions) {
     doc.setTextColor(...SLATE_400);
     doc.text('No hay temas activos en este período.', margin, y + 6);
   } else {
-    autoTable(doc, {
-      startY: y,
-      margin: { left: margin, right: margin },
-      head: [['#', 'Tema', 'Responsable', 'Inicio', 'Vence', 'Estado', 'Avance']],
-      body: activeTopics.map((t, i) => {
-        const tl = getTrafficLight(t.due_date);
-        const done = t.subtasks.filter(s => s.completed).length;
-        const total = t.subtasks.length;
-        const avance = total > 0 ? `${done}/${total} (${Math.round((done / total) * 100)}%)` : '—';
-        const startStr = t.start_date ? formatStoredDate(t.start_date, 'dd MMM yy', { locale: es }) : '—';
-        const dueStr = t.due_date ? formatStoredDate(t.due_date, 'dd MMM yy', { locale: es }) : '—';
-        return [
-          String(i + 1),
-          t.title,
-          t.assignee || ownerName,
-          startStr,
-          dueStr,
-          tl.label,
-          avance,
-        ];
-      }),
-      styles: { fontSize: 8.5, cellPadding: 2.8, overflow: 'linebreak', lineColor: SLATE_200 as any, lineWidth: 0.15, textColor: SLATE_700 as any, valign: 'middle' },
-      headStyles: { fillColor: NAVY as any, textColor: WHITE as any, fontStyle: 'bold', fontSize: 8.5 },
-      alternateRowStyles: { fillColor: SLATE_50 as any },
-      columnStyles: {
-        0: { cellWidth: 8, halign: 'center', textColor: SLATE_400 as any },
-        1: { cellWidth: 'auto', fontStyle: 'bold', textColor: NAVY as any },
-        2: { cellWidth: 32 },
-        3: { cellWidth: 18, halign: 'center' },
-        4: { cellWidth: 18, halign: 'center' },
-        5: { cellWidth: 22, halign: 'center', fontStyle: 'bold' },
-        6: { cellWidth: 24, halign: 'center' },
-      },
-      didParseCell: (data) => {
-        if (data.section === 'body' && data.column.index === 5) {
-          const v = data.cell.raw as string;
-          if (v === 'Atrasado') data.cell.styles.textColor = RED as any;
-          else if (v === 'Por vencer') data.cell.styles.textColor = AMBER as any;
-          else if (v === 'Al día') data.cell.styles.textColor = GREEN as any;
-          else data.cell.styles.textColor = SLATE_400 as any;
-        }
-      },
+    // Group by department
+    const deptMap = new Map<string, { id: string; name: string }>();
+    (opts.departments || []).forEach(d => deptMap.set(d.id, d));
+
+    const NO_DEPT_KEY = '__no_dept__';
+    const groups = new Map<string, TopicWithSubtasks[]>();
+    activeTopics.forEach(t => {
+      const key = t.department_id && deptMap.has(t.department_id) ? t.department_id : NO_DEPT_KEY;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(t);
     });
-    y = (doc as any).lastAutoTable.finalY + 6;
+
+    // Sort: departments alphabetically, "Sin departamento" last
+    const sortedKeys = Array.from(groups.keys()).sort((a, b) => {
+      if (a === NO_DEPT_KEY) return 1;
+      if (b === NO_DEPT_KEY) return -1;
+      const an = deptMap.get(a)?.name || '';
+      const bn = deptMap.get(b)?.name || '';
+      return an.localeCompare(bn, 'es');
+    });
+
+    sortedKeys.forEach((key, idx) => {
+      const list = groups.get(key)!;
+      const deptName = key === NO_DEPT_KEY ? 'Sin departamento' : (deptMap.get(key)?.name || 'Sin departamento');
+
+      // Sort within: assignee alphabetical, then by execution_order/sort_order
+      list.sort((a, b) => {
+        const aa = (a.assignee || ownerName).localeCompare(b.assignee || ownerName, 'es');
+        if (aa !== 0) return aa;
+        const eo = (a.execution_order ?? 999) - (b.execution_order ?? 999);
+        if (eo !== 0) return eo;
+        return (a.sort_order ?? 0) - (b.sort_order ?? 0);
+      });
+
+      // Department sub-header
+      y = checkPageBreak(doc, y, 16, margin);
+      if (idx > 0) y += 2;
+      doc.setFillColor(...SLATE_100);
+      doc.rect(margin, y, contentW, 7, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(...NAVY);
+      doc.text(deptName, margin + 3, y + 5);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(...SLATE_500);
+      doc.text(`${list.length} tema(s)`, pageW - margin - 3, y + 5, { align: 'right' });
+      y += 9;
+
+      autoTable(doc, {
+        startY: y,
+        margin: { left: margin, right: margin },
+        head: [['#', 'Tema', 'Responsable', 'Inicio', 'Vence', 'Estado', 'Avance']],
+        body: list.map((t, i) => {
+          const tl = getTrafficLight(t.due_date);
+          const done = t.subtasks.filter(s => s.completed).length;
+          const total = t.subtasks.length;
+          const avance = total > 0 ? `${done}/${total} (${Math.round((done / total) * 100)}%)` : '—';
+          const startStr = t.start_date ? formatStoredDate(t.start_date, 'dd MMM yy', { locale: es }) : '—';
+          const dueStr = t.due_date ? formatStoredDate(t.due_date, 'dd MMM yy', { locale: es }) : '—';
+          return [
+            String(i + 1),
+            t.title,
+            t.assignee || ownerName,
+            startStr,
+            dueStr,
+            tl.label,
+            avance,
+          ];
+        }),
+        styles: { fontSize: 8.5, cellPadding: 2.8, overflow: 'linebreak', lineColor: SLATE_200 as any, lineWidth: 0.15, textColor: SLATE_700 as any, valign: 'middle' },
+        headStyles: { fillColor: NAVY as any, textColor: WHITE as any, fontStyle: 'bold', fontSize: 8.5 },
+        alternateRowStyles: { fillColor: SLATE_50 as any },
+        columnStyles: {
+          0: { cellWidth: 8, halign: 'center', textColor: SLATE_400 as any },
+          1: { cellWidth: 'auto', fontStyle: 'bold', textColor: NAVY as any },
+          2: { cellWidth: 32 },
+          3: { cellWidth: 18, halign: 'center' },
+          4: { cellWidth: 18, halign: 'center' },
+          5: { cellWidth: 22, halign: 'center', fontStyle: 'bold' },
+          6: { cellWidth: 24, halign: 'center' },
+        },
+        didParseCell: (data) => {
+          if (data.section === 'body' && data.column.index === 5) {
+            const v = data.cell.raw as string;
+            if (v === 'Atrasado') data.cell.styles.textColor = RED as any;
+            else if (v === 'Por vencer') data.cell.styles.textColor = AMBER as any;
+            else if (v === 'Al día') data.cell.styles.textColor = GREEN as any;
+            else data.cell.styles.textColor = SLATE_400 as any;
+          }
+        },
+      });
+      y = (doc as any).lastAutoTable.finalY + 4;
+    });
 
     // Optional bitácora detail per topic
     if (includeBitacora) {
