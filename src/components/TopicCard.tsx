@@ -810,7 +810,7 @@ export function TopicCard({
                       size="sm"
                       variant="outline"
                       className="flex-1 h-9 text-xs gap-2"
-                      onClick={() => onUpdate(topic.id, { status: 'activo', pause_reason: '', paused_at: null })}
+                      onClick={() => onUpdate(topic.id, { status: 'activo', pause_reason: '', paused_at: null, archived: false })}
                     >
                       <Play className="h-3.5 w-3.5" /> Reactivar
                     </Button>
