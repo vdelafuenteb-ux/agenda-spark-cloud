@@ -1,72 +1,32 @@
 
 
-## Plan: Arreglar "Atrasados" + agrupar Temas Activos por departamento/responsable
+## Diagnóstico: Tema reactivado de Vicente Godoy desaparecido
 
-### Problemas detectados
+### Hipótesis
+El usuario cambió un tema de "pausado" → "activo", pero ya no aparece en la lista. Las causas más probables:
 
-**1. "Atrasados" cuenta temas cerrados con fecha vencida** (BUG)
+1. **El tema quedó archivado** (`archived = true`). La pestaña "En curso" oculta los archivados — habría que revisar la pestaña "Archivados".
+2. **Filtro activo** (departamento, responsable, etiqueta, búsqueda) que lo está excluyendo.
+3. **Pestaña de estado equivocada** — quizá quedó en "seguimiento" en vez de "activo".
+4. **Caché de React Query desactualizada** — la mutación optimista no invalidó correctamente.
 
-En `generateReportPdf.ts` línea 326:
-```ts
-const od = list.filter(t => getTrafficLight(t.due_date).label === 'Atrasado').length;
-```
+### Verificación (necesito leer la BD para confirmar)
 
-Esto filtra **toda** la lista del responsable (activos + pausados + cerrados) por fecha vencida. Como `getTrafficLight` solo mira `due_date` sin importar el `status`, los temas cerrados después de su fecha original cuentan como "atrasados". Por eso ves 19 en vez de los ~3 reales.
+Voy a consultar Supabase para encontrar los temas de Vicente Godoy modificados recientemente y revisar su `status`, `archived`, `paused_at` y `updated_at`. Con eso confirmamos cuál es el tema y dónde está realmente.
 
-**Fix**: Solo contar atrasados entre temas **activos/seguimiento** (no cerrados, no pausados):
-```ts
-const od = list.filter(t => 
-  (t.status === 'activo' || t.status === 'seguimiento') &&
-  getTrafficLight(t.due_date).label === 'Atrasado'
-).length;
-```
+### Plan de acción
 
-**2. Tabla "Temas Activos" sin agrupar**
+1. **Diagnóstico (read-only ahora)**: ejecutar query a `topics` filtrando por `assignee = 'Vicente Godoy'` ordenado por `updated_at DESC` para identificar el tema afectado y su estado actual.
+2. **Según el resultado**:
+   - Si `archived = true` → revisar `TopicCard.tsx` para asegurar que al cambiar de "pausado" a "activo" se desarchive automáticamente (o al menos avisar al usuario). Posible fix: en el handler de cambio de estado, si pasa de pausado a activo y está archivado, setear `archived = false`.
+   - Si `status` quedó incorrecto (ej. `seguimiento`) → revisar el flujo de "reactivar" en el diálogo de pausa.
+   - Si está correcto en BD pero no aparece en UI → revisar invalidación de cache en `useTopics.updateTopic` y los filtros activos en `Index.tsx`.
+3. **Comunicar al usuario** dónde está el tema y aplicar el fix correspondiente.
 
-Hoy lista 43 temas mezclados. Lo quieres agrupado por **departamento → responsable**, todos los temas de una persona juntos.
+### Archivos a revisar/modificar (probable)
 
-### Solución para Sección 1 — Temas Activos
-
-Reemplazar la tabla única por **una tabla por departamento**, y dentro de cada departamento ordenar por responsable (todos los de Matías, luego todos los de Vicente, etc.).
-
-Estructura visual:
-```text
-01  Temas Activos
-    43 tema(s) en curso o seguimiento
-─────────────────────────────────
-
-▸ Administración y Finanzas (15 temas)
-┌───┬──────────────────────┬──────────────┬────────┬────────┬──────────┬────────┐
-│ # │ Tema                 │ Responsable  │ Inicio │ Vence  │ Estado   │ Avance │
-├───┼──────────────────────┼──────────────┼────────┼────────┼──────────┼────────┤
-│ 1 │ Tema A               │ Matías       │ ...    │ ...    │ Al día   │ —      │
-│ 2 │ Tema B               │ Matías       │ ...    │ ...    │ Atrasado │ —      │
-│ 3 │ Tema C               │ Vicente      │ ...    │ ...    │ Al día   │ —      │
-│ … │                      │              │        │        │          │        │
-└───┴──────────────────────┴──────────────┴────────┴────────┴──────────┴────────┘
-
-▸ Operaciones (8 temas)
-┌───┬──────────────────────┬──────────────┬────────┬────────┬──────────┬────────┐
-│ … │                      │              │        │        │          │        │
-└───┴──────────────────────┴──────────────┴────────┴────────┴──────────┴────────┘
-
-▸ Sin departamento (3 temas)
-…
-```
-
-**Lógica de orden**:
-- Agrupar `activeTopics` por `department_id` (mapear a nombre vía `departments`).
-- Departamentos en orden alfabético; "Sin departamento" al final.
-- Dentro de cada departamento: ordenar por `assignee` alfabético, luego por `priority/order`.
-- Renderizar un `autoTable` por departamento con un sub-encabezado.
-
-### Archivos afectados
-
-| Archivo | Cambio |
+| Archivo | Cambio probable |
 |---|---|
-| `src/lib/generateReportPdf.ts` | (1) Fix cálculo "Atrasados" en resumen por responsable. (2) Reescribir Sección 1: agrupar por departamento → responsable con una tabla por grupo. |
-
-### También aplicar el fix al PDF Sección 1 columna "Estado"
-
-Actualmente "Estado" usa `getTrafficLight(due_date)` que es correcto para activos. No se toca esa lógica. Solo se arregla el conteo "Atrasados" del resumen y se agrupa la tabla.
+| `src/components/TopicCard.tsx` | Al reactivar (pausado → activo), desarchivar automáticamente y limpiar `pause_reason`/`paused_at` |
+| `src/hooks/useTopics.tsx` | Verificar que `updateTopic` invalide correctamente |
 
