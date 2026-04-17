@@ -834,7 +834,7 @@ export function TopicCard({
                     size="sm"
                     variant="outline"
                     className="w-full h-9 text-xs gap-2"
-                    onClick={() => onUpdate(topic.id, { status: 'activo', closed_at: null })}
+                    onClick={() => onUpdate(topic.id, { status: 'activo', closed_at: null, archived: false })}
                   >
                     <RotateCcw className="h-3.5 w-3.5" /> Reabrir
                   </Button>
