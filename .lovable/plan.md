@@ -1,28 +1,61 @@
 
 
-## Plan: Mostrar nombres de autor en historial de avances
+## Plan: Rediseño del Informe Ejecutivo PDF
 
-### Problema
-En la página de actualización externa, los mensajes del historial solo muestran "Tú" para los del responsable y nada para los del administrador. No queda claro quién escribió cada mensaje.
+### Problema actual
+El informe está desordenado, mezcla secciones, y no presenta los temas de forma clara y ejecutiva.
 
 ### Solución
+Rediseñar `generateReportPdf.ts` con una estructura limpia de 3 secciones temáticas + resumen ejecutivo en página 1.
 
-#### 1. Edge Function `validate-update-token/index.ts`
-- Buscar el nombre del dueño de los temas consultando `auth.users` con el `user_id` del token para obtener el email, o mejor: pasar un campo `owner_name` en la respuesta.
-- Como no hay tabla de perfiles, usar el email del usuario (`auth.users.email`) como fallback, o hardcodear según la memoria de branding. La opción más limpia: consultar `auth.users` con service role para obtener el email y extraer el nombre antes del `@`, o agregar el nombre del usuario como campo adicional en la respuesta.
-- **Mejor enfoque**: Agregar `owner_name` a la respuesta JSON. Consultar `supabase.auth.admin.getUserById(tokenData.user_id)` para obtener el email/metadata del dueño.
+---
 
-#### 2. Página `src/pages/UpdateTopics.tsx`
-- Guardar `ownerName` del response en estado.
-- En cada entrada del historial, mostrar:
-  - Si `source === "assignee"` → nombre del responsable (ya disponible como `assigneeName`)
-  - Si no → nombre del dueño (`ownerName`)
-- Mostrar el nombre en negrita antes del contenido o en la línea de fecha.
+### Estructura del nuevo PDF
+
+**Página 1 — Resumen Ejecutivo (alto impacto)**
+- Header con título, autor, periodo
+- 4 KPIs grandes: Total temas / Activos / Pausados / Cerrados
+- Mini-tabla "Alertas críticas": atrasados + por vencer (top 5)
+- Resumen por responsable (compacto)
+
+**Página 2+ — Detalle por Secciones**
+
+Cada sección inicia en página nueva con título grande:
+
+1. **SECCIÓN 1 — TEMAS ACTIVOS** (incluye activos en curso, archivados, en seguimiento — todo lo que esté en estado `activo`, archivado o no)
+   - Tabla agrupada por departamento → responsable
+   - Columnas: P# / Tema / Responsable / Inicio / Vence / Estado plazo / Avance
+
+2. **SECCIÓN 2 — TEMAS PAUSADOS**
+   - Tabla con: Tema / Responsable / Pausado desde / Razón
+
+3. **SECCIÓN 3 — TEMAS CERRADOS**
+   - Tabla con: Tema / Responsable / Cerrado el / Cumplimiento (a tiempo/atraso)
+   - Filtrado por el rango de fechas seleccionado (por `closed_at`)
+
+---
+
+### Cambios en `ReportModal.tsx`
+
+- Mantener selector de periodo (semana/mes/personalizado) — ya filtra cerrados por fecha
+- Simplificar switches: solo "Incluir bitácora" y "Incluir responsables"
+- Eliminar la complejidad actual de selección manual tema-por-tema (queda implícito: todos los del periodo)
+- Botones: Descargar PDF / Guardar informe
+
+---
+
+### Cambios en `generateReportPdf.ts`
+
+- Reescribir `generateReportPdf()` con la nueva estructura de 3 secciones claras
+- Nueva función `renderExecutiveSummary()` para página 1
+- Nueva función `renderActiveSection()`, `renderPausedSection()`, `renderClosedSection()`
+- Estilo ejecutivo: tipografía clara, espaciado generoso, colores sobrios (azul/gris/rojo solo para alertas)
+- Footers con número de página y "Confidencial"
 
 ### Archivos afectados
 
 | Archivo | Cambio |
 |---|---|
-| `supabase/functions/validate-update-token/index.ts` | Consultar nombre del dueño y agregarlo al JSON de respuesta |
-| `src/pages/UpdateTopics.tsx` | Mostrar nombre del autor en cada entrada del historial |
+| `src/lib/generateReportPdf.ts` | Reescritura del layout en 3 secciones + portada ejecutiva |
+| `src/components/ReportModal.tsx` | Simplificar UI manteniendo filtro por fechas |
 
