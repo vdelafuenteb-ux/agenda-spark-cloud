@@ -436,11 +436,6 @@ export function generateReportPdf(opts: PdfOptions) {
       // -------- ACTIVOS sub-section --------
       if (deptActive.length > 0) {
         y = checkPageBreak(doc, y, 14, margin);
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(10);
-        doc.setTextColor(...BLUE);
-        doc.text(`▸ Activos (${deptActive.length})`, margin, y);
-        y += 3;
 
         autoTable(doc, {
           startY: y,
@@ -483,11 +478,6 @@ export function generateReportPdf(opts: PdfOptions) {
       // -------- PAUSADOS sub-section --------
       if (deptPaused.length > 0) {
         y = checkPageBreak(doc, y, 14, margin);
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(10);
-        doc.setTextColor(...AMBER);
-        doc.text(`▸ Pausados (${deptPaused.length})`, margin, y);
-        y += 3;
 
         autoTable(doc, {
           startY: y,
@@ -514,11 +504,6 @@ export function generateReportPdf(opts: PdfOptions) {
       // -------- CERRADOS sub-section --------
       if (deptClosed.length > 0) {
         y = checkPageBreak(doc, y, 14, margin);
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(10);
-        doc.setTextColor(...GREEN);
-        doc.text(`▸ Cerrados (${deptClosed.length})`, margin, y);
-        y += 3;
 
         autoTable(doc, {
           startY: y,
