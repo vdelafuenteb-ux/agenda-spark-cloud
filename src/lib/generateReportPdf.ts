@@ -478,11 +478,6 @@ export function generateReportPdf(opts: PdfOptions) {
       // -------- PAUSADOS sub-section --------
       if (deptPaused.length > 0) {
         y = checkPageBreak(doc, y, 14, margin);
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(10);
-        doc.setTextColor(...AMBER);
-        doc.text(`▸ Pausados (${deptPaused.length})`, margin, y);
-        y += 3;
 
         autoTable(doc, {
           startY: y,
