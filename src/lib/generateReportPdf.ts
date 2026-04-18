@@ -316,7 +316,7 @@ export function generateReportPdf(opts: PdfOptions) {
       autoTable(doc, {
         startY: y,
         margin: { left: margin, right: margin },
-        head: [['Responsable', 'Activos', 'Pausados', 'Cerrados', 'Atrasados', 'Total']],
+        head: [['Responsable', 'Activos', 'Atrasados', 'Pausados', 'Cerrados', 'Total']],
         body: Array.from(assigneeMap.entries())
           .sort(([, a], [, b]) => b.length - a.length)
           .map(([name, list]) => {
@@ -327,7 +327,7 @@ export function generateReportPdf(opts: PdfOptions) {
               (t.status === 'activo' || t.status === 'seguimiento') &&
               getTrafficLight(t.due_date).label === 'Atrasado'
             ).length;
-            return [name, String(a), String(p), String(c), String(od), String(list.length)];
+            return [name, String(a), String(od), String(p), String(c), String(list.length)];
           }),
         styles: { fontSize: 8.5, cellPadding: 2.5, lineColor: SLATE_200 as any, lineWidth: 0.15, halign: 'center', textColor: SLATE_700 as any },
         headStyles: { fillColor: SLATE_700 as any, textColor: WHITE as any, fontStyle: 'bold', fontSize: 8.5 },
@@ -335,13 +335,13 @@ export function generateReportPdf(opts: PdfOptions) {
         columnStyles: {
           0: { cellWidth: 'auto', halign: 'left', fontStyle: 'bold', textColor: NAVY as any },
           1: { cellWidth: 22 },
-          2: { cellWidth: 22 },
+          2: { cellWidth: 24 },
           3: { cellWidth: 22 },
-          4: { cellWidth: 24 },
+          4: { cellWidth: 22 },
           5: { cellWidth: 20, fontStyle: 'bold' },
         },
         didParseCell: (data) => {
-          if (data.section === 'body' && data.column.index === 4) {
+          if (data.section === 'body' && data.column.index === 2) {
             const v = parseInt(data.cell.raw as string);
             if (v > 0) {
               data.cell.styles.textColor = RED as any;
