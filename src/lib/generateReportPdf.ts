@@ -504,11 +504,6 @@ export function generateReportPdf(opts: PdfOptions) {
       // -------- CERRADOS sub-section --------
       if (deptClosed.length > 0) {
         y = checkPageBreak(doc, y, 14, margin);
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(10);
-        doc.setTextColor(...GREEN);
-        doc.text(`▸ Cerrados (${deptClosed.length})`, margin, y);
-        y += 3;
 
         autoTable(doc, {
           startY: y,
