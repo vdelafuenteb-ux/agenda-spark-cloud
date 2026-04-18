@@ -362,233 +362,230 @@ export function generateReportPdf(opts: PdfOptions) {
   doc.text(note, margin, pageH - 18);
 
   // ===================================================================
-  // SECTION 1 — TEMAS ACTIVOS
+  // DETAIL BY DEPARTMENT
+  // Each department: Activos → Pausados → Cerrados, then page break.
   // ===================================================================
-  doc.addPage();
-  y = drawSectionTitle(doc, 1, 'Temas Activos', `${activeTopics.length} tema(s) en curso o seguimiento`, margin, contentW);
+  const deptMap = new Map<string, { id: string; name: string }>();
+  (opts.departments || []).forEach(d => deptMap.set(d.id, d));
+  const NO_DEPT_KEY = '__no_dept__';
 
-  if (activeTopics.length === 0) {
+  // Build a unified set of department keys present across the 3 buckets
+  const allDeptKeys = new Set<string>();
+  const keyOf = (t: TopicWithSubtasks) =>
+    t.department_id && deptMap.has(t.department_id) ? t.department_id : NO_DEPT_KEY;
+  [...activeTopics, ...pausedTopics, ...closedTopics].forEach(t => allDeptKeys.add(keyOf(t)));
+
+  const sortedDeptKeys = Array.from(allDeptKeys).sort((a, b) => {
+    if (a === NO_DEPT_KEY) return 1;
+    if (b === NO_DEPT_KEY) return -1;
+    const an = deptMap.get(a)?.name || '';
+    const bn = deptMap.get(b)?.name || '';
+    return an.localeCompare(bn, 'es');
+  });
+
+  const sortByAssigneeThenOrder = (a: TopicWithSubtasks, b: TopicWithSubtasks) => {
+    const aa = (a.assignee || ownerName).localeCompare(b.assignee || ownerName, 'es');
+    if (aa !== 0) return aa;
+    const eo = (a.execution_order ?? 999) - (b.execution_order ?? 999);
+    if (eo !== 0) return eo;
+    return (a.sort_order ?? 0) - (b.sort_order ?? 0);
+  };
+
+  if (sortedDeptKeys.length === 0) {
+    doc.addPage();
+    y = drawSectionTitle(doc, 1, 'Detalle por Departamento', 'Sin temas para mostrar', margin, contentW);
     doc.setFont('helvetica', 'italic');
     doc.setFontSize(10);
     doc.setTextColor(...SLATE_400);
-    doc.text('No hay temas activos en este período.', margin, y + 6);
+    doc.text('No hay temas registrados en el período.', margin, y + 6);
   } else {
-    // Group by department
-    const deptMap = new Map<string, { id: string; name: string }>();
-    (opts.departments || []).forEach(d => deptMap.set(d.id, d));
+    sortedDeptKeys.forEach((deptKey, deptIdx) => {
+      const deptName = deptKey === NO_DEPT_KEY
+        ? 'Sin departamento'
+        : (deptMap.get(deptKey)?.name || 'Sin departamento');
 
-    const NO_DEPT_KEY = '__no_dept__';
-    const groups = new Map<string, TopicWithSubtasks[]>();
-    activeTopics.forEach(t => {
-      const key = t.department_id && deptMap.has(t.department_id) ? t.department_id : NO_DEPT_KEY;
-      if (!groups.has(key)) groups.set(key, []);
-      groups.get(key)!.push(t);
-    });
+      const deptActive = activeTopics.filter(t => keyOf(t) === deptKey).sort(sortByAssigneeThenOrder);
+      const deptPaused = pausedTopics.filter(t => keyOf(t) === deptKey).sort(sortByAssigneeThenOrder);
+      const deptClosed = closedTopics.filter(t => keyOf(t) === deptKey).sort(sortByAssigneeThenOrder);
 
-    // Sort: departments alphabetically, "Sin departamento" last
-    const sortedKeys = Array.from(groups.keys()).sort((a, b) => {
-      if (a === NO_DEPT_KEY) return 1;
-      if (b === NO_DEPT_KEY) return -1;
-      const an = deptMap.get(a)?.name || '';
-      const bn = deptMap.get(b)?.name || '';
-      return an.localeCompare(bn, 'es');
-    });
+      // New page per department
+      doc.addPage();
+      y = 22;
 
-    sortedKeys.forEach((key, idx) => {
-      const list = groups.get(key)!;
-      const deptName = key === NO_DEPT_KEY ? 'Sin departamento' : (deptMap.get(key)?.name || 'Sin departamento');
-
-      // Sort within: assignee alphabetical, then by execution_order/sort_order
-      list.sort((a, b) => {
-        const aa = (a.assignee || ownerName).localeCompare(b.assignee || ownerName, 'es');
-        if (aa !== 0) return aa;
-        const eo = (a.execution_order ?? 999) - (b.execution_order ?? 999);
-        if (eo !== 0) return eo;
-        return (a.sort_order ?? 0) - (b.sort_order ?? 0);
-      });
-
-      // Department sub-header
-      y = checkPageBreak(doc, y, 16, margin);
-      if (idx > 0) y += 2;
-      doc.setFillColor(...SLATE_100);
-      doc.rect(margin, y, contentW, 7, 'F');
+      // Department header banner
+      doc.setFillColor(...NAVY);
+      doc.rect(margin, y, contentW, 14, 'F');
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10);
-      doc.setTextColor(...NAVY);
-      doc.text(deptName, margin + 3, y + 5);
+      doc.setFontSize(13);
+      doc.setTextColor(...WHITE);
+      doc.text(deptName.toUpperCase(), margin + 4, y + 6);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8.5);
-      doc.setTextColor(...SLATE_500);
-      doc.text(`${list.length} tema(s)`, pageW - margin - 3, y + 5, { align: 'right' });
-      y += 9;
+      doc.setTextColor(...SLATE_200);
+      doc.text(
+        `${deptActive.length} activo(s) · ${deptPaused.length} pausado(s) · ${deptClosed.length} cerrado(s)`,
+        margin + 4, y + 11
+      );
+      // Section number badge (top-right)
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.setTextColor(...SLATE_300);
+      doc.text(`${String(deptIdx + 1).padStart(2, '0')} / ${String(sortedDeptKeys.length).padStart(2, '0')}`, pageW - margin - 4, y + 9, { align: 'right' });
+      y += 18;
 
-      autoTable(doc, {
-        startY: y,
-        margin: { left: margin, right: margin },
-        head: [['#', 'Tema', 'Responsable', 'Inicio', 'Vence', 'Estado', 'Avance']],
-        body: list.map((t, i) => {
-          const tl = getTrafficLight(t.due_date);
-          const done = t.subtasks.filter(s => s.completed).length;
-          const total = t.subtasks.length;
-          const avance = total > 0 ? `${done}/${total} (${Math.round((done / total) * 100)}%)` : '—';
-          const startStr = t.start_date ? formatStoredDate(t.start_date, 'dd MMM yy', { locale: es }) : '—';
-          const dueStr = t.due_date ? formatStoredDate(t.due_date, 'dd MMM yy', { locale: es }) : '—';
-          return [
-            String(i + 1),
-            t.title,
-            t.assignee || ownerName,
-            startStr,
-            dueStr,
-            tl.label,
-            avance,
-          ];
-        }),
-        styles: { fontSize: 8.5, cellPadding: 2.8, overflow: 'linebreak', lineColor: SLATE_200 as any, lineWidth: 0.15, textColor: SLATE_700 as any, valign: 'middle' },
-        headStyles: { fillColor: NAVY as any, textColor: WHITE as any, fontStyle: 'bold', fontSize: 8.5 },
-        alternateRowStyles: { fillColor: SLATE_50 as any },
-        columnStyles: {
-          0: { cellWidth: 8, halign: 'center', textColor: SLATE_400 as any },
-          1: { cellWidth: 'auto', fontStyle: 'bold', textColor: NAVY as any },
-          2: { cellWidth: 32 },
-          3: { cellWidth: 18, halign: 'center' },
-          4: { cellWidth: 18, halign: 'center' },
-          5: { cellWidth: 22, halign: 'center', fontStyle: 'bold' },
-          6: { cellWidth: 24, halign: 'center' },
-        },
-        didParseCell: (data) => {
-          if (data.section === 'body' && data.column.index === 5) {
-            const v = data.cell.raw as string;
-            if (v === 'Atrasado') data.cell.styles.textColor = RED as any;
-            else if (v === 'Por vencer') data.cell.styles.textColor = AMBER as any;
-            else if (v === 'Al día') data.cell.styles.textColor = GREEN as any;
-            else data.cell.styles.textColor = SLATE_400 as any;
-          }
-        },
-      });
-      y = (doc as any).lastAutoTable.finalY + 4;
-    });
-
-    // Optional bitácora detail per topic
-    if (includeBitacora) {
-      for (const t of activeTopics) {
-        if (!t.progress_entries || t.progress_entries.length === 0) continue;
-        const last = t.progress_entries[t.progress_entries.length - 1];
+      // -------- ACTIVOS sub-section --------
+      if (deptActive.length > 0) {
         y = checkPageBreak(doc, y, 14, margin);
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(8.5);
-        doc.setTextColor(...NAVY);
-        doc.text(`▸ ${t.title}`, margin, y);
-        y += 4;
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8);
-        doc.setTextColor(...SLATE_700);
-        const lines = doc.splitTextToSize(`Último avance: ${last.content}`, contentW - 4);
-        doc.text(lines, margin + 4, y);
-        y += lines.length * 4 + 2;
+        doc.setFontSize(10);
+        doc.setTextColor(...BLUE);
+        doc.text(`▸ Activos (${deptActive.length})`, margin, y);
+        y += 3;
+
+        autoTable(doc, {
+          startY: y,
+          margin: { left: margin, right: margin },
+          head: [['#', 'Tema', 'Responsable', 'Inicio', 'Vence', 'Estado', 'Avance']],
+          body: deptActive.map((t, i) => {
+            const tl = getTrafficLight(t.due_date);
+            const done = t.subtasks.filter(s => s.completed).length;
+            const total = t.subtasks.length;
+            const avance = total > 0 ? `${done}/${total} (${Math.round((done / total) * 100)}%)` : '—';
+            const startStr = t.start_date ? formatStoredDate(t.start_date, 'dd MMM yy', { locale: es }) : '—';
+            const dueStr = t.due_date ? formatStoredDate(t.due_date, 'dd MMM yy', { locale: es }) : '—';
+            return [String(i + 1), t.title, t.assignee || ownerName, startStr, dueStr, tl.label, avance];
+          }),
+          styles: { fontSize: 8.5, cellPadding: 2.6, overflow: 'linebreak', lineColor: SLATE_200 as any, lineWidth: 0.15, textColor: SLATE_700 as any, valign: 'middle' },
+          headStyles: { fillColor: NAVY as any, textColor: WHITE as any, fontStyle: 'bold', fontSize: 8.5 },
+          alternateRowStyles: { fillColor: SLATE_50 as any },
+          columnStyles: {
+            0: { cellWidth: 8, halign: 'center', textColor: SLATE_400 as any },
+            1: { cellWidth: 'auto', fontStyle: 'bold', textColor: NAVY as any },
+            2: { cellWidth: 32 },
+            3: { cellWidth: 18, halign: 'center' },
+            4: { cellWidth: 18, halign: 'center' },
+            5: { cellWidth: 22, halign: 'center', fontStyle: 'bold' },
+            6: { cellWidth: 24, halign: 'center' },
+          },
+          didParseCell: (data) => {
+            if (data.section === 'body' && data.column.index === 5) {
+              const v = data.cell.raw as string;
+              if (v === 'Atrasado') data.cell.styles.textColor = RED as any;
+              else if (v === 'Por vencer') data.cell.styles.textColor = AMBER as any;
+              else if (v === 'Al día') data.cell.styles.textColor = GREEN as any;
+              else data.cell.styles.textColor = SLATE_400 as any;
+            }
+          },
+        });
+        y = (doc as any).lastAutoTable.finalY + 6;
       }
-    }
-  }
 
-  // ===================================================================
-  // SECTION 2 — TEMAS PAUSADOS
-  // ===================================================================
-  doc.addPage();
-  y = drawSectionTitle(doc, 2, 'Temas Pausados', `${pausedTopics.length} tema(s) en pausa`, margin, contentW);
+      // -------- PAUSADOS sub-section --------
+      if (deptPaused.length > 0) {
+        y = checkPageBreak(doc, y, 14, margin);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.setTextColor(...AMBER);
+        doc.text(`▸ Pausados (${deptPaused.length})`, margin, y);
+        y += 3;
 
-  if (pausedTopics.length === 0) {
-    doc.setFont('helvetica', 'italic');
-    doc.setFontSize(10);
-    doc.setTextColor(...SLATE_400);
-    doc.text('No hay temas pausados.', margin, y + 6);
-  } else {
-    autoTable(doc, {
-      startY: y,
-      margin: { left: margin, right: margin },
-      head: [['#', 'Tema', 'Responsable', 'Pausado desde', 'Razón']],
-      body: pausedTopics.map((t, i) => {
-        const pausedAt = t.paused_at ? format(new Date(t.paused_at), 'dd MMM yyyy', { locale: es }) : '—';
-        return [
-          String(i + 1),
-          t.title,
-          t.assignee || ownerName,
-          pausedAt,
-          t.pause_reason || '—',
-        ];
-      }),
-      styles: { fontSize: 8.5, cellPadding: 2.8, overflow: 'linebreak', lineColor: SLATE_200 as any, lineWidth: 0.15, textColor: SLATE_700 as any, valign: 'middle' },
-      headStyles: { fillColor: AMBER as any, textColor: WHITE as any, fontStyle: 'bold', fontSize: 8.5 },
-      alternateRowStyles: { fillColor: SLATE_50 as any },
-      columnStyles: {
-        0: { cellWidth: 8, halign: 'center', textColor: SLATE_400 as any },
-        1: { cellWidth: 60, fontStyle: 'bold', textColor: NAVY as any },
-        2: { cellWidth: 32 },
-        3: { cellWidth: 26, halign: 'center' },
-        4: { cellWidth: 'auto' },
-      },
-    });
-  }
+        autoTable(doc, {
+          startY: y,
+          margin: { left: margin, right: margin },
+          head: [['#', 'Tema', 'Responsable', 'Pausado desde', 'Razón']],
+          body: deptPaused.map((t, i) => {
+            const pausedAt = t.paused_at ? format(new Date(t.paused_at), 'dd MMM yyyy', { locale: es }) : '—';
+            return [String(i + 1), t.title, t.assignee || ownerName, pausedAt, t.pause_reason || '—'];
+          }),
+          styles: { fontSize: 8.5, cellPadding: 2.6, overflow: 'linebreak', lineColor: SLATE_200 as any, lineWidth: 0.15, textColor: SLATE_700 as any, valign: 'middle' },
+          headStyles: { fillColor: AMBER as any, textColor: WHITE as any, fontStyle: 'bold', fontSize: 8.5 },
+          alternateRowStyles: { fillColor: SLATE_50 as any },
+          columnStyles: {
+            0: { cellWidth: 8, halign: 'center', textColor: SLATE_400 as any },
+            1: { cellWidth: 60, fontStyle: 'bold', textColor: NAVY as any },
+            2: { cellWidth: 32 },
+            3: { cellWidth: 26, halign: 'center' },
+            4: { cellWidth: 'auto' },
+          },
+        });
+        y = (doc as any).lastAutoTable.finalY + 6;
+      }
 
-  // ===================================================================
-  // SECTION 3 — TEMAS CERRADOS (en período)
-  // ===================================================================
-  doc.addPage();
-  y = drawSectionTitle(
-    doc,
-    3,
-    'Temas Cerrados',
-    `${closedTopics.length} tema(s) cerrados en el período seleccionado`,
-    margin, contentW
-  );
+      // -------- CERRADOS sub-section --------
+      if (deptClosed.length > 0) {
+        y = checkPageBreak(doc, y, 14, margin);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.setTextColor(...GREEN);
+        doc.text(`▸ Cerrados (${deptClosed.length})`, margin, y);
+        y += 3;
 
-  if (closedTopics.length === 0) {
-    doc.setFont('helvetica', 'italic');
-    doc.setFontSize(10);
-    doc.setTextColor(...SLATE_400);
-    doc.text('No se cerraron temas en este período.', margin, y + 6);
-  } else {
-    autoTable(doc, {
-      startY: y,
-      margin: { left: margin, right: margin },
-      head: [['#', 'Tema', 'Responsable', 'Vencía', 'Cerrado el', 'Cumplimiento']],
-      body: closedTopics.map((t, i) => {
-        const closedDate = t.closed_at ? new Date(t.closed_at) : null;
-        const dueDate = t.due_date ? parseStoredDate(t.due_date) : null;
-        let compliance = '—';
-        if (closedDate && dueDate) {
-          const diff = daysBetween(closedDate, dueDate);
-          if (diff <= 0) compliance = `A tiempo${diff < 0 ? ` (${-diff}d antes)` : ''}`;
-          else compliance = `Atrasado (${diff}d)`;
-        } else if (closedDate && !dueDate) {
-          compliance = 'Sin plazo';
+        autoTable(doc, {
+          startY: y,
+          margin: { left: margin, right: margin },
+          head: [['#', 'Tema', 'Responsable', 'Vencía', 'Cerrado el', 'Cumplimiento']],
+          body: deptClosed.map((t, i) => {
+            const closedDate = t.closed_at ? new Date(t.closed_at) : null;
+            const dueDate = t.due_date ? parseStoredDate(t.due_date) : null;
+            let compliance = '—';
+            if (closedDate && dueDate) {
+              const diff = daysBetween(closedDate, dueDate);
+              if (diff <= 0) compliance = `A tiempo${diff < 0 ? ` (${-diff}d antes)` : ''}`;
+              else compliance = `Atrasado (${diff}d)`;
+            } else if (closedDate && !dueDate) {
+              compliance = 'Sin plazo';
+            }
+            return [
+              String(i + 1),
+              t.title,
+              t.assignee || ownerName,
+              dueDate ? format(dueDate, 'dd MMM yy', { locale: es }) : '—',
+              closedDate ? format(closedDate, 'dd MMM yy', { locale: es }) : '—',
+              compliance,
+            ];
+          }),
+          styles: { fontSize: 8.5, cellPadding: 2.6, overflow: 'linebreak', lineColor: SLATE_200 as any, lineWidth: 0.15, textColor: SLATE_700 as any, valign: 'middle' },
+          headStyles: { fillColor: GREEN as any, textColor: WHITE as any, fontStyle: 'bold', fontSize: 8.5 },
+          alternateRowStyles: { fillColor: SLATE_50 as any },
+          columnStyles: {
+            0: { cellWidth: 8, halign: 'center', textColor: SLATE_400 as any },
+            1: { cellWidth: 'auto', fontStyle: 'bold', textColor: NAVY as any },
+            2: { cellWidth: 32 },
+            3: { cellWidth: 22, halign: 'center' },
+            4: { cellWidth: 22, halign: 'center' },
+            5: { cellWidth: 38, halign: 'center', fontStyle: 'bold' },
+          },
+          didParseCell: (data) => {
+            if (data.section === 'body' && data.column.index === 5) {
+              const v = data.cell.raw as string;
+              if (v.startsWith('A tiempo')) data.cell.styles.textColor = GREEN as any;
+              else if (v.startsWith('Atrasado')) data.cell.styles.textColor = RED as any;
+              else data.cell.styles.textColor = SLATE_500 as any;
+            }
+          },
+        });
+        y = (doc as any).lastAutoTable.finalY + 6;
+      }
+
+      // Optional bitácora notes per active topic in this department
+      if (includeBitacora) {
+        for (const t of deptActive) {
+          if (!t.progress_entries || t.progress_entries.length === 0) continue;
+          const last = t.progress_entries[t.progress_entries.length - 1];
+          y = checkPageBreak(doc, y, 14, margin);
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(8.5);
+          doc.setTextColor(...NAVY);
+          doc.text(`▸ ${t.title}`, margin, y);
+          y += 4;
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(8);
+          doc.setTextColor(...SLATE_700);
+          const lines = doc.splitTextToSize(`Último avance: ${last.content}`, contentW - 4);
+          doc.text(lines, margin + 4, y);
+          y += lines.length * 4 + 2;
         }
-        return [
-          String(i + 1),
-          t.title,
-          t.assignee || ownerName,
-          dueDate ? format(dueDate, 'dd MMM yy', { locale: es }) : '—',
-          closedDate ? format(closedDate, 'dd MMM yy', { locale: es }) : '—',
-          compliance,
-        ];
-      }),
-      styles: { fontSize: 8.5, cellPadding: 2.8, overflow: 'linebreak', lineColor: SLATE_200 as any, lineWidth: 0.15, textColor: SLATE_700 as any, valign: 'middle' },
-      headStyles: { fillColor: GREEN as any, textColor: WHITE as any, fontStyle: 'bold', fontSize: 8.5 },
-      alternateRowStyles: { fillColor: SLATE_50 as any },
-      columnStyles: {
-        0: { cellWidth: 8, halign: 'center', textColor: SLATE_400 as any },
-        1: { cellWidth: 'auto', fontStyle: 'bold', textColor: NAVY as any },
-        2: { cellWidth: 32 },
-        3: { cellWidth: 22, halign: 'center' },
-        4: { cellWidth: 22, halign: 'center' },
-        5: { cellWidth: 38, halign: 'center', fontStyle: 'bold' },
-      },
-      didParseCell: (data) => {
-        if (data.section === 'body' && data.column.index === 5) {
-          const v = data.cell.raw as string;
-          if (v.startsWith('A tiempo')) data.cell.styles.textColor = GREEN as any;
-          else if (v.startsWith('Atrasado')) data.cell.styles.textColor = RED as any;
-          else data.cell.styles.textColor = SLATE_500 as any;
-        }
-      },
+      }
     });
   }
 
