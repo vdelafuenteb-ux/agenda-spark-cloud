@@ -436,11 +436,6 @@ export function generateReportPdf(opts: PdfOptions) {
       // -------- ACTIVOS sub-section --------
       if (deptActive.length > 0) {
         y = checkPageBreak(doc, y, 14, margin);
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(10);
-        doc.setTextColor(...BLUE);
-        doc.text(`▸ Activos (${deptActive.length})`, margin, y);
-        y += 3;
 
         autoTable(doc, {
           startY: y,
