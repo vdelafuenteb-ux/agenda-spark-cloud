@@ -101,34 +101,6 @@ export function AuthPage() {
             Personal Agenda
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Inicia sesión para continuar
-          </p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            required
-          />
-          <Input
-            type="password"
-            placeholder="Contraseña"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            required
-            minLength={6}
-          />
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="w-full max-w-sm space-y-8 px-4">
-        <div className="text-center">
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            Personal Agenda
-          </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
             {mode === 'signup' ? 'Crea tu cuenta para comenzar' : 'Inicia sesión para continuar'}
           </p>
         </div>
