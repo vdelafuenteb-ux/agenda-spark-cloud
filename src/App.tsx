@@ -3,6 +3,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { WorkspaceProvider } from "@/hooks/useWorkspace";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Index from "./pages/Index.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
 import UpdateTopics from "./pages/UpdateTopics.tsx";
@@ -21,22 +22,26 @@ const queryClient = new QueryClient({
 });
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Sonner />
-      <BrowserRouter>
-        <WorkspaceProvider>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/update/:token" element={<UpdateTopics />} />
-            <Route path="/invite/:token" element={<AcceptInvite />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </WorkspaceProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Sonner />
+        <BrowserRouter>
+          <WorkspaceProvider>
+            <ErrorBoundary>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/update/:token" element={<UpdateTopics />} />
+                <Route path="/invite/:token" element={<AcceptInvite />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </ErrorBoundary>
+          </WorkspaceProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;

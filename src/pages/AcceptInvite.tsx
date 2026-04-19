@@ -41,16 +41,17 @@ export default function AcceptInvite() {
       if (!token) { setError('Token inválido'); setLoading(false); return; }
       const { data, error } = await supabase
         .from('workspace_invitations')
-        .select('id, workspace_id, email, role, expires_at, accepted, workspaces(name)')
+        .select('*')
         .eq('token', token)
         .maybeSingle();
       if (error || !data) { setError('Invitación no encontrada'); setLoading(false); return; }
       if (data.accepted) { setError('Esta invitación ya fue aceptada'); setLoading(false); return; }
       if (new Date(data.expires_at) < new Date()) { setError('Esta invitación ha expirado'); setLoading(false); return; }
+      const { data: wsRow } = await supabase.from('workspaces').select('*').eq('id', data.workspace_id).maybeSingle();
       setInvite({
         id: data.id,
         workspace_id: data.workspace_id,
-        workspace_name: (data.workspaces as any)?.name ?? 'Workspace',
+        workspace_name: (wsRow as any)?.name ?? 'Workspace',
         email: data.email,
         role: data.role,
         expires_at: data.expires_at,

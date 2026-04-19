@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { useWorkspace } from '@/hooks/useWorkspace';
 
 export interface Reschedule {
   id: string;
@@ -14,16 +16,21 @@ export interface Reschedule {
 
 export function useReschedules() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const { activeWorkspaceId } = useWorkspace();
 
   const reschedulesQuery = useQuery({
-    queryKey: ['topic_reschedules'],
+    queryKey: ['topic_reschedules', activeWorkspaceId],
+    enabled: !!activeWorkspaceId,
     queryFn: async (): Promise<Reschedule[]> => {
+      if (!activeWorkspaceId) return [];
       const { data, error } = await supabase
         .from('topic_reschedules' as any)
         .select('*')
-        .order('created_at', { ascending: false });
+        .eq('workspace_id', activeWorkspaceId);
       if (error) throw error;
-      return (data || []) as unknown as Reschedule[];
+      const list = (data || []) as unknown as Reschedule[];
+      return [...list].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     },
   });
 
@@ -38,7 +45,7 @@ export function useReschedules() {
     }) => {
       const { error } = await supabase
         .from('topic_reschedules' as any)
-        .insert(params as any);
+        .insert({ ...params, workspace_id: activeWorkspaceId } as any);
       if (error) throw error;
     },
     onSuccess: () => {

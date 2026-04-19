@@ -3,8 +3,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2, Plus, Pencil, Check, X, Mail, Tag, Users, Clock, CalendarCheck, Building2, Building } from 'lucide-react';
+import { Trash2, Plus, Pencil, Check, X, Mail, Tag, Users, Clock, CalendarCheck, Building2, Building, Shield } from 'lucide-react';
 import { WorkspaceMembersView } from '@/components/WorkspaceMembersView';
+import { UserApprovalsView } from '@/components/UserApprovalsView';
+import { useApproval } from '@/hooks/useApproval';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,19 +26,26 @@ import { EmailScheduleSettings } from '@/components/EmailScheduleSettings';
 import { cn } from '@/lib/utils';
 import { DailySummarySettings } from '@/components/DailySummarySettings';
 import { ReminderEmailSettings } from '@/components/ReminderEmailSettings';
+import { EmailTestCard } from '@/components/EmailTestCard';
+import { useProjects } from '@/features/workGraph/useProjects';
+import { useClients } from '@/features/workGraph/useClients';
+import { Briefcase, Contact as ContactIcon } from 'lucide-react';
 
 
 const TAG_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#8b5cf6', '#ec4899', '#6b7280'];
 
-type SettingsSection = 'workspace' | 'etiquetas' | 'responsables' | 'departamentos' | 'correos_automaticos' | 'resumen_diario';
+type SettingsSection = 'workspace' | 'etiquetas' | 'responsables' | 'departamentos' | 'proyectos' | 'clientes' | 'correos_automaticos' | 'resumen_diario' | 'aprobaciones';
 
-const SECTIONS: { key: SettingsSection; label: string; icon: typeof Tag }[] = [
+const SECTIONS: { key: SettingsSection; label: string; icon: typeof Tag; adminOnly?: boolean }[] = [
   { key: 'workspace', label: 'Workspace', icon: Building },
   { key: 'etiquetas', label: 'Etiquetas', icon: Tag },
   { key: 'responsables', label: 'Responsables', icon: Users },
   { key: 'departamentos', label: 'Departamentos', icon: Building2 },
+  { key: 'proyectos', label: 'Proyectos', icon: Briefcase },
+  { key: 'clientes', label: 'Clientes', icon: ContactIcon },
   { key: 'correos_automaticos', label: 'Correos Automáticos', icon: Clock },
   { key: 'resumen_diario', label: 'Resumen Diario', icon: CalendarCheck },
+  { key: 'aprobaciones', label: 'Aprobaciones', icon: Shield, adminOnly: true },
 ];
 
 interface SettingsViewProps {
@@ -44,15 +53,15 @@ interface SettingsViewProps {
   assignees: Assignee[];
   departments: Department[];
   topics: { id: string; title: string; assignee: string | null; status: string }[];
-  onDeleteTag: (id: string) => void;
+  onDeleteTag: (id: string) => void | Promise<void>;
   onCreateTag: (data: { name: string; color: string }) => Promise<any>;
-  onUpdateTag: (id: string, name: string) => void;
-  onDeleteAssignee: (id: string) => void;
-  onCreateAssignee: (name: string) => Promise<any>;
-  onUpdateAssignee: (id: string, data: { name?: string; email?: string | null; weekly_capacity?: number; department_id?: string | null }) => void;
+  onUpdateTag: (id: string, name: string) => void | Promise<void>;
+  onDeleteAssignee: (id: string) => void | Promise<void>;
+  onCreateAssignee: (input: string | { name: string; email?: string | null; department_id?: string | null }) => Promise<any>;
+  onUpdateAssignee: (id: string, data: { name?: string; email?: string | null; weekly_capacity?: number; department_id?: string | null }) => void | Promise<void>;
   onCreateDepartment: (name: string) => Promise<any>;
-  onUpdateDepartment: (id: string, name: string) => void;
-  onDeleteDepartment: (id: string) => void;
+  onUpdateDepartment: (id: string, name: string) => void | Promise<void>;
+  onDeleteDepartment: (id: string) => void | Promise<void>;
 }
 
 function DeleteConfirm({ title, description, onConfirm, children }: { title: string; description: string; onConfirm: () => void; children: React.ReactNode }) {
@@ -117,8 +126,12 @@ export function SettingsView({ tags, assignees, departments, topics, onDeleteTag
   const handleCreateAssignee = async () => {
     if (!newAssigneeName.trim()) return;
     try {
-      const created = await onCreateAssignee(newAssigneeName.trim());
-      if (newAssigneeEmail.trim()) onUpdateAssignee(created.id, { email: newAssigneeEmail.trim() });
+      // Single atomic create with name + email. Prevents race where UI refreshes
+      // before the follow-up email update lands.
+      await onCreateAssignee({
+        name: newAssigneeName.trim(),
+        email: newAssigneeEmail.trim() || null,
+      } as any);
       setNewAssigneeName('');
       setNewAssigneeEmail('');
       toast.success('Responsable creado');
@@ -155,12 +168,15 @@ export function SettingsView({ tags, assignees, departments, topics, onDeleteTag
     toast.success('Departamento actualizado');
   };
 
+  const { isAdmin } = useApproval();
+  const visibleSections = SECTIONS.filter((s) => !s.adminOnly || isAdmin);
+
   return (
     <main className="flex-1 overflow-hidden flex flex-col md:flex-row">
       {/* Sidebar nav */}
       <nav className="shrink-0 border-b md:border-b-0 md:border-r border-border bg-muted/20 overflow-x-auto md:overflow-y-auto md:w-52">
         <div className="flex md:flex-col p-2 md:p-4 gap-0.5">
-          {SECTIONS.map((s) => {
+          {visibleSections.map((s) => {
             const Icon = s.icon;
             return (
               <button
@@ -253,7 +269,10 @@ export function SettingsView({ tags, assignees, departments, topics, onDeleteTag
                               </div>
                               <ActionButtons
                                 onEdit={() => { setEditingTagId(tag.id); setEditingTagName(tag.name); }}
-                                onDelete={() => { onDeleteTag(tag.id); toast.success('Etiqueta eliminada'); }}
+                                onDelete={async () => {
+                                  try { await (onDeleteTag as any)(tag.id); toast.success('Etiqueta eliminada'); }
+                                  catch (e: any) { toast.error(e?.message || 'No se pudo eliminar'); }
+                                }}
                                 deleteTitle="¿Eliminar etiqueta?"
                                 deleteDesc={`Se eliminará la etiqueta "${tag.name}" y se quitará de todos los temas asociados.`}
                               />
@@ -395,7 +414,10 @@ export function SettingsView({ tags, assignees, departments, topics, onDeleteTag
                                   setEditingAssigneeCapacity(a.weekly_capacity || 45);
                                   setEditingAssigneeDeptId(a.department_id || null);
                                 }}
-                                onDelete={() => { onDeleteAssignee(a.id); toast.success('Responsable eliminado'); }}
+                                onDelete={async () => {
+                                  try { await onDeleteAssignee(a.id); toast.success('Responsable eliminado'); }
+                                  catch (e: any) { toast.error(e?.message || 'No se pudo eliminar'); }
+                                }}
                                 deleteTitle="¿Eliminar responsable?"
                                 deleteDesc={`Se eliminará "${a.name}" de la lista. Los temas asignados no se modificarán.`}
                               />
@@ -470,7 +492,10 @@ export function SettingsView({ tags, assignees, departments, topics, onDeleteTag
                                 </div>
                                 <ActionButtons
                                   onEdit={() => { setEditingDeptId(dept.id); setEditingDeptName(dept.name); }}
-                                  onDelete={() => { onDeleteDepartment(dept.id); toast.success('Departamento eliminado'); }}
+                                  onDelete={async () => {
+                                    try { await (onDeleteDepartment as any)(dept.id); toast.success('Departamento eliminado'); }
+                                    catch (e: any) { toast.error(e?.message || 'No se pudo eliminar'); }
+                                  }}
                                   deleteTitle="¿Eliminar departamento?"
                                   deleteDesc={`Se eliminará "${dept.name}". Los responsables asignados quedarán sin departamento.`}
                                 />
@@ -486,6 +511,12 @@ export function SettingsView({ tags, assignees, departments, topics, onDeleteTag
             </div>
           )}
 
+          {/* ═══════════ PROYECTOS (globales) ═══════════ */}
+          {section === 'proyectos' && <ProjectsSection />}
+
+          {/* ═══════════ CLIENTES (globales) ═══════════ */}
+          {section === 'clientes' && <ClientsSection />}
+
           {/* ═══════════ CORREOS AUTOMÁTICOS ═══════════ */}
           {section === 'correos_automaticos' && (
             <div className="space-y-4">
@@ -493,6 +524,7 @@ export function SettingsView({ tags, assignees, departments, topics, onDeleteTag
                 <h2 className="text-lg font-semibold">Correos Automáticos</h2>
                 <p className="text-xs text-muted-foreground mt-0.5">Configura el envío programado de correos a responsables.</p>
               </div>
+              <EmailTestCard />
               <EmailScheduleSettings assignees={assignees} topics={topics} />
               <ReminderEmailSettings assignees={assignees} />
             </div>
@@ -508,8 +540,174 @@ export function SettingsView({ tags, assignees, departments, topics, onDeleteTag
               <DailySummarySettings />
             </div>
           )}
+
+          {/* ═══════════ APROBACIONES (admin) ═══════════ */}
+          {section === 'aprobaciones' && isAdmin && <UserApprovalsView />}
         </div>
       </div>
     </main>
+  );
+}
+
+// ---------- Projects section (global, cross-workspace) ----------
+
+function ProjectsSection() {
+  const { projects, createProject, updateProject, deleteProject } = useProjects();
+  const [newName, setNewName] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
+
+  const handleCreate = async () => {
+    if (!newName.trim()) return;
+    try { await createProject.mutateAsync({ name: newName.trim() }); setNewName(''); toast.success('Proyecto creado'); }
+    catch (e: any) { toast.error(e?.message || 'Error al crear'); }
+  };
+  const handleSaveEdit = async (id: string) => {
+    if (!editName.trim()) { setEditingId(null); return; }
+    try { await updateProject.mutateAsync({ id, name: editName.trim() }); setEditingId(null); toast.success('Proyecto actualizado'); }
+    catch (e: any) { toast.error(e?.message || 'Error'); }
+  };
+  const handleDelete = async (id: string) => {
+    try { await deleteProject.mutateAsync(id); toast.success('Proyecto eliminado'); }
+    catch (e: any) { toast.error(e?.message || 'No se pudo eliminar'); }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-lg font-semibold">Proyectos</h2>
+        <p className="text-xs text-muted-foreground mt-0.5">Compartidos entre todos los workspaces — cualquier tema puede apuntar a un proyecto.</p>
+      </div>
+      <Card>
+        <CardContent className="p-4 space-y-3">
+          <div className="flex gap-2">
+            <Input
+              placeholder="Nombre del proyecto"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
+              className="h-9"
+            />
+            <Button onClick={handleCreate} disabled={!newName.trim()}>
+              <Plus className="h-4 w-4 mr-1.5" /> Crear
+            </Button>
+          </div>
+          {projects.length === 0 ? (
+            <p className="text-xs text-muted-foreground text-center py-4">Sin proyectos. Crea el primero arriba.</p>
+          ) : (
+            <div className="space-y-1.5">
+              {projects.map((p) => (
+                <div key={p.id} className="flex items-center gap-2 rounded-md border bg-muted/20 px-3 py-2">
+                  {editingId === p.id ? (
+                    <>
+                      <Input autoFocus value={editName} onChange={(e) => setEditName(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSaveEdit(p.id)}
+                        className="h-7 text-sm flex-1" />
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleSaveEdit(p.id)}><Check className="h-3.5 w-3.5 text-green-600" /></Button>
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditingId(null)}><X className="h-3.5 w-3.5" /></Button>
+                    </>
+                  ) : (
+                    <>
+                      <Briefcase className="h-4 w-4 shrink-0 text-violet-600" />
+                      <span className="text-sm font-medium flex-1 truncate">{p.name}</span>
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setEditingId(p.id); setEditName(p.name); }}><Pencil className="h-3 w-3" /></Button>
+                      <DeleteConfirm
+                        title="¿Eliminar proyecto?"
+                        description={`Se eliminará "${p.name}". Los temas apuntando a este proyecto quedarán sin proyecto pero no se borrarán.`}
+                        onConfirm={() => handleDelete(p.id)}
+                      >
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive"><Trash2 className="h-3 w-3" /></Button>
+                      </DeleteConfirm>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// ---------- Clients section (global, cross-workspace) ----------
+
+function ClientsSection() {
+  const { clients, createClient, updateClient, deleteClient } = useClients();
+  const [newName, setNewName] = useState('');
+  const [newEmail, setNewEmail] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
+
+  const handleCreate = async () => {
+    if (!newName.trim()) return;
+    try {
+      await createClient.mutateAsync({ name: newName.trim(), contact_email: newEmail.trim() || undefined });
+      setNewName(''); setNewEmail(''); toast.success('Cliente creado');
+    } catch (e: any) { toast.error(e?.message || 'Error'); }
+  };
+  const handleSaveEdit = async (id: string) => {
+    if (!editName.trim()) { setEditingId(null); return; }
+    try { await updateClient.mutateAsync({ id, name: editName.trim() }); setEditingId(null); toast.success('Cliente actualizado'); }
+    catch (e: any) { toast.error(e?.message || 'Error'); }
+  };
+  const handleDelete = async (id: string) => {
+    try { await deleteClient.mutateAsync(id); toast.success('Cliente eliminado'); }
+    catch (e: any) { toast.error(e?.message || 'No se pudo eliminar'); }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-lg font-semibold">Clientes</h2>
+        <p className="text-xs text-muted-foreground mt-0.5">Compartidos entre todos los workspaces.</p>
+      </div>
+      <Card>
+        <CardContent className="p-4 space-y-3">
+          <div className="flex gap-2">
+            <Input placeholder="Nombre del cliente" value={newName} onChange={(e) => setNewName(e.target.value)} className="h-9 flex-1" />
+            <Input placeholder="Email (opcional)" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} className="h-9 flex-1" type="email" />
+            <Button onClick={handleCreate} disabled={!newName.trim()}>
+              <Plus className="h-4 w-4 mr-1.5" /> Crear
+            </Button>
+          </div>
+          {clients.length === 0 ? (
+            <p className="text-xs text-muted-foreground text-center py-4">Sin clientes.</p>
+          ) : (
+            <div className="space-y-1.5">
+              {clients.map((c) => (
+                <div key={c.id} className="flex items-center gap-2 rounded-md border bg-muted/20 px-3 py-2">
+                  {editingId === c.id ? (
+                    <>
+                      <Input autoFocus value={editName} onChange={(e) => setEditName(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSaveEdit(c.id)}
+                        className="h-7 text-sm flex-1" />
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleSaveEdit(c.id)}><Check className="h-3.5 w-3.5 text-green-600" /></Button>
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditingId(null)}><X className="h-3.5 w-3.5" /></Button>
+                    </>
+                  ) : (
+                    <>
+                      <ContactIcon className="h-4 w-4 shrink-0 text-sky-600" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{c.name}</p>
+                        {c.contact_email && <p className="text-[10px] text-muted-foreground truncate">{c.contact_email}</p>}
+                      </div>
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setEditingId(c.id); setEditName(c.name); }}><Pencil className="h-3 w-3" /></Button>
+                      <DeleteConfirm
+                        title="¿Eliminar cliente?"
+                        description={`Se eliminará "${c.name}". Los proyectos/temas que apuntan a este cliente quedan sin cliente.`}
+                        onConfirm={() => handleDelete(c.id)}
+                      >
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive"><Trash2 className="h-3 w-3" /></Button>
+                      </DeleteConfirm>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }

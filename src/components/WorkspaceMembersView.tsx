@@ -73,7 +73,7 @@ export function WorkspaceMembersView() {
       ? await supabase.from('profiles').select('user_id, display_name, email').in('user_id', userIds)
       : { data: [] as any[] };
 
-    const profileMap = new Map((profiles ?? []).map((p: any) => [p.user_id, p]));
+    const profileMap = new Map<string, any>((profiles ?? []).map((p: any) => [p.user_id, p]));
     setMembers(
       (memberRows ?? []).map((m: any) => ({
         id: m.id,

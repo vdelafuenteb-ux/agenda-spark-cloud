@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { useWorkspace } from '@/hooks/useWorkspace';
 
 export interface Tag {
   id: string;
@@ -18,27 +20,41 @@ export interface TopicTag {
 
 export function useTags() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const { activeWorkspaceId } = useWorkspace();
 
   const tagsQuery = useQuery({
-    queryKey: ['tags'],
+    queryKey: ['tags', activeWorkspaceId],
+    enabled: !!activeWorkspaceId,
     queryFn: async (): Promise<Tag[]> => {
+      if (!activeWorkspaceId) return [];
       const { data, error } = await supabase
         .from('tags')
         .select('*')
-        .order('name', { ascending: true });
+        .eq('workspace_id', activeWorkspaceId);
       if (error) throw error;
-      return data || [];
+      const list = (data || []) as Tag[];
+      return [...list].sort((a, b) => a.name.localeCompare(b.name));
     },
   });
 
   const topicTagsQuery = useQuery({
-    queryKey: ['topic_tags'],
+    queryKey: ['topic_tags', activeWorkspaceId],
+    enabled: !!activeWorkspaceId,
     queryFn: async (): Promise<TopicTag[]> => {
-      const { data, error } = await supabase
-        .from('topic_tags')
-        .select('*');
-      if (error) throw error;
-      return data || [];
+      if (!activeWorkspaceId) return [];
+      const { data: wsTags } = await supabase.from('tags').select('id').eq('workspace_id', activeWorkspaceId);
+      const wsTagIds = new Set(((wsTags || []) as any[]).map((t) => t.id));
+      if (wsTagIds.size === 0) return [];
+      const chunks: string[][] = [];
+      const ids = [...wsTagIds];
+      for (let i = 0; i < ids.length; i += 30) chunks.push(ids.slice(i, i + 30));
+      const out: TopicTag[] = [];
+      for (const c of chunks) {
+        const { data } = await supabase.from('topic_tags').select('*').in('tag_id', c);
+        out.push(...((data || []) as TopicTag[]));
+      }
+      return out;
     },
   });
 
@@ -63,11 +79,10 @@ export function useTags() {
 
   const createTag = useMutation({
     mutationFn: async ({ name, color }: { name: string; color: string }) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      if (!user || !activeWorkspaceId) throw new Error('No hay workspace activo');
       const { data, error } = await supabase
         .from('tags')
-        .insert({ user_id: user.id, name, color })
+        .insert({ user_id: user.id, workspace_id: activeWorkspaceId, name, color })
         .select()
         .single();
       if (error) throw error;

@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { useWorkspace } from '@/hooks/useWorkspace';
 
 export interface ChecklistItem {
   id: string;
@@ -12,17 +14,22 @@ export interface ChecklistItem {
 
 export function useChecklist() {
   const qc = useQueryClient();
-  const key = ['checklist_items'];
+  const { user } = useAuth();
+  const { activeWorkspaceId } = useWorkspace();
+  const key = ['checklist_items', activeWorkspaceId];
 
   const query = useQuery({
     queryKey: key,
+    enabled: !!activeWorkspaceId,
     queryFn: async (): Promise<ChecklistItem[]> => {
+      if (!activeWorkspaceId) return [];
       const { data, error } = await supabase
         .from('checklist_items')
         .select('*')
-        .order('created_at', { ascending: true });
+        .eq('workspace_id', activeWorkspaceId);
       if (error) throw error;
-      return data || [];
+      const list = (data || []) as ChecklistItem[];
+      return [...list].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
     },
   });
 
@@ -30,11 +37,10 @@ export function useChecklist() {
 
   const addItem = useMutation({
     mutationFn: async ({ title, due_date }: { title: string; due_date?: string | null }) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      if (!user || !activeWorkspaceId) throw new Error('No hay workspace activo');
       const { data, error } = await supabase
         .from('checklist_items')
-        .insert({ user_id: user.id, title: title.trim(), due_date: due_date ?? null })
+        .insert({ user_id: user.id, workspace_id: activeWorkspaceId, title: title.trim(), due_date: due_date ?? null })
         .select()
         .single();
       if (error) throw error;

@@ -11,8 +11,12 @@ import { FilterBar, type SortOption } from '@/components/FilterBar';
 import { BulkEmailModal } from '@/components/BulkEmailModal';
 import { CreateTopicModal } from '@/components/CreateTopicModal';
 import { AuthPage } from '@/components/AuthPage';
+import { PendingApproval } from '@/components/PendingApproval';
+import { WorkspaceLanding } from '@/components/WorkspaceLanding';
+import { useApproval } from '@/hooks/useApproval';
 import { ReviewView } from '@/components/ReviewView';
 import { useAuth } from '@/hooks/useAuth';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { useTopics } from '@/hooks/useTopics';
 import { useTags } from '@/hooks/useTags';
 import { useAssignees } from '@/hooks/useAssignees';
@@ -29,6 +33,8 @@ import { SettingsView } from '@/components/SettingsView';
 import { EmailHistoryView } from '@/components/EmailHistoryView';
 import { TeamView } from '@/components/TeamView';
 import { ContactsView } from '@/components/ContactsView';
+import { WorkGraphView } from '@/features/workGraph/WorkGraphView';
+import { useWorkGraphRelationships } from '@/features/workGraph/useWorkGraphRelationships';
 import { toast } from 'sonner';
 
 import type { Filter, StatusTab } from '@/types/filters';
@@ -36,17 +42,20 @@ import type { Filter, StatusTab } from '@/types/filters';
 const Index = () => {
   const queryClient = useQueryClient();
   const { user, loading: authLoading } = useAuth();
+  const { approved, loading: approvalLoading } = useApproval();
+  const { activeWorkspaceId, loading: workspaceLoading } = useWorkspace();
   useEffect(() => {
     if (user) {
       queryClient.invalidateQueries();
     }
   }, [user, queryClient]);
 
-  const { topics, isLoading, createTopic, updateTopic, deleteTopic, addSubtask, toggleSubtask, deleteSubtask, addProgressEntry, updateProgressEntry, deleteProgressEntry, updateSubtask, addSubtaskEntry, updateSubtaskEntry, deleteSubtaskEntry, addSubtaskContact, updateSubtaskContact, deleteSubtaskContact, uploadEntryAttachment, deleteEntryAttachment } = useTopics();
+  const { topics, isLoading, createTopic, updateTopic, deleteTopic, addSubtask, toggleSubtask, deleteSubtask, addProgressEntry, updateProgressEntry, deleteProgressEntry, updateSubtask, addSubtaskEntry, updateSubtaskEntry, deleteSubtaskEntry, addSubtaskContact, updateSubtaskContact, deleteSubtaskContact, uploadEntryAttachment, deleteEntryAttachment } = useTopics(activeWorkspaceId);
   const { tags, getTagsForTopic, createTag, updateTag, deleteTag, addTopicTag, removeTopicTag } = useTags();
   const { assignees, createAssignee, updateAssignee, deleteAssignee } = useAssignees();
   const { departments, createDepartment, updateDepartment, deleteDepartment } = useDepartments();
   const { reschedulesByTopic, createReschedule } = useReschedules();
+  const { createRelationship } = useWorkGraphRelationships();
   const [filter, setFilter] = useState<Filter>('todos');
   
   const [statusTab, setStatusTab] = useState<StatusTab>('activo');
@@ -181,6 +190,17 @@ const Index = () => {
 
   if (!user) return <AuthPage />;
 
+  if (approvalLoading || workspaceLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <p className="text-sm text-muted-foreground">Cargando...</p>
+      </div>
+    );
+  }
+  if (!approved) return <PendingApproval />;
+  // If the user hasn't picked a workspace yet, show the landing picker.
+  if (!activeWorkspaceId) return <WorkspaceLanding />;
+
   const handleCreateTopic = async (data: {
     title: string;
     priority: any;
@@ -203,10 +223,13 @@ const Index = () => {
         is_ongoing: (data as any).is_ongoing ?? false,
         assignee: data.assignee || null,
         department_id: (data as Record<string, unknown>).department_id as string | null || null,
+        project_id: (data as any).project_id ?? null,
+        client_id: (data as any).client_id ?? null,
         execution_order: (data as any).execution_order ?? null,
         hh_type: (data as any).hh_type ?? null,
         hh_value: (data as any).hh_value ?? null,
         user_id: user!.id,
+        workspace_id: activeWorkspaceId,
       } as any);
 
       const warnings: string[] = [];
@@ -263,6 +286,27 @@ const Index = () => {
 
       await Promise.all(operations);
 
+      // Persist manual relationships declared inline in the modal. Fire-and-forget
+      // per-edge so one failure doesn't abort the whole creation flow.
+      const rels = (data as any).relationships as Array<{ edge_type: string; target_type: string; target_id: string; reason?: string }> | undefined;
+      if (rels && rels.length > 0 && created?.id) {
+        for (const r of rels) {
+          try {
+            await createRelationship.mutateAsync({
+              source_type: 'task',
+              source_id: created.id,
+              target_type: r.target_type as any,
+              target_id: r.target_id,
+              edge_type: r.edge_type as any,
+              reason: r.reason,
+              workspace_id: activeWorkspaceId,
+            });
+          } catch (e) {
+            // Already toasted in the mutation; continue with the next relationship.
+          }
+        }
+      }
+
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['topics'], refetchType: 'active' }),
         queryClient.invalidateQueries({ queryKey: ['tags'], refetchType: 'active' }),
@@ -276,9 +320,15 @@ const Index = () => {
         toast.success('Tema creado');
       }
 
-      // Auto-notify assignee when topic is "seguimiento"
-      if (data.status === 'seguimiento' && data.assignee) {
+      // Auto-notify assignee whenever there's one assigned (regardless of initial status)
+      if (data.assignee) {
         const assignee = assignees.find(a => a.name === data.assignee);
+        if (!assignee?.email) {
+          toast.warning(
+            `${data.assignee} no tiene correo configurado. Agrega su correo en Configuración → Responsables para enviar notificaciones.`,
+            { duration: 6000 },
+          );
+        }
         if (assignee?.email) {
           try {
             // Calculate urgency: due_date exists and is <= 2 days from now
@@ -308,14 +358,22 @@ const Index = () => {
               },
             });
 
+            if (emailError) {
+              console.error('[send-new-topic-notification] error:', emailError);
+              toast.error(`No se pudo enviar el correo: ${emailError.message || 'error desconocido'}`, { duration: 8000 });
+            }
             if (!emailError) {
               // Log in notification_emails for history
               await supabase.from('notification_emails').insert({
                 user_id: user!.id,
+                workspace_id: activeWorkspaceId,
                 topic_id: created.id,
                 assignee_name: assignee.name,
                 assignee_email: assignee.email,
                 email_type: 'new_topic',
+                sent_at: new Date().toISOString(),
+                responded: false,
+                confirmed: false,
               } as any);
               queryClient.invalidateQueries({ queryKey: ['notification_emails'] });
               queryClient.invalidateQueries({ queryKey: ['notification_emails_all'] });
@@ -323,13 +381,10 @@ const Index = () => {
               queryClient.invalidateQueries({ queryKey: ['notification_emails_team'] });
               queryClient.invalidateQueries({ queryKey: ['notification_emails_assignee'] });
               toast.success(`Se notificó a ${assignee.name} del nuevo tema`);
-            } else {
-              console.error('Error sending new topic notification:', emailError);
-              toast.warning('Tema creado, pero no se pudo enviar la notificación');
             }
-          } catch (notifError) {
+          } catch (notifError: any) {
             console.error('Error sending new topic notification:', notifError);
-            toast.warning('Tema creado, pero no se pudo enviar la notificación');
+            toast.error(`Error enviando correo: ${notifError?.message || 'desconocido'}`, { duration: 8000 });
           }
         }
       }
@@ -348,7 +403,7 @@ const Index = () => {
             <div className="flex items-center gap-2">
               <SidebarTrigger />
               <h1 className="text-sm font-semibold text-foreground">
-                {filter === 'configuracion' ? 'Configuración' : filter === 'historial_correos' ? 'Historial de Correos' : filter === 'calendario' ? 'Calendario' : filter === 'notas' ? 'Notas' : filter === 'informes' ? 'Informes' : filter === 'revision' ? 'Revisión' : filter === 'dashboard' ? 'Dashboard' : filter === 'checklist' ? 'Checklist del Día' : filter === 'equipo' ? 'Equipo' : filter === 'contactos' ? 'Contactos' : 'Temas'}
+                {filter === 'configuracion' ? 'Configuración' : filter === 'historial_correos' ? 'Historial de Correos' : filter === 'calendario' ? 'Calendario' : filter === 'notas' ? 'Notas' : filter === 'informes' ? 'Informes' : filter === 'revision' ? 'Revisión' : filter === 'dashboard' ? 'Dashboard' : filter === 'checklist' ? 'Checklist del Día' : filter === 'equipo' ? 'Equipo' : filter === 'contactos' ? 'Contactos' : filter === 'workgraph' ? 'WorkGraph · Cerebro Operativo' : 'Temas'}
               </h1>
             </div>
             {filter !== 'notas' && filter !== 'informes' && filter !== 'revision' && filter !== 'dashboard' && filter !== 'checklist' && filter !== 'calendario' && filter !== 'configuracion' && filter !== 'historial_correos' && filter !== 'equipo' && filter !== 'contactos' && (
@@ -371,15 +426,15 @@ const Index = () => {
               assignees={assignees}
               departments={departments}
               topics={topics}
-              onDeleteTag={(id) => deleteTag.mutate(id)}
+              onDeleteTag={(id) => deleteTag.mutateAsync(id)}
               onCreateTag={(data) => createTag.mutateAsync(data)}
-              onUpdateTag={(id, name) => updateTag.mutate({ id, name })}
-              onDeleteAssignee={(id) => deleteAssignee.mutate(id)}
-              onCreateAssignee={(name) => createAssignee.mutateAsync({ name })}
-              onUpdateAssignee={(id, data) => updateAssignee.mutate({ id, ...data })}
+              onUpdateTag={(id, name) => updateTag.mutateAsync({ id, name })}
+              onDeleteAssignee={(id) => deleteAssignee.mutateAsync(id)}
+              onCreateAssignee={(data) => createAssignee.mutateAsync(data as any)}
+              onUpdateAssignee={(id, data) => updateAssignee.mutateAsync({ id, ...data })}
               onCreateDepartment={(name) => createDepartment.mutateAsync(name)}
-              onUpdateDepartment={(id, name) => updateDepartment.mutate({ id, name })}
-              onDeleteDepartment={(id) => deleteDepartment.mutate(id)}
+              onUpdateDepartment={(id, name) => updateDepartment.mutateAsync({ id, name })}
+              onDeleteDepartment={(id) => deleteDepartment.mutateAsync(id)}
             />
           ) : filter === 'dashboard' ? (
             <DashboardView topics={topics} assignees={assignees} departments={departments} reschedules={Array.from(reschedulesByTopic.values()).flat()} onUpdateTopic={(id, data) => updateTopic.mutate({ id, ...data })} onNavigateToTopic={(topicId, status) => {
@@ -404,7 +459,7 @@ const Index = () => {
                 allReschedulesByTopic: reschedulesByTopic,
                 onCreateReschedule: createReschedule,
                 userId: user!.id,
-                onCreateAssignee: (name: string) => createAssignee.mutateAsync({ name }),
+                onCreateAssignee: (data: any) => createAssignee.mutateAsync(data),
                 onUpdate: (id: string, data: Record<string, unknown>) => updateTopic.mutate({ id, ...data }),
                 onDelete: (id: string) => deleteTopic.mutate(id),
                 onAddSubtask: (topicId: string, title: string) => addSubtask.mutate({ topic_id: topicId, title }),
@@ -437,7 +492,7 @@ const Index = () => {
                 allReschedulesByTopic: reschedulesByTopic,
                 onCreateReschedule: createReschedule,
                 userId: user!.id,
-                onCreateAssignee: (name: string) => createAssignee.mutateAsync({ name }),
+                onCreateAssignee: (data: any) => createAssignee.mutateAsync(data),
                 onUpdate: (id: string, data: Record<string, unknown>) => updateTopic.mutate({ id, ...data }),
                 onDelete: (id: string) => deleteTopic.mutate(id),
                 onAddSubtask: (topicId: string, title: string) => addSubtask.mutate({ topic_id: topicId, title }),
@@ -462,6 +517,10 @@ const Index = () => {
             />
           ) : filter === 'historial_correos' ? (
             <EmailHistoryView />
+          ) : filter === 'workgraph' ? (
+            <main className="flex-1 overflow-hidden">
+              <WorkGraphView />
+            </main>
           ) : filter === 'checklist' ? (
             <ChecklistView />
           ) : filter === 'calendario' ? (
@@ -566,7 +625,7 @@ const Index = () => {
                           reschedules={reschedulesByTopic.get(topic.id) || []}
                           onCreateReschedule={createReschedule}
                           userId={user!.id}
-                          onCreateAssignee={(name) => createAssignee.mutateAsync({ name })}
+                          onCreateAssignee={(data) => createAssignee.mutateAsync(data as any)}
                           forceExpand={expandedTopicId === topic.id ? true : forceExpand}
                           onUpdate={(id, data) => {
                             // Clear assignee filter if changing assignee while filter is active
@@ -613,6 +672,7 @@ const Index = () => {
           allTags={tags}
           assignees={assignees}
           departments={departments}
+          topics={topics.map((t) => ({ id: t.id, title: t.title }))}
           onCreateAssignee={(data) => createAssignee.mutateAsync(data)}
           onSubmit={handleCreateTopic}
           isPending={createTopic.isPending}

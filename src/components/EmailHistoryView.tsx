@@ -149,14 +149,28 @@ export function EmailHistoryView() {
   const { data: emails = [], isLoading } = useQuery({
     queryKey: ['notification_emails_all'],
     queryFn: async (): Promise<EmailRecord[]> => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
       const { data, error } = await supabase
         .from('notification_emails')
-        .select('*, topics(title)')
-        .order('sent_at', { ascending: false });
+        .select('*')
+        .eq('user_id', user.id);
       if (error) throw error;
-      return (data || []).map((row: any) => ({
+      const rows = ((data || []) as any[]).sort(
+        (a, b) => new Date(b.sent_at).getTime() - new Date(a.sent_at).getTime(),
+      );
+      const topicIds = Array.from(new Set(rows.map((r) => r.topic_id).filter(Boolean)));
+      const titleById = new Map<string, string>();
+      if (topicIds.length > 0) {
+        for (let i = 0; i < topicIds.length; i += 30) {
+          const chunk = topicIds.slice(i, i + 30);
+          const { data: topicRows } = await supabase.from('topics').select('id, title').in('id', chunk);
+          for (const t of (topicRows || []) as any[]) titleById.set(t.id, t.title);
+        }
+      }
+      return rows.map((row) => ({
         ...row,
-        topic_title: row.topics?.title || 'Tema eliminado',
+        topic_title: titleById.get(row.topic_id) || 'Tema eliminado',
       })) as EmailRecord[];
     },
   });

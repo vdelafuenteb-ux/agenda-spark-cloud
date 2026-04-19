@@ -1,0 +1,36 @@
+rules_version = '2';
+
+// Shared workspace model: any approved user can read/write all workspace data.
+// Users collection: self-scoped (each user manages their own record).
+// Client-side code filters by workspace_id to present the right data slice.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function isApproved() {
+      return signedIn() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.approved == true;
+    }
+    function isAdmin() {
+      return signedIn() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.approved == true;
+    }
+
+    // Users collection (approval system).
+    match /users/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow create: if signedIn() && request.auth.uid == uid;
+      allow update: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // All other collections: any approved user has full access. Workspace
+    // separation is enforced client-side via `workspace_id` filtering.
+    match /{document=**} {
+      allow read, write: if isApproved();
+    }
+  }
+}

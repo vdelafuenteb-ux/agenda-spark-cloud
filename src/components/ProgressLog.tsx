@@ -1,6 +1,21 @@
 import { useState, useRef, useEffect } from 'react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { es } from 'date-fns/locale';
+
+// Defensive wrappers — legacy rows occasionally miss `created_at`, and
+// date-fns throws on Invalid Date which used to crash the expanded topic view.
+function safeFormatEntry(value: string | null | undefined, pattern: string): string {
+  if (!value) return '';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '';
+  try { return format(d, pattern, { locale: es }); } catch { return ''; }
+}
+function safeDistance(value: string | null | undefined): string {
+  if (!value) return '—';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '—';
+  try { return formatDistanceToNow(d, { addSuffix: true, locale: es }); } catch { return '—'; }
+}
 import { Send, Pencil, Trash2, Check, X, Bold, Italic, List, Paperclip, FileText, Image, File, Ban } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -322,9 +337,9 @@ export function ProgressLog({ entries, onAdd, onUpdate, onDelete, onUploadFiles,
                       </div>
                       )}
                     </div>
-                    <p className="text-[10px] text-muted-foreground mt-1" title={format(new Date(entry.created_at), "dd MMM yyyy HH:mm", { locale: es })}>
+                    <p className="text-[10px] text-muted-foreground mt-1" title={safeFormatEntry(entry.created_at, "dd MMM yyyy HH:mm")}>
                       {isAssignee && <span className="text-blue-600 dark:text-blue-400 font-medium mr-1">Responsable ·</span>}
-                      {formatDistanceToNow(new Date(entry.created_at), { addSuffix: true, locale: es })}
+                      {safeDistance(entry.created_at)}
                     </p>
                   </>
                 )}

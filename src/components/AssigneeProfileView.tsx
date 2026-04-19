@@ -100,28 +100,45 @@ export function AssigneeProfileView({
   const { data: emailHistory = [] } = useQuery({
     queryKey: ['notification_emails_assignee', assigneeName],
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
       const { data, error } = await supabase
         .from('notification_emails')
-        .select('*, topics(title)')
-        .eq('assignee_name', assigneeName)
-        .order('sent_at', { ascending: false })
-        .limit(50);
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('assignee_name', assigneeName);
       if (error) throw error;
-      return data || [];
+      const rows = ((data || []) as any[])
+        .sort((a, b) => new Date(b.sent_at).getTime() - new Date(a.sent_at).getTime())
+        .slice(0, 50);
+      const topicIds = Array.from(new Set(rows.map((r) => r.topic_id).filter(Boolean)));
+      const titleById = new Map<string, string>();
+      if (topicIds.length > 0) {
+        for (let i = 0; i < topicIds.length; i += 30) {
+          const chunk = topicIds.slice(i, i + 30);
+          const { data: topicRows } = await supabase.from('topics').select('id, title').in('id', chunk);
+          for (const t of (topicRows || []) as any[]) titleById.set(t.id, t.title);
+        }
+      }
+      return rows.map((row) => ({ ...row, topics: { title: titleById.get(row.topic_id) } }));
     },
   });
 
   const { data: scoreSnapshots = [] } = useQuery({
     queryKey: ['score_snapshots', assigneeName],
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
       const { data, error } = await supabase
         .from('score_snapshots')
         .select('*')
-        .eq('assignee_name', assigneeName)
-        .order('snapshot_date', { ascending: true })
-        .limit(52);
+        .eq('user_id', user.id)
+        .eq('assignee_name', assigneeName);
       if (error) throw error;
-      return (data || []).map((s: any) => ({
+      const sorted = ((data || []) as any[])
+        .sort((a, b) => a.snapshot_date.localeCompare(b.snapshot_date))
+        .slice(-52);
+      return sorted.map((s: any) => ({
         ...s,
         label: format(new Date(s.snapshot_date + 'T12:00:00'), 'dd MMM', { locale: es }),
       }));

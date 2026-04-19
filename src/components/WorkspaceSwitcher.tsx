@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, ChevronsUpDown, Plus, Building2 } from 'lucide-react';
+import { Check, ChevronsUpDown, Plus, Building2, ArrowLeftRight } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -123,7 +123,7 @@ function WSContent({
 }: {
   workspaces: ReturnType<typeof useWorkspace>['workspaces'];
   activeId: string | null;
-  onSelect: (id: string) => void;
+  onSelect: (id: string | null) => void;
   onCreate: () => void;
 }) {
   return (
@@ -159,6 +159,10 @@ function WSContent({
       <DropdownMenuItem onClick={onCreate} className="gap-2">
         <Plus className="h-3.5 w-3.5" />
         <span className="text-sm">Crear workspace</span>
+      </DropdownMenuItem>
+      <DropdownMenuItem onClick={() => onSelect(null as any)} className="gap-2">
+        <ArrowLeftRight className="h-3.5 w-3.5" />
+        <span className="text-sm">Cambiar de workspace</span>
       </DropdownMenuItem>
     </DropdownMenuContent>
   );

@@ -23,16 +23,14 @@ export function useNotificationEmails(topicId?: string) {
   const emailsQuery = useQuery({
     queryKey: ['notification_emails', topicId],
     queryFn: async (): Promise<NotificationEmail[]> => {
-      let query = supabase
-        .from('notification_emails')
-        .select('*')
-        .order('sent_at', { ascending: false });
-      if (topicId) {
-        query = query.eq('topic_id', topicId);
-      }
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+      let query = supabase.from('notification_emails').select('*').eq('user_id', user.id);
+      if (topicId) query = query.eq('topic_id', topicId);
       const { data, error } = await query;
       if (error) throw error;
-      return (data || []) as unknown as NotificationEmail[];
+      const list = (data || []) as unknown as NotificationEmail[];
+      return [...list].sort((a, b) => new Date((b as any).sent_at).getTime() - new Date((a as any).sent_at).getTime());
     },
     enabled: !!topicId,
   });
