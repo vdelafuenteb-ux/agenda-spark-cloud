@@ -3,7 +3,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2, Plus, Pencil, Check, X, Mail, Tag, Users, Clock, CalendarCheck, Building2 } from 'lucide-react';
+import { Trash2, Plus, Pencil, Check, X, Mail, Tag, Users, Clock, CalendarCheck, Building2, Building } from 'lucide-react';
+import { WorkspaceMembersView } from '@/components/WorkspaceMembersView';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,9 +28,10 @@ import { ReminderEmailSettings } from '@/components/ReminderEmailSettings';
 
 const TAG_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#8b5cf6', '#ec4899', '#6b7280'];
 
-type SettingsSection = 'etiquetas' | 'responsables' | 'departamentos' | 'correos_automaticos' | 'resumen_diario';
+type SettingsSection = 'workspace' | 'etiquetas' | 'responsables' | 'departamentos' | 'correos_automaticos' | 'resumen_diario';
 
 const SECTIONS: { key: SettingsSection; label: string; icon: typeof Tag }[] = [
+  { key: 'workspace', label: 'Workspace', icon: Building },
   { key: 'etiquetas', label: 'Etiquetas', icon: Tag },
   { key: 'responsables', label: 'Responsables', icon: Users },
   { key: 'departamentos', label: 'Departamentos', icon: Building2 },
@@ -87,7 +89,7 @@ function ActionButtons({ onEdit, onDelete, deleteTitle, deleteDesc }: { onEdit: 
 }
 
 export function SettingsView({ tags, assignees, departments, topics, onDeleteTag, onCreateTag, onUpdateTag, onDeleteAssignee, onCreateAssignee, onUpdateAssignee, onCreateDepartment, onUpdateDepartment, onDeleteDepartment }: SettingsViewProps) {
-  const [section, setSection] = useState<SettingsSection>('etiquetas');
+  const [section, setSection] = useState<SettingsSection>('workspace');
   const [newTagName, setNewTagName] = useState('');
   const [newTagColor, setNewTagColor] = useState(TAG_COLORS[0]);
   const [newAssigneeName, setNewAssigneeName] = useState('');
@@ -182,6 +184,9 @@ export function SettingsView({ tags, assignees, departments, topics, onDeleteTag
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
         <div className="max-w-2xl mx-auto space-y-1">
+
+          {/* ═══════════ WORKSPACE ═══════════ */}
+          {section === 'workspace' && <WorkspaceMembersView />}
 
           {/* ═══════════ ETIQUETAS ═══════════ */}
           {section === 'etiquetas' && (
