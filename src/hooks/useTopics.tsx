@@ -1,7 +1,17 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { logEvent } from '@/features/workGraph/events';
 import type { Database } from '@/integrations/supabase/types';
+
+// Firestore `in` operator supports at most 30 values — split larger sets.
+async function inChunks<T>(ids: string[], fetcher: (chunk: string[]) => Promise<T[]>): Promise<T[]> {
+  if (ids.length === 0) return [];
+  const out: T[] = [];
+  for (let i = 0; i < ids.length; i += 30) out.push(...(await fetcher(ids.slice(i, i + 30))));
+  return out;
+}
 
 type Topic = Database['public']['Tables']['topics']['Row'];
 type TopicInsert = Database['public']['Tables']['topics']['Insert'];
@@ -49,33 +59,66 @@ export interface ProgressEntry {
 
 export type TopicWithSubtasks = Topic & { subtasks: SubtaskWithEntries[]; progress_entries: ProgressEntry[] };
 
-export function useTopics() {
+export function useTopics(workspaceId?: string | null) {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const topicsQuery = useQuery({
-    queryKey: ['topics'],
+    queryKey: ['topics', workspaceId ?? null],
+    enabled: !!workspaceId,
     queryFn: async (): Promise<TopicWithSubtasks[]> => {
-      const [topicsRes, subtasksRes, entriesRes, subtaskEntriesRes, contactsRes, attachmentsRes] = await Promise.all([
-        supabase.from('topics').select('*').order('sort_order', { ascending: true }).order('created_at', { ascending: false }),
-        supabase.from('subtasks').select('*').order('sort_order', { ascending: true }).order('created_at', { ascending: true }),
-        supabase.from('progress_entries').select('*').order('created_at', { ascending: true }),
-        supabase.from('subtask_entries').select('*').order('created_at', { ascending: true }),
-        supabase.from('subtask_contacts').select('*').order('sort_order', { ascending: true }).order('created_at', { ascending: true }),
-        supabase.from('entry_attachments').select('*').order('created_at', { ascending: true }),
+      if (!workspaceId) return [];
+      const topicsRes = await supabase.from('topics').select('*').eq('workspace_id', workspaceId);
+      if (topicsRes.error) throw topicsRes.error;
+      const topics = (topicsRes.data || []) as any[];
+      topics.sort((a, b) => {
+        const so = (a.sort_order ?? 0) - (b.sort_order ?? 0);
+        if (so !== 0) return so;
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
+
+      const topicIds = topics.map((t) => t.id);
+      const [subtasksRaw, entriesRaw] = await Promise.all([
+        inChunks<any>(topicIds, async (chunk) => {
+          const r = await supabase.from('subtasks').select('*').in('topic_id', chunk);
+          if (r.error) throw r.error;
+          return r.data as any[];
+        }),
+        inChunks<any>(topicIds, async (chunk) => {
+          const r = await supabase.from('progress_entries').select('*').in('topic_id', chunk);
+          if (r.error) throw r.error;
+          return r.data as any[];
+        }),
+      ]);
+      const subtaskIds = subtasksRaw.map((s) => s.id);
+      const entryIds = entriesRaw.map((e) => e.id);
+      const [subtaskEntriesRaw, contactsRaw, attachmentsRaw] = await Promise.all([
+        inChunks<any>(subtaskIds, async (chunk) => {
+          const r = await supabase.from('subtask_entries').select('*').in('subtask_id', chunk);
+          if (r.error) throw r.error;
+          return r.data as any[];
+        }),
+        inChunks<any>(subtaskIds, async (chunk) => {
+          const r = await supabase.from('subtask_contacts').select('*').in('subtask_id', chunk);
+          if (r.error) throw r.error;
+          return r.data as any[];
+        }),
+        inChunks<any>([...entryIds, ...subtaskIds], async (chunk) => {
+          const r = await supabase.from('entry_attachments').select('*').in('entry_id', chunk);
+          if (r.error) throw r.error;
+          return r.data as any[];
+        }),
       ]);
 
-      if (topicsRes.error) throw topicsRes.error;
-      if (subtasksRes.error) throw subtasksRes.error;
-      if (entriesRes.error) throw entriesRes.error;
-      if (subtaskEntriesRes.error) throw subtaskEntriesRes.error;
-      if (contactsRes.error) throw contactsRes.error;
-      if (attachmentsRes.error) throw attachmentsRes.error;
-
-      const subtasks = subtasksRes.data || [];
-      const entries = entriesRes.data || [];
-      const subtaskEntries = subtaskEntriesRes.data || [];
-      const contacts = (contactsRes.data || []) as unknown as SubtaskContact[];
-      const attachments = (attachmentsRes.data || []) as unknown as EntryAttachment[];
+      const subtasks = [...subtasksRaw].sort((a, b) => {
+        const so = (a.sort_order ?? 0) - (b.sort_order ?? 0);
+        if (so !== 0) return so;
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      });
+      const entries = [...entriesRaw].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+      const subtaskEntries = [...subtaskEntriesRaw].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+      const contacts = [...contactsRaw].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)) as unknown as SubtaskContact[];
+      const attachments = attachmentsRaw as unknown as EntryAttachment[];
 
       // Build lookup map for attachments by entry_id
       const attachmentsByEntry = new Map<string, EntryAttachment[]>();
@@ -119,11 +162,11 @@ export function useTopics() {
         else entriesByTopic.set(e.topic_id, [enriched]);
       }
 
-      return (topicsRes.data || []).map((topic) => ({
+      return topics.map((topic) => ({
         ...topic,
         subtasks: subtasksByTopic.get(topic.id) || [],
         progress_entries: entriesByTopic.get(topic.id) || [],
-      }));
+      })) as TopicWithSubtasks[];
     },
   });
 
@@ -137,6 +180,26 @@ export function useTopics() {
         .select()
         .single();
       if (error) throw error;
+      // Fire-and-forget event for the WorkGraph timeline. Never blocks creation.
+      logEvent({
+        type: 'task.created',
+        workspace_id: (data as any).workspace_id ?? null,
+        actor_id: user?.id ?? null,
+        actor_email: user?.email ?? null,
+        target_id: created?.id ?? null,
+        target_type: 'task',
+        payload: { title: (data as any).title, assignee: (data as any).assignee, status: (data as any).status, due_date: (data as any).due_date },
+      });
+      if ((data as any).assignee) {
+        logEvent({
+          type: 'task.assigned',
+          workspace_id: (data as any).workspace_id ?? null,
+          actor_id: user?.id ?? null,
+          target_id: created?.id ?? null,
+          target_type: 'task',
+          payload: { assignee: (data as any).assignee },
+        });
+      }
       return created;
     },
   });
@@ -145,6 +208,47 @@ export function useTopics() {
     mutationFn: async ({ id, ...data }: TopicUpdate & { id: string }) => {
       const { error } = await supabase.from('topics').update(data).eq('id', id);
       if (error) throw error;
+      // Status transitions → fire specific lifecycle events so the NodeInspector
+      // history is useful. We don't read the previous state from the cache
+      // (could be stale); the status alone gives enough signal for a timeline.
+      const statusPatch = (data as any).status as string | undefined;
+      if (statusPatch) {
+        const type =
+          statusPatch === 'completado' ? 'task.completed'
+          : statusPatch === 'pausado' ? 'task.blocked'
+          : statusPatch === 'activo' ? 'task.unblocked'
+          : 'task.updated';
+        logEvent({
+          type: type as any,
+          workspace_id: null,
+          actor_id: user?.id ?? null,
+          actor_email: user?.email ?? null,
+          target_id: id,
+          target_type: 'task',
+          payload: { status: statusPatch },
+        });
+      } else {
+        // Non-status edits: still emit a generic event so the activity log fills.
+        logEvent({
+          type: 'task.updated' as any,
+          workspace_id: null,
+          actor_id: user?.id ?? null,
+          target_id: id,
+          target_type: 'task',
+          payload: data as any,
+        });
+      }
+      // Assignee change → task.assigned event.
+      if ((data as any).assignee !== undefined) {
+        logEvent({
+          type: 'task.assigned',
+          workspace_id: null,
+          actor_id: user?.id ?? null,
+          target_id: id,
+          target_type: 'task',
+          payload: { assignee: (data as any).assignee },
+        });
+      }
     },
     onMutate: async ({ id, ...data }) => {
       await queryClient.cancelQueries({ queryKey: ['topics'] });
@@ -197,6 +301,13 @@ export function useTopics() {
         completed_at: completed ? new Date().toISOString() : null,
       }).eq('id', id);
       if (error) throw error;
+      logEvent({
+        type: completed ? 'task.completed' : 'task.started',
+        workspace_id: null,
+        actor_id: user?.id ?? null,
+        target_id: id,
+        target_type: 'subtask',
+      });
     },
     onMutate: async ({ id, completed }) => {
       await queryClient.cancelQueries({ queryKey: ['topics'] });

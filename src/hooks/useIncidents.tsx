@@ -22,13 +22,16 @@ export function useIncidents(assigneeName: string) {
   const { data: incidents = [], isLoading } = useQuery({
     queryKey,
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [] as WorkerIncident[];
       const { data, error } = await supabase
         .from('worker_incidents' as any)
         .select('*')
-        .eq('assignee_name', assigneeName)
-        .order('incident_date', { ascending: false });
+        .eq('user_id', user.id)
+        .eq('assignee_name', assigneeName);
       if (error) throw error;
-      return (data || []) as unknown as WorkerIncident[];
+      const list = (data || []) as unknown as WorkerIncident[];
+      return [...list].sort((a, b) => new Date(b.incident_date).getTime() - new Date(a.incident_date).getTime());
     },
     enabled: !!assigneeName,
   });

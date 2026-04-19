@@ -18,4 +18,9 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    // Temporary: sourcemaps in prod so ErrorBoundary stack traces point to real
+    // source files. Revert to false when diagnosis is complete.
+    sourcemap: true,
+  },
 }));

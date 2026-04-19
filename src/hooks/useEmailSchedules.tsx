@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { useWorkspace } from '@/hooks/useWorkspace';
 
 export interface EmailSchedule {
   id: string;
@@ -18,23 +20,27 @@ export interface EmailSchedule {
 
 export function useEmailSchedules() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const { activeWorkspaceId } = useWorkspace();
 
   const query = useQuery({
-    queryKey: ['email_schedules'],
+    queryKey: ['email_schedules', activeWorkspaceId],
+    enabled: !!activeWorkspaceId,
     queryFn: async (): Promise<EmailSchedule[]> => {
+      if (!activeWorkspaceId) return [];
       const { data, error } = await supabase
         .from('email_schedules')
         .select('*')
-        .order('created_at', { ascending: false });
+        .eq('workspace_id', activeWorkspaceId);
       if (error) throw error;
-      return (data || []) as unknown as EmailSchedule[];
+      const list = (data || []) as unknown as EmailSchedule[];
+      return [...list].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     },
   });
 
   const upsertSchedule = useMutation({
     mutationFn: async (schedule: Partial<EmailSchedule> & { id?: string }) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      if (!user || !activeWorkspaceId) throw new Error('No hay workspace activo');
 
       if (schedule.id) {
         const { error } = await supabase
@@ -57,6 +63,7 @@ export function useEmailSchedules() {
           .from('email_schedules')
           .insert({
             user_id: user.id,
+            workspace_id: activeWorkspaceId,
             enabled: schedule.enabled ?? false,
             day_of_week: schedule.day_of_week ?? 1,
             send_hour: schedule.send_hour ?? 9,

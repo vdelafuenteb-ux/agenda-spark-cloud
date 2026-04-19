@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { useWorkspace } from '@/hooks/useWorkspace';
 
 export interface ReminderEmail {
   id: string;
@@ -16,23 +18,27 @@ export interface ReminderEmail {
 
 export function useReminderEmails() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const { activeWorkspaceId } = useWorkspace();
 
   const query = useQuery({
-    queryKey: ['reminder_emails'],
+    queryKey: ['reminder_emails', activeWorkspaceId],
+    enabled: !!activeWorkspaceId,
     queryFn: async (): Promise<ReminderEmail[]> => {
+      if (!activeWorkspaceId) return [];
       const { data, error } = await supabase
         .from('reminder_emails' as any)
         .select('*')
-        .order('created_at', { ascending: false });
+        .eq('workspace_id', activeWorkspaceId);
       if (error) throw error;
-      return (data || []) as unknown as ReminderEmail[];
+      const list = (data || []) as unknown as ReminderEmail[];
+      return [...list].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     },
   });
 
   const upsertReminderEmail = useMutation({
     mutationFn: async (item: Partial<ReminderEmail> & { id?: string }) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      if (!user || !activeWorkspaceId) throw new Error('No hay workspace activo');
 
       if (item.id) {
         const { error } = await supabase
@@ -52,6 +58,7 @@ export function useReminderEmails() {
           .from('reminder_emails' as any)
           .insert({
             user_id: user.id,
+            workspace_id: activeWorkspaceId,
             enabled: item.enabled ?? false,
             day_of_week: item.day_of_week ?? 4,
             send_hour: item.send_hour ?? 9,

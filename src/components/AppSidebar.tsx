@@ -1,4 +1,4 @@
-import { Eye, LayoutList, FileText, LogOut, StickyNote, BarChart3, CheckSquare, Settings, CalendarDays, MailCheck, Users, Contact } from 'lucide-react';
+import { Eye, LayoutList, FileText, LogOut, StickyNote, BarChart3, CheckSquare, Settings, CalendarDays, MailCheck, Users, Contact, Sparkles } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -31,6 +31,7 @@ const filters: { key: Filter; label: string; icon: typeof LayoutList }[] = [
   { key: 'checklist', label: 'Checklist', icon: CheckSquare },
   { key: 'calendario', label: 'Calendario', icon: CalendarDays },
   { key: 'equipo', label: 'Equipo', icon: Users },
+  { key: 'workgraph', label: 'WorkGraph', icon: Sparkles },
   { key: 'contactos', label: 'Contactos', icon: Contact },
   { key: 'notas', label: 'Notas', icon: StickyNote },
   { key: 'informes', label: 'Informes', icon: FileText },
@@ -41,7 +42,10 @@ const filters: { key: Filter; label: string; icon: typeof LayoutList }[] = [
 export function AppSidebar({ activeFilter, onFilterChange, topics }: AppSidebarProps) {
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
+  const fullName = (user?.user_metadata?.name as string) || (user?.email?.split('@')[0] ?? 'Mi Agenda');
+  const displayName = `Agenda de ${fullName.charAt(0).toUpperCase() + fullName.slice(1)}`;
+  const initials = displayName.replace(/Agenda de /, '').slice(0, 2).toUpperCase();
 
   const activeTopics = topics.filter(t => t.status === 'activo' && !(t as any).archived);
   const seguimientoCount = topics.filter(t => t.status === 'seguimiento').length;
@@ -57,13 +61,13 @@ export function AppSidebar({ activeFilter, onFilterChange, topics }: AppSidebarP
           <div className={`px-3 py-4 ${collapsed ? 'text-center' : ''}`}>
             {!collapsed && (
               <>
-                <h2 className="text-sm font-semibold text-foreground tracking-tight">Agenda de Matías</h2>
+                <h2 className="text-sm font-semibold text-foreground tracking-tight">{displayName}</h2>
               <p className="mt-2 text-xs text-muted-foreground">
                   {activeTopics.length} activos · {seguimientoCount} seguimiento · {progress}% avance
                 </p>
               </>
             )}
-            {collapsed && <span className="text-xs font-bold text-foreground">AM</span>}
+            {collapsed && <span className="text-xs font-bold text-foreground">{initials}</span>}
           </div>
           <div className="px-2 pb-2">
             <WorkspaceSwitcher collapsed={collapsed} />

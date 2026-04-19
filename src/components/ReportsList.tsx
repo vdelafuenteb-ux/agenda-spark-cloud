@@ -25,12 +25,16 @@ export function ReportsList({ onNewReport }: ReportsListProps) {
   const { data: reports = [], isLoading } = useQuery({
     queryKey: ['reports'],
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
       const { data, error } = await supabase
         .from('reports')
         .select('*')
-        .order('created_at', { ascending: false });
+        .eq('user_id', user.id);
       if (error) throw error;
-      return data;
+      return ((data || []) as any[]).sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+      );
     },
   });
 

@@ -1,21 +1,28 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import type { Tables } from '@/integrations/supabase/types';
 
 export type Department = Tables<'departments'>;
 
 export function useDepartments() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const { activeWorkspaceId } = useWorkspace();
 
   const departmentsQuery = useQuery({
-    queryKey: ['departments'],
+    queryKey: ['departments', activeWorkspaceId],
+    enabled: !!activeWorkspaceId,
     queryFn: async (): Promise<Department[]> => {
+      if (!activeWorkspaceId) return [];
       const { data, error } = await supabase
         .from('departments')
         .select('*')
-        .order('name', { ascending: true });
+        .eq('workspace_id', activeWorkspaceId);
       if (error) throw error;
-      return data || [];
+      const list = (data || []) as Department[];
+      return [...list].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     },
   });
 
@@ -23,11 +30,10 @@ export function useDepartments() {
 
   const createDepartment = useMutation({
     mutationFn: async (name: string) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No autenticado');
+      if (!user || !activeWorkspaceId) throw new Error('No hay workspace activo');
       const { data, error } = await supabase
         .from('departments')
-        .insert({ name, user_id: user.id })
+        .insert({ name, user_id: user.id, workspace_id: activeWorkspaceId })
         .select()
         .single();
       if (error) throw error;

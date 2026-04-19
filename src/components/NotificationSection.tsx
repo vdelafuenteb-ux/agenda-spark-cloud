@@ -26,8 +26,21 @@ interface NotificationSectionProps {
 const DEADLINE_HOURS = 48;
 
 function isOnTime(sentAt: string, confirmedAt: string) {
-  const deadlineTime = new Date(sentAt).getTime() + DEADLINE_HOURS * 60 * 60 * 1000;
-  return new Date(confirmedAt).getTime() <= deadlineTime;
+  const sent = sentAt ? new Date(sentAt).getTime() : NaN;
+  const confirmed = confirmedAt ? new Date(confirmedAt).getTime() : NaN;
+  if (!Number.isFinite(sent) || !Number.isFinite(confirmed)) return null;
+  return confirmed <= sent + DEADLINE_HOURS * 60 * 60 * 1000;
+}
+
+// Safe date formatter: date-fns `format()` throws RangeError on Invalid Date,
+// which used to crash the whole expanded TopicCard via React's render error.
+// Legacy/edge-case notification_emails rows can be missing `sent_at` entirely,
+// so we guard every call site through this helper.
+function safeFormat(value: string | null | undefined, pattern: string): string {
+  if (!value) return '';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '';
+  try { return format(d, pattern, { locale: es }); } catch { return ''; }
 }
 
 function toLocalDatetime(isoStr: string) {
@@ -259,7 +272,7 @@ export function NotificationSection({ topic, assignees }: NotificationSectionPro
                   )}>
                     <CheckCircle2 className="h-2.5 w-2.5" />
                     {onTime ? 'A tiempo' : 'Fuera de plazo'}
-                    {email.confirmed_at && ` · ${format(new Date(email.confirmed_at), "dd MMM", { locale: es })}`}
+                    {email.confirmed_at && ` · ${safeFormat(email.confirmed_at, "dd MMM")}`}
                   </span>
                 ) : (
                   <span className="text-[9px] shrink-0 flex items-center gap-0.5 text-muted-foreground">
@@ -268,7 +281,7 @@ export function NotificationSection({ topic, assignees }: NotificationSectionPro
                   </span>
                 )}
                 <span className="text-[10px] ml-auto shrink-0 font-mono">
-                  {format(new Date(email.sent_at), "dd MMM yy HH:mm", { locale: es })}
+                  {safeFormat(email.sent_at, "dd MMM yy HH:mm") || '—'}
                 </span>
                 <Checkbox
                   checked={!!(email as any).reviewed}

@@ -19,6 +19,38 @@ import type { Tag as TagType } from '@/hooks/useTags';
 import type { Assignee } from '@/hooks/useAssignees';
 import type { Department } from '@/hooks/useDepartments';
 import type { Database } from '@/integrations/supabase/types';
+import { useProjects } from '@/features/workGraph/useProjects';
+import { useClients } from '@/features/workGraph/useClients';
+import type { WorkEdgeType, WorkNodeType } from '@/features/workGraph/types';
+import { EDGE_LABELS } from '@/features/workGraph/types';
+
+// Draft of a manual relationship the user declares during task creation.
+// Persisted into `task_relationships` after the task is inserted so the edge
+// can reference the real task id.
+export interface PendingRelationship {
+  edge_type: WorkEdgeType;
+  target_type: WorkNodeType;
+  target_id: string;
+  target_label: string;   // cached for UI chips
+  reason?: string;
+}
+
+// Which (edge → target type) combinations are offered in the modal. Kept
+// tight so the UX stays crisp.
+const RELATIONSHIP_SLOTS: Array<{
+  key: string;
+  edge_type: WorkEdgeType;
+  target_type: WorkNodeType;
+  label: string;
+  helper: string;
+}> = [
+  { key: 'depends_task', edge_type: 'DEPENDS_ON', target_type: 'task', label: 'Depende de tarea', helper: 'Otra tarea que debe completarse primero' },
+  { key: 'depends_user', edge_type: 'WAITING_FOR', target_type: 'user', label: 'Espera a persona', helper: 'Necesita input de alguien específico' },
+  { key: 'depends_area', edge_type: 'BLOCKED_BY', target_type: 'area', label: 'Bloqueado por área', helper: 'Área cuya entrega frena esta tarea' },
+  { key: 'approved_by', edge_type: 'APPROVED_BY', target_type: 'user', label: 'Requiere aprobación', helper: 'Persona que debe aprobar' },
+  { key: 'impacts_proj', edge_type: 'IMPACTS_PROJECT', target_type: 'project', label: 'Impacta proyecto', helper: 'Proyecto donde pesa el resultado' },
+  { key: 'impacts_client', edge_type: 'IMPACTS', target_type: 'client', label: 'Impacta cliente', helper: 'Cliente afectado por esta tarea' },
+];
 
 type Priority = Database['public']['Enums']['topic_priority'];
 type Status = Database['public']['Enums']['topic_status'];
@@ -31,6 +63,7 @@ interface CreateTopicModalProps {
   allTags: TagType[];
   assignees: Assignee[];
   departments: Department[];
+  topics?: Array<{ id: string; title: string }>;
   onCreateAssignee: (data: { name: string; email?: string; department_id?: string }) => Promise<Assignee>;
   onSubmit: (data: {
     title: string;
@@ -48,13 +81,25 @@ interface CreateTopicModalProps {
     execution_order?: number | null;
     hh_type?: string | null;
     hh_value?: number | null;
+    project_id?: string | null;
+    client_id?: string | null;
+    relationships?: PendingRelationship[];
   }) => Promise<void> | void;
   isPending: boolean;
 }
 
-export function CreateTopicModal({ open, onOpenChange, allTags, assignees, departments, onCreateAssignee, onSubmit, isPending }: CreateTopicModalProps) {
+export function CreateTopicModal({ open, onOpenChange, allTags, assignees, departments, topics = [], onCreateAssignee, onSubmit, isPending }: CreateTopicModalProps) {
+  const { projects } = useProjects();
+  const { clients } = useClients();
   const [title, setTitle] = useState('');
   const [departmentId, setDepartmentId] = useState('');
+  const [projectId, setProjectId] = useState('');
+  const [clientId, setClientId] = useState('');
+  const [pendingRelationships, setPendingRelationships] = useState<PendingRelationship[]>([]);
+  const [relSlotOpen, setRelSlotOpen] = useState(false);
+  const [relSlotKey, setRelSlotKey] = useState<string>('depends_task');
+  const [relTargetId, setRelTargetId] = useState<string>('');
+  const [relReason, setRelReason] = useState('');
   const [priority, setPriority] = useState<Priority>('media');
   const [status, setStatus] = useState<Status>('activo');
   const [assignee, setAssignee] = useState('');
@@ -83,6 +128,13 @@ export function CreateTopicModal({ open, onOpenChange, allTags, assignees, depar
     setStatus('activo');
     setAssignee('');
     setDepartmentId('');
+    setProjectId('');
+    setClientId('');
+    setPendingRelationships([]);
+    setRelSlotOpen(false);
+    setRelSlotKey('depends_task');
+    setRelTargetId('');
+    setRelReason('');
     setShowNewAssigneeForm(false);
     setNewAssigneeName('');
     setNewAssigneeEmail('');
@@ -133,6 +185,9 @@ export function CreateTopicModal({ open, onOpenChange, allTags, assignees, depar
       execution_order: executionOrder,
       hh_type: hhType,
       hh_value: hhValue,
+      project_id: projectId && projectId !== 'none' ? projectId : null,
+      client_id: clientId && clientId !== 'none' ? clientId : null,
+      relationships: pendingRelationships,
     });
     reset();
   };
@@ -327,6 +382,34 @@ export function CreateTopicModal({ open, onOpenChange, allTags, assignees, depar
             </div>
           </div>
 
+          {/* Row: Proyecto + Cliente (globales, cross-workspace) */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Proyecto</label>
+              <Select value={projectId || 'none'} onValueChange={setProjectId}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Sin proyecto" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sin proyecto</SelectItem>
+                  {projects.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Cliente</label>
+              <Select value={clientId || 'none'} onValueChange={setClientId}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Sin cliente" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sin cliente</SelectItem>
+                  {clients.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
           {/* Row: Fechas + Continuo */}
           <div className="grid grid-cols-2 gap-3 items-end">
             <div className="space-y-1.5">
@@ -476,6 +559,127 @@ export function CreateTopicModal({ open, onOpenChange, allTags, assignees, depar
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Nota inicial (opcional)</label>
             <Textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Contexto, observaciones iniciales..." className="text-sm min-h-[60px] resize-none" />
+          </div>
+
+          {/* ═══════════ Relaciones inline ═══════════ */}
+          {/* Declarar dependencias y bloqueos en el momento de la creación. Se */}
+          {/* persisten post-insert de la tarea via task_relationships. */}
+          <div className="space-y-1.5 rounded-lg border border-dashed p-3 bg-muted/20">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Relaciones y dependencias</label>
+              {!relSlotOpen && (
+                <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setRelSlotOpen(true)}>
+                  <Plus className="h-3 w-3 mr-1" /> Añadir
+                </Button>
+              )}
+            </div>
+
+            {/* Chips of pending relationships */}
+            {pendingRelationships.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {pendingRelationships.map((r, idx) => (
+                  <div key={idx} className="flex items-center gap-1 rounded-full bg-violet-50 border border-violet-200 px-2 py-1 text-[11px]">
+                    <span className="font-medium text-violet-900">{EDGE_LABELS[r.edge_type] ?? r.edge_type.toLowerCase()}:</span>
+                    <span className="text-violet-800 truncate max-w-[10rem]">{r.target_label}</span>
+                    {r.reason && <span className="italic text-violet-700 truncate max-w-[10rem]">— {r.reason}</span>}
+                    <button
+                      onClick={() => setPendingRelationships((prev) => prev.filter((_, i) => i !== idx))}
+                      className="ml-0.5 rounded p-0.5 hover:bg-violet-100 text-violet-600"
+                      aria-label="Eliminar relación"
+                    >
+                      <X className="h-2.5 w-2.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Inline picker to add a new one */}
+            {relSlotOpen && (() => {
+              const slot = RELATIONSHIP_SLOTS.find((s) => s.key === relSlotKey) ?? RELATIONSHIP_SLOTS[0];
+              const targetOptions: Array<{ id: string; label: string }> = (() => {
+                switch (slot.target_type) {
+                  case 'task': return topics.map((t) => ({ id: t.id, label: t.title }));
+                  case 'user': return assignees.map((a) => ({ id: a.id, label: a.name }));
+                  case 'area': return departments.map((d) => ({ id: d.id, label: d.name }));
+                  case 'project': return projects.map((p) => ({ id: p.id, label: p.name }));
+                  case 'client': return clients.map((c) => ({ id: c.id, label: c.name }));
+                  default: return [];
+                }
+              })();
+              const canAdd = !!relTargetId && targetOptions.some((o) => o.id === relTargetId);
+              return (
+                <div className="space-y-2 rounded-md border bg-background p-2.5">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Tipo</p>
+                      <Select value={relSlotKey} onValueChange={(v) => { setRelSlotKey(v); setRelTargetId(''); }}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {RELATIONSHIP_SLOTS.map((s) => (
+                            <SelectItem key={s.key} value={s.key}>{s.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-[10px] text-muted-foreground mt-1">{slot.helper}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Destino</p>
+                      <Select value={relTargetId} onValueChange={setRelTargetId}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
+                        <SelectContent>
+                          {targetOptions.length === 0 ? (
+                            <div className="px-2 py-1.5 text-xs text-muted-foreground">Sin opciones disponibles</div>
+                          ) : targetOptions.map((o) => (
+                            <SelectItem key={o.id} value={o.id}>{o.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <Input
+                    placeholder="Motivo / contexto (opcional)"
+                    value={relReason}
+                    onChange={(e) => setRelReason(e.target.value)}
+                    className="h-8 text-xs"
+                  />
+                  <div className="flex gap-2 justify-end">
+                    <Button size="sm" variant="ghost" className="h-7" onClick={() => { setRelSlotOpen(false); setRelTargetId(''); setRelReason(''); }}>
+                      Cancelar
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="h-7"
+                      disabled={!canAdd}
+                      onClick={() => {
+                        const option = targetOptions.find((o) => o.id === relTargetId)!;
+                        setPendingRelationships((prev) => [
+                          ...prev,
+                          {
+                            edge_type: slot.edge_type,
+                            target_type: slot.target_type,
+                            target_id: relTargetId,
+                            target_label: option.label,
+                            reason: relReason.trim() || undefined,
+                          },
+                        ]);
+                        setRelSlotOpen(false);
+                        setRelTargetId('');
+                        setRelReason('');
+                      }}
+                    >
+                      <Check className="h-3 w-3 mr-1" /> Agregar
+                    </Button>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {pendingRelationships.length === 0 && !relSlotOpen && (
+              <p className="text-[11px] text-muted-foreground italic">
+                Opcional. Si declaras dependencias aquí, el grafo las muestra al instante.
+              </p>
+            )}
           </div>
 
           <Button className="w-full" onClick={handleSubmit} disabled={!title.trim() || isPending}>

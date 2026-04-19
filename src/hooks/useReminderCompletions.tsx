@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { useWorkspace } from './useWorkspace';
 
 export interface ReminderCompletion {
   id: string;
@@ -12,17 +13,20 @@ export interface ReminderCompletion {
 
 export function useReminderCompletions() {
   const { user } = useAuth();
+  const { activeWorkspaceId } = useWorkspace();
   const qc = useQueryClient();
 
   const { data: completions = [] } = useQuery({
-    queryKey: ['reminder_completions'],
-    enabled: !!user,
+    queryKey: ['reminder_completions', activeWorkspaceId],
+    enabled: !!activeWorkspaceId,
     queryFn: async () => {
+      if (!activeWorkspaceId) return [] as ReminderCompletion[];
       const { data, error } = await supabase
         .from('reminder_completions')
-        .select('*');
+        .select('*')
+        .eq('workspace_id', activeWorkspaceId);
       if (error) throw error;
-      return data as ReminderCompletion[];
+      return (data || []) as ReminderCompletion[];
     },
   });
 
@@ -46,6 +50,7 @@ export function useReminderCompletions() {
           reminder_id,
           completed_date,
           user_id: user!.id,
+          workspace_id: activeWorkspaceId,
         });
         if (error) throw error;
       }

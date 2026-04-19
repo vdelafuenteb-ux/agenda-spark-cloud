@@ -58,13 +58,17 @@ export function DashboardView({ topics, assignees, departments = [], reschedules
   const { data: allEmails = [] } = useQuery({
     queryKey: ['notification_emails_all_dashboard'],
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
       const { data, error } = await supabase
         .from('notification_emails')
         .select('assignee_name, sent_at, confirmed, confirmed_at, email_type')
-        .eq('email_type', 'weekly')
-        .order('sent_at', { ascending: false });
+        .eq('user_id', user.id)
+        .eq('email_type', 'weekly');
       if (error) throw error;
-      return data || [];
+      return ((data || []) as any[]).sort(
+        (a, b) => new Date(b.sent_at).getTime() - new Date(a.sent_at).getTime(),
+      );
     },
   });
 

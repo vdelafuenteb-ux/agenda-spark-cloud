@@ -1,4 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/hooks/useAuth';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Notebook {
@@ -38,49 +40,67 @@ export interface NoteTag {
 
 export function useNotes() {
   const qc = useQueryClient();
+  const { user } = useAuth();
+  const { activeWorkspaceId } = useWorkspace();
 
   const notebooksQuery = useQuery({
-    queryKey: ['notebooks'],
+    queryKey: ['notebooks', activeWorkspaceId],
+    enabled: !!activeWorkspaceId,
     queryFn: async () => {
+      if (!activeWorkspaceId) return [] as Notebook[];
       const { data, error } = await supabase
         .from('notebooks')
         .select('*')
-        .order('name');
+        .eq('workspace_id', activeWorkspaceId);
       if (error) throw error;
-      return data as Notebook[];
+      return [...(data as Notebook[] || [])].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     },
   });
 
   const sectionsQuery = useQuery({
-    queryKey: ['note_sections'],
+    queryKey: ['note_sections', activeWorkspaceId],
+    enabled: !!activeWorkspaceId,
     queryFn: async () => {
+      if (!activeWorkspaceId) return [] as NoteSection[];
       const { data, error } = await supabase
         .from('note_sections')
         .select('*')
-        .order('sort_order');
+        .eq('workspace_id', activeWorkspaceId);
       if (error) throw error;
-      return data as NoteSection[];
+      return [...(data as NoteSection[] || [])].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
     },
   });
 
   const notesQuery = useQuery({
-    queryKey: ['notes'],
+    queryKey: ['notes', activeWorkspaceId],
+    enabled: !!activeWorkspaceId,
     queryFn: async () => {
+      if (!activeWorkspaceId) return [] as Note[];
       const { data, error } = await supabase
         .from('notes')
         .select('*')
-        .order('updated_at', { ascending: false });
+        .eq('workspace_id', activeWorkspaceId);
       if (error) throw error;
-      return data as Note[];
+      return [...(data as Note[] || [])].sort((a, b) => new Date((b as any).updated_at).getTime() - new Date((a as any).updated_at).getTime());
     },
   });
 
   const noteTagsQuery = useQuery({
-    queryKey: ['note_tags'],
+    queryKey: ['note_tags', activeWorkspaceId],
+    enabled: !!activeWorkspaceId,
     queryFn: async () => {
-      const { data, error } = await supabase.from('note_tags').select('*');
-      if (error) throw error;
-      return data as NoteTag[];
+      if (!activeWorkspaceId) return [] as NoteTag[];
+      const { data } = await supabase.from('notes').select('id').eq('workspace_id', activeWorkspaceId);
+      const wsNoteIds = new Set(((data || []) as any[]).map((n) => n.id));
+      if (wsNoteIds.size === 0) return [] as NoteTag[];
+      const ids = [...wsNoteIds];
+      const out: NoteTag[] = [];
+      for (let i = 0; i < ids.length; i += 30) {
+        const chunk = ids.slice(i, i + 30);
+        const { data: ntData } = await supabase.from('note_tags').select('*').in('note_id', chunk);
+        out.push(...((ntData || []) as NoteTag[]));
+      }
+      return out;
     },
   });
 
@@ -92,11 +112,10 @@ export function useNotes() {
   // Notebook CRUD
   const createNotebook = useMutation({
     mutationFn: async (data: { name: string; color: string }) => {
-      const { data: user } = await supabase.auth.getUser();
-      if (!user.user) throw new Error('No autenticado');
+      if (!user || !activeWorkspaceId) throw new Error('No hay workspace activo');
       const { data: nb, error } = await supabase
         .from('notebooks')
-        .insert({ ...data, user_id: user.user.id })
+        .insert({ ...data, user_id: user.id, workspace_id: activeWorkspaceId })
         .select()
         .single();
       if (error) throw error;
@@ -129,11 +148,10 @@ export function useNotes() {
   // Section CRUD
   const createSection = useMutation({
     mutationFn: async (data: { notebook_id: string; name: string; color?: string }) => {
-      const { data: user } = await supabase.auth.getUser();
-      if (!user.user) throw new Error('No autenticado');
+      if (!user || !activeWorkspaceId) throw new Error('No hay workspace activo');
       const { data: sec, error } = await supabase
         .from('note_sections')
-        .insert({ user_id: user.user.id, notebook_id: data.notebook_id, name: data.name, color: data.color ?? '#6b7280' })
+        .insert({ user_id: user.id, workspace_id: activeWorkspaceId, notebook_id: data.notebook_id, name: data.name, color: data.color ?? '#6b7280' })
         .select()
         .single();
       if (error) throw error;
@@ -164,12 +182,12 @@ export function useNotes() {
   // Note CRUD
   const createNote = useMutation({
     mutationFn: async (data: { title?: string; notebook_id?: string | null; section_id?: string | null }) => {
-      const { data: user } = await supabase.auth.getUser();
-      if (!user.user) throw new Error('No autenticado');
+      if (!user || !activeWorkspaceId) throw new Error('No hay workspace activo');
       const { data: note, error } = await supabase
         .from('notes')
         .insert({
-          user_id: user.user.id,
+          user_id: user.id,
+          workspace_id: activeWorkspaceId,
           title: data.title ?? '',
           notebook_id: data.notebook_id ?? null,
           section_id: data.section_id ?? null,

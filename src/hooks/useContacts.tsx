@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useWorkspace } from '@/hooks/useWorkspace';
 
 export interface Contact {
   id: string;
@@ -16,26 +17,29 @@ export interface Contact {
 
 export function useContacts() {
   const { user } = useAuth();
+  const { activeWorkspaceId } = useWorkspace();
   const queryClient = useQueryClient();
 
   const { data: contacts = [], isLoading } = useQuery({
-    queryKey: ['contacts'],
+    queryKey: ['contacts', activeWorkspaceId],
     queryFn: async () => {
+      if (!activeWorkspaceId) return [] as Contact[];
       const { data, error } = await supabase
         .from('contacts')
         .select('*')
-        .order('name');
+        .eq('workspace_id', activeWorkspaceId);
       if (error) throw error;
-      return data as Contact[];
+      const list = (data || []) as Contact[];
+      return [...list].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     },
-    enabled: !!user,
+    enabled: !!activeWorkspaceId,
   });
 
   const createContact = useMutation({
     mutationFn: async (contact: Omit<Contact, 'id' | 'user_id' | 'created_at'>) => {
       const { data, error } = await supabase
         .from('contacts')
-        .insert({ ...contact, user_id: user!.id })
+        .insert({ ...contact, user_id: user!.id, workspace_id: activeWorkspaceId })
         .select()
         .single();
       if (error) throw error;

@@ -12,6 +12,16 @@ dist
 dist-ssr
 *.local
 
+# Firebase local cache / deploy artifacts
+.firebase/
+
+# Firebase Functions build + deps
+functions/node_modules
+functions/lib
+
+# Local AI assistant configs
+.claude/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
