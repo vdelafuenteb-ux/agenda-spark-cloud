@@ -6,8 +6,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 export function AuthPage() {
+  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [displayName, setDisplayName] = useState('');
   const [loading, setLoading] = useState(false);
   const [forgotMode, setForgotMode] = useState(false);
   const { signIn } = useAuth();
@@ -16,8 +18,21 @@ export function AuthPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const { error } = await signIn(email, password);
-      if (error) throw error;
+      if (mode === 'signup') {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/`,
+            data: { display_name: displayName || email.split('@')[0] },
+          },
+        });
+        if (error) throw error;
+        toast.success('Cuenta creada. Revisa tu email para confirmarla.');
+      } else {
+        const { error } = await signIn(email, password);
+        if (error) throw error;
+      }
     } catch (err: any) {
       toast.error(err.message);
     } finally {
@@ -86,11 +101,36 @@ export function AuthPage() {
             Personal Agenda
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Inicia sesión para continuar
+            {mode === 'signup' ? 'Crea tu cuenta para comenzar' : 'Inicia sesión para continuar'}
           </p>
         </div>
 
+        <div className="flex gap-1 p-1 bg-muted rounded-md">
+          <button
+            type="button"
+            onClick={() => setMode('signin')}
+            className={`flex-1 text-xs py-1.5 rounded transition-colors ${mode === 'signin' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground'}`}
+          >
+            Iniciar sesión
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode('signup')}
+            className={`flex-1 text-xs py-1.5 rounded transition-colors ${mode === 'signup' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground'}`}
+          >
+            Crear cuenta
+          </button>
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-4">
+          {mode === 'signup' && (
+            <Input
+              type="text"
+              placeholder="Tu nombre"
+              value={displayName}
+              onChange={e => setDisplayName(e.target.value)}
+            />
+          )}
           <Input
             type="email"
             placeholder="Email"
@@ -107,15 +147,17 @@ export function AuthPage() {
             minLength={6}
           />
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? 'Cargando...' : 'Ingresar'}
+            {loading ? 'Cargando...' : (mode === 'signup' ? 'Crear cuenta' : 'Ingresar')}
           </Button>
-          <button
-            type="button"
-            onClick={() => setForgotMode(true)}
-            className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            ¿Olvidaste tu contraseña?
-          </button>
+          {mode === 'signin' && (
+            <button
+              type="button"
+              onClick={() => setForgotMode(true)}
+              className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              ¿Olvidaste tu contraseña?
+            </button>
+          )}
         </form>
       </div>
     </div>
