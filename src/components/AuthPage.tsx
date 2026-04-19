@@ -121,16 +121,71 @@ export function AuthPage() {
             required
             minLength={6}
           />
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? 'Cargando...' : 'Ingresar'}
-          </Button>
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="w-full max-w-sm space-y-8 px-4">
+        <div className="text-center">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+            Personal Agenda
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {mode === 'signup' ? 'Crea tu cuenta para comenzar' : 'Inicia sesión para continuar'}
+          </p>
+        </div>
+
+        <div className="flex gap-1 p-1 bg-muted rounded-md">
           <button
             type="button"
-            onClick={() => setForgotMode(true)}
-            className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors"
+            onClick={() => setMode('signin')}
+            className={`flex-1 text-xs py-1.5 rounded transition-colors ${mode === 'signin' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground'}`}
           >
-            ¿Olvidaste tu contraseña?
+            Iniciar sesión
           </button>
+          <button
+            type="button"
+            onClick={() => setMode('signup')}
+            className={`flex-1 text-xs py-1.5 rounded transition-colors ${mode === 'signup' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground'}`}
+          >
+            Crear cuenta
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {mode === 'signup' && (
+            <Input
+              type="text"
+              placeholder="Tu nombre"
+              value={displayName}
+              onChange={e => setDisplayName(e.target.value)}
+            />
+          )}
+          <Input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            required
+          />
+          <Input
+            type="password"
+            placeholder="Contraseña"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            required
+            minLength={6}
+          />
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading ? 'Cargando...' : (mode === 'signup' ? 'Crear cuenta' : 'Ingresar')}
+          </Button>
+          {mode === 'signin' && (
+            <button
+              type="button"
+              onClick={() => setForgotMode(true)}
+              className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              ¿Olvidaste tu contraseña?
+            </button>
+          )}
         </form>
       </div>
     </div>
