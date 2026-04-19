@@ -14,6 +14,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
 import type { TopicWithSubtasks } from '@/hooks/useTopics';
 import { isStoredDateOverdue } from '@/lib/date';
+import { WorkspaceSwitcher } from '@/components/WorkspaceSwitcher';
 
 import type { Filter } from '@/types/filters';
 
@@ -63,6 +64,9 @@ export function AppSidebar({ activeFilter, onFilterChange, topics }: AppSidebarP
               </>
             )}
             {collapsed && <span className="text-xs font-bold text-foreground">AM</span>}
+          </div>
+          <div className="px-2 pb-2">
+            <WorkspaceSwitcher collapsed={collapsed} />
           </div>
           <SidebarGroupContent>
             <SidebarMenu>
