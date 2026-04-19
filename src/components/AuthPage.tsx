@@ -6,8 +6,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 export function AuthPage() {
+  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [displayName, setDisplayName] = useState('');
   const [loading, setLoading] = useState(false);
   const [forgotMode, setForgotMode] = useState(false);
   const { signIn } = useAuth();
@@ -16,8 +18,21 @@ export function AuthPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const { error } = await signIn(email, password);
-      if (error) throw error;
+      if (mode === 'signup') {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/`,
+            data: { display_name: displayName || email.split('@')[0] },
+          },
+        });
+        if (error) throw error;
+        toast.success('Cuenta creada. Revisa tu email para confirmarla.');
+      } else {
+        const { error } = await signIn(email, password);
+        if (error) throw error;
+      }
     } catch (err: any) {
       toast.error(err.message);
     } finally {
